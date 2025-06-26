@@ -46,7 +46,11 @@ GRACE_PERIOD_AFTER_START = 60  # 60 seconds of period after plugin start to allo
 
 async def _load_db(self) -> None:
     """Restore save state."""
-    await super(type(self),self)._load_db()
+    try:
+        await super(type(self),self)._load_db()
+    except Exception as e:
+        self.log.logging("TransportZigpy", "Error", f"Failed to load database: {e}")
+        raise
 
 
 async def initialize(self, *, auto_form: bool = False, force_form: bool = False):
@@ -61,6 +65,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         await self.watchdog_feed()
         self._watchdog_task = asyncio.create_task(self._watchdog_loop(), name="watchdog_loop")
         await asyncio.sleep(1)
+        self.log.logging("TransportZigpy", "Log", "AppGeneric:initialize - Watchdog loop started watchdog_task: {}".format(self._watchdog_task))
 
     # Retreive Last Backup
     _retreived_backup = _retreive_previous_backup(self)
@@ -141,22 +146,30 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
 
 async def shutdown(self, *, db: bool = True) -> None:
     """Shutdown controller."""
-    LOGGER.info("Zigpy shutdown")
-    self.shutting_down = True
+    LOGGER.info("AppGeneric shutdown")
 
-    LOGGER.info("Backup")
-    await _create_backup(self)
+    if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
+        backup_coordinator = await self.backups.create_backup(load_devices=True)
+        await _create_backup(self, backup_coordinator), 
+        LOGGER.info("Backup completed")
 
-    LOGGER.info("zigpy application shutdown")
-    # await ControllerApplication.shutdown(self, db=db)
-    await super(type(self),self).shutdown( db=db)
+    LOGGER.info("AppGeneric application shutdown")
+    self.shutting_down = True 
+
+    try:
+        # await ControllerApplication.shutdown(self, db=db)
+        await super(type(self),self).shutdown( db=db)
+    except Exception as e:
+        LOGGER.error("AppGeneric shutdown failed", exc_info=e)
+    
+    await asyncio.sleep(3)
 
 
-async def _create_backup(self) -> None:
+async def _create_backup(self, backup) -> None:
     """ Create a coordinator backup"""
     try:
-        if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
-            self.callBackBackup(await self.backups.create_backup(load_devices=True))
+        self.callBackBackup(backup)
+
     except Exception:
         LOGGER.warning("Failed to create backup", exc_info=False)
 

@@ -107,6 +107,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
     async def shutdown(self, *, db: bool = True) -> None:
         """Shutdown controller."""
+        LOGGER.info("AppZnp shutdown called")
         await Classes.ZigpyTransport.AppGeneric.shutdown(self, db=db)
 
 

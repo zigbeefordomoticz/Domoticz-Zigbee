@@ -165,7 +165,7 @@ async def start_zigpy_task(self, channel, extended_pan_id):
 
     except asyncio.CancelledError:
         # Handle cancellation gracefully if the loop is stopped externally
-        self.log.logging("TransportZigpy", "Warning", "start_zigpy_task worker_loop(self) was cancelled.")
+        self.log.logging("TransportZigpy", "Error", "start_zigpy_task worker_loop(self) was cancelled.")
 
     except RuntimeError as e:
         # Handle cases like "Cannot run the event loop while another loop is running"
@@ -177,7 +177,7 @@ async def start_zigpy_task(self, channel, extended_pan_id):
 
     # We exit the worker_loop, shutdown time
     try:
-        self.log.logging("TransportZigpy", "Log", "Shutting down zigpy thread...")
+        self.log.logging("TransportZigpy", "Debug", "Shutting down zigpy thread...")
         await self.app.shutdown()
 
     except Exception as e:
@@ -197,14 +197,33 @@ async def start_zigpy_task(self, channel, extended_pan_id):
 
 async def _shutdown_remaining_task(self):
     """Cleanup tasks tied to the service's shutdown."""
-    tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+    # Get all tasks except the current one
+    tasks = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
     
-    [task.cancel() for task in tasks]
-    
-    self.log.logging("TransportZigpy", "Log", f"Cancelling {len(tasks)} outstanding tasks")
-    
-    await asyncio.gather(*tasks, return_exceptions=True)
-    await asyncio.sleep(1)
+    if not tasks:
+        self.log.logging("TransportZigpy", "Debug", "No outstanding tasks to cancel")
+        return
+
+    # Log the number of tasks being cancelled
+    self.log.logging("TransportZigpy", "Debug", f"Cancelling {len(tasks)} outstanding tasks")
+
+    # Cancel all tasks
+    for task in tasks:
+        if not task.done():  # Only cancel tasks that are not already done
+            task.cancel()
+
+    # Wait for tasks to complete or handle exceptions
+    try:
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+    except asyncio.CancelledError:
+        # Ignore CancelledError as it's expected during task cancellation
+        pass
+
+    except Exception as e:
+        self.log.logging("TransportZigpy", "Error", f"Error during task shutdown: {e}")
+
+    self.log.logging("TransportZigpy", "Debug", "Task cleanup completed")
     
 
 async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0):
@@ -337,6 +356,9 @@ def optional_configuration_setup(self, config, conf, set_extendedPanId, set_chan
     # Disable zigpy conf topo scan by default
     config[zigpy.config.CONF_TOPO_SCAN_ENABLED] = False
 
+    # Enable Zigpy Watchdog by default
+    config[zigpy.config.CONF_WATCHDOG_ENABLED] = True
+    
     # Config Zigpy db. if not defined, there is no persistent Db.
     if "enableZigpyPersistentInFile" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["enableZigpyPersistentInFile"]:
         data_folder = Path( self.pluginconf.pluginConf["pluginData"] )

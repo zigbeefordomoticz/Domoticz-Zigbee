@@ -15,10 +15,10 @@
 #
 
 import json
+import threading
 import time
 
 import zigpy.application
-import zigpy.types as t
 
 from Classes.ZigateTransport.sqnMgmt import sqn_init_stack
 from Classes.ZigpyTransport.forwarderThread import (start_forwarder_thread,
@@ -99,12 +99,33 @@ class ZigpyTransport(object):
         pass
 
     def thread_transport_shutdown(self):
-        self.log.logging("Transport", "Debug", "Shuting down co-routine")
+        self.log.logging("Transport", "Debug", "Shutting down zigpy thread")
         stop_zigpy_thread(self)
-        stop_forwarder_thread(self)
+        self.log.logging("Transport", "Debug", "Zigpy thread stopped")
 
-        self.zigpy_thread.join()
-        self.forwarder_thread.join()
+        self.log.logging("Transport", "Debug", "Shutting down zigpy forwarder thread")
+        stop_forwarder_thread(self)
+        self.log.logging("Transport", "Debug", "Zigpy forwarder stopped")
+
+        self.log.logging("Transport", "Debug", "Zigpy thread join with 5 seconds timeout")
+        self.zigpy_thread.join(timeout=120)
+        if self.zigpy_thread.is_alive():
+            self.log.logging("Transport", "Error", "Zigpy thread did not terminate within 5 seconds")
+            active_threads = threading.enumerate()
+            thread_info = [(t.name, t.ident, t.is_alive()) for t in active_threads]
+            self.log.logging("Transport", "Debug", f"Active threads: {thread_info}")
+        else:
+            self.log.logging("Transport", "Debug", "Zigpy join completed")
+ 
+
+        self.log.logging("Transport", "Debug", "Zigpy forwarder thread join with 5 seconds timeout")
+        self.forwarder_thread.join(timeout=5)
+        if self.forwarder_thread.is_alive():
+            self.log.logging("Transport", "Error", "Forwarder thread did not terminate within 5 seconds")
+        else:
+            self.log.logging("Transport", "Debug", "Forwarder join completed")
+        
+        self.log.logging("Transport", "Status", "Zigpy transport threads shutdown attempted")
 
     def sendData(self, cmd, datas, sqn=None, highpriority=False, ackIsDisabled=False, waitForResponseIn=False, NwkId=None):
         
