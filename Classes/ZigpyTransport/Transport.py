@@ -113,7 +113,7 @@ class ZigpyTransport(object):
             self.log.logging("Transport", "Error", "Zigpy thread did not terminate within 5 seconds")
             active_threads = threading.enumerate()
             thread_info = [(t.name, t.ident, t.is_alive()) for t in active_threads]
-            self.log.logging("Transport", "Debug", f"Active threads: {thread_info}")
+            self.log.logging("Transport", "Error", f"Active threads: {thread_info}")
         else:
             self.log.logging("Transport", "Debug", "Zigpy join completed")
  
