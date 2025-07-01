@@ -152,9 +152,15 @@ async def shutdown(self, *, db: bool = True) -> None:
         LOGGER.warning("AppGeneric shutdown called while connection lost, not backup-ing the coordinator state")
 
     elif self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED] and self.backups is not None:
-        backup_coordinator = await self.backups.create_backup(load_devices=True)
-        await _create_backup(self, backup_coordinator), 
-        LOGGER.info("Backup completed")
+        try:
+            backup_coordinator = await self.backups.create_backup(load_devices=True)
+            if backup_coordinator is None:
+                LOGGER.warning("AppGeneric backup not created, no coordinator state to backup")
+            else:
+                await _create_backup(self, backup_coordinator)
+                LOGGER.info("Backup completed")
+        except Exception as e:
+            LOGGER.error("AppGeneric backup failed", exc_info=e)
 
     LOGGER.info("AppGeneric application shutdown")
     self.shutting_down = True 
