@@ -774,12 +774,12 @@ SWITCH_SELECTORS = {
         "ForceUpdate": False
     },
     "ThermoMode": {
-        "00": (0, "00"),
-        "01": (1, "10"),
-        "03": (2, "20"),
-        "04": (3, "30"),
-        "08": (4, "40"),
-        "07": (5, "50"),
+        "00": (0, "00"),  # Off
+        "01": (1, "10"),  # Auto
+        "03": (2, "20"),  # Cool
+        "04": (3, "30"),  # Heat
+        "08": (4, "40"),  # Dry
+        "07": (5, "50"),  # Fan
         "ForceUpdate": False,
         "SelectorStyle": 1,
         "LevelNames": "Off|Auto|Cool|Heat|Dry|Fan",
