@@ -640,6 +640,7 @@ class BasePlugin:
 
         # Close CIE connection and shutdown transport thread
         if self.pluginconf and self.ControllerLink:
+            self.log.logging("Plugin", "Log", "onStop called shutding down CIE connection and transport thread")
             self.ControllerLink.thread_transport_shutdown()
             self.ControllerLink.close_cie_connection()
 
@@ -661,10 +662,10 @@ class BasePlugin:
             self.log.logging("Plugin", "Log", "Closing Logging Management")
             self.log.closeLogFile()
 
-        # Log running threads that need to be shutdown
-        for thread in threading.enumerate():
-            if thread.name != threading.current_thread().name:
-                Domoticz.Log("'" + thread.name + "' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
+        # Log running threads. We should have only the main thread (MainThread)
+        active_threads = threading.enumerate()
+        thread_info = [(t.name, t.ident, t.is_alive()) for t in active_threads]
+        Domoticz.Log("Remaining active threads: %s" % thread_info)
 
         # Update plugin health status
         self.PluginHealth["Flag"] = 3
