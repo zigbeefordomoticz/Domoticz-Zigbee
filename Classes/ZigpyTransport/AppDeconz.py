@@ -65,6 +65,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         
         self.shutting_down = False
         self.restarting = False
+        self.current_error = None
 
         await asyncio.sleep( 3 )
 

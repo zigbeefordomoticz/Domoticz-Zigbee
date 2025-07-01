@@ -148,7 +148,10 @@ async def shutdown(self, *, db: bool = True) -> None:
     """Shutdown controller."""
     LOGGER.info("AppGeneric shutdown")
 
-    if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
+    if self.current_error == "connection lost":
+        LOGGER.warning("AppGeneric shutdown called while connection lost, not backup-ing the coordinator state")
+
+    elif self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED] and self.backups is not None:
         backup_coordinator = await self.backups.create_backup(load_devices=True)
         await _create_backup(self, backup_coordinator), 
         LOGGER.info("Backup completed")
@@ -203,6 +206,7 @@ def connection_lost(self, exc: Exception) -> None:
 
 def connection_lost_error(self, message: str) -> None:
     self.restarting = True
+    self.current_error = "connection lost"
     LOGGER.error(message)
     self.callBackRestartPlugin()
 
