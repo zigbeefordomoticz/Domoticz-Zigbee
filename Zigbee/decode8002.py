@@ -22,28 +22,28 @@ def decode8002_and_process(self, frame):
     ProfileId, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload = extract_nwk_infos_from_8002(frame)
     
     self.log.logging("Transport8002", "Debug", "decode8002_and_process ProfileId: %04x %s %s" % (
-        int(ProfileId,16), SrcNwkId, frame))
+        int(ProfileId,16), SrcNwkId, frame), SrcNwkId)
     self.log.logging("Transport8002", "Debug", "decode8002_and_process ProfileID: %04x NwkId: %s Ep: %s Cluster: %s Payload: %s" % (
-        int(ProfileId,16), SrcNwkId, SrcEndPoint, ClusterId, Payload))
+        int(ProfileId,16), SrcNwkId, SrcEndPoint, ClusterId, Payload), SrcNwkId)
 
     if SrcNwkId is None:
         return frame
 
     if len(Payload) == 0:
         self.log.logging("Transport8002", "Log", "decode8002_and_process - Frame with empty Payload !! ProfileID: %04x NwkId: %s Ep: %s Cluster: %s frame: %s" % (
-            int(ProfileId,16), SrcNwkId, SrcEndPoint, ClusterId, frame))
+            int(ProfileId,16), SrcNwkId, SrcEndPoint, ClusterId, frame), SrcNwkId)
         return frame
     
     if ProfileId == "0000":
         frame = zdp_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, frame)
-        self.log.logging("Transport8002", "Debug", "decode8002_and_process return ZDP frame: %s" % frame)
+        self.log.logging("Transport8002", "Debug", "decode8002_and_process return ZDP frame: %s" % frame, SrcNwkId)
         return frame
 
     if self.zigbee_communication == "zigpy" and SrcNwkId not in self.ListOfDevices:
         if lookupForIEEE(self, SrcNwkId, reconnect=True):
             return frame
             
-        self.log.logging("Transport8002", "Log", "decode8002_and_process unknown NwkId: %s for ZCL frame %s" % (SrcNwkId,frame))
+        self.log.logging("Transport8002", "Log", "decode8002_and_process unknown NwkId: %s for ZCL frame %s" % (SrcNwkId,frame), SrcNwkId)
         return None
 
     if self.zigbee_communication == "zigpy":
@@ -55,7 +55,7 @@ def decode8002_and_process(self, frame):
 
     # Z-Stack doesn't provide Profile Information, so we should assumed that if it is not 0x0000 (ZDP) it is then ZCL
     frame = zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, frame)
-    self.log.logging("Transport8002", "Debug", "decode8002_and_process return ZCL frame: %s" % frame)
+    self.log.logging("Transport8002", "Debug", "decode8002_and_process return ZCL frame: %s" % frame, SrcNwkId)
     return frame
 
 

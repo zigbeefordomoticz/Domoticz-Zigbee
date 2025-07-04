@@ -878,30 +878,31 @@ def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_updat
     ota_image_advertize(self, target_nwkid, target_ep, image_version=image_version, image_type=image_type, manufacturer_code=manuf_code)
     return True
 
-def logging(self, logType, message):  # OK 13/10
-    self.log.logging("OTA", logType, message)
+def logging(self, logType, message, nwkid=None):  # OK 13/10
+    self.log.logging("OTA", logType, message, nwkid)
 
 def is_image_for_query_next_image_request( self, nwkid, manuf_code, image_type, file_version):
 
-    logging(self, "Debug", "is_image_for_query_next_image_request - %s %s %s" % (manuf_code, image_type, file_version))
+    logging(self, "Debug", "is_image_for_query_next_image_request - %s %s %s" % (manuf_code, image_type, file_version), nwkid)
     for brand_name in self.ListOfImages["Brands"]:
-        logging(self, "Debug", "is_image_for_query_next_image_request - checking %s" %brand_name)
+        logging(self, "Debug", "is_image_for_query_next_image_request - checking %s" %brand_name, nwkid)
         for file_name in self.ListOfImages["Brands"][brand_name]:
             logging(self, "Debug", "    - filename %s %s %s" %(
                 file_name,
                 self.ListOfImages["Brands"][brand_name][file_name]["intManufCode"], 
                 self.ListOfImages["Brands"][brand_name][file_name]["ImageType"]
-                )
+                ),
+                nwkid
             )
             if int(manuf_code,16) != self.ListOfImages["Brands"][brand_name][file_name]["intManufCode"]:
                 continue
-            logging(self, "Debug", "is_image_for_query_next_image_request - potential brand name found:%s ..." % brand_name)
+            logging(self, "Debug", "is_image_for_query_next_image_request - potential brand name found:%s ..." % brand_name, nwkid)
 
             if int(image_type,16) != self.ListOfImages["Brands"][brand_name][file_name]["ImageType"]:
                 continue
 
             logging(self, "Debug", "is_image_for_query_next_image_request - potential image type found:%s with version %s..." % (
-                brand_name, self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]))
+                brand_name, self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]), nwkid)
 
             if int(file_version,16) < self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]:
                 logging(self, "Debug", "is_image_for_query_next_image_request - We have newest firmware available for this device")
@@ -1107,7 +1108,7 @@ def prepare_and_send_block(self, MsgSrcAddr, MsgEP, MsgFileOffset, intMsgImageVe
 
     if intMsgImageType not in self.ListOfImages["ImageType"]:
         # Image Type unknown or not loaded
-        logging( self, "Error", "prepare_and_send_block %s/%s - 0x%04x image not found" % (MsgSrcAddr, MsgEP, intMsgImageType), )
+        logging( self, "Error", "prepare_and_send_block %s/%s - 0x%04x image not found" % (MsgSrcAddr, MsgEP, intMsgImageType), MsgSrcAddr)
         return
 
     if self.ListInUpdate["NwkId"] and intMsgImageType != self.ListInUpdate["intImageType"] and MsgSrcAddr != self.ListInUpdate["NwkId"]:
@@ -1116,7 +1117,7 @@ def prepare_and_send_block(self, MsgSrcAddr, MsgEP, MsgFileOffset, intMsgImageVe
         return
 
     logging( self, "Debug", "prepare_and_send_block - [%3s] request - %s/%s Offset: %s version: 0x%08X Type: 0%04X Code: 0x%04X Delay: %s MaxSize: %s Control: 0x%02X" % ( 
-        int(MsgSQN, 16), MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, intMsgFieldControl, ),)
+        int(MsgSQN, 16), MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, intMsgFieldControl, ), MsgSrcAddr)
 
     if self.ListInUpdate["Process"] is None:
         start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgFileOffset, MsgMaxDataSize)
@@ -1129,7 +1130,7 @@ def prepare_and_send_block(self, MsgSrcAddr, MsgEP, MsgFileOffset, intMsgImageVe
     self.ListInUpdate["LastBlockSent"] = time.time()
 
     logging( self, "Debug", "prepare_and_send_block - Block Request for %s/%s Image Type: 0x%04X Image Version: %08X Seq: %s Offset: %s Size: %s FieldCtrl: 0x%02X" % ( 
-        MsgSrcAddr, block_request["ReqEp"], block_request["ImageType"], block_request["ImageVersion"], MsgSQN, block_request["Offset"], block_request["MaxDataSize"], block_request["FieldControl"], ),)
+        MsgSrcAddr, block_request["ReqEp"], block_request["ImageType"], block_request["ImageVersion"], MsgSQN, block_request["Offset"], block_request["MaxDataSize"], block_request["FieldControl"], ),MsgSrcAddr)
 
     ota_send_block(self, MsgSrcAddr, MsgEP, intMsgImageType, intMsgImageVersion, block_request, disable_ack=disableACK)
     display_percentage_progress(self, MsgSrcAddr, MsgEP, intMsgImageType, MsgFileOffset)
@@ -1148,7 +1149,8 @@ def initialize_block_request(self, MsgSrcAddr, MsgEP, MsgFileOffset, intMsgImage
         logging(
             self,
             "Debug",
-            f"Fixing - [{int(MsgSQN, 16):3}] OTA image Block request - {MsgSrcAddr}/{MsgEP} Offset: {int(MsgFileOffset, 16)} version: 0x{intMsgImageVersion:08X} Type: 0x{intMsgImageType:04X} Code: 0x{intMsgManufCode:04X} Delay: {MsgBlockRequestDelay} MaxSize: {MsgMaxDataSize} Control: 0x{intMsgFieldControl:02X}"
+            f"Fixing - [{int(MsgSQN, 16):3}] OTA image Block request - {MsgSrcAddr}/{MsgEP} Offset: {int(MsgFileOffset, 16)} version: 0x{intMsgImageVersion:08X} Type: 0x{intMsgImageType:04X} Code: 0x{intMsgManufCode:04X} Delay: {MsgBlockRequestDelay} MaxSize: {MsgMaxDataSize} Control: 0x{intMsgFieldControl:02X}",
+            MsgSrcAddr           
         )
 
     return {
@@ -1170,35 +1172,35 @@ def ota_aync_request( self, MsgSrcAddr, MsgEP, MsgIEEE, MsgFileOffset, image_ver
     # Check if we have an available firmware
     # If yes, then load the firmware on ZiGate
 
-    logging(self, "Debug", f"ota_aync_request: There is async request coming {MsgSrcAddr} against {self.ListInUpdate.get('AuthorizedForUpdate')}")
+    logging(self, "Debug", f"ota_aync_request: There is async request coming {MsgSrcAddr} against {self.ListInUpdate.get('AuthorizedForUpdate')}", MsgSrcAddr)
 
     if MsgSrcAddr not in self.ListInUpdate.get("AuthorizedForUpdate", []):
         if self.pluginconf.pluginConf.get("autoServeOTA", False):
             return False
 
         # We need to prevent looping on serving if it is not expected!
-        logging(self, "Error", f"ota_aync_request: There is no upgrade plan for that device, drop request from {MsgSrcAddr}")
+        logging(self, "Error", f"ota_aync_request: There is no upgrade plan for that device, drop request from {MsgSrcAddr}", MsgSrcAddr)
         return False
 
     if self.ListInUpdate.get("NwkId"):
         logging(
             self,
             "Debug",
-            f"ota_aync_request: There is an upgrade in progress {self.ListInUpdate['NwkId']}, drop request from {MsgSrcAddr}",
+            f"ota_aync_request: There is an upgrade in progress {self.ListInUpdate['NwkId']}, drop request from {MsgSrcAddr}", MsgSrcAddr
         )
         return False
 
     if image_type not in self.ListOfImages.get("ImageType", {}):
-        logging(self, "Log", f"ota_aync_request: No Firmware available to satisfy this request by {MsgSrcAddr}")
+        logging(self, "Log", f"ota_aync_request: No Firmware available to satisfy this request by {MsgSrcAddr}", MsgSrcAddr)
         return False
 
     entry = retrieve_image(self, image_type)
     if entry is None:
-        logging(self, "Error", f"ota_aync_request: No Firmware available to satisfy this request by {MsgSrcAddr} !!!")
+        logging(self, "Error", f"ota_aync_request: No Firmware available to satisfy this request by {MsgSrcAddr} !!!", MsgSrcAddr)
 
     brand, ota_image_file = entry
     available_image = self.ListOfImages.get("Brands", {}).get(brand, {}).get(ota_image_file, {})
-    logging(self, "Debug", f"ota_aync_request: brand: {brand} ota_image_file: {ota_image_file}")
+    logging(self, "Debug", f"ota_aync_request: brand: {brand} ota_image_file: {ota_image_file}", MsgSrcAddr)
 
     # Sanity Checks
     if intMsgManufCode != available_image.get("intManufCode"):
@@ -1206,10 +1208,11 @@ def ota_aync_request( self, MsgSrcAddr, MsgEP, MsgIEEE, MsgFileOffset, image_ver
             self,
             "Error",
             f"ota_aync_request: {MsgSrcAddr} Available Firmware {ota_image_file} is not for this Manufacturer Code {intMsgManufCode}. Dropping",
+            MsgSrcAddr
         )
         return False
 
-    logging(self, "Debug", f"OTA heartbeat - Image: 0x{image_type:04X} from file: {ota_image_file}")
+    logging(self, "Debug", f"OTA heartbeat - Image: 0x{image_type:04X} from file: {ota_image_file}", MsgSrcAddr)
 
     # Loading Image on Zigate
     if not self.ImageLoaded:
@@ -1244,7 +1247,7 @@ def notify_upgrade_end(
             _transferTime_mm,
             _transferTime_ss,
         )
-        logging(self, "Status", _textmsg)
+        logging(self, "Status", _textmsg, MsgSrcAddr)
         if "Firmware Update" in self.PluginHealth and len(self.PluginHealth["Firmware Update"]) > 0:
             self.PluginHealth["Firmware Update"]["Progress"] = "Success"
 
@@ -1336,7 +1339,7 @@ def display_percentage_progress(self, MsgSrcAddr, MsgEP, intMsgImageType, MsgFil
     _completion = round((int(MsgFileOffset, 16) / _size) * 100, 1)
 
     if _completion % 5 == 0:
-        logging(self, "Status", f"Firmware transfer for {MsgSrcAddr}/{MsgEP} - Progress: {_completion:4.1f} %")
+        logging(self, "Status", f"Firmware transfer for {MsgSrcAddr}/{MsgEP} - Progress: {_completion:4.1f} %", MsgSrcAddr)
         update_firmware_health(self, MsgSrcAddr, _completion)
 
 
@@ -1356,7 +1359,7 @@ def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgF
     # Retrieve the image entry for the requested image type
     entry = retrieve_image(self, intMsgImageType)
     if entry is None:
-        logging(self, "Error", "start_upgrade_infos: No Firmware available to satify this request by %s !!!" % MsgSrcAddr)
+        logging(self, "Error", "start_upgrade_infos: No Firmware available to satify this request by %s !!!" % MsgSrcAddr, MsgSrcAddr)
         return
     brand, ota_image_file = entry
 
