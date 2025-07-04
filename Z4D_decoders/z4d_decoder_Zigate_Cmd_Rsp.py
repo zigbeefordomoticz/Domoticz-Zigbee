@@ -68,14 +68,14 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
     
     if MsgSrcAddr not in self.ListOfDevices:
         if not zigpy_plugin_sanity_check(self, MsgSrcAddr):
-            self.log.logging('Input', 'Debug', f"Decode8011 - not zigpy_plugin_sanity_check {MsgSrcAddr} {MsgStatus}")
+            self.log.logging('Input', 'Debug', f"Decode8011 - not zigpy_plugin_sanity_check {MsgSrcAddr} {MsgStatus}", MsgSrcAddr)
             handle_unknow_device(self, MsgSrcAddr)
         return
 
     MsgSEQ = MsgData[12:14] if MsgLen > 12 else None
     i_sqn = sqn_get_internal_sqn_from_aps_sqn(self.ControllerLink, MsgSEQ)
 
-    self.log.logging('Input', 'Debug', f"Decode8011 - Nwkid: {MsgSrcAddr} Status: {MsgStatus} MsgSEQ: {MsgSEQ}")
+    self.log.logging('Input', 'Debug', f"Decode8011 - Nwkid: {MsgSrcAddr} Status: {MsgStatus} MsgSEQ: {MsgSEQ}", MsgSrcAddr)
 
     if self.pluginconf.pluginConf['coordinatorCmd']:
         if MsgSEQ:
@@ -96,7 +96,7 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
     # We have a NACK
     clusterId = MsgData[8:12]
     _powered = mainPoweredDevice(self, MsgSrcAddr)
-    self.log.logging('Input', 'Debug', f"Decode8011 - Nwkid: {MsgSrcAddr} Cluster: {clusterId} TimedOut with Status: {MsgStatus}, MainPowered: {_powered}")
+    self.log.logging('Input', 'Debug', f"Decode8011 - Nwkid: {MsgSrcAddr} Cluster: {clusterId} TimedOut with Status: {MsgStatus}, MainPowered: {_powered}", MsgSrcAddr)
     
     if not _powered:
         return
