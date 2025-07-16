@@ -1164,6 +1164,7 @@ def _start_zigpy_ZNP(self):
     if Parameters["Mode2"] == "Socket":
         SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
         self.transport += "Socket"
+        communication_specifics = None
     else:
         # Serial mode via USB
         communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
@@ -1204,6 +1205,7 @@ def _start_zigpy_deConz(self):
     if Parameters["Mode2"] == "Socket":
         SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
         self.transport += "Socket"
+        communication_specifics = None
     else:
         # Serial mode via USB
         communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
@@ -1245,6 +1247,7 @@ def _start_zigpy_EZSP(self):
     if Parameters["Mode2"] == "Socket":
         SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
         self.transport += "Socket"
+        communication_specifics = None
     else:
         communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
         SerialPort = Parameters["SerialPort"]
