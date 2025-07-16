@@ -313,6 +313,9 @@ class BasePlugin:
     def onStart(self):
         #tracemalloc.start()
 
+        if Parameters["Mode6"] != "0":
+            Domoticz.Debugging(int(Parameters["Mode6"]))
+
         Domoticz.Status( "Welcome to Zigbee for Domoticz (Z4D) plugin. (c)pipiche38 - 2018 - 2025")
 
         # Print PYTHONPATH if set
