@@ -434,16 +434,19 @@ def post_coordinator_startup(self, radiomodule):
     # Let send a 0302 to simulate an Off/on
     self.forwarder_queue.put( build_plugin_0302_frame_content( self, ) )
 
-    
+
 def display_network_infos(self):
     self.log.logging( "TransportZigpy", "Status", "++ Network settings")
-    self.log.logging( "TransportZigpy", "Status", "++   Device IEEE        : %s" %self.app.state.node_info.ieee)
-    self.log.logging( "TransportZigpy", "Status", "++   Device NWK         : 0x%04X" %self.app.state.node_info.nwk)
-    self.log.logging( "TransportZigpy", "Status", "++   Network Update Id  : 0x%04X" %self.app.state.network_info.nwk_update_id)
-    self.log.logging( "TransportZigpy", "Status", "++   PAN ID             : 0x%04X" %self.app.state.network_info.pan_id)
-    self.log.logging( "TransportZigpy", "Status", "++   Extended PAN ID    : %s" %self.app.state.network_info.extended_pan_id)
-    self.log.logging( "TransportZigpy", "Status", "++   Channel            : %s" %self.app.state.network_info.channel)
-    self.log.logging( "TransportZigpy", "Debug", "++   Network key: " + ":".join( f"{c:02x}" for c in self.app.state.network_information.network_key.key ))
+    self.log.logging( "TransportZigpy", "Status", f"  PAN ID:                0x{self.app.state.network_info.pan_id:04X}")
+    self.log.logging( "TransportZigpy", "Status", f"  Extended PAN ID:       {self.app.state.network_info.extended_pan_id}")
+    self.log.logging( "TransportZigpy", "Status", f"  Channel:               {self.app.state.network_info.channel}")
+    self.log.logging( "TransportZigpy", "Status", f"  Channel mask:          {list(self.app.state.network_info.channel_mask)}")
+    self.log.logging( "TransportZigpy", "Status", f"  NWK update ID:         {self.app.state.network_info.nwk_update_id}")
+    self.log.logging( "TransportZigpy", "Status", f"  Device IEEE:           {self.app.state.node_info.ieee}")
+    self.log.logging( "TransportZigpy", "Status", f"  Device NWK:            0x{self.app.state.node_info.nwk:04X}")
+    self.log.logging( "TransportZigpy", "Status", f"  Network key:           " + ":".join( f"{c:02x}" for c in self.app.state.network_information.network_key.key ))
+    self.log.logging( "TransportZigpy", "Status", f"  Network key sequence:  {self.app.state.network_info.network_key.seq}")
+    self.log.logging( "TransportZigpy", "Status", f"  Network key counter:   {self.app.state.network_info.network_key.tx_counter}")
 
 
 async def worker_loop(self):
