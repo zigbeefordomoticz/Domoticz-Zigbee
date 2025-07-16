@@ -36,18 +36,24 @@
         <param field="Mode2" label="Coordinator connection type" width="200px" required="true" default="None">
             <description>
                 <br/>Select the Radio Coordinator connection type : USB, DIN, Pi, TCPIP (Zigate Wifi, Ethernet) or Socket (ZNP and ESZP via Ethernet).
+
+                <br/>In case of USB, the default settings are Baudrate: 115200 and no flow control.
+                <br/>You can specify the baudrate and the flow control (none, software or hardware) in the format USB,baudrate,flowcontrol (USB,56700,software for example).
+
                 <br/>In case of Socket use the IP to put the remote ip.
-                <br/>In case of USB, you can also specify the baudrate and the flow control (software or hardware) in the format USB,baudrate,flowcontrol (USB,56700,software for example).
             </description>
             <options>
                 <option label="USB"   value="USB" />
-                
+
+                <option label="USB, 56700"             value="USB,56700" />
                 <option label="USB, 56700, software"   value="USB,56700,software" />
                 <option label="USB, 56700, hardware"   value="USB,56700,hardware" />
-                
+
+                <option label="USB, 115200"             value="USB,115200" />
                 <option label="USB, 115200, software"   value="USB,115200,software" />
                 <option label="USB, 115200, hardware"   value="USB,115200,hardware" />
-                
+
+                <option label="USB, 320400"             value="USB,320400" />
                 <option label="USB, 320400, software"   value="USB,320400,software" />
                 <option label="USB, 320400, hardware"   value="USB,320400,hardware" />
 
