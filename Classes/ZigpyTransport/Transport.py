@@ -45,7 +45,6 @@ class ZigpyTransport(object):
         self._radiomodule = radiomodule
         self._serialPort = serialPort
         self._serialPort_communication_specifics = com_specifcs
-        self.log.logging("Transport", "Log", f"Serial Port: {serialPort}, Communication specifics: {com_specifcs}")
 
         self.version = None
         self.Firmwareversion = None
@@ -91,6 +90,8 @@ class ZigpyTransport(object):
 
    
     def open_cie_connection(self):
+        self.log.logging("Transport", "Log", f"Radio model {self._radiomodule} Serial Port: {self._serialPort}, Communication specifics: {self._serialPort_communication_specifics}")
+
         start_zigpy_thread(self)
         start_forwarder_thread(self)
 
