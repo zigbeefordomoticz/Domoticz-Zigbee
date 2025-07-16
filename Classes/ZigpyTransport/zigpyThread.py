@@ -229,34 +229,29 @@ async def _shutdown_remaining_task(self):
 async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0):
 
     self.log.logging("TransportZigpy", "Debug", "In radio_start %s" %radiomodule)
+    config = None
 
     try:
         if radiomodule == "ezsp":
             import bellows.config as radio_specific_conf
-
             from Classes.ZigpyTransport.AppBellows import App_bellows as App
-
             config = ezsp_configuration_setup(self, radio_specific_conf, serialPort)
-            self.log.logging("TransportZigpy", "Status", "++ Started radio %s port: %s" %( radiomodule, serialPort))
 
         elif radiomodule =="znp":
             import zigpy_znp.config as radio_specific_conf
-
             from Classes.ZigpyTransport.AppZnp import App_znp as App
-
             config = znp_configuration_setup(self, radio_specific_conf, serialPort)
-            self.log.logging("TransportZigpy", "Status", "++ Started radio znp port: %s" %(serialPort))
 
         elif radiomodule =="deCONZ":
             import zigpy_deconz.config as radio_specific_conf
-
             from Classes.ZigpyTransport.AppDeconz import App_deconz as App
-
             config = deconz_configuration_setup(self, radio_specific_conf, serialPort)
-            self.log.logging("TransportZigpy", "Status", "++ Started radio deconz port: %s" %(serialPort))
 
         else:
             self.log.logging( "TransportZigpy", "Error", "Wrong radiomode: %s" % (radiomodule), )
+            return
+
+        self.log.logging("TransportZigpy", "Status", "++ Started radio %s port: %s config %s" %( radiomodule, serialPort, config))
 
     except Exception as e:
         self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
