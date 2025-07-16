@@ -293,11 +293,19 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
 
 
 def ezsp_configuration_setup(self, bellows_conf, serialPort):
+    """Setup configuration for EZSP radio module."""
     config = {
-        zigpy.config.CONF_DEVICE: { zigpy.config.CONF_DEVICE_PATH: serialPort, zigpy.config.CONF_DEVICE_BAUDRATE: 115200},
-        zigpy.config.CONF_NWK: {},
-        bellows_conf.CONF_EZSP_CONFIG: {},
-        zigpy.config.CONF_OTA: {},
+        zigpy.config.CONF_DEVICE: {
+            zigpy.config.CONF_DEVICE_PATH: serialPort,
+            zigpy.config.CONF_DEVICE_BAUDRATE: self._serialPort_communication_specifics.get("Baudrate", 115200),
+            zigpy.config.CONF_DEVICE_FLOW_CONTROL: self._serialPort_communication_specifics.get("FlowControl", None)
+        },
+        zigpy.config.CONF_NWK: {
+        },
+        bellows_conf.CONF_EZSP_CONFIG: {
+        },
+        zigpy.config.CONF_OTA: {
+        },
         "handle_unknown_devices": True,
     }
 
@@ -313,12 +321,19 @@ def ezsp_configuration_setup(self, bellows_conf, serialPort):
 
 
 def znp_configuration_setup(self, znp_conf, serialPort):
-        
+    """Setup configuration for ZNP radio module."""
     config = {
-        zigpy.config.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, 
-        zigpy.config.CONF_NWK: {},
-        znp_conf.CONF_ZNP_CONFIG: { },
-        zigpy.config.CONF_OTA: {},
+        zigpy.config.CONF_DEVICE: {
+            zigpy.config.CONF_DEVICE_PATH: serialPort,
+            zigpy.config.CONF_DEVICE_BAUDRATE: self._serialPort_communication_specifics.get("Baudrate", 115200),
+            zigpy.config.CONF_DEVICE_FLOW_CONTROL: self._serialPort_communication_specifics.get("FlowControl", None)
+        },
+        zigpy.config.CONF_NWK: {
+        },
+        znp_conf.CONF_ZNP_CONFIG: {
+        },
+        zigpy.config.CONF_OTA: {
+        },
     }
     if specific_endpoints(self):
         config[ znp_conf.CONF_ZNP_CONFIG][ "prefer_endpoint_1" ] = False
@@ -330,12 +345,18 @@ def znp_configuration_setup(self, znp_conf, serialPort):
 
 
 def deconz_configuration_setup(self, deconz_conf, serialPort):
+    """Setup configuration for deCONZ radio module."""
     return {
-        zigpy.config.CONF_DEVICE: {"path": serialPort, "baudrate": 115200},
-        zigpy.config.CONF_NWK: {},
-        zigpy.config.CONF_OTA: {},
+        zigpy.config.CONF_DEVICE: {
+            zigpy.config.CONF_DEVICE_PATH: serialPort, 
+            zigpy.config.CONF_DEVICE_BAUDRATE: self._serialPort_communication_specifics.get("Baudrate", 115200),
+            zigpy.config.CONF_DEVICE_FLOW_CONTROL: self._serialPort_communication_specifics.get("FlowControl", None)
+        },
+        zigpy.config.CONF_NWK: {
+        },
+        zigpy.config.CONF_OTA: {
+        },
     }
-
 
 def optional_configuration_setup(self, config, conf, set_extendedPanId, set_channel):
 
@@ -444,7 +465,7 @@ def display_network_infos(self):
     self.log.logging( "TransportZigpy", "Status", f"  NWK update ID:         {self.app.state.network_info.nwk_update_id}")
     self.log.logging( "TransportZigpy", "Status", f"  Device IEEE:           {self.app.state.node_info.ieee}")
     self.log.logging( "TransportZigpy", "Status", f"  Device NWK:            0x{self.app.state.node_info.nwk:04X}")
-    self.log.logging( "TransportZigpy", "Status", f"  Network key:           " + ":".join( f"{c:02x}" for c in self.app.state.network_information.network_key.key ))
+    self.log.logging( "TransportZigpy", "Status", "  Network key:           " + ":".join( f"{c:02x}" for c in self.app.state.network_information.network_key.key ))
     self.log.logging( "TransportZigpy", "Status", f"  Network key sequence:  {self.app.state.network_info.network_key.seq}")
     self.log.logging( "TransportZigpy", "Status", f"  Network key counter:   {self.app.state.network_info.network_key.tx_counter}")
 

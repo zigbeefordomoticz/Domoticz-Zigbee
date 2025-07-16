@@ -33,19 +33,23 @@
                 <option label="Conbee/Rasbee I, II, III (via zigpy)" value="ZigpydeCONZ"/>
             </options>
         </param>
-        <param field="Mode2" label="Coordinator connection type" width="75px" required="true" default="None">
-            <description><br/>Select the Radio Coordinator connection type : USB, DIN, Pi, TCPIP (Zigate Wifi, Ethernet) or Socket (ZNP and ESZP via Ethernet). In case of Socket use the IP to put the remote ip</description>
+        <param field="Mode2" label="Coordinator connection type" width="200px" required="true" default="None">
+            <description>
+                <br/>Select the Radio Coordinator connection type : USB, DIN, Pi, TCPIP (Zigate Wifi, Ethernet) or Socket (ZNP and ESZP via Ethernet).
+                <br/>In case of Socket use the IP to put the remote ip.
+                <br/>In case of USB, you can also specify the baudrate and the flow control (software or hardware) in the format USB,baudrate,flowcontrol (USB,56700,software for example).
+            </description>
             <options>
                 <option label="USB"   value="USB" />
                 
-                <option label="USB,56700,xon_xoff"   value="USB,56700,xon_xoff" />
-                <option label="USB,56700,rtscts"   value="USB,56700,rtscts" />
+                <option label="USB, 56700, software"   value="USB,56700,software" />
+                <option label="USB, 56700, hardware"   value="USB,56700,hardware" />
                 
-                <option label="USB,115200,xon_xoff"   value="USB,115200,xon_xoff" />
-                <option label="USB,115200,rtscts"   value="USB,115200,rtscts" />
+                <option label="USB, 115200, software"   value="USB,115200,software" />
+                <option label="USB, 115200, hardware"   value="USB,115200,hardware" />
                 
-                <option label="USB,320400,xon_xoff"   value="USB,320400,xon_xoff" />
-                <option label="USB,320400,rtscts"   value="USB,320400,rtscts" />
+                <option label="USB, 320400, software"   value="USB,320400,software" />
+                <option label="USB, 320400, hardware"   value="USB,320400,hardware" />
 
                 <option label="DIN"   value="DIN" />
                 <option label="PI"    value="PI" />
@@ -688,6 +692,7 @@ class BasePlugin:
         if self.adminWidgets:
             self.adminWidgets.updateStatusWidget(Devices, "No Communication")
 
+
     def onDeviceRemoved(self, Unit):
         # def onDeviceRemoved(self, DeviceID, Unit):
         if not self.ControllerIEEE:
@@ -792,6 +797,7 @@ class BasePlugin:
 
     def zigpy_chk_upd_device(self, ieee, nwkid ):
         chk_and_update_IEEE_NWKID(self, nwkid, ieee)
+
 
     def zigpy_get_device(self, ieee=None, nwkid=None):
         # allow to inter-connect zigpy world and plugin
@@ -1119,9 +1125,6 @@ def parse_mode2_serial_com_specifics(mode2):
     """
     # Default values
     result = {
-        "SerialMode": None,
-        "Baudrate": None,
-        "FlowControl": None
     }
     
     # Split the Mode2 string by commas
@@ -1143,6 +1146,7 @@ def parse_mode2_serial_com_specifics(mode2):
         result["FlowControl"] = parts[2]
 
     return result
+
 
 def _start_zigpy_ZNP(self):
     import zigpy
@@ -1166,7 +1170,20 @@ def _start_zigpy_ZNP(self):
         SerialPort = Parameters["SerialPort"]
 
     self.ControllerLink= ZigpyTransport(
-        self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.restart_plugin, self.log, self.statistics, self.HardwareID, "znp", SerialPort
+        self.ControllerData,
+        self.pluginParameters,
+        self.pluginconf,
+        self.processFrame,
+        self.zigpy_chk_upd_device,
+        self.zigpy_get_device,
+        self.zigpy_backup_available,
+        self.restart_plugin,
+        self.log,
+        self.statistics,
+        self.HardwareID,
+        "znp",
+        SerialPort,
+        communication_specifics
         )
     self.ControllerLink.open_cie_connection()
     self.pluginconf.pluginConf["ControllerInRawMode"] = True
@@ -1193,7 +1210,20 @@ def _start_zigpy_deConz(self):
         SerialPort = Parameters["SerialPort"]
 
     self.ControllerLink= ZigpyTransport(
-        self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.restart_plugin, self.log, self.statistics, self.HardwareID, "deCONZ", SerialPort
+        self.ControllerData,
+        self.pluginParameters,
+        self.pluginconf,
+        self.processFrame,
+        self.zigpy_chk_upd_device,
+        self.zigpy_get_device,
+        self.zigpy_backup_available,
+        self.restart_plugin,
+        self.log,
+        self.statistics,
+        self.HardwareID,
+        "deCONZ",
+        SerialPort,
+        communication_specifics
         )
     self.ControllerLink.open_cie_connection()
     self.pluginconf.pluginConf["ControllerInRawMode"] = True
@@ -1220,8 +1250,22 @@ def _start_zigpy_EZSP(self):
         SerialPort = Parameters["SerialPort"]
 
     self.ControllerLink= ZigpyTransport(
-        self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.restart_plugin, self.log, self.statistics, self.HardwareID, "ezsp", SerialPort
+        self.ControllerData,
+        self.pluginParameters,
+        self.pluginconf,
+        self.processFrame,
+        self.zigpy_chk_upd_device,
+        self.zigpy_get_device,
+        self.zigpy_backup_available,
+        self.restart_plugin,
+        self.log,
+        self.statistics,
+        self.HardwareID,
+        "ezsp",
+        SerialPort,
+        communication_specifics
         )
+
     self.ControllerLink.open_cie_connection()
     self.pluginconf.pluginConf["ControllerInRawMode"] = True
     
