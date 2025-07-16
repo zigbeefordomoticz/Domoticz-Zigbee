@@ -115,6 +115,7 @@ import json
 import os
 import os.path
 import pathlib
+import re
 import sys
 import threading
 import time
@@ -1104,7 +1105,44 @@ def _start_native_zigate(self, serialPort=None, wifiAddress=None, wifiPort=None)
         kwargs["wifiPort"] = wifiPort
 
     self.ControllerLink = ZigateTransport(**kwargs)   
-        
+
+
+def parse_mode2_serial_com_specifics(mode2):
+    """
+    Parse the Mode2 string to extract Serial Mode, Baudrate, and Flow Control.
+
+    Args:
+        mode2 (str): The Mode2 string to parse.
+
+    Returns:
+        dict: A dictionary containing 'SerialMode', 'Baudrate', and 'FlowControl'.
+    """
+    # Default values
+    result = {
+        "SerialMode": None,
+        "Baudrate": None,
+        "FlowControl": None
+    }
+    
+    # Split the Mode2 string by commas
+    parts = mode2.split(",")
+
+    # Extract SerialMode (always the first part)
+    if len(parts) > 0:
+        result["SerialMode"] = parts[0]
+
+    # Extract Baudrate (if present, it's the second part)
+    if len(parts) > 1:
+        try:
+            result["Baudrate"] = int(parts[1])  # Convert to integer
+        except ValueError:
+            result["Baudrate"] = None
+
+    # Extract FlowControl (if present, it's the third part)
+    if len(parts) > 2:
+        result["FlowControl"] = parts[2]
+
+    return result
 
 def _start_zigpy_ZNP(self):
     import zigpy
@@ -1123,6 +1161,8 @@ def _start_zigpy_ZNP(self):
         SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
         self.transport += "Socket"
     else:
+        # Serial mode via USB
+        communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
         SerialPort = Parameters["SerialPort"]
 
     self.ControllerLink= ZigpyTransport(
@@ -1148,6 +1188,8 @@ def _start_zigpy_deConz(self):
         SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
         self.transport += "Socket"
     else:
+        # Serial mode via USB
+        communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
         SerialPort = Parameters["SerialPort"]
 
     self.ControllerLink= ZigpyTransport(
@@ -1174,6 +1216,7 @@ def _start_zigpy_EZSP(self):
         SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
         self.transport += "Socket"
     else:
+        communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
         SerialPort = Parameters["SerialPort"]
 
     self.ControllerLink= ZigpyTransport(
