@@ -33,10 +33,20 @@
                 <option label="Conbee/Rasbee I, II, III (via zigpy)" value="ZigpydeCONZ"/>
             </options>
         </param>
-        <param field="Mode2" label="Coordinator Type" width="75px" required="true" default="None">
+        <param field="Mode2" label="Coordinator connection type" width="75px" required="true" default="None">
             <description><br/>Select the Radio Coordinator connection type : USB, DIN, Pi, TCPIP (Zigate Wifi, Ethernet) or Socket (ZNP and ESZP via Ethernet). In case of Socket use the IP to put the remote ip</description>
             <options>
                 <option label="USB"   value="USB" />
+                
+                <option label="USB,56700,xon_xoff"   value="USB,56700,xon_xoff" />
+                <option label="USB,56700,rtscts"   value="USB,56700,rtscts" />
+                
+                <option label="USB,115200,xon_xoff"   value="USB,115200,xon_xoff" />
+                <option label="USB,115200,rtscts"   value="USB,115200,rtscts" />
+                
+                <option label="USB,320400,xon_xoff"   value="USB,320400,xon_xoff" />
+                <option label="USB,320400,rtscts"   value="USB,320400,rtscts" />
+
                 <option label="DIN"   value="DIN" />
                 <option label="PI"    value="PI" />
                 <option label="TCPIP" value="Wifi"/>
