@@ -231,21 +231,23 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
     self.log.logging("TransportZigpy", "Debug", "In radio_start %s" %radiomodule)
     config = None
 
+    serial_specifics = self._serialPort_communication_specifics or {}
+    
     try:
         if radiomodule == "ezsp":
             import bellows.config as radio_specific_conf
             from Classes.ZigpyTransport.AppBellows import App_bellows as App
-            config = ezsp_configuration_setup(self, radio_specific_conf, serialPort)
+            config = ezsp_configuration_setup(self, radio_specific_conf, serialPort, serial_specifics)
 
         elif radiomodule =="znp":
             import zigpy_znp.config as radio_specific_conf
             from Classes.ZigpyTransport.AppZnp import App_znp as App
-            config = znp_configuration_setup(self, radio_specific_conf, serialPort)
+            config = znp_configuration_setup(self, radio_specific_conf, serialPort, serial_specifics)
 
         elif radiomodule =="deCONZ":
             import zigpy_deconz.config as radio_specific_conf
             from Classes.ZigpyTransport.AppDeconz import App_deconz as App
-            config = deconz_configuration_setup(self, radio_specific_conf, serialPort)
+            config = deconz_configuration_setup(self, radio_specific_conf, serialPort, serial_specifics)
 
         else:
             self.log.logging( "TransportZigpy", "Error", "Wrong radiomode: %s" % (radiomodule), )
@@ -287,13 +289,13 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
     self.log.logging( "TransportZigpy", "Debug", "Exiting co-rounting radio_start")
 
 
-def ezsp_configuration_setup(self, bellows_conf, serialPort):
+def ezsp_configuration_setup(self, bellows_conf, serialPort, serial_specifics):
     """Setup configuration for EZSP radio module."""
     config = {
         zigpy.config.CONF_DEVICE: {
             zigpy.config.CONF_DEVICE_PATH: serialPort,
-            zigpy.config.CONF_DEVICE_BAUDRATE: self._serialPort_communication_specifics.get("Baudrate", 115200),
-            zigpy.config.CONF_DEVICE_FLOW_CONTROL: self._serialPort_communication_specifics.get("FlowControl", None)
+            zigpy.config.CONF_DEVICE_BAUDRATE: serial_specifics.get("Baudrate", 115200),
+            zigpy.config.CONF_DEVICE_FLOW_CONTROL: serial_specifics.get("FlowControl", None)
         },
         zigpy.config.CONF_NWK: {
         },
@@ -315,13 +317,13 @@ def ezsp_configuration_setup(self, bellows_conf, serialPort):
     return config
 
 
-def znp_configuration_setup(self, znp_conf, serialPort):
+def znp_configuration_setup(self, znp_conf, serialPort, serial_specifics):
     """Setup configuration for ZNP radio module."""
     config = {
         zigpy.config.CONF_DEVICE: {
             zigpy.config.CONF_DEVICE_PATH: serialPort,
-            zigpy.config.CONF_DEVICE_BAUDRATE: self._serialPort_communication_specifics.get("Baudrate", 115200),
-            zigpy.config.CONF_DEVICE_FLOW_CONTROL: self._serialPort_communication_specifics.get("FlowControl", None)
+            zigpy.config.CONF_DEVICE_BAUDRATE: serial_specifics.get("Baudrate", 115200),
+            zigpy.config.CONF_DEVICE_FLOW_CONTROL: serial_specifics.get("FlowControl", None)
         },
         zigpy.config.CONF_NWK: {
         },
@@ -339,13 +341,13 @@ def znp_configuration_setup(self, znp_conf, serialPort):
     return config
 
 
-def deconz_configuration_setup(self, deconz_conf, serialPort):
+def deconz_configuration_setup(self, deconz_conf, serialPort, serial_specifics):
     """Setup configuration for deCONZ radio module."""
     return {
         zigpy.config.CONF_DEVICE: {
             zigpy.config.CONF_DEVICE_PATH: serialPort, 
-            zigpy.config.CONF_DEVICE_BAUDRATE: self._serialPort_communication_specifics.get("Baudrate", 115200),
-            zigpy.config.CONF_DEVICE_FLOW_CONTROL: self._serialPort_communication_specifics.get("FlowControl", None)
+            zigpy.config.CONF_DEVICE_BAUDRATE: serial_specifics.get("Baudrate", 115200),
+            zigpy.config.CONF_DEVICE_FLOW_CONTROL: serial_specifics.get("FlowControl", None)
         },
         zigpy.config.CONF_NWK: {
         },
