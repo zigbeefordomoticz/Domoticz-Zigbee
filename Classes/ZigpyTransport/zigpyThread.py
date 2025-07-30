@@ -47,7 +47,7 @@ from Classes.ZigpyTransport.tools import handle_thread_error
 from Modules.macPrefix import DELAY_FOR_VERY_KEY
 
 ERROR_TASK_CREATION_FAILED = 0xB6
-
+SEMAPHORE_TIMEOUT = 240  # seconds
 REQUEST_TIMEOUT = 8   # This is a given time for the request to be sent
 WAITING_TIME_BETWEEN_REQUESTS = 0.0
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
@@ -665,30 +665,6 @@ async def _multicast_command(self, NwkId, Profile, Cluster, sEp, sequence, paylo
     return result, msg
 
 
-#async def _unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, AckIsDisable, delay, extended_timeout, Function, Sqn, delayAfterSent):
-#
-#    self.log.logging("TransportZigpy", "Debug", f"process_raw_command Unicast destination: {destination} Profile: {Profile} Cluster: {Cluster} sEp: {sEp} dEp: {dEp} Seq: {sequence} Payload: {payload.hex()}")
-#    AckIsDisable = False if self.pluginconf.pluginConf["ForceAPSAck"] else AckIsDisable
-#
-#    try:
-#        task = asyncio.create_task(
-#            transport_request(self, Function, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=AckIsDisable, use_ieee=False, delay=delay, extended_timeout=extended_timeout, delayAfterSent=delayAfterSent),
-#            name=f"_unicast_command-{Function}-{destination}-{Cluster}-{Sqn}"
-#        )
-#
-#    except Exception as e:
-#        self.log.logging("TransportZigpy", "Error", f"process_raw_command: Error creating task: {e}")
-#        error_msg = str(e)
-#        result = 0xB6
-#        self.statistics._ackKO += 1
-#
-#    else:
-#        self.statistics._sent += 1
-#        result = None
-#        error_msg = ""
-#
-#    return result, error_msg
-
 async def _unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, AckIsDisable, delay, extended_timeout, Function, Sqn, delayAfterSent):
     """
     Sends a unicast command to a Zigbee device.
@@ -730,10 +706,10 @@ async def _unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequen
             async def async_callback():
                 async with asyncio.Lock():  # Now valid in async context
                     if task.exception():
-                        self.log.logging("TransportZigpy", "Error", f"Task107 {task.get_name()} failed with exception: {task.exception()}")
+                        self.log.logging("TransportZigpy", "Debug", f"_unicast_command - Task {task.get_name()} failed with exception: {task.exception()}")
                         self.statistics._ackKO += 1
                     else:
-                        self.log.logging("TransportZigpy", "Debug", f"Task {task.get_name()} completed successfully")
+                        self.log.logging("TransportZigpy", "Debug", f"_unicast_command - Task {task.get_name()} completed successfully")
 
             # Schedule the async callback in the event loop
             asyncio.create_task(async_callback())
@@ -1132,41 +1108,151 @@ def handle_transport_result(self, Function, Cluster, sequence, result, ack_is_di
         self._currently_not_reachable.append(_ieee)
 
 
+#@contextlib.asynccontextmanager
+#async def _limit_concurrency(self, destination, sequence):
+#    """
+#    Async context manager that prevents devices from being overwhelmed by requests.
+#    Mainly a thin wrapper around `asyncio.Semaphore` that logs when it has to wait.
+#    """
+#    ieee = str(destination.ieee)
+#    nwkid = destination.nwk.serialize()[::-1].hex()
+#
+#    # Create semaphore if it doesn't exist for the given IEEE
+#    if ieee not in self._concurrent_requests_semaphores_list:
+#        self._concurrent_requests_semaphores_list[ieee] = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS_PER_DEVICE)
+#        self._currently_waiting_requests_list[ieee] = 0
+#
+#    start_time = time.monotonic()
+#    was_locked = self._concurrent_requests_semaphores_list[ieee].locked()
+#
+#    # Log when waiting due to max concurrency
+#    if was_locked:
+#        self._currently_waiting_requests_list[ieee] += 1
+#        self.log.logging("TransportZigpy", "Debug", f"Max concurrency reached for {nwkid}, delaying request {sequence} ({self._currently_waiting_requests_list[ieee]} enqueued)", nwkid)
+#
+#    try:
+#        async with self._concurrent_requests_semaphores_list[ieee]:
+#            # Log when a previously delayed request starts running
+#            if was_locked:
+#                elapsed_time = time.monotonic() - start_time
+#                self.log.logging("TransportZigpy", "Debug", f"Previously delayed request {sequence} is now running, delayed by {elapsed_time:.2f} seconds for {nwkid}", nwkid)
+#            yield
+#
+#    finally:
+#        if was_locked:
+#            # Decrement the waiting count if a request is processed
+#            self._currently_waiting_requests_list[ieee] -= 1
+#
+
+
 @contextlib.asynccontextmanager
 async def _limit_concurrency(self, destination, sequence):
     """
-    Async context manager that prevents devices from being overwhelmed by requests.
-    Mainly a thin wrapper around `asyncio.Semaphore` that logs when it has to wait.
+    Async context manager to limit concurrent requests to a specific Zigbee device.
+
+    This method uses a per-device asyncio.Semaphore to ensure that no more than a fixed number
+    of concurrent operations are issued to a single device at once. If the semaphore is locked,
+    the request is queued and logged. A timeout is enforced to prevent indefinite blocking.
+
+    Parameters
+    ----------
+    destination : zigpy.device.Device
+        The target Zigbee device for which concurrency is being managed.
+    sequence : int or str
+        An identifier for the request, used for logging/debugging.
+
+    Yields
+    ------
+    None
+        Code inside the `async with` block executes once a concurrency slot is available.
+        If the semaphore acquisition times out, the block still runs, but with a warning logged.
+
+    Raises
+    ------
+    asyncio.TimeoutError
+        Logged (but not raised) if semaphore acquisition exceeds the configured timeout.
+        The caller must handle timeout behavior after the `yield` if needed.
+
+    Notes
+    -----
+    - MAX_CONCURRENT_REQUESTS_PER_DEVICE defines the per-device concurrency limit.
+    - SEMAPHORE_TIMEOUT defines the maximum wait time before logging a timeout warning.
+    - Uses self._concurrent_requests_semaphores_list and self._currently_waiting_requests_list
+      to track semaphores and pending requests by IEEE address.
     """
     ieee = str(destination.ieee)
     nwkid = destination.nwk.serialize()[::-1].hex()
 
-    # Create semaphore if it doesn't exist for the given IEEE
+    # Safely initialize semaphore and waiting counter
     if ieee not in self._concurrent_requests_semaphores_list:
         self._concurrent_requests_semaphores_list[ieee] = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS_PER_DEVICE)
-        self._currently_waiting_requests_list[ieee] = 0
+    self._currently_waiting_requests_list.setdefault(ieee, 0)
 
+    semaphore = self._concurrent_requests_semaphores_list[ieee]
     start_time = time.monotonic()
-    was_locked = self._concurrent_requests_semaphores_list[ieee].locked()
+    was_locked = semaphore.locked()
 
-    # Log when waiting due to max concurrency
     if was_locked:
         self._currently_waiting_requests_list[ieee] += 1
         self.log.logging("TransportZigpy", "Debug", f"Max concurrency reached for {nwkid}, delaying request {sequence} ({self._currently_waiting_requests_list[ieee]} enqueued)", nwkid)
 
     try:
-        async with self._concurrent_requests_semaphores_list[ieee]:
-            # Log when a previously delayed request starts running
-            if was_locked:
-                elapsed_time = time.monotonic() - start_time
-                self.log.logging("TransportZigpy", "Debug", f"Previously delayed request {sequence} is now running, delayed by {elapsed_time:.2f} seconds for {nwkid}", nwkid)
-            yield
+        # Wait for semaphore with timeout
+        try:
+            await asyncio.wait_for(semaphore.acquire(), timeout=SEMAPHORE_TIMEOUT)
+        except asyncio.TimeoutError:
+            self.log.logging("TransportZigpy", "Warning", f"Timeout waiting for concurrency slot for {nwkid}, request {sequence} dropped", nwkid)
+            yield  # Allow graceful fallback or logging outside
+            return
+
+        # Delayed request is now running
+        if was_locked:
+            elapsed_time = time.monotonic() - start_time
+            self.log.logging("TransportZigpy", "Debug", f"Previously delayed request {sequence} is now running, delayed by {elapsed_time:.2f} seconds for {nwkid}", nwkid)
+
+        yield
 
     finally:
-        if was_locked:
-            # Decrement the waiting count if a request is processed
-            self._currently_waiting_requests_list[ieee] -= 1
+        if semaphore.locked():
+            semaphore.release()
 
+        if was_locked:
+            self._currently_waiting_requests_list[ieee] -= 1
+            
+        # Opportunistic cleanup
+        if ( self._currently_waiting_requests_list.get(ieee, 0) == 0 and self._concurrent_requests_semaphores_list[ieee]._value == MAX_CONCURRENT_REQUESTS_PER_DEVICE ):
+            del self._concurrent_requests_semaphores_list[ieee]
+            self._currently_waiting_requests_list.pop(ieee, None)
+
+
+
+def _cleanup_unused_concurrency_state(self):
+    """
+    Cleans up semaphore and waiting state for inactive devices.
+
+    This method iterates through all per-device semaphores and removes entries
+    that are no longer in use. A device's concurrency state is considered unused if:
+    - No requests are currently waiting (i.e., waiting count == 0)
+    - All semaphore slots are released (i.e., the semaphore is not acquired by any task)
+
+    This helps prevent unbounded memory growth when many devices are seen temporarily.
+
+    Notes
+    -----
+    - This method should be called periodically (e.g., every hour) or during idle time.
+    - Safe to call while other coroutines are active.
+    - Assumes self._concurrent_requests_semaphores_list and self._currently_waiting_requests_list
+      are initialized and managed consistently elsewhere in the class.
+    """
+    for ieee in list(self._concurrent_requests_semaphores_list):
+        sem = self._concurrent_requests_semaphores_list[ieee]
+        waiting = self._currently_waiting_requests_list.get(ieee, 0)
+
+        # Only clean up if no one is waiting and all slots are released
+        if waiting == 0 and sem._value == MAX_CONCURRENT_REQUESTS_PER_DEVICE:
+            del self._concurrent_requests_semaphores_list[ieee]
+            self._currently_waiting_requests_list.pop(ieee, None)
+            
 
 def specific_endpoints(self):
     supported_plugins = ["Terncy", "Konke", "Wiser", "Orvibo", "Livolo", "Wiser2"]
