@@ -46,6 +46,8 @@ from Classes.ZigpyTransport.plugin_encoders import (
 from Classes.ZigpyTransport.tools import handle_thread_error
 from Modules.macPrefix import DELAY_FOR_VERY_KEY
 
+ERROR_TASK_CREATION_FAILED = 0xB6
+
 REQUEST_TIMEOUT = 8   # This is a given time for the request to be sent
 WAITING_TIME_BETWEEN_REQUESTS = 0.0
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
@@ -236,16 +238,19 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
     try:
         if radiomodule == "ezsp":
             import bellows.config as radio_specific_conf
+
             from Classes.ZigpyTransport.AppBellows import App_bellows as App
             config = ezsp_configuration_setup(self, radio_specific_conf, serialPort, serial_specifics)
 
         elif radiomodule =="znp":
             import zigpy_znp.config as radio_specific_conf
+
             from Classes.ZigpyTransport.AppZnp import App_znp as App
             config = znp_configuration_setup(self, radio_specific_conf, serialPort, serial_specifics)
 
         elif radiomodule =="deCONZ":
             import zigpy_deconz.config as radio_specific_conf
+
             from Classes.ZigpyTransport.AppDeconz import App_deconz as App
             config = deconz_configuration_setup(self, radio_specific_conf, serialPort, serial_specifics)
 
@@ -660,8 +665,58 @@ async def _multicast_command(self, NwkId, Profile, Cluster, sEp, sequence, paylo
     return result, msg
 
 
+#async def _unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, AckIsDisable, delay, extended_timeout, Function, Sqn, delayAfterSent):
+#
+#    self.log.logging("TransportZigpy", "Debug", f"process_raw_command Unicast destination: {destination} Profile: {Profile} Cluster: {Cluster} sEp: {sEp} dEp: {dEp} Seq: {sequence} Payload: {payload.hex()}")
+#    AckIsDisable = False if self.pluginconf.pluginConf["ForceAPSAck"] else AckIsDisable
+#
+#    try:
+#        task = asyncio.create_task(
+#            transport_request(self, Function, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=AckIsDisable, use_ieee=False, delay=delay, extended_timeout=extended_timeout, delayAfterSent=delayAfterSent),
+#            name=f"_unicast_command-{Function}-{destination}-{Cluster}-{Sqn}"
+#        )
+#
+#    except Exception as e:
+#        self.log.logging("TransportZigpy", "Error", f"process_raw_command: Error creating task: {e}")
+#        error_msg = str(e)
+#        result = 0xB6
+#        self.statistics._ackKO += 1
+#
+#    else:
+#        self.statistics._sent += 1
+#        result = None
+#        error_msg = ""
+#
+#    return result, error_msg
+
 async def _unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, AckIsDisable, delay, extended_timeout, Function, Sqn, delayAfterSent):
-    self.log.logging("TransportZigpy", "Debug", f"process_raw_command Unicast destination: {destination} Profile: {Profile} Cluster: {Cluster} sEp: {sEp} dEp: {dEp} Seq: {sequence} Payload: {payload.hex()}")
+    """
+    Sends a unicast command to a Zigbee device.
+
+    Args:
+        destination (str): The destination address of the Zigbee device.
+        Profile (int): The Zigbee profile ID.
+        Cluster (int): The Zigbee cluster ID.
+        sEp (int): Source endpoint.
+        dEp (int): Destination endpoint.
+        sequence (int): Sequence number for the command.
+        payload (bytes): The command payload.
+        AckIsDisable (bool): Whether to disable APS acknowledgments.
+        delay (float): Delay before sending the command.
+        extended_timeout (float): Timeout for the task.
+        Function (str): Function identifier for the command.
+        Sqn (int): Sequence number for task naming.
+        delayAfterSent (float): Delay after sending the command.
+
+    Returns:
+        tuple: (result, error_msg)
+            - result (int): Status code (0x00 for success, error code for failure).
+            - error_msg (str): Error message if the task creation fails.
+    """
+
+    payload_hex = payload.hex()[:100] + "..." if len(payload.hex()) > 100 else payload.hex()
+    self.log.logging("TransportZigpy", "Debug", f"process_raw_command Unicast destination: {destination} Profile: {Profile} Cluster: {Cluster} sEp: {sEp} dEp: {dEp} Seq: {sequence} Payload: {payload_hex}")
+
     AckIsDisable = False if self.pluginconf.pluginConf["ForceAPSAck"] else AckIsDisable
 
     try:
@@ -670,18 +725,30 @@ async def _unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequen
             name=f"_unicast_command-{Function}-{destination}-{Cluster}-{Sqn}"
         )
 
-    except Exception as e:
-        self.log.logging("TransportZigpy", "Error", f"process_raw_command: Error creating task: {e}")
-        error_msg = str(e)
-        result = 0xB6
-        self.statistics._ackKO += 1
+        # Add callback to log task completion
+        def task_done_callback(task):
+            async def async_callback():
+                async with asyncio.Lock():  # Now valid in async context
+                    if task.exception():
+                        self.log.logging("TransportZigpy", "Error", f"Task107 {task.get_name()} failed with exception: {task.exception()}")
+                        self.statistics._ackKO += 1
+                    else:
+                        self.log.logging("TransportZigpy", "Debug", f"Task {task.get_name()} completed successfully")
 
-    else:
+            # Schedule the async callback in the event loop
+            asyncio.create_task(async_callback())
+
+        task.add_done_callback(task_done_callback)
+
+    except (TypeError, ValueError, RuntimeError) as e:
+        self.log.logging("TransportZigpy", "Error", f"process_raw_command: Error creating task: {e}\n{traceback.format_exc()}")
+        async with asyncio.Lock():
+            self.statistics._ackKO += 1
+        return ERROR_TASK_CREATION_FAILED, str(e)
+
+    async with asyncio.Lock():
         self.statistics._sent += 1
-        result = None
-        error_msg = ""
-
-    return result, error_msg
+    return 0x00, ""
 
 
 def _get_destination(self, NwkId, addressmode, Profile, Cluster, sEp, dEp, sequence, payload):
