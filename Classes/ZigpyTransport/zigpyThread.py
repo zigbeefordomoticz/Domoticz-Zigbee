@@ -1000,6 +1000,8 @@ async def _send_and_retry(
 
         packet_priority = t.PacketPriority.HIGH  # escalate on retry
 
+        await asyncio.sleep(min(max(0.1 * (2 ** (attempt - 1)), 0.1), 1.0))  # Exponential backoff with a cap at 1 second
+
 
 async def zigpy_request( self, device: zigpy.device.Device, profile: t.uint16_t, cluster: t.uint16_t, src_ep: t.uint8_t, dst_ep: t.uint8_t, sequence: t.uint8_t, data: bytes, *, ack_is_disable: bool = True, use_ieee: bool = False, extended_timeout: bool = False, priority: bool = t.PacketPriority.NORMAL) -> tuple[zigpy.zcl.foundation.Status, str]:
     """Submit and send data out as an unicast transmission."""
