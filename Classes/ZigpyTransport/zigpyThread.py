@@ -12,6 +12,7 @@
 
 import asyncio
 import contextlib
+import functools
 import json
 import queue
 import random
@@ -827,64 +828,127 @@ def check_transport_readiness(self):
 
 
 def measure_execution_time(func):
-    async def wrapper(self, Function, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable, use_ieee, delay, extended_timeout, delayAfterSent):
+    @functools.wraps(func)
+    async def wrapper(self, *args, **kwargs):
         t_start = None
-        if self.pluginconf.pluginConf.get("ZigpyReactTime", False):
-            t_start = int(1000 * time.time())
+        if getattr(self, "pluginconf", None) and self.pluginconf.pluginConf.get("ZigpyReactTime", False):
+            t_start = time.time()
 
         try:
-            await func(self, Function, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable, use_ieee, delay, extended_timeout, delayAfterSent)
-
+            result = await func(self, *args, **kwargs)
+            return result
         finally:
             if t_start:
-                t_end = int(1000 * time.time())
-                t_elapse = t_end - t_start
-                self.statistics.add_timing_zigpy(t_elapse)  
-                self.log.logging("TransportZigpy", "Log", f"| (transport_request) | {t_elapse} | {Function} | {sequence} | {ack_is_disable} | {destination.nwk} | {destination.ieee} | {destination.model} | {destination.manufacturer_id} | {destination.is_initialized} | {destination.rssi} | {destination.lqi} |")
+                t_end = time.time()
+                t_elapse = round((t_end - t_start) * 1000)  # milliseconds
+
+                if hasattr(self, "statistics"):
+                    self.statistics.add_timing_zigpy(t_elapse)
+
+                if hasattr(self, "log"):
+                    # Safely extract info from known kwargs or fallback
+                    Function = kwargs.get("Function", args[0] if len(args) > 0 else "Unknown")
+                    sequence = kwargs.get("sequence", args[6] if len(args) > 6 else "N/A")
+                    ack_is_disable = kwargs.get("ack_is_disable", args[7] if len(args) > 7 else False)
+                    destination = kwargs.get("destination", args[1] if len(args) > 1 else None)
+
+                    nwk = getattr(destination.nwk, "hex", lambda: "??")() if destination else "??"
+                    ieee = getattr(destination, "ieee", "??")
+                    model = getattr(destination, "model", "??")
+                    mfr = getattr(destination, "manufacturer_id", "??")
+                    init = getattr(destination, "is_initialized", "??")
+                    rssi = getattr(destination, "rssi", "??")
+                    lqi = getattr(destination, "lqi", "??")
+
+                    self.log.logging(
+                        "TransportZigpy", "Log",
+                        f"| (transport_request) | {t_elapse}ms | {Function} | {sequence} | {ack_is_disable} | {nwk} | {ieee} | {model} | {mfr} | {init} | {rssi} | {lqi} |"
+                    )
     return wrapper
 
 
 @measure_execution_time
-async def transport_request(self, Function, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=False, use_ieee=False, delay=None, extended_timeout=False, delayAfterSent=0):
-    """Send a zigbee message based on different arguments
+async def transport_request(
+    self,
+    Function,
+    destination,
+    Profile,
+    Cluster,
+    sEp,
+    dEp,
+    sequence,
+    payload,
+    ack_is_disable=False,
+    use_ieee=False,
+    delay=None,
+    extended_timeout=False,
+    delayAfterSent=0
+):
+    """
+    Send a Zigbee message using the transport layer.
 
     Args:
-        destination (_type_): Destination network address
-        Profile (_type_): Zigbee Profile ID ( 0x000 or 0X0104)
-        Cluster (_type_): Cluster to be use
-        sEp (_type_): Source endpoint
-        dEp (_type_): Destination endpoint
-        sequence (_type_): sequence number
-        payload (_type_): zigbee payload (based on profile id and cluster)
-        ack_is_disable (bool, optional): is ACK disable. Defaults to False.
-        use_ieee (bool, optional): for usage of IEEE. Defaults to False.
-        delay (_type_, optional): delay in seconds. Defaults to None.
-        extended_timeout (bool, optional): Is extended timeout needed. Defaults to False.
+        Function (str): Operation name for logging and stats.
+        destination: Zigpy device object (must have `nwk` and `ieee` attributes).
+        Profile (int): Zigbee Profile ID (e.g., 0x0000 or 0x0104).
+        Cluster (int): Zigbee Cluster ID.
+        sEp (int): Source endpoint.
+        dEp (int): Destination endpoint.
+        sequence (int): Transaction sequence number.
+        payload (bytes): Zigbee payload data.
+        ack_is_disable (bool, optional): If True, disables waiting for ACK. Defaults to False.
+        use_ieee (bool, optional): If True, uses IEEE addressing. Defaults to False.
+        delay (float, optional): Optional delay (in seconds) before sending. Defaults to None.
+        extended_timeout (bool, optional): Enables extended timeout. Defaults to False.
+        delayAfterSent (float, optional): Delay after sending the request. Defaults to 0.
+
+    Returns:
+        int | None: Zigbee transmission result code (e.g., 0x00 for success, 0xB6 for error), or None if skipped.
     """
 
     _nwkid = destination.nwk.serialize()[::-1].hex()
     _ieee = str(destination.ieee)
 
     if not check_transport_readiness(self):
-        return
+        return None
 
+    # Optional delay for specific devices (e.g., CASA.IA)
     if Profile == 0x0000 and Cluster == 0x0005 and _ieee and _ieee[:8] in DELAY_FOR_VERY_KEY:
-        self.log.logging("TransportZigpy", "Log", "Waiting 6 seconds for CASA.IA Confirm Key")
-        delay = VERIFY_KEY_DELAY
+        self.log.logging("TransportZigpy", "Debug", f"Delaying for key verification for {_ieee}")
+        delay = delay or VERIFY_KEY_DELAY  # Let VERIFY_KEY_DELAY be something like 1.0 instead of 6.0 if desired
 
     if delay:
         self.log.logging("TransportZigpy", "Debug", f"transport_request: delay for {delay} seconds")
         await asyncio.sleep(delay)
 
     async with _limit_concurrency(self, destination, sequence):
+        if _ieee in self._currently_not_reachable and self._currently_waiting_requests_list.get(_ieee, 0):
+            self.log.logging(
+                "TransportZigpy", "Debug",
+                f"transport_request: Request {sequence} skipped. Device not reachable: NwkId: {_nwkid} IEEE: {_ieee}"
+            )
+            return None
 
-        if _ieee in self._currently_not_reachable and self._currently_waiting_requests_list[_ieee]:
-            self.log.logging("TransportZigpy", "Debug", f"transport_request: Request {sequence} skipped NwkId: {_nwkid} not reachable - {_ieee} {str(self._currently_not_reachable)} {self._currently_waiting_requests_list[_ieee]}", _nwkid)
-            return
+        result = await _send_and_retry(
+            self,
+            Function,
+            destination,
+            Profile,
+            Cluster,
+            _nwkid,
+            sEp,
+            dEp,
+            sequence,
+            payload,
+            use_ieee,
+            _ieee,
+            ack_is_disable,
+            extended_timeout,
+            delayAfterSent
+        )
 
-        await _send_and_retry(self, Function, destination, Profile, Cluster, _nwkid, sEp, dEp, sequence, payload, use_ieee, _ieee,ack_is_disable, extended_timeout, delayAfterSent )
-
-    await asyncio.sleep( WAITING_TIME_BETWEEN_REQUESTS)
+    await asyncio.sleep(WAITING_TIME_BETWEEN_REQUESTS)
+    return result
 
 
 async def _send_and_retry(
@@ -1095,56 +1159,35 @@ async def zigpy_broadcast( self, profile: t.uint16_t, cluster: t.uint16_t, src_e
 
 
 def handle_transport_result(self, Function, Cluster, sequence, result, ack_is_disable, extended_timeout, _ieee, _nwkid, lqi):
+    """
+    Handle the result of a Zigbee transport operation by updating plugin state,
+    acknowledging APS delivery status, and tracking device reachability.
+
+    Args:
+        Function: Zigbee command/function used.
+        Cluster: Zigbee cluster involved in the request.
+        sequence: Sequence number of the request.
+        result (int): APS ACK/NACK result (0x00 = success).
+        ack_is_disable (bool): True if APS ACK was disabled in request.
+        extended_timeout (bool): True if extended timeout was used.
+        _ieee (str): IEEE address of the target device.
+        _nwkid (str): Network ID (NWK address) of the device.
+        lqi (int): Link Quality Indicator of the received response.
+    """
+
     if ack_is_disable:
-        # As Ack is disable, we cannot conclude that the target device is in trouble.
-        # this could be the coordinator itself, or the next hop.
+        # Cannot conclude reachability when ACK is disabled
         return
-  
+
     push_APS_ACK_NACKto_plugin(self, _nwkid, Cluster, sequence, result, lqi)
 
-    if result == 0x00 and _ieee in self._currently_not_reachable:
-        self._currently_not_reachable.remove(_ieee)
+    if result == 0x00:
+        # Device successfully responded, remove from not reachable list
+        if _ieee in self._currently_not_reachable:
+            self._currently_not_reachable.remove(_ieee)
 
-    elif result != 0x00 and _ieee not in self._currently_not_reachable:
-        # Mark the ieee has not reachable.
+    elif _ieee not in self._currently_not_reachable:
         self._currently_not_reachable.append(_ieee)
-
-
-#@contextlib.asynccontextmanager
-#async def _limit_concurrency(self, destination, sequence):
-#    """
-#    Async context manager that prevents devices from being overwhelmed by requests.
-#    Mainly a thin wrapper around `asyncio.Semaphore` that logs when it has to wait.
-#    """
-#    ieee = str(destination.ieee)
-#    nwkid = destination.nwk.serialize()[::-1].hex()
-#
-#    # Create semaphore if it doesn't exist for the given IEEE
-#    if ieee not in self._concurrent_requests_semaphores_list:
-#        self._concurrent_requests_semaphores_list[ieee] = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS_PER_DEVICE)
-#        self._currently_waiting_requests_list[ieee] = 0
-#
-#    start_time = time.monotonic()
-#    was_locked = self._concurrent_requests_semaphores_list[ieee].locked()
-#
-#    # Log when waiting due to max concurrency
-#    if was_locked:
-#        self._currently_waiting_requests_list[ieee] += 1
-#        self.log.logging("TransportZigpy", "Debug", f"Max concurrency reached for {nwkid}, delaying request {sequence} ({self._currently_waiting_requests_list[ieee]} enqueued)", nwkid)
-#
-#    try:
-#        async with self._concurrent_requests_semaphores_list[ieee]:
-#            # Log when a previously delayed request starts running
-#            if was_locked:
-#                elapsed_time = time.monotonic() - start_time
-#                self.log.logging("TransportZigpy", "Debug", f"Previously delayed request {sequence} is now running, delayed by {elapsed_time:.2f} seconds for {nwkid}", nwkid)
-#            yield
-#
-#    finally:
-#        if was_locked:
-#            # Decrement the waiting count if a request is processed
-#            self._currently_waiting_requests_list[ieee] -= 1
-#
 
 
 @contextlib.asynccontextmanager
@@ -1225,7 +1268,6 @@ async def _limit_concurrency(self, destination, sequence):
         if ( self._currently_waiting_requests_list.get(ieee, 0) == 0 and self._concurrent_requests_semaphores_list[ieee]._value == MAX_CONCURRENT_REQUESTS_PER_DEVICE ):
             del self._concurrent_requests_semaphores_list[ieee]
             self._currently_waiting_requests_list.pop(ieee, None)
-
 
 
 def _cleanup_unused_concurrency_state(self):
