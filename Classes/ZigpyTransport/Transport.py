@@ -212,5 +212,9 @@ class ZigpyTransport(object):
     def loadTransmit(self):
         if self.writer_queue is None:
             return 0
-        _queue = sum(self._currently_waiting_requests_list[device] + 1 for device in list(self._currently_waiting_requests_list) if self._concurrent_requests_semaphores_list[device].locked())
+        _queue = sum(
+            self._currently_waiting_requests_list.get(device, 0) + 1
+            for device in list(self._currently_waiting_requests_list)
+            if self._concurrent_requests_semaphores_list.get(device) and self._concurrent_requests_semaphores_list[device].locked()
+        )
         return max(_queue - 1, 0) + self.writer_queue.qsize()
