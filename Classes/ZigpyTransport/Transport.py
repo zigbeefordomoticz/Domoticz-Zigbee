@@ -25,8 +25,8 @@ from Classes.ZigpyTransport.forwarderThread import (start_forwarder_thread,
                                                     stop_forwarder_thread)
 from Classes.ZigpyTransport.instrumentation import (
     instrument_log_command_open, instrument_sendData, open_capture_rx_frames)
-from Classes.ZigpyTransport.zigpyThread import (start_zigpy_thread,
-                                                stop_zigpy_thread)
+from Classes.ZigpyTransport.zigpyThread import (
+    _cleanup_unused_concurrency_state, start_zigpy_thread, stop_zigpy_thread)
 
 
 class ZigpyTransport(object):
@@ -217,4 +217,9 @@ class ZigpyTransport(object):
             for device in list(self._currently_waiting_requests_list)
             if self._concurrent_requests_semaphores_list.get(device) and self._concurrent_requests_semaphores_list[device].locked()
         )
-        return max(_queue - 1, 0) + self.writer_queue.qsize()
+        
+        load = max(_queue - 1, 0) + self.writer_queue.qsize()
+        if load <= 0:
+            _cleanup_unused_concurrency_state(self)
+
+        return load

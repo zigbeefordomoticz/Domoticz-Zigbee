@@ -1265,9 +1265,9 @@ async def _limit_concurrency(self, destination, sequence):
             self._currently_waiting_requests_list[ieee] -= 1
             
         # Opportunistic cleanup
-        if ( self._currently_waiting_requests_list.get(ieee, 0) == 0 and self._concurrent_requests_semaphores_list[ieee]._value == MAX_CONCURRENT_REQUESTS_PER_DEVICE ):
-            del self._concurrent_requests_semaphores_list[ieee]
-            self._currently_waiting_requests_list.pop(ieee, None)
+        #if ( self._currently_waiting_requests_list.get(ieee, 0) == 0 and self._concurrent_requests_semaphores_list[ieee]._value == MAX_CONCURRENT_REQUESTS_PER_DEVICE ):
+        #    del self._concurrent_requests_semaphores_list[ieee]
+        #    self._currently_waiting_requests_list.pop(ieee, None)
 
 
 def _cleanup_unused_concurrency_state(self):
@@ -1285,8 +1285,6 @@ def _cleanup_unused_concurrency_state(self):
     -----
     - This method should be called periodically (e.g., every hour) or during idle time.
     - Safe to call while other coroutines are active.
-    - Assumes self._concurrent_requests_semaphores_list and self._currently_waiting_requests_list
-      are initialized and managed consistently elsewhere in the class.
     """
     for ieee in list(self._concurrent_requests_semaphores_list):
         sem = self._concurrent_requests_semaphores_list[ieee]
@@ -1294,6 +1292,8 @@ def _cleanup_unused_concurrency_state(self):
 
         # Only clean up if no one is waiting and all slots are released
         if waiting == 0 and sem._value == MAX_CONCURRENT_REQUESTS_PER_DEVICE:
+            self.log.logging("TransportZigpy", "Log", f"_cleanup_unused_concurrency_state {ieee} from concurrency_state", )
+            
             del self._concurrent_requests_semaphores_list[ieee]
             self._currently_waiting_requests_list.pop(ieee, None)
             
