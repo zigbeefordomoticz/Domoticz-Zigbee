@@ -218,7 +218,7 @@ class ZigpyTransport(object):
         now = time.monotonic()
         if self._periodic_reset is None or now - self._periodic_reset > 3600:
             self._periodic_reset = now
-            self._cleanup_unused_concurrency_state()
+            _cleanup_unused_concurrency_state(self)
 
         _queue = sum(
             self._currently_waiting_requests_list.get(device, 0) + 1
