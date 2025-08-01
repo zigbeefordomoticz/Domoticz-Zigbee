@@ -65,6 +65,7 @@ class ZigpyTransport(object):
         self._concurrent_requests_semaphores_list = {}
         self._currently_waiting_requests_list = {}  
         self._currently_not_reachable = []
+        self._periodic_reset = None
         
         # Initialise SQN Management
         sqn_init_stack(self)
@@ -212,14 +213,17 @@ class ZigpyTransport(object):
     def loadTransmit(self):
         if self.writer_queue is None:
             return 0
+
+        # Periodic cleanup check
+        now = time.monotonic()
+        if self._periodic_reset is None or now - self._periodic_reset > 3600:
+            self._periodic_reset = now
+            self._cleanup_unused_concurrency_state()
+
         _queue = sum(
             self._currently_waiting_requests_list.get(device, 0) + 1
             for device in list(self._currently_waiting_requests_list)
             if self._concurrent_requests_semaphores_list.get(device) and self._concurrent_requests_semaphores_list[device].locked()
         )
         
-        load = max(_queue - 1, 0) + self.writer_queue.qsize()
-        if load <= 0:
-            _cleanup_unused_concurrency_state(self)
-
-        return load
+        return max(_queue - 1, 0) + self.writer_queue.qsize()
