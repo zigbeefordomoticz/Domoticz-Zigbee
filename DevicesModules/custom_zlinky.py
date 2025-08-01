@@ -223,6 +223,9 @@ def _get_corresponding_color(self, attribut, op_tarifaire):
 def _normalize_tempo_color(self, color):
     """Normalize the given color to the Tempo format."""
     self.log.logging("ZLinky", "Debug", f"_normalize_tempo_color - {color}")
+    if color is None:
+        self.log.logging("ZLinky", "Debug", "_normalize_tempo_color - color is None")
+        return None
 
     if "HP" in color:
         suffix = "HP"
