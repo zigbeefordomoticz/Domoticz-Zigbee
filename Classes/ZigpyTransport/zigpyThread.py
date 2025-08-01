@@ -1292,7 +1292,7 @@ def _cleanup_unused_concurrency_state(self):
 
         # Only clean up if no one is waiting and all slots are released
         if waiting == 0 and sem._value == MAX_CONCURRENT_REQUESTS_PER_DEVICE:
-            self.log.logging("TransportZigpy", "Log", f"_cleanup_unused_concurrency_state {ieee} from concurrency_state", )
+            self.log.logging("TransportZigpy", "Debug", f"_cleanup_unused_concurrency_state {ieee} from concurrency_state", )
             
             del self._concurrent_requests_semaphores_list[ieee]
             self._currently_waiting_requests_list.pop(ieee, None)
