@@ -42,12 +42,14 @@ def time_spent_forwarder():
 
     return profiling
 
+
 def write_capture_rx_frames(self, *args):
     if self.captureRxFrame is None:
         return
     zigbee_frame = " %s |" %time.time()
     zigbee_frame += "".join(' %s |' %str(x) for x in args) 
     self.captureRxFrame.write( zigbee_frame[:-1] + '\n'  )
+
 
 def open_capture_rx_frames(self):
     if "CaptureRxFrames" not in self.pluginconf.pluginConf or not self.pluginconf.pluginConf[ "CaptureRxFrames" ]:
@@ -62,8 +64,8 @@ def open_capture_rx_frames(self):
     self.captureRxFrame = open( captureRxFrame_filename,"at")
     if header:
         self.captureRxFrame.write( header )
-        
-        
+
+ 
 def instrument_log_command_open( self):
     if "CaptureTxFrames" not in self.pluginconf.pluginConf or not self.pluginconf.pluginConf["CaptureTxFrames"]:
         return
@@ -80,27 +82,42 @@ def instrument_log_command_open( self):
         header = " Time Stamp | Command | Function | SQN | Priority | ackIsDisabled | WaitForresponseIn | NwkId | Profile | Target addr | Target Ep | Src Ep | Cluster | Payload | Addr Mode | rxOnIddle \n"
         self.structured_log_command_file_handler.write( header )
 
-def instrument_sendData( self, cmd, datas, sqn, timestamp, highpriority, ackIsDisabled, waitForResponseIn, NwkId ):
+
+def instrument_sendData(self, cmd, datas, sqn, timestamp, highpriority, ackIsDisabled, waitForResponseIn, NwkId):
+    """
+    Logs a structured trace of the data sent via the Zigbee transport layer.
+
+    Args:
+        cmd (str): Command type.
+        datas (dict): Data payload including attributes like Function, Cluster, etc.
+        sqn (int): Sequence number.
+        timestamp (float): Time the message was queued.
+        highpriority (bool): True if marked as high priority.
+        ackIsDisabled (bool): True if APS ACK is disabled.
+        waitForResponseIn (bool): True if waiting for plugin response.
+        NwkId (int or None): Network address of the target device.
+    """
     if self.structured_log_command_file_handler is None:
         return
-    line = ""
-    line += " %s " %timestamp
-    line += "| %s " %cmd
-    if datas is not None:
-        line += "| %s " %datas["Function"] if "Function" in datas else ""
-        line += "| %s " %sqn
-        line += "| %s " %highpriority
-        line += "| %s " %ackIsDisabled
-        line += "| %s " %waitForResponseIn
-        line += "| 0x%04x " %(NwkId) if NwkId is not None else "| None "
-        line += "| 0x%04X " %(datas["Profile"]) if "Profile" in datas else "| "
-        line += "| 0x%X " %(datas["TargetNwk"]) if "TargetNwk" in datas else "| "
-        line += "| 0x%02X " %(datas["TargetEp"]) if "TargetEp" in datas else "| "
-        line += "| 0x%02X " %(datas["SrcEp"]) if "SrcEp" in datas else "| "
-        line += "| 0x%04X " %(datas["Cluster"]) if "Cluster" in datas else "| "
-        line += "| %s " %(datas["payload"]) if "payload" in datas else "| "
-        line += "| %s " %(datas["AddressMode"]) if "AddressMode" in datas else "| "
-        line += "| %s " %(datas["RxOnIdle"]) if "RxOnIdle" in datas else "| "
-        line += "\n"
 
-    self.structured_log_command_file_handler.write( line )
+    parts = [
+        f" {timestamp:.3f}",
+        f"| {cmd}",
+        f"| {datas.get('Function', '')}",
+        f"| {sqn}",
+        f"| {highpriority}",
+        f"| {ackIsDisabled}",
+        f"| {waitForResponseIn}",
+        f"| 0x{NwkId:04X}" if NwkId is not None else "| None",
+        f"| 0x{datas['Profile']:04X}" if "Profile" in datas else "| ",
+        f"| 0x{datas['TargetNwk']:X}" if "TargetNwk" in datas else "| ",
+        f"| 0x{datas['TargetEp']:02X}" if "TargetEp" in datas else "| ",
+        f"| 0x{datas['SrcEp']:02X}" if "SrcEp" in datas else "| ",
+        f"| 0x{datas['Cluster']:04X}" if "Cluster" in datas else "| ",
+        f"| {datas['payload']}" if "payload" in datas else "| ",
+        f"| {datas['AddressMode']}" if "AddressMode" in datas else "| ",
+        f"| {datas['RxOnIdle']}" if "RxOnIdle" in datas else "| "
+    ]
+
+    line = " ".join(parts) + "\n"
+    self.structured_log_command_file_handler.write(line)

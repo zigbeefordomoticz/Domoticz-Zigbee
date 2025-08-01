@@ -25,8 +25,8 @@ from Classes.ZigpyTransport.forwarderThread import (start_forwarder_thread,
                                                     stop_forwarder_thread)
 from Classes.ZigpyTransport.instrumentation import (
     instrument_log_command_open, instrument_sendData, open_capture_rx_frames)
-from Classes.ZigpyTransport.zigpyThread import (start_zigpy_thread,
-                                                stop_zigpy_thread)
+from Classes.ZigpyTransport.zigpyThread import (
+    _cleanup_unused_concurrency_state, start_zigpy_thread, stop_zigpy_thread)
 
 
 class ZigpyTransport(object):
@@ -65,6 +65,7 @@ class ZigpyTransport(object):
         self._concurrent_requests_semaphores_list = {}
         self._currently_waiting_requests_list = {}  
         self._currently_not_reachable = []
+        self._periodic_reset = None
         
         # Initialise SQN Management
         sqn_init_stack(self)
@@ -95,11 +96,14 @@ class ZigpyTransport(object):
         start_zigpy_thread(self)
         start_forwarder_thread(self)
 
+
     def re_connect_cie(self):
         pass
 
+
     def close_cie_connection(self):
         pass
+
 
     def thread_transport_shutdown(self):
         self.log.logging("Transport", "Debug", "Shutting down zigpy thread")
@@ -130,8 +134,21 @@ class ZigpyTransport(object):
         
         self.log.logging("Transport", "Status", "Zigpy transport threads shutdown attempted")
 
+
     def sendData(self, cmd, datas, sqn=None, highpriority=False, ackIsDisabled=False, waitForResponseIn=False, NwkId=None):
-        
+        """
+        Send a command to the Zigbee transport writer queue.
+
+        Args:
+            cmd (str): The command identifier.
+            datas (Any): The payload data to send (typically a list or dict).
+            sqn (int, optional): Sequence number. Defaults to None.
+            highpriority (bool, optional): Marks message as high priority for instrumentation. Defaults to False.
+            ackIsDisabled (bool, optional): True if APS ACK is disabled. Defaults to False.
+            waitForResponseIn (bool, optional): True if response is expected from plugin. Defaults to False.
+            NwkId (str, optional): Network ID of the destination device. Defaults to None.
+        """
+
         if self.writer_queue is None:
             return
 
@@ -139,19 +156,33 @@ class ZigpyTransport(object):
         if _queue > self.statistics._MaxLoad:
             self.statistics._MaxLoad = _queue
 
-        if self.pluginconf.pluginConf["coordinatorCmd"]:
-            self.log.logging(
-                "Transport",
-                "Log",
-                "sendData       - [%s] %s %s %s Queue Length: %s"
-                % (sqn, cmd, datas, NwkId, _queue),
-            )
+        if self.pluginconf.pluginConf.get("coordinatorCmd", False):
+            self.log.logging( "Transport", "Log", f"sendData       - [{sqn}] {cmd} {datas} {NwkId} Queue Length: {_queue}" )
 
-        self.log.logging("Transport", "Debug", "===> sendData - Cmd: %s Datas: %s" % (cmd, datas))
+        self.log.logging( "Transport", "Debug", f"===> sendData - Cmd: {cmd} Datas: {datas}" )
 
-        message = {"cmd": cmd, "datas": datas, "NwkId": NwkId, "TimeStamp": time.time(), "ACKIsDisable": ackIsDisabled, "Sqn": sqn}
+        message = {
+            "cmd": cmd,
+            "datas": datas,
+            "NwkId": NwkId,
+            "TimeStamp": time.time(),
+            "ACKIsDisable": ackIsDisabled,
+            "Sqn": sqn
+        }
+
         self.writer_queue.put_nowait(json.dumps(message))
-        instrument_sendData( self, cmd, datas, sqn, message["TimeStamp"], highpriority, ackIsDisabled, waitForResponseIn, NwkId )
+
+        instrument_sendData(
+            self,
+            cmd,
+            datas,
+            sqn,
+            message["TimeStamp"],
+            highpriority,
+            ackIsDisabled,
+            waitForResponseIn,
+            NwkId
+        )
         
 
     def receiveData(self, message):
@@ -182,5 +213,17 @@ class ZigpyTransport(object):
     def loadTransmit(self):
         if self.writer_queue is None:
             return 0
-        _queue = sum(self._currently_waiting_requests_list[device] + 1 for device in list(self._currently_waiting_requests_list) if self._concurrent_requests_semaphores_list[device].locked())
+
+        # Periodic cleanup check
+        now = time.monotonic()
+        if self._periodic_reset is None or now - self._periodic_reset > 3600:
+            self._periodic_reset = now
+            _cleanup_unused_concurrency_state(self)
+
+        _queue = sum(
+            self._currently_waiting_requests_list.get(device, 0) + 1
+            for device in list(self._currently_waiting_requests_list)
+            if self._concurrent_requests_semaphores_list.get(device) and self._concurrent_requests_semaphores_list[device].locked()
+        )
+        
         return max(_queue - 1, 0) + self.writer_queue.qsize()
