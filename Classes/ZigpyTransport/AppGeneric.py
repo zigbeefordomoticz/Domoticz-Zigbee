@@ -146,6 +146,10 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
 
 async def shutdown(self, *, db: bool = True) -> None:
     """Shutdown controller."""
+    if self.shutting_down:
+        _LOGGER.warning("Ignoring duplicate shutdown event")
+        return
+
     LOGGER.info("AppGeneric shutdown")
 
     if self.current_error == "connection lost":
