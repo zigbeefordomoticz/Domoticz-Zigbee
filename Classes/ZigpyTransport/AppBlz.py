@@ -230,5 +230,5 @@ class App_blz(zigpy_blz.zigbee.application.ControllerApplication):
         return False
 
 
-   def is_blz(self):
+    def is_blz(self):
         return True
