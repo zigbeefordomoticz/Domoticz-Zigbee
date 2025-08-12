@@ -23,6 +23,7 @@ FIRMWARE_BRANCH = {
     "43": "Conbee III",
     "30": "Elelabs, ELR02x",
     "31": "Elelabs, ELU01x",
+    "50": "Bouffalo Lab Zigbee (BLZ)",
     
     "97": "Unknown deConz",
     "98": "Unknown Silicon Labs",
@@ -63,6 +64,10 @@ def set_display_firmware_version( self ):
     elif 40 <= int(self.ControllerData["Branch Version"]) < 50:
         # deCONZ
         self.pluginParameters["DisplayFirmwareVersion"] = "deCONZ - %s" %self.ControllerData["Minor Version"]
+
+    elif 50 <= int(self.ControllerData["Branch Version"]) < 60:
+        # deCONZ
+        self.pluginParameters["DisplayFirmwareVersion"] = "BLZ - %s" %self.ControllerData["Minor Version"]
 
     else:
         self.pluginParameters["DisplayFirmwareVersion"] = "UNK - %s" % self.ControllerData["Minor Version"] 

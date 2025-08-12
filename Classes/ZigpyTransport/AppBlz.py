@@ -14,14 +14,10 @@ import asyncio
 import logging
 import time
 
+import zigpy.application
 import zigpy.config as zigpy_conf
-import zigpy.device
-import zigpy.profiles
 import zigpy.types as zigpy_t
-import zigpy.zdo.types as zdo_types
-import zigpy_blz.config as blz_conf
 import zigpy_blz.zigbee.application
-from zigpy.zcl import clusters
 
 import Classes.ZigpyTransport.AppGeneric
 from Classes.ZigpyTransport.firmwareversionHelper import \
@@ -77,6 +73,7 @@ class App_blz(zigpy_blz.zigbee.application.ControllerApplication):
         try:
             await self.connect()
             await self.initialize(auto_form=True, force_form=force_form)
+
         except Exception as e:
             LOGGER.error("Couldn't start application", exc_info=e)
             await self.shutdown()
@@ -95,9 +92,10 @@ class App_blz(zigpy_blz.zigbee.application.ControllerApplication):
         blz_model = self.state.node_info.model  # "BL706"
         blz_manuf = self.state.node_info.manufacturer  # "Bouffalo Lab"
 
-        FirmwareBranch, FirmwareMajorVersion, FirmwareVersion = blz_extract_versioning_for_plugin(self, blz_manuf, blz_model, version)
-        self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion,version))
-      
+        branch, version = blz_extract_versioning_for_plugin( self, blz_model, blz_manuf, version)
+        self.callBackFunction(build_plugin_8010_frame_content( branch, "00", "0000", version))
+
+
         self.log.logging("TransportZigpy", "Status", "++ BLZ Board Information" )
         self.log.logging("TransportZigpy", "Status", f"++   Radio manufacturer : {blz_manuf}" )
         self.log.logging("TransportZigpy", "Status", f"++   Radio board model  : {blz_model}" )
@@ -106,7 +104,7 @@ class App_blz(zigpy_blz.zigbee.application.ControllerApplication):
 
     async def shutdown(self, *, db: bool = True) -> None:
         """Shutdown controller."""
-        LOGGER.info("AppZnp shutdown called")
+        LOGGER.info("AppBlz shutdown called")
         await Classes.ZigpyTransport.AppGeneric.shutdown(self, db=db)
 
 
@@ -180,13 +178,13 @@ class App_blz(zigpy_blz.zigbee.application.ControllerApplication):
 
 
     async def set_extended_pan_id(self,extended_pan_ip):
-        self.config[blz_conf.CONF_NWK][blz_conf.CONF_NWK_EXTENDED_PAN_ID] = extended_pan_ip
-        self.startup(self.callBackFunction,self.callBackGetDevice,auto_form=True,force_form=True,log=self.log)
+        """Set the extended PAN ID for the network."""
+        self.log.logging("TransportZigpy", "Debug", "set_extended_pan_id not implemented yet")
 
 
     async def set_channel(self,channel):
-        self.config[blz_conf.CONF_NWK][blz_conf.CONF_NWK_EXTENDED_PAN_ID] = channel
-        self.startup(self.callBackFunction,self.callBackGetDevice,auto_form=True,force_form=True,log=self.log)
+        """Set the channel for the network."""
+        self.log.logging("TransportZigpy", "Debug", "set_extended_pan_id not implemented yet")
 
 
     async def remove_ieee(self, ieee):

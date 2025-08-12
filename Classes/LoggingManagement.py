@@ -642,6 +642,25 @@ def configure_zigpy_deconz_loggers(self, mode="warning"):
     configure_loggers(self, logger_names, mode)
 
 
+def configure_zigpy_blz_loggers(self, mode="warning"):
+    """ Configure Logging level for bellows """
+    #domoticz_log_api( f"configure_zigpy_ezsp_loggers -{mode}")
+    if mode == self.debugEZSP:
+        return
+    self.debugEZSP = mode
+
+    logger_names = [
+        "AppBlz",
+        "zigpy_blz", 
+        "zigpy_blz.zigbee", 
+        "zigpy_blz.zigbee.application", 
+        "zigpy_blz.uart", 
+        "ZigpyTransport.AppBlz", 
+        "Classes.ZigpyTransport.AppGeneric"
+    ]
+    configure_loggers(self, logger_names, mode)
+
+
 def _configure_debug_mode(self, config_name, config_function):
     """ if debug_flag set to True, or ConfigName parameter set to True, enable python module logging"""
     
