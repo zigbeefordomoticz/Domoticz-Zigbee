@@ -255,6 +255,11 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
             from Classes.ZigpyTransport.AppDeconz import App_deconz as App
             config = deconz_configuration_setup(self, radio_specific_conf, serialPort, serial_specifics)
 
+        elif radiomodule == "blz":
+            import zigpy_blz.config as radio_specific_conf
+            from Classes.ZigpyTransport.AppBlz import App_blz as App
+            config = blz_configuration_setup(self, radio_specific_conf, serialPort, serial_specifics)
+
         else:
             self.log.logging( "TransportZigpy", "Error", "Wrong radiomode: %s" % (radiomodule), )
             return
@@ -268,7 +273,7 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
     optional_configuration_setup(self, config, radio_specific_conf, set_extendedPanId, set_channel)
 
     try:
-        if radiomodule in ["znp", "deCONZ", "ezsp"]:
+        if radiomodule in ["znp", "deCONZ", "ezsp", "blz"]:
             self.app = App(config)
 
         else:
@@ -368,6 +373,22 @@ def deconz_configuration_setup(self, deconz_conf, serialPort, serial_specifics):
         zigpy.config.CONF_OTA: {
         },
     }
+
+
+  def blz_configuration_setup(self, deconz_conf, serialPort, serial_specifics):
+      """Setup configuration for deCONZ radio module."""
+      return {
+          zigpy.config.CONF_DEVICE: {
+              zigpy.config.CONF_DEVICE_PATH: serialPort, 
+              zigpy.config.CONF_DEVICE_BAUDRATE: serial_specifics.get("Baudrate", 200000),
+              zigpy.config.CONF_DEVICE_FLOW_CONTROL: serial_specifics.get("FlowControl", None)
+          },
+          zigpy.config.CONF_NWK: {
+          },
+          zigpy.config.CONF_OTA: {
+          },
+     }
+
 
 def optional_configuration_setup(self, config, conf, set_extendedPanId, set_channel):
 
