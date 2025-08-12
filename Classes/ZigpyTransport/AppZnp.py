@@ -14,6 +14,7 @@ import asyncio
 import logging
 import time
 
+import zigpy.application
 import zigpy.config as zigpy_conf
 import zigpy.types as zigpy_t
 import zigpy_znp.commands.util

@@ -17,10 +17,9 @@ import time
 import bellows.config as bellows_conf
 import bellows.types as t
 import bellows.zigbee.application
+import zigpy.application
 import zigpy.config as zigpy_conf
-import zigpy.device
 import zigpy.types as zigpy_t
-import zigpy.zdo.types as zdo_types
 from bellows.exception import EzspError
 
 import Classes.ZigpyTransport.AppGeneric
