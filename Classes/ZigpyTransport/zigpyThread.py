@@ -375,19 +375,19 @@ def deconz_configuration_setup(self, deconz_conf, serialPort, serial_specifics):
     }
 
 
-  def blz_configuration_setup(self, deconz_conf, serialPort, serial_specifics):
-      """Setup configuration for deCONZ radio module."""
-      return {
-          zigpy.config.CONF_DEVICE: {
-              zigpy.config.CONF_DEVICE_PATH: serialPort, 
-              zigpy.config.CONF_DEVICE_BAUDRATE: serial_specifics.get("Baudrate", 200000),
-              zigpy.config.CONF_DEVICE_FLOW_CONTROL: serial_specifics.get("FlowControl", None)
-          },
-          zigpy.config.CONF_NWK: {
-          },
-          zigpy.config.CONF_OTA: {
-          },
-     }
+def blz_configuration_setup(self, deconz_conf, serialPort, serial_specifics):
+    """Setup configuration for deCONZ radio module."""
+    return {
+        zigpy.config.CONF_DEVICE: {
+            zigpy.config.CONF_DEVICE_PATH: serialPort, 
+            zigpy.config.CONF_DEVICE_BAUDRATE: serial_specifics.get("Baudrate", 200000),
+            zigpy.config.CONF_DEVICE_FLOW_CONTROL: serial_specifics.get("FlowControl", None)
+        },
+        zigpy.config.CONF_NWK: {
+        },
+        zigpy.config.CONF_OTA: {
+        },
+    }
 
 
 def optional_configuration_setup(self, config, conf, set_extendedPanId, set_channel):
