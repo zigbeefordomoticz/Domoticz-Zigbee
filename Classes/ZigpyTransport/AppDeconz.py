@@ -15,11 +15,7 @@ import logging
 import time
 
 import zigpy.config as zigpy_conf
-import zigpy.device
 import zigpy.types as t
-import zigpy.zcl
-import zigpy.zdo
-import zigpy.zdo.types as zdo_types
 import zigpy_deconz
 import zigpy_deconz.zigbee.application
 

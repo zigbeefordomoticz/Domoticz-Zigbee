@@ -24,16 +24,8 @@ from threading import Thread
 
 import zigpy.config
 import zigpy.device
-import zigpy.exceptions
-import zigpy.group
-import zigpy.ota
-import zigpy.quirks
-import zigpy.state
-import zigpy.topology
 import zigpy.types as t
-import zigpy.util
 import zigpy.zcl
-import zigpy.zdo
 from zigpy.exceptions import (APIException, ControllerException, DeliveryError,
                               InvalidResponse)
 from zigpy_znp.exceptions import (CommandNotRecognized, InvalidCommandResponse,

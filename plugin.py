@@ -649,7 +649,8 @@ class BasePlugin:
         # Flush ListOfDevices
         if self.log:
             self.log.logging("Plugin", "Log", "Flushing plugin database onto disk")
-        WriteDeviceList(self, 0)  # write immediatly
+        if self.pluginconf:
+            WriteDeviceList(self, 0)  # write immediatly
 
         # Uninstall Z4D custom UI from Domoticz
         uninstall_Z4D_to_domoticz_custom_ui()

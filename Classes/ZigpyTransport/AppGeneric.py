@@ -10,7 +10,6 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
-import serial
 import asyncio
 import binascii
 import contextlib
@@ -20,11 +19,8 @@ import os.path
 import time
 from pathlib import Path
 
-from zigpy.application import ControllerApplication
-import zigpy.application
-import zigpy.backups
+import serial
 import zigpy.config as zigpy_conf
-import zigpy.const as const
 import zigpy.device
 import zigpy.exceptions
 import zigpy.types as zigpy_t
@@ -147,7 +143,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
 async def shutdown(self, *, db: bool = True) -> None:
     """Shutdown controller."""
     if self.shutting_down:
-        _LOGGER.warning("Ignoring duplicate shutdown event")
+        LOGGER.warning("Ignoring duplicate shutdown event")
         return
 
     LOGGER.info("AppGeneric shutdown")
@@ -190,8 +186,10 @@ async def _create_backup(self, backup) -> None:
 def connection_lost(self, exc: Exception) -> None:
     """Handle connection lost event."""
 
-    from bellows.ash import NcpFailure  # pylint: disable=import-outside-toplevel
-    from bellows.types.named import NcpResetCode  # pylint: disable=import-outside-toplevel
+    from bellows.ash import \
+        NcpFailure  # pylint: disable=import-outside-toplevel
+    from bellows.types.named import \
+        NcpResetCode  # pylint: disable=import-outside-toplevel
 
     LOGGER.warning("+ Connection to the radio was lost: %s %r", type(exc), exc)
 
@@ -434,16 +432,16 @@ def get_zigpy_version(self):
 
 
 def get_device_with_address( self, address: zigpy_t.AddrModeAddress ) -> zigpy.device.Device:
-        """Gets a `Device` object using the provided address mode address."""
+    """Gets a `Device` object using the provided address mode address."""
 
-        if address.addr_mode == zigpy_t.AddrMode.NWK:
-            return self.get_device(nwk=address.address)
+    if address.addr_mode == zigpy_t.AddrMode.NWK:
+        return self.get_device(nwk=address.address)
 
-        elif address.addr_mode == zigpy_t.AddrMode.IEEE:
-            return self.get_device(ieee=address.address)
+    elif address.addr_mode == zigpy_t.AddrMode.IEEE:
+        return self.get_device(ieee=address.address)
 
-        else:
-            raise ValueError(f"Invalid address: {address!r}")
+    else:
+        raise ValueError(f"Invalid address: {address!r}")
 
 
 async def register_specific_endpoints(self):
