@@ -1283,7 +1283,7 @@ def _start_zigpy_EZSP(self):
     self.pluginconf.pluginConf["ControllerInRawMode"] = True
     
 def _start_zigpy_BLZ(self):
-    import zigpy-blz
+    import zigpy_blz
     import zigpy
     from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                               SCHEMA_DEVICE)
