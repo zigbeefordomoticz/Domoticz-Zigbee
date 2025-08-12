@@ -95,7 +95,7 @@ class App_blz(zigpy_blz.zigbee.application.ControllerApplication):
         blz_model = self.state.node_info.model  # "BL706"
         blz_manuf = self.state.node_info.manufacturer  # "Bouffalo Lab"
 
-        FirmwareBranch, FirmwareMajorVersion, FirmwareVersion = blz_extract_versioning_for_plugin(self, brd_manuf, brd_name, version)
+        FirmwareBranch, FirmwareMajorVersion, FirmwareVersion = blz_extract_versioning_for_plugin(self, blz_manuf, blz_model, version)
         self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion,version))
       
         self.log.logging("TransportZigpy", "Status", "++ BLZ Board Information" )
