@@ -307,16 +307,24 @@ def ezsp_configuration_setup(self, bellows_conf, serialPort, serial_specifics):
         },
         bellows_conf.CONF_EZSP_CONFIG: {
         },
+        # configure automatic behaviors in the NCP (Network Co-Processor)
+        bellows_conf.CONF_EZSP_POLICIES: {
+        },
         zigpy.config.CONF_OTA: {
         },
         "handle_unknown_devices": True,
     }
 
-    if "BellowsNoMoreEndDeviceChildren" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["BellowsNoMoreEndDeviceChildren"]:
+    if self.pluginconf.pluginConf.get("EzspAllowUnsecuredRejoins"):
+        self.log.logging( "TransportZigpy", "Status", "++ Allow Unsecure Rejoins for Aqara devices ...")
+        # “If a device tries to rejoin without a secure link key, still let it in.”
+        config[bellows_conf.CONF_EZSP_POLICIES]["TRUST_CENTER_POLICY"] =  0x0003 # ALLOW_UNSECURED_REJOINS|ALLOW_JOINS
+          
+    if self.pluginconf.pluginConf.get("BellowsNoMoreEndDeviceChildren"):
         self.log.logging("TransportZigpy", "Status", "++ Set The maximum number of end device children that Coordinater will support to 0")
         config[bellows_conf.CONF_EZSP_CONFIG]["CONFIG_MAX_END_DEVICE_CHILDREN"] = 0
 
-    if self.pluginconf.pluginConf["TXpower_set"]:
+    if self.pluginconf.pluginConf.get("TXpower_set"):
         self.log.logging("TransportZigpy", "Status", "++ Enables boost power mode and the alternate transmitter output.")
         config[bellows_conf.CONF_EZSP_CONFIG]["CONFIG_TX_POWER_MODE"] = 0x3
 
@@ -384,19 +392,19 @@ def optional_configuration_setup(self, config, conf, set_extendedPanId, set_chan
     config[zigpy.config.CONF_WATCHDOG_ENABLED] = True
     
     # Config Zigpy db. if not defined, there is no persistent Db.
-    if "enableZigpyPersistentInFile" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["enableZigpyPersistentInFile"]:
+    if self.pluginconf.pluginConf.get("enableZigpyPersistentInFile"):
         data_folder = Path( self.pluginconf.pluginConf["pluginData"] )
         config[zigpy.config.CONF_DATABASE] = str(data_folder / ("zigpy_persistent_%02d.db"% self.hardwareid) )
         config[zigpy.config.CONF_TOPO_SCAN_ENABLED] = True
         config[zigpy.config.CONF_TOPO_SCAN_PERIOD] = 12 * 60  # 12 Hours
 
-    elif "enableZigpyPersistentInMemory" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["enableZigpyPersistentInMemory"]:
+    elif self.pluginconf.pluginConf.get("enableZigpyPersistentInMemory"):
         config[zigpy.config.CONF_DATABASE] = ":memory:"
         config[zigpy.config.CONF_TOPO_SCAN_ENABLED] = True
         config[zigpy.config.CONF_TOPO_SCAN_PERIOD] = 12 * 60  # 12 Hours
 
     # Manage coordinator auto backup
-    if "autoBackup" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoBackup"]:
+    if self.pluginconf.pluginConf.get("autoBackup"):
         config[zigpy.config.CONF_NWK_BACKUP_ENABLED] = True
         config[zigpy.config.CONF_NWK_BACKUP_PERIOD] = self.pluginconf.pluginConf["autoBackup"]
     else:
