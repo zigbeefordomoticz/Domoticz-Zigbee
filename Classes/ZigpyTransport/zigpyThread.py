@@ -318,7 +318,7 @@ def ezsp_configuration_setup(self, bellows_conf, serialPort, serial_specifics):
     if self.pluginconf.pluginConf.get("EzspAllowUnsecuredRejoins"):
         self.log.logging( "TransportZigpy", "Status", "++ Allow Unsecure Rejoins for Aqara devices ...")
         # “If a device tries to rejoin without a secure link key, still let it in.”
-        config[bellows_conf.CONF_EZSP_POLICIES]["TRUST_CENTER_POLICY"] =  0x0003 # ALLOW_UNSECURED_REJOINS|ALLOW_JOINS
+        config[bellows_conf.CONF_EZSP_POLICIES]["TRUST_CENTER_POLICY"] = 0x0003 # ALLOW_UNSECURED_REJOINS|ALLOW_JOINS
           
     if self.pluginconf.pluginConf.get("BellowsNoMoreEndDeviceChildren"):
         self.log.logging("TransportZigpy", "Status", "++ Set The maximum number of end device children that Coordinater will support to 0")
