@@ -176,17 +176,19 @@ class App_blz(zigpy_blz.zigbee.application.ControllerApplication):
     async def erase_pdm(self):
         pass
 
-
+    
     async def set_extended_pan_id(self,extended_pan_ip):
         """Set the extended PAN ID for the network."""
-        self.log.logging("TransportZigpy", "Debug", "set_extended_pan_id not implemented yet")
+        self.config[zigpy_conf.CONF_NWK][zigpy_conf.CONF_NWK_EXTENDED_PAN_ID] = extended_pan_ip
+        self.startup(self.callBackFunction,self.callBackGetDevice,auto_form=True,force_form=True,log=self.log)
 
 
     async def set_channel(self,channel):
         """Set the channel for the network."""
-        self.log.logging("TransportZigpy", "Debug", "set_extended_pan_id not implemented yet")
+        self.config[zigpy_conf.CONF_NWK][zigpy_conf.CONF_NWK_EXTENDED_PAN_ID] = channel
+        self.startup(self.callBackFunction,self.callBackGetDevice,auto_form=True,force_form=True,log=self.log)
 
-
+    
     async def remove_ieee(self, ieee):
         await self.remove( ieee )
 
