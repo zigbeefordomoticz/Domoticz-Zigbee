@@ -90,6 +90,7 @@ class LoggingManagement:
         _configure_debug_mode(self, "ZigpyEZSP", configure_zigpy_ezsp_loggers)
         _configure_debug_mode(self, "ZigpyZigate", configure_zigpy_zigate_loggers)
         _configure_debug_mode(self, "ZigpydeCONZ", configure_zigpy_deconz_loggers)
+        _configure_debug_mode(self, "ZigpyBLZ", configure_zigpy_blz_loggers)
         
         default_mode = logging.INFO if self.pluginconf.pluginConf["ZigpyDefaultLoggingInfo"] else logging.WARNING
         for param in self.pluginconf.pluginConf:
