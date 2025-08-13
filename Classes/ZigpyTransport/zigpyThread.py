@@ -747,6 +747,7 @@ async def _unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequen
 
     async with asyncio.Lock():
         self.statistics._sent += 1
+
     return 0x00, ""
 
 
@@ -839,7 +840,7 @@ def log_exception(self, exception, error, cmd, data):
 
 def check_transport_readiness(self):
     radiomodule = self._radiomodule
-    if radiomodule in {"zigate", "deCONZ", "ezsp"}:
+    if radiomodule in {"zigate", "deCONZ", "ezsp", "blz"}:
         return True
 
     if radiomodule == "znp":
