@@ -376,6 +376,8 @@ def blz_configuration_setup(self, blz_conf, serialPort, serial_specifics):
             zigpy.config.CONF_DEVICE_BAUDRATE: serial_specifics.get("Baudrate", 2000000),
             zigpy.config.CONF_DEVICE_FLOW_CONTROL: serial_specifics.get("FlowControl", None)
         },
+        zigpy.config.CONF_NWK: {
+        },
         zigpy.config.CONF_OTA: {
         },
     }
@@ -384,12 +386,12 @@ def blz_configuration_setup(self, blz_conf, serialPort, serial_specifics):
 def optional_configuration_setup(self, config, radio_conf, set_extendedPanId, set_channel):
 
     # In case we have to set the Extended PAN Id
-    if radio_conf and set_extendedPanId != 0:
-        config[radio_conf.CONF_NWK][radio_conf.CONF_NWK_EXTENDED_PAN_ID] = "%s" % ( t.EUI64(t.uint64_t(set_extendedPanId).serialize()) )
+    if set_extendedPanId != 0:
+        config[zigpy.config.CONF_NWK][zigpy.config.CONF_NWK_EXTENDED_PAN_ID] = "%s" % ( t.EUI64(t.uint64_t(set_extendedPanId).serialize()) )
 
     # In case we have to force the Channel
     if radio_conf and set_channel != 0:
-        config[radio_conf.CONF_NWK][radio_conf.CONF_NWK_CHANNEL] = set_channel
+        config[zigpy.config.CONF_NWK][zigpy.config.CONF_NWK_CHANNEL] = set_channel
 
     # Enable or not Source Routing based on zigpySourceRouting setting
     config[zigpy.config.CONF_SOURCE_ROUTING] = bool( self.pluginconf.pluginConf["zigpySourceRouting"] )
