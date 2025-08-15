@@ -90,6 +90,7 @@ class LoggingManagement:
         _configure_debug_mode(self, "ZigpyEZSP", configure_zigpy_ezsp_loggers)
         _configure_debug_mode(self, "ZigpyZigate", configure_zigpy_zigate_loggers)
         _configure_debug_mode(self, "ZigpydeCONZ", configure_zigpy_deconz_loggers)
+        _configure_debug_mode(self, "ZigpyBLZ", configure_zigpy_blz_loggers)
         
         default_mode = logging.INFO if self.pluginconf.pluginConf["ZigpyDefaultLoggingInfo"] else logging.WARNING
         for param in self.pluginconf.pluginConf:
@@ -637,6 +638,25 @@ def configure_zigpy_deconz_loggers(self, mode="warning"):
     logger_names = [
         "zigpy_deconz",
         "ZigpyTransport.AppDeconz",
+        "Classes.ZigpyTransport.AppGeneric"
+    ]
+    configure_loggers(self, logger_names, mode)
+
+
+def configure_zigpy_blz_loggers(self, mode="warning"):
+    """ Configure Logging level for bellows """
+    #domoticz_log_api( f"configure_zigpy_ezsp_loggers -{mode}")
+    if mode == self.debugEZSP:
+        return
+    self.debugEZSP = mode
+
+    logger_names = [
+        "AppBlz",
+        "zigpy_blz", 
+        "zigpy_blz.zigbee", 
+        "zigpy_blz.zigbee.application", 
+        "zigpy_blz.uart", 
+        "ZigpyTransport.AppBlz", 
         "Classes.ZigpyTransport.AppGeneric"
     ]
     configure_loggers(self, logger_names, mode)

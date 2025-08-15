@@ -33,7 +33,10 @@ def bellows_extract_versioning_for_plugin(self, brd_manuf, brd_name, version):
     return firmware_branch, firmware_major_version, firmware_version
 
 
-# deConz
+# Bouffalo Lab Zigbee (BLZ) radios 
+def blz_extract_versioning_for_plugin(self, deconz_model, deconz_manuf, version):
+    return "50", version
+
 
 # deConz
 def deconz_extract_versioning_for_plugin(self, deconz_model, deconz_manuf, version):

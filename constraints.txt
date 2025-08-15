@@ -1,4 +1,4 @@
-zigpy==0.82.1
+zigpy==0.82.2
 zigpy_znp==0.14.1
 zigpy_deconz==0.25.1
 bellows==0.45.3

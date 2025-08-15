@@ -173,7 +173,8 @@ async def start_zigpy_task(self, channel, extended_pan_id):
     # We exit the worker_loop, shutdown time
     try:
         self.log.logging("TransportZigpy", "Debug", "Shutting down zigpy thread...")
-        await self.app.shutdown()
+        if self.app:
+            await self.app.shutdown()
 
     except Exception as e:
         self.log.logging("TransportZigpy", "Error", f"start_zigpy_task shutdown(self) error: {e}")
@@ -247,6 +248,11 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
             from Classes.ZigpyTransport.AppDeconz import App_deconz as App
             config = deconz_configuration_setup(self, radio_specific_conf, serialPort, serial_specifics)
 
+        elif radiomodule == "blz":
+            radio_specific_conf = {}
+            from Classes.ZigpyTransport.AppBlz import App_blz as App
+            config = blz_configuration_setup(self, radio_specific_conf, serialPort, serial_specifics)
+
         else:
             self.log.logging( "TransportZigpy", "Error", "Wrong radiomode: %s" % (radiomodule), )
             return
@@ -260,7 +266,7 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
     optional_configuration_setup(self, config, radio_specific_conf, set_extendedPanId, set_channel)
 
     try:
-        if radiomodule in ["znp", "deCONZ", "ezsp"]:
+        if radiomodule in ["znp", "deCONZ", "ezsp", "blz"]:
             self.app = App(config)
 
         else:
@@ -361,15 +367,31 @@ def deconz_configuration_setup(self, deconz_conf, serialPort, serial_specifics):
         },
     }
 
-def optional_configuration_setup(self, config, conf, set_extendedPanId, set_channel):
+
+def blz_configuration_setup(self, blz_conf, serialPort, serial_specifics):
+    """Setup configuration for deCONZ radio module."""
+    return {
+        zigpy.config.CONF_DEVICE: {
+            zigpy.config.CONF_DEVICE_PATH: serialPort, 
+            zigpy.config.CONF_DEVICE_BAUDRATE: serial_specifics.get("Baudrate", 2000000),
+            zigpy.config.CONF_DEVICE_FLOW_CONTROL: serial_specifics.get("FlowControl", None)
+        },
+        zigpy.config.CONF_NWK: {
+        },
+        zigpy.config.CONF_OTA: {
+        },
+    }
+
+
+def optional_configuration_setup(self, config, radio_conf, set_extendedPanId, set_channel):
 
     # In case we have to set the Extended PAN Id
     if set_extendedPanId != 0:
-        config[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = "%s" % ( t.EUI64(t.uint64_t(set_extendedPanId).serialize()) )
+        config[zigpy.config.CONF_NWK][zigpy.config.CONF_NWK_EXTENDED_PAN_ID] = "%s" % ( t.EUI64(t.uint64_t(set_extendedPanId).serialize()) )
 
     # In case we have to force the Channel
-    if set_channel != 0:
-        config[conf.CONF_NWK][conf.CONF_NWK_CHANNEL] = set_channel
+    if radio_conf and set_channel != 0:
+        config[zigpy.config.CONF_NWK][zigpy.config.CONF_NWK_CHANNEL] = set_channel
 
     # Enable or not Source Routing based on zigpySourceRouting setting
     config[zigpy.config.CONF_SOURCE_ROUTING] = bool( self.pluginconf.pluginConf["zigpySourceRouting"] )
@@ -725,6 +747,7 @@ async def _unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequen
 
     async with asyncio.Lock():
         self.statistics._sent += 1
+
     return 0x00, ""
 
 
@@ -817,7 +840,7 @@ def log_exception(self, exception, error, cmd, data):
 
 def check_transport_readiness(self):
     radiomodule = self._radiomodule
-    if radiomodule in {"zigate", "deCONZ", "ezsp"}:
+    if radiomodule in {"zigate", "deCONZ", "ezsp", "blz"}:
         return True
 
     if radiomodule == "znp":

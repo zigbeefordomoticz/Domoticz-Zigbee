@@ -31,6 +31,7 @@
                 <option label="Texas Instruments ZNP (via zigpy)" value="ZigpyZNP"/>
                 <option label="Silicon Labs EZSP (via zigpy)" value="ZigpyEZSP"/>
                 <option label="Conbee/Rasbee I, II, III (via zigpy)" value="ZigpydeCONZ"/>
+                <option label="Bouffalo Lab Zigbee (via zigpy)" value="ZigpyBLZ"/>
             </options>
         </param>
         <param field="Mode2" label="Coordinator connection type" width="200px" required="true" default="None">
@@ -366,7 +367,7 @@ class BasePlugin:
             self.zigbee_communication = "native"
             self.transport = "None"
 
-        elif Parameters["Mode1"] in ( "ZigpyZiGate", "ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP"):
+        elif Parameters["Mode1"] in ( "ZigpyZiGate", "ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP", "ZigpyBLZ"):
             self.transport = Parameters["Mode1"]
             self.zigbee_communication = "zigpy"
 
@@ -601,7 +602,7 @@ class BasePlugin:
 
         start_zigbee_transport(self )
 
-        if self.transport not in ("ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP", "ZigpyZiGate", "None" ):
+        if self.transport not in ("ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP", "ZigpyZiGate", "ZigpyBLZ", "None" ):
             self.log.logging("Plugin", "Debug", "Establish Zigate connection")
             self.ControllerLink.open_cie_connection()
 
@@ -1061,7 +1062,10 @@ def start_zigbee_transport(self ):
         _start_zigpy_deConz(self)
                 
     elif self.transport == "ZigpyEZSP":
-        _start_zigpy_EZSP(self) 
+        _start_zigpy_EZSP(self)
+
+    elif self.transport == "ZigpyBLZ":
+        _start_zigpy_BLZ(self)
         
     else:
         self.log.logging("Plugin", "Error", "Unknown Transport comunication protocol : %s" % str(self.transport))
@@ -1279,7 +1283,48 @@ def _start_zigpy_EZSP(self):
     self.ControllerLink.open_cie_connection()
     self.pluginconf.pluginConf["ControllerInRawMode"] = True
     
-    
+def _start_zigpy_BLZ(self):
+    import zigpy_blz
+    import zigpy
+    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
+                              SCHEMA_DEVICE)
+
+    from Classes.ZigpyTransport.Transport import ZigpyTransport
+
+    check_python_modules_version( self )
+    self.zigbee_communication = "zigpy"
+    self.pluginParameters["Zigpy"] = True
+    self.log.logging("Plugin", "Status","Z4D starting Bouffalo Lab Zigbee (BLZ) ")
+
+    if Parameters["Mode2"] == "Socket":
+        SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
+        self.transport += "Socket"
+        communication_specifics = None
+    else:
+        communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
+        SerialPort = Parameters["SerialPort"]
+
+    self.ControllerLink= ZigpyTransport(
+        self.ControllerData,
+        self.pluginParameters,
+        self.pluginconf,
+        self.processFrame,
+        self.zigpy_chk_upd_device,
+        self.zigpy_get_device,
+        self.zigpy_backup_available,
+        self.restart_plugin,
+        self.log,
+        self.statistics,
+        self.HardwareID,
+        "blz",
+        SerialPort,
+        communication_specifics
+        )
+
+    self.ControllerLink.open_cie_connection()
+    self.pluginconf.pluginConf["ControllerInRawMode"] = True
+
+
 def zigateInit_Phase1(self):
     """
     Mainly managed Erase PDM if required
