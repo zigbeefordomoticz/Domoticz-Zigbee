@@ -1070,30 +1070,22 @@ async def _send_and_retry(
         attempt += 1
         elapsed = time.monotonic() - start_time
 
-        # Check if we have reached the maximum number of attempts
         if elapsed >= REQUEST_TIMEOUT:
-            self.log.logging("TransportZigpy", "Log", f"_send_and_retry: {common_log_info} Prio {packet_priority} TIMEOUT of {REQUEST_TIMEOUT}s reached after {attempt - 1} attempts. ")
+            self.log.logging("TransportZigpy", "Log", f"_send_and_retry: {common_log_info} TIMEOUT of {REQUEST_TIMEOUT}s reached after {attempt - 1} attempts. ")
             self.statistics._ackKO += 1
             handle_transport_result(self, function, cluster, sequence, 0xB6, ack_is_disable, extended_timeout, ieee, nwkid, destination.lqi)
             return 0xB6
 
-        # If we have already attempted, we use extended timeout
-        if attempt > 1:
-            extended_timeout = True
-            packet_priority = t.PacketPriority.HIGH  # escalate on retry
-            self.statistics._reTx += 1
-        
         self.log.logging("TransportZigpy", "Debug",
                          f"_send_and_retry: {function} {common_log_info} "
-                         f"extended_timeout: {extended_timeout} Priority: {packet_priority} Attempt: {attempt} Elapsed: {elapsed:.2f}s")
+                         f"extended_timeout: {extended_timeout} Attempt: {attempt} Elapsed: {elapsed:.2f}s")
         result = await __try_send(attempt)
-
-        if result == zigpy.zcl.foundation.Status.SUCCESS:
-            # We exit the loop if the result is successful
-            self.log.logging("TransportZigpy", "Debug", f"_send_and_retry: {function} - {result}- Attempt: {attempt} Elapsed: {elapsed:.2f}s")
-            return result
         
-        await asyncio.sleep(min(max(0.1 * (2 ** (attempt - 1)), 0.1), 1.0))  # Exponential backoff with a cap at 1 second
+        # if result is None it means we need to retry
+        if result is not None:
+            return result
+
+        packet_priority = t.PacketPriority.HIGH  # escalate on retry
 
 
 async def zigpy_request( self, device: zigpy.device.Device, profile: t.uint16_t, cluster: t.uint16_t, src_ep: t.uint8_t, dst_ep: t.uint8_t, sequence: t.uint8_t, data: bytes, *, ack_is_disable: bool = True, use_ieee: bool = False, extended_timeout: bool = False, priority: bool = t.PacketPriority.NORMAL) -> tuple[zigpy.zcl.foundation.Status, str]:
