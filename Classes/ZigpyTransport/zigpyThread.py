@@ -316,7 +316,7 @@ def ezsp_configuration_setup(self, bellows_conf, serialPort, serial_specifics):
     if self.pluginconf.pluginConf.get("EzspAllowUnsecuredRejoins"):
         self.log.logging( "TransportZigpy", "Status", "++ Allow Unsecure Rejoins for Aqara devices ...")
         # “If a device tries to rejoin without a secure link key, still let it in.”
-        config[bellows_conf.CONF_EZSP_POLICIES]["TRUST_CENTER_POLICY"] = 0x0003 # ALLOW_UNSECURED_REJOINS|ALLOW_JOINS
+        config[bellows_conf.CONF_EZSP_POLICIES]["TRUST_CENTER_POLICY"] = 0x0003   # ALLOW_UNSECURED_REJOINS|ALLOW_JOINS
           
     if self.pluginconf.pluginConf.get("BellowsNoMoreEndDeviceChildren"):
         self.log.logging("TransportZigpy", "Status", "++ Set The maximum number of end device children that Coordinater will support to 0")
@@ -1070,26 +1070,29 @@ async def _send_and_retry(
         attempt += 1
         elapsed = time.monotonic() - start_time
 
+        # Check if we have reached the maximum number of attempts
         if elapsed >= REQUEST_TIMEOUT:
-            self.log.logging("TransportZigpy", "Log", f"_send_and_retry: {common_log_info} TIMEOUT of {REQUEST_TIMEOUT}s reached after {attempt - 1} attempts. ")
+            self.log.logging("TransportZigpy", "Log", f"_send_and_retry: {common_log_info} Prio {packet_priority} TIMEOUT of {REQUEST_TIMEOUT}s reached after {attempt - 1} attempts. ")
             self.statistics._ackKO += 1
             handle_transport_result(self, function, cluster, sequence, 0xB6, ack_is_disable, extended_timeout, ieee, nwkid, destination.lqi)
             return 0xB6
 
+        # If we have already attempted, we use extended timeout
         if attempt > 1:
-            extended_timeout = True  # For retry, we always use extended timeout
-
+            extended_timeout = True
+            packet_priority = t.PacketPriority.HIGH  # escalate on retry
+            self.statistics._reTx += 1
+        
         self.log.logging("TransportZigpy", "Log",
                          f"_send_and_retry: {function} {common_log_info} "
-                         f"extended_timeout: {extended_timeout} Attempt: {attempt} Elapsed: {elapsed:.2f}s")
+                         f"extended_timeout: {extended_timeout} Priority: {packet_priority} Attempt: {attempt} Elapsed: {elapsed:.2f}s")
         result = await __try_send(attempt)
 
         # if result is None it means we need to retry
         if result is not None:
-            self.log.logging("TransportZigpy", "Log", "_send_and_retry: {function} - {result}- Attempt: {attempt} Elapsed: {elapsed:.2f}s")
+            self.log.logging("TransportZigpy", "Log", f"_send_and_retry: {function} - {result}- Attempt: {attempt} Elapsed: {elapsed:.2f}s")
             return result
-
-        packet_priority = t.PacketPriority.HIGH  # escalate on retry
+        
         self.log.logging("TransportZigpy", "Log",
                          f"_send_and_retry: {function} {common_log_info} "
                          f"extended_timeout: {extended_timeout} Attempt: {attempt} Elapsed: {elapsed:.2f}s")
