@@ -1087,9 +1087,10 @@ async def _send_and_retry(
                          f"_send_and_retry: {function} {common_log_info} "
                          f"extended_timeout: {extended_timeout} Priority: {packet_priority} Attempt: {attempt} Elapsed: {elapsed:.2f}s")
         result = await __try_send(attempt)
+        ok = result == zigpy.zcl.foundation.Status.SUCCESS
 
-        # if result is None it means we need to retry
-        if result is not None:
+        if ok:
+            # We exit the loop if the result is successful
             self.log.logging("TransportZigpy", "Log", f"_send_and_retry: {function} - {result}- Attempt: {attempt} Elapsed: {elapsed:.2f}s")
             return result
         
