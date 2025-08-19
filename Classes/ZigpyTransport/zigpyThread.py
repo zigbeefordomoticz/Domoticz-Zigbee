@@ -1083,21 +1083,16 @@ async def _send_and_retry(
             packet_priority = t.PacketPriority.HIGH  # escalate on retry
             self.statistics._reTx += 1
         
-        self.log.logging("TransportZigpy", "Log",
+        self.log.logging("TransportZigpy", "Debug",
                          f"_send_and_retry: {function} {common_log_info} "
                          f"extended_timeout: {extended_timeout} Priority: {packet_priority} Attempt: {attempt} Elapsed: {elapsed:.2f}s")
         result = await __try_send(attempt)
-        ok = result == zigpy.zcl.foundation.Status.SUCCESS
 
-        if ok:
+        if result == zigpy.zcl.foundation.Status.SUCCESS:
             # We exit the loop if the result is successful
-            self.log.logging("TransportZigpy", "Log", f"_send_and_retry: {function} - {result}- Attempt: {attempt} Elapsed: {elapsed:.2f}s")
+            self.log.logging("TransportZigpy", "Debug", f"_send_and_retry: {function} - {result}- Attempt: {attempt} Elapsed: {elapsed:.2f}s")
             return result
         
-        self.log.logging("TransportZigpy", "Log",
-                         f"_send_and_retry: {function} {common_log_info} "
-                         f"extended_timeout: {extended_timeout} Attempt: {attempt} Elapsed: {elapsed:.2f}s")
-
         await asyncio.sleep(min(max(0.1 * (2 ** (attempt - 1)), 0.1), 1.0))  # Exponential backoff with a cap at 1 second
 
 
