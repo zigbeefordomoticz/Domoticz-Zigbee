@@ -1076,16 +1076,23 @@ async def _send_and_retry(
             handle_transport_result(self, function, cluster, sequence, 0xB6, ack_is_disable, extended_timeout, ieee, nwkid, destination.lqi)
             return 0xB6
 
-        self.log.logging("TransportZigpy", "Debug",
+        if attempt > 1:
+            extended_timeout = True  # For retry, we always use extended timeout
+
+        self.log.logging("TransportZigpy", "Log",
                          f"_send_and_retry: {function} {common_log_info} "
                          f"extended_timeout: {extended_timeout} Attempt: {attempt} Elapsed: {elapsed:.2f}s")
         result = await __try_send(attempt)
-        
+
         # if result is None it means we need to retry
         if result is not None:
+            self.log.logging("TransportZigpy", "Log", "_send_and_retry: {function} - {result}- Attempt: {attempt} Elapsed: {elapsed:.2f}s")
             return result
 
         packet_priority = t.PacketPriority.HIGH  # escalate on retry
+        self.log.logging("TransportZigpy", "Log",
+                         f"_send_and_retry: {function} {common_log_info} "
+                         f"extended_timeout: {extended_timeout} Attempt: {attempt} Elapsed: {elapsed:.2f}s")
 
         await asyncio.sleep(min(max(0.1 * (2 ** (attempt - 1)), 0.1), 1.0))  # Exponential backoff with a cap at 1 second
 
