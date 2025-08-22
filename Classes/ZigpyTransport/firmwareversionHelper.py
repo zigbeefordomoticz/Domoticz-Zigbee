@@ -16,19 +16,28 @@ from Modules.zigbeeVersionTable import ZNP_MODEL
 
 # Bellows
 def bellows_extract_versioning_for_plugin(self, brd_manuf, brd_name, version):
-    self.log.logging("TransportZigpy", "Debug", "bellows_extract_versioning_for_plugin Manuf: %s Name: %s Version: %s" % (brd_manuf, brd_name, version))
-    
+    #self.log.logging("TransportZigpy", "Debug", "bellows_extract_versioning_for_plugin Manuf: %s Name: %s Version: %s" % (brd_manuf, brd_name, version))
+
     firmware_branch = "98"  # Not found in the Table.
-    
+
     if brd_manuf and brd_manuf.lower() == 'elelabs':
+        # Elelabs, ELR02x or ELU01x
         if 'elu01' in brd_name.lower():
             firmware_branch = "31"
+
         elif 'elr02' in brd_name.lower():
             firmware_branch = "30"
+
+    elif brd_name == 'ZBDongle-E':
+        # Sonoff ZBDongle-E
+        firmware_branch = "32"
 
     # 6.10.3.0 build 297
     firmware_major_version = "%02d" % int(version[:2].replace('.', ''))
     firmware_version = "%04d" % int(version[2:8].replace(' ', '').replace('.', ''))
+
+    #self.log.logging("TransportZigpy", "Debug", "bellows_extract_versioning_for_plugin return %s %s %s" % (
+    #    firmware_branch, firmware_major_version, firmware_version))
 
     return firmware_branch, firmware_major_version, firmware_version
 
