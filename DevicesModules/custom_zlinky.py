@@ -227,9 +227,9 @@ def _normalize_tempo_color(self, color):
         self.log.logging("ZLinky", "Debug", "_normalize_tempo_color - color is None")
         return None
 
-    if "HP" in color:
+    if color is not None and "HP" in color:
         suffix = "HP"
-    elif "HC" in color:
+    elif color is not None and "HC" in color:
         suffix = "HC"
     else:
         return color  # No "HP" or "HC" found, return as is
