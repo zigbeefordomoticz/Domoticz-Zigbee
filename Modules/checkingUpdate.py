@@ -163,7 +163,7 @@ def is_plugin_update_available(self, currentVersion, availVersion):
 
 
 def is_zigate_firmware_available(self, currentMajorVersion, currentFirmwareVersion, availfirmMajor, availfirmMinor):
-    self.log.logging("Plugin", "Log", f"is_zigate_firmware_available {type(currentMajorVersion)}, {type(currentFirmwareVersion)}, {type(availfirmMajor)}, {type(availfirmMinor)}")
+    self.log.logging("Plugin", "Debug", f"is_zigate_firmware_available {type(currentMajorVersion)}, {type(currentFirmwareVersion)}, {type(availfirmMajor)}, {type(availfirmMinor)}")
     if not (availfirmMinor and currentFirmwareVersion):
         return False
     if availfirmMinor > int(currentFirmwareVersion, 16):

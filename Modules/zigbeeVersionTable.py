@@ -11,18 +11,29 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 FIRMWARE_BRANCH = {
+    # Zigate
     "00": "Production",
     "01": "Beta",
     "11": "ZiGate (znp)",
+
+    # Znp
     "20": "CC1352/CC2652, Z-Stack 3.30+ (znp)",
     "21": "CC2531, Z-Stack 3.0.x (znp)",
     "22": "CC2531, Z-Stack Home 1.2 (znp)",
+
+    # Ezsp
+    "30": "Elelabs, ELR02x",
+    "31": "Elelabs, ELU01x",
+    "32": "ZBDongle-E (ezsp)",
+
+    # deCONZ
     "40": "ConBee II",
     "41": "RaspBee II",
     "42": "RaspBee",
     "43": "Conbee III",
-    "30": "Elelabs, ELR02x",
-    "31": "Elelabs, ELU01x",
+
+    # BLZ
+    "50": "Bouffalo Lab Zigbee (BLZ)",
     
     "97": "Unknown deConz",
     "98": "Unknown Silicon Labs",
@@ -63,6 +74,15 @@ def set_display_firmware_version( self ):
     elif 40 <= int(self.ControllerData["Branch Version"]) < 50:
         # deCONZ
         self.pluginParameters["DisplayFirmwareVersion"] = "deCONZ - %s" %self.ControllerData["Minor Version"]
+
+    elif 50 <= int(self.ControllerData["Branch Version"]) < 60:
+        # deCONZ
+        self.pluginParameters["DisplayFirmwareVersion"] = "BLZ - %s" %self.ControllerData["Minor Version"]
+    
+    elif 50 <= int(self.ControllerData["Branch Version"]) < 60:
+        # deCONZ
+        self.pluginParameters["DisplayFirmwareVersion"] = "BLZ - %s" %self.ControllerData["Minor Version"]
+
 
     else:
         self.pluginParameters["DisplayFirmwareVersion"] = "UNK - %s" % self.ControllerData["Minor Version"] 

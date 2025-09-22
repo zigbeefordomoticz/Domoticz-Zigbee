@@ -156,7 +156,7 @@ def update_device_basic_info(self, MsgDataShAddr, MsgDataEp, MsgDataProfile, Msg
     DeviceVersion = int(MsgDataBField, 16) & 0x1111
     device['ZDeviceVersion'] = '%04x' % DeviceVersion
     if not inDB_status:
-        self.log.logging([ "Pairing", "Input"], 'Status', '[%s]    NEW OBJECT: %s Ep: {MsgDataEp} Application Version %s' % (
+        self.log.logging([ "Pairing", "Input"], 'Status', f'[%s]    NEW OBJECT: %s Ep: {MsgDataEp} Application Version %s' % (
             '-', MsgDataShAddr, device['ZDeviceVersion']))
 
 

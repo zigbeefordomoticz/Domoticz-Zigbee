@@ -14,16 +14,13 @@ import asyncio
 import logging
 import time
 
+import zigpy.application
 import zigpy.config as zigpy_conf
-import zigpy.device
-import zigpy.profiles
 import zigpy.types as zigpy_t
-import zigpy.zdo.types as zdo_types
 import zigpy_znp.commands.util
 import zigpy_znp.config as znp_conf
 import zigpy_znp.types as t
 import zigpy_znp.zigbee.application
-from zigpy.zcl import clusters
 
 import Classes.ZigpyTransport.AppGeneric
 from Classes.ZigpyTransport.firmwareversionHelper import \
@@ -70,6 +67,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
         self.shutting_down = False
         self.restarting = False
+        self.current_error = None
 
         await asyncio.sleep( 3 )
         
@@ -107,6 +105,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
     async def shutdown(self, *, db: bool = True) -> None:
         """Shutdown controller."""
+        LOGGER.info("AppZnp shutdown called")
         await Classes.ZigpyTransport.AppGeneric.shutdown(self, db=db)
 
 

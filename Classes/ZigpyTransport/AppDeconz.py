@@ -14,12 +14,9 @@ import asyncio
 import logging
 import time
 
+import zigpy.application
 import zigpy.config as zigpy_conf
-import zigpy.device
 import zigpy.types as t
-import zigpy.zcl
-import zigpy.zdo
-import zigpy.zdo.types as zdo_types
 import zigpy_deconz
 import zigpy_deconz.zigbee.application
 
@@ -65,6 +62,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         
         self.shutting_down = False
         self.restarting = False
+        self.current_error = None
 
         await asyncio.sleep( 3 )
 

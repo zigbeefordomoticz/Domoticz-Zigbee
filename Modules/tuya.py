@@ -179,6 +179,7 @@ def tuya_polling_values(self, nwkid, device_model, tuya_device_info):
     tuya_data_request_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING", return_default=0)
 
     if not tuya_data_query and not tuya_data_request_polling:
+        self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 No polling configured for TUYA_DATA_REQUEST {tuya_data_query} and TUYA_DATA_REQUEST_POLLING {tuya_data_request_polling}")
         return 0, 0, 0, 0, 0
 
     # 3 consecutives polling by default
@@ -247,6 +248,7 @@ def tuya_polling_values(self, nwkid, device_model, tuya_device_info):
 
 def tuya_polling(self, nwkid):
     """Some Tuya devices, requirea specific polling"""
+    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01")
 
     device_model = self.ListOfDevices.get(nwkid, {}).get("Model")
     if device_model is None:

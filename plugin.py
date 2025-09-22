@@ -31,12 +31,33 @@
                 <option label="Texas Instruments ZNP (via zigpy)" value="ZigpyZNP"/>
                 <option label="Silicon Labs EZSP (via zigpy)" value="ZigpyEZSP"/>
                 <option label="Conbee/Rasbee I, II, III (via zigpy)" value="ZigpydeCONZ"/>
+                <option label="Bouffalo Lab Zigbee (via zigpy)" value="ZigpyBLZ"/>
             </options>
         </param>
-        <param field="Mode2" label="Coordinator Type" width="75px" required="true" default="None">
-            <description><br/>Select the Radio Coordinator connection type : USB, DIN, Pi, TCPIP (Zigate Wifi, Ethernet) or Socket (ZNP and ESZP via Ethernet). In case of Socket use the IP to put the remote ip</description>
+        <param field="Mode2" label="Coordinator connection type" width="200px" required="true" default="None">
+            <description>
+                <br/>Select the Radio Coordinator connection type : USB, DIN, Pi, TCPIP (Zigate Wifi, Ethernet) or Socket (ZNP and ESZP via Ethernet).
+
+                <br/>In case of USB, the default settings are Baudrate: 115200 and no flow control.
+                <br/>You can specify the baudrate and the flow control (none, software or hardware) in the format USB,baudrate,flowcontrol (USB,56700,software for example).
+
+                <br/>In case of Socket use the IP to put the remote ip.
+            </description>
             <options>
                 <option label="USB"   value="USB" />
+
+                <option label="USB, 56700"             value="USB,56700" />
+                <option label="USB, 56700, software"   value="USB,56700,software" />
+                <option label="USB, 56700, hardware"   value="USB,56700,hardware" />
+
+                <option label="USB, 115200"             value="USB,115200" />
+                <option label="USB, 115200, software"   value="USB,115200,software" />
+                <option label="USB, 115200, hardware"   value="USB,115200,hardware" />
+
+                <option label="USB, 320400"             value="USB,320400" />
+                <option label="USB, 320400, software"   value="USB,320400,software" />
+                <option label="USB, 320400, hardware"   value="USB,320400,hardware" />
+
                 <option label="DIN"   value="DIN" />
                 <option label="PI"    value="PI" />
                 <option label="TCPIP" value="Wifi"/>
@@ -105,6 +126,7 @@ import json
 import os
 import os.path
 import pathlib
+import re
 import sys
 import threading
 import time
@@ -313,6 +335,9 @@ class BasePlugin:
     def onStart(self):
         #tracemalloc.start()
 
+        if Parameters["Mode6"] != "0":
+            Domoticz.Debugging(int(Parameters["Mode6"]))
+
         Domoticz.Status( "Welcome to Zigbee for Domoticz (Z4D) plugin. (c)pipiche38 - 2018 - 2025")
 
         # Print PYTHONPATH if set
@@ -342,7 +367,7 @@ class BasePlugin:
             self.zigbee_communication = "native"
             self.transport = "None"
 
-        elif Parameters["Mode1"] in ( "ZigpyZiGate", "ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP"):
+        elif Parameters["Mode1"] in ( "ZigpyZiGate", "ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP", "ZigpyBLZ"):
             self.transport = Parameters["Mode1"]
             self.zigbee_communication = "zigpy"
 
@@ -577,7 +602,7 @@ class BasePlugin:
 
         start_zigbee_transport(self )
 
-        if self.transport not in ("ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP", "ZigpyZiGate", "None" ):
+        if self.transport not in ("ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP", "ZigpyZiGate", "ZigpyBLZ", "None" ):
             self.log.logging("Plugin", "Debug", "Establish Zigate connection")
             self.ControllerLink.open_cie_connection()
 
@@ -625,7 +650,8 @@ class BasePlugin:
         # Flush ListOfDevices
         if self.log:
             self.log.logging("Plugin", "Log", "Flushing plugin database onto disk")
-        WriteDeviceList(self, 0)  # write immediatly
+        if self.pluginconf:
+            WriteDeviceList(self, 0)  # write immediatly
 
         # Uninstall Z4D custom UI from Domoticz
         uninstall_Z4D_to_domoticz_custom_ui()
@@ -640,6 +666,7 @@ class BasePlugin:
 
         # Close CIE connection and shutdown transport thread
         if self.pluginconf and self.ControllerLink:
+            self.log.logging("Plugin", "Log", "onStop called shutding down CIE connection and transport thread")
             self.ControllerLink.thread_transport_shutdown()
             self.ControllerLink.close_cie_connection()
 
@@ -661,10 +688,10 @@ class BasePlugin:
             self.log.logging("Plugin", "Log", "Closing Logging Management")
             self.log.closeLogFile()
 
-        # Log running threads that need to be shutdown
-        for thread in threading.enumerate():
-            if thread.name != threading.current_thread().name:
-                Domoticz.Log("'" + thread.name + "' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
+        # Log running threads. We should have only the main thread (MainThread)
+        active_threads = threading.enumerate()
+        thread_info = [(t.name, t.ident, t.is_alive()) for t in active_threads]
+        Domoticz.Log("Remaining active threads: %s" % thread_info)
 
         # Update plugin health status
         self.PluginHealth["Flag"] = 3
@@ -672,6 +699,7 @@ class BasePlugin:
 
         if self.adminWidgets:
             self.adminWidgets.updateStatusWidget(Devices, "No Communication")
+
 
     def onDeviceRemoved(self, Unit):
         # def onDeviceRemoved(self, DeviceID, Unit):
@@ -777,6 +805,7 @@ class BasePlugin:
 
     def zigpy_chk_upd_device(self, ieee, nwkid ):
         chk_and_update_IEEE_NWKID(self, nwkid, ieee)
+
 
     def zigpy_get_device(self, ieee=None, nwkid=None):
         # allow to inter-connect zigpy world and plugin
@@ -1033,7 +1062,10 @@ def start_zigbee_transport(self ):
         _start_zigpy_deConz(self)
                 
     elif self.transport == "ZigpyEZSP":
-        _start_zigpy_EZSP(self) 
+        _start_zigpy_EZSP(self)
+
+    elif self.transport == "ZigpyBLZ":
+        _start_zigpy_BLZ(self)
         
     else:
         self.log.logging("Plugin", "Error", "Unknown Transport comunication protocol : %s" % str(self.transport))
@@ -1090,7 +1122,42 @@ def _start_native_zigate(self, serialPort=None, wifiAddress=None, wifiPort=None)
         kwargs["wifiPort"] = wifiPort
 
     self.ControllerLink = ZigateTransport(**kwargs)   
-        
+
+
+def parse_mode2_serial_com_specifics(mode2):
+    """
+    Parse the Mode2 string to extract Serial Mode, Baudrate, and Flow Control.
+
+    Args:
+        mode2 (str): The Mode2 string to parse.
+
+    Returns:
+        dict: A dictionary containing 'SerialMode', 'Baudrate', and 'FlowControl'.
+    """
+    # Default values
+    result = {
+    }
+    
+    # Split the Mode2 string by commas
+    parts = mode2.split(",")
+
+    # Extract SerialMode (always the first part)
+    if len(parts) > 0:
+        result["SerialMode"] = parts[0]
+
+    # Extract Baudrate (if present, it's the second part)
+    if len(parts) > 1:
+        try:
+            result["Baudrate"] = int(parts[1])  # Convert to integer
+        except ValueError:
+            result["Baudrate"] = None
+
+    # Extract FlowControl (if present, it's the third part)
+    if len(parts) > 2:
+        result["FlowControl"] = parts[2]
+
+    return result
+
 
 def _start_zigpy_ZNP(self):
     import zigpy
@@ -1108,11 +1175,27 @@ def _start_zigpy_ZNP(self):
     if Parameters["Mode2"] == "Socket":
         SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
         self.transport += "Socket"
+        communication_specifics = None
     else:
+        # Serial mode via USB
+        communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
         SerialPort = Parameters["SerialPort"]
 
     self.ControllerLink= ZigpyTransport(
-        self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.restart_plugin, self.log, self.statistics, self.HardwareID, "znp", SerialPort
+        self.ControllerData,
+        self.pluginParameters,
+        self.pluginconf,
+        self.processFrame,
+        self.zigpy_chk_upd_device,
+        self.zigpy_get_device,
+        self.zigpy_backup_available,
+        self.restart_plugin,
+        self.log,
+        self.statistics,
+        self.HardwareID,
+        "znp",
+        SerialPort,
+        communication_specifics
         )
     self.ControllerLink.open_cie_connection()
     self.pluginconf.pluginConf["ControllerInRawMode"] = True
@@ -1133,11 +1216,27 @@ def _start_zigpy_deConz(self):
     if Parameters["Mode2"] == "Socket":
         SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
         self.transport += "Socket"
+        communication_specifics = None
     else:
+        # Serial mode via USB
+        communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
         SerialPort = Parameters["SerialPort"]
 
     self.ControllerLink= ZigpyTransport(
-        self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.restart_plugin, self.log, self.statistics, self.HardwareID, "deCONZ", SerialPort
+        self.ControllerData,
+        self.pluginParameters,
+        self.pluginconf,
+        self.processFrame,
+        self.zigpy_chk_upd_device,
+        self.zigpy_get_device,
+        self.zigpy_backup_available,
+        self.restart_plugin,
+        self.log,
+        self.statistics,
+        self.HardwareID,
+        "deCONZ",
+        SerialPort,
+        communication_specifics
         )
     self.ControllerLink.open_cie_connection()
     self.pluginconf.pluginConf["ControllerInRawMode"] = True
@@ -1159,16 +1258,73 @@ def _start_zigpy_EZSP(self):
     if Parameters["Mode2"] == "Socket":
         SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
         self.transport += "Socket"
+        communication_specifics = None
     else:
+        communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
         SerialPort = Parameters["SerialPort"]
 
     self.ControllerLink= ZigpyTransport(
-        self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.restart_plugin, self.log, self.statistics, self.HardwareID, "ezsp", SerialPort
+        self.ControllerData,
+        self.pluginParameters,
+        self.pluginconf,
+        self.processFrame,
+        self.zigpy_chk_upd_device,
+        self.zigpy_get_device,
+        self.zigpy_backup_available,
+        self.restart_plugin,
+        self.log,
+        self.statistics,
+        self.HardwareID,
+        "ezsp",
+        SerialPort,
+        communication_specifics
         )
+
     self.ControllerLink.open_cie_connection()
     self.pluginconf.pluginConf["ControllerInRawMode"] = True
     
-    
+def _start_zigpy_BLZ(self):
+    import zigpy_blz
+    import zigpy
+    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
+                              SCHEMA_DEVICE)
+
+    from Classes.ZigpyTransport.Transport import ZigpyTransport
+
+    check_python_modules_version( self )
+    self.zigbee_communication = "zigpy"
+    self.pluginParameters["Zigpy"] = True
+    self.log.logging("Plugin", "Status","Z4D starting Bouffalo Lab Zigbee (BLZ) ")
+
+    if Parameters["Mode2"] == "Socket":
+        SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
+        self.transport += "Socket"
+        communication_specifics = None
+    else:
+        communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
+        SerialPort = Parameters["SerialPort"]
+
+    self.ControllerLink= ZigpyTransport(
+        self.ControllerData,
+        self.pluginParameters,
+        self.pluginconf,
+        self.processFrame,
+        self.zigpy_chk_upd_device,
+        self.zigpy_get_device,
+        self.zigpy_backup_available,
+        self.restart_plugin,
+        self.log,
+        self.statistics,
+        self.HardwareID,
+        "blz",
+        SerialPort,
+        communication_specifics
+        )
+
+    self.ControllerLink.open_cie_connection()
+    self.pluginconf.pluginConf["ControllerInRawMode"] = True
+
+
 def zigateInit_Phase1(self):
     """
     Mainly managed Erase PDM if required

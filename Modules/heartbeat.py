@@ -890,27 +890,34 @@ def processListOfDevices(self, Devices):
             entriesToBeRemoved.append(NwkId)
             continue
 
-        if "Param" in self.ListOfDevices[NwkId] and "Disabled" in self.ListOfDevices[NwkId]["Param"]:
-            if self.ListOfDevices[NwkId]["Param"]["Disabled"] and self.ListOfDevices[NwkId]["Health"] == "Disabled":
-                self.ListOfDevices[NwkId]["CheckParam"] = False
+        device = self.ListOfDevices.get(NwkId, {})
+        param = device.get("Param", {})
+        health = device.get("Health", "")
+
+        if "Disabled" in param:
+            if param["Disabled"] and health == "Disabled":
+                device["CheckParam"] = False
                 continue
             
-            if not self.ListOfDevices[NwkId]["Param"]["Disabled"] and self.ListOfDevices[NwkId]["Health"] == "Disabled":
-                # Looks like it was disabled and it is not any more. 
-                # We need to refresh it
-                self.ListOfDevices[NwkId]["Health"] = ""
-                del self.ListOfDevices[NwkId]["Stamp"]
-                self.ListOfDevices[NwkId]["RIA"] = "0"
-                
-        status = self.ListOfDevices[NwkId]["Status"]
-        if self.ListOfDevices[NwkId]["RIA"] not in ( "", {}):
-            RIA = int(self.ListOfDevices[NwkId]["RIA"])
+            if not param["Disabled"] and health == "Disabled":
+                # Device was previously disabled and is now re-enabled; refresh it
+                device["Health"] = ""
+                device.pop("Stamp", None)
+                device["RIA"] = "0"
+
+        ria = device.get("RIA", "")
+        if ria not in ( "", {}):
+            RIA = int(ria)
         else:
             RIA = 0
-            self.ListOfDevices[NwkId]["RIA"] = "0"
+            ria = "0"
 
-        self.ListOfDevices[NwkId]["Heartbeat"] = str(int(self.ListOfDevices[NwkId]["Heartbeat"]) + 1)
+        try:
+            device["Heartbeat"] = str(int(device.get("Heartbeat", "0")) + 1)
+        except ValueError:
+            device["Heartbeat"] = "1"
 
+        status = device.get("Status", {})
         if status == "failDB":
             entriesToBeRemoved.append(NwkId)
             continue
@@ -918,9 +925,24 @@ def processListOfDevices(self, Devices):
         # Known Devices
         if status == "inDB":
             hr_process_device(self, Devices, NwkId)
-            
+
             # Check and reset if needed Motion, Vibrator and Switch Selector
             check_and_reset_device_if_needed(self, Devices, NwkId)
+
+            # Timed out devices in Domoticz is needed
+            timeout_hours = self.pluginconf.pluginConf.get("ForceDeviceTimedOut_afterXhours", 0)
+            if timeout_hours:
+                stamp = device.get("Stamp", {})
+                last_seen = stamp.get("LastSeen", 0)
+
+                if last_seen > 0 and (time.time() - last_seen) > (timeout_hours * 3600):
+                    timedOutDevice(self, Devices, NwkId=NwkId)
+                    self.log.logging(
+                        "Heartbeat",
+                        "Debug",
+                        f"processListOfDevices - Device {NwkId} is timed out after {timeout_hours} hours",
+                        NwkId
+                    )
 
         elif status == "Leave":
             timedOutDevice(self, Devices, NwkId=NwkId)

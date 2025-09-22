@@ -10,55 +10,113 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
+"""
+Module to restart the Zigbee plugin in Domoticz using its JSON API.
 
+This script is designed to interact with the Domoticz home automation system
+via HTTP requests executed through the `curl` command-line tool. It automates
+the process of restarting a specific plugin (Zigate), optionally erasing the
+Persistent Data Memory (PDM), and toggling the plugin's enabled state.
+
+It uses system-specific `curl` binaries depending on the OS (Windows or Linux),
+and constructs appropriate Domoticz API URLs to update hardware parameters.
+
+Functions:
+    restartPluginViaDomoticzJsonApi(self, stop=False, erasePDM=False, url_base_api=DOMOTICZ_URL, auth=None):
+        Restarts the Zigbee plugin in Domoticz with various configurable options.
+"""
+
+import json
 import os
-import urllib.parse
+import subprocess  # nosec, B404
+from urllib.parse import urlencode
 
-from Modules.domoticzAbstractLayer import domoticz_log_api, domoticz_status_api
+from Modules.domoticzAbstractLayer import domoticz_error_api, domoticz_log_api
 
 LINUX_CURL_COMMAND = "/usr/bin/curl"
 WINDOWS_CURL_COMMAND = r"c:\Windows\System32\curl.exe"
+DOMOTICZ_URL = "http://127.0.0.1:8080"
+ZIGBEE_PLUGIN_KEY = "Zigate"
 
-def restartPluginViaDomoticzJsonApi(self, stop=False, erasePDM=False, url_base_api="http://127.0.0.1:8080"):
-    # sourcery skip: replace-interpolation-with-fstring
 
+def restartPluginViaDomoticzJsonApi(self, stop=False, erasePDM=False, url_base_api=DOMOTICZ_URL, auth=None):
+    """
+    Restarts the Zigbee plugin in Domoticz by sending an `updatehardware` command through the JSON API.
+
+    This function:
+        - Detects the correct `curl` binary based on the OS.
+        - Queries Domoticz for a list of hardware configurations.
+        - Locates the Zigbee plugin based on the `Extra` key.
+        - Constructs and executes a `curl` command to update hardware parameters.
+        - Can stop the plugin or trigger an erase of the persistent data memory (PDM).
+
+    Args:
+        self: Reference to the plugin instance containing configuration in `self.pluginParameters`.
+        stop (bool): If True, the plugin will be disabled (default: False).
+        erasePDM (bool): If True, triggers an erase of the PDM during restart (default: False).
+        url_base_api (str): Base URL for Domoticz API (default: "http://127.0.0.1:8080").
+        auth (tuple or None): Optional basic auth credentials as (username, password).
+
+    Returns:
+        bool: True if the plugin restart command was successfully issued, False otherwise.
+    """
+    
     curl_command = WINDOWS_CURL_COMMAND if os.name == 'nt' else LINUX_CURL_COMMAND
     if not os.path.isfile(curl_command):
-        domoticz_log_api("Unable to restart the plugin, %s not available" % curl_command)
-        return
+        domoticz_error_api(f"Unable to restart the plugin, {curl_command} not available.")
+        return False
 
-    erasePDM = "True" if erasePDM else "False"
-    enabled = "false" if stop else "true"
+    auth_opts = ["-u", f"{auth[0]}:{auth[1]}"] if auth else []
 
-    url = url_base_api + "/json.htm?"
+    # Get hardware list
+    get_url = f"{url_base_api}/json.htm?type=command&param=gethardware"
+    result = subprocess.check_output([curl_command, "-s"] + auth_opts + [get_url])  # nosec, B603
+    hw_list = json.loads(result)
 
-    url_infos = {
-        "type": "command",
-        "param": "updatehardware",
-        "htype": "94",   # Python Plugin Framework
-        "idx": self.pluginParameters["HardwareID"],
-        "name": self.pluginParameters["Name"],
-        "address": self.pluginParameters["Address"],
-        "port": self.pluginParameters["Port"],
-        "serialport": self.pluginParameters["SerialPort"],
-        "Mode1": self.pluginParameters["Mode1"],
-        "Mode2": self.pluginParameters["Mode2"],
-        "Mode3": erasePDM,
-        "Mode4": self.pluginParameters["Mode4"],
-        "Mode5": self.pluginParameters["Mode5"],
-        "Mode6": self.pluginParameters["Mode6"],
-        "extra": self.pluginParameters["Key"],
-        "enabled": enabled,
-        "datatimeout": "0",
-    }
+    plugin = next((h for h in hw_list["result"] if h["Extra"] == ZIGBEE_PLUGIN_KEY), None)
+    if not plugin:
+        domoticz_error_api(f"Plugin '{ZIGBEE_PLUGIN_KEY}' not found. in {hw_list}")
+        return False
 
-    if "LogLevel" in self.pluginParameters:
-        url_infos["loglevel"] = self.pluginParameters["LogLevel"]
+    def build_update_cmd(plugin, erasePDM, stop):
+        base_url = f"{url_base_api}/json.htm?type=command&param=updatehardware"
 
-    domoticz_log_api("URL INFOS %s" %url_infos)
-    url += urllib.parse.urlencode(url_infos, quote_via=urllib.parse.quote )
+        params = {
+            "idx": self.pluginParameters["HardwareID"],
+            "htype": "94",
+            "name": self.pluginParameters["Name"],
+            "extra": self.pluginParameters["Key"],
+            "loglevel": plugin.get("LogLevel", 0),
+            "datatimeout": "0",
+            "Mode1": self.pluginParameters["Mode1"],
+            "Mode2": self.pluginParameters["Mode2"],
+            "Mode3": "True" if erasePDM else "False",
+            "Mode4": self.pluginParameters["Mode4"],
+            "Mode5": self.pluginParameters["Mode5"],
+            "Mode6": self.pluginParameters["Mode6"],
+            "enabled": "false" if stop else "true"
+        }
 
-    domoticz_status_api("Plugin Restart command : %s" % url)
+        optional_fields_map = {
+            "Address": "address",
+            "Port": "port",
+            "SerialPort": "serialport",
+            "Username": "username",
+            "Password": "password",
+        }
 
-    _cmd = curl_command + " '%s' &" % url
-    os.system(_cmd)  # nosec
+        for domoticz_key, api_key in optional_fields_map.items():
+            params[api_key] = self.pluginParameters.get(domoticz_key, "")
+
+        # Properly encode all query parameters
+        full_url = base_url + "&" + urlencode(params)
+
+        # domoticz_log_api(f"Constructed update URL: {full_url}")
+        return [curl_command, ] + auth_opts + [full_url]
+
+    domoticz_log_api(f"Restarting plugin '{ZIGBEE_PLUGIN_KEY}'... {build_update_cmd(plugin, erasePDM, stop)}")
+   
+    subprocess.Popen(build_update_cmd(plugin, erasePDM, stop), start_new_session=True, shell=False, text=True)  # nosec, B603
+
+    domoticz_log_api("Plugin restart complete.")
+    return True

@@ -10,7 +10,6 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
-import serial
 import asyncio
 import binascii
 import contextlib
@@ -20,11 +19,8 @@ import os.path
 import time
 from pathlib import Path
 
-from zigpy.application import ControllerApplication
-import zigpy.application
-import zigpy.backups
+import serial
 import zigpy.config as zigpy_conf
-import zigpy.const as const
 import zigpy.device
 import zigpy.exceptions
 import zigpy.types as zigpy_t
@@ -46,7 +42,11 @@ GRACE_PERIOD_AFTER_START = 60  # 60 seconds of period after plugin start to allo
 
 async def _load_db(self) -> None:
     """Restore save state."""
-    await super(type(self),self)._load_db()
+    try:
+        await super(type(self),self)._load_db()
+    except Exception as e:
+        self.log.logging("TransportZigpy", "Error", f"Failed to load database: {e}")
+        raise
 
 
 async def initialize(self, *, auto_form: bool = False, force_form: bool = False):
@@ -61,6 +61,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         await self.watchdog_feed()
         self._watchdog_task = asyncio.create_task(self._watchdog_loop(), name="watchdog_loop")
         await asyncio.sleep(1)
+        self.log.logging("TransportZigpy", "Log", "AppGeneric:initialize - Watchdog loop started watchdog_task: {}".format(self._watchdog_task))
 
     # Retreive Last Backup
     _retreived_backup = _retreive_previous_backup(self)
@@ -141,22 +142,43 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
 
 async def shutdown(self, *, db: bool = True) -> None:
     """Shutdown controller."""
-    LOGGER.info("Zigpy shutdown")
-    self.shutting_down = True
+    if self.shutting_down:
+        LOGGER.warning("Ignoring duplicate shutdown event")
+        return
 
-    LOGGER.info("Backup")
-    await _create_backup(self)
+    LOGGER.info("AppGeneric shutdown")
 
-    LOGGER.info("zigpy application shutdown")
-    # await ControllerApplication.shutdown(self, db=db)
-    await super(type(self),self).shutdown( db=db)
+    if self.current_error == "connection lost":
+        LOGGER.warning("AppGeneric shutdown called while connection lost, not backup-ing the coordinator state")
+
+    elif self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED] and self.backups is not None:
+        try:
+            backup_coordinator = await self.backups.create_backup(load_devices=True)
+            if backup_coordinator is None:
+                LOGGER.warning("AppGeneric backup not created, no coordinator state to backup")
+            else:
+                await _create_backup(self, backup_coordinator)
+                LOGGER.info("Backup completed")
+        except Exception as e:
+            LOGGER.error("AppGeneric backup failed", exc_info=e)
+
+    LOGGER.info("AppGeneric application shutdown")
+    self.shutting_down = True 
+
+    try:
+        # await ControllerApplication.shutdown(self, db=db)
+        await super(type(self),self).shutdown( db=db)
+    except Exception as e:
+        LOGGER.error("AppGeneric shutdown failed", exc_info=e)
+    
+    await asyncio.sleep(3)
 
 
-async def _create_backup(self) -> None:
+async def _create_backup(self, backup) -> None:
     """ Create a coordinator backup"""
     try:
-        if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
-            self.callBackBackup(await self.backups.create_backup(load_devices=True))
+        self.callBackBackup(backup)
+
     except Exception:
         LOGGER.warning("Failed to create backup", exc_info=False)
 
@@ -164,8 +186,10 @@ async def _create_backup(self) -> None:
 def connection_lost(self, exc: Exception) -> None:
     """Handle connection lost event."""
 
-    from bellows.ash import NcpFailure  # pylint: disable=import-outside-toplevel
-    from bellows.types.named import NcpResetCode  # pylint: disable=import-outside-toplevel
+    from bellows.ash import \
+        NcpFailure  # pylint: disable=import-outside-toplevel
+    from bellows.types.named import \
+        NcpResetCode  # pylint: disable=import-outside-toplevel
 
     LOGGER.warning("+ Connection to the radio was lost: %s %r", type(exc), exc)
 
@@ -190,6 +214,7 @@ def connection_lost(self, exc: Exception) -> None:
 
 def connection_lost_error(self, message: str) -> None:
     self.restarting = True
+    self.current_error = "connection lost"
     LOGGER.error(message)
     self.callBackRestartPlugin()
 
@@ -407,16 +432,16 @@ def get_zigpy_version(self):
 
 
 def get_device_with_address( self, address: zigpy_t.AddrModeAddress ) -> zigpy.device.Device:
-        """Gets a `Device` object using the provided address mode address."""
+    """Gets a `Device` object using the provided address mode address."""
 
-        if address.addr_mode == zigpy_t.AddrMode.NWK:
-            return self.get_device(nwk=address.address)
+    if address.addr_mode == zigpy_t.AddrMode.NWK:
+        return self.get_device(nwk=address.address)
 
-        elif address.addr_mode == zigpy_t.AddrMode.IEEE:
-            return self.get_device(ieee=address.address)
+    elif address.addr_mode == zigpy_t.AddrMode.IEEE:
+        return self.get_device(ieee=address.address)
 
-        else:
-            raise ValueError(f"Invalid address: {address!r}")
+    else:
+        raise ValueError(f"Invalid address: {address!r}")
 
 
 async def register_specific_endpoints(self):

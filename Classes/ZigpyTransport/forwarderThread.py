@@ -38,6 +38,7 @@ def forwarder_thread(self):
             self.log.logging("TransportFrwder", "Debug", "Waiting for next message")
             message = self.forwarder_queue.get()
             if message == "STOP":
+                self.log.logging("TransportFrwder", "Log", "Forwarder thread stop in progress...")
                 break
             if message is None:
                 continue
@@ -54,7 +55,7 @@ def forwarder_thread(self):
 
             handle_thread_error(self, e, message)
 
-    self.log.logging("TransportFrwder", "Debug", "ZigpyTransport: thread_processing_and_sending Thread stop.")
+    self.log.logging("TransportFrwder", "Status", "++ Forwarder thread stopped. [1/3]")
 
 
 @time_spent_forwarder()

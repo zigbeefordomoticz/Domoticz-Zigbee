@@ -68,9 +68,9 @@ def send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpo
         # No check for zigate
         return False
 
-    self.log.logging("zclDecoder", "Debug",f"zcl_decoders default response disabled ? {disable_default_response} for command {command}")
+    self.log.logging("zclDecoder", "Debug",f"zcl_decoders default response disabled ? {disable_default_response} for command {command}", src_nwk_id)
     if not disable_default_response:
-        self.log.logging("zclDecoder", "Debug",f"zcl_decoders sending a default response {disable_default_response} for command {command}")
+        self.log.logging("zclDecoder", "Debug",f"zcl_decoders sending a default response {disable_default_response} for command {command}", src_nwk_id)
         zcl_raw_default_response(self, src_nwk_id, ZIGATE_EP, src_endpoint, cluster_id, command, sqn, command_status="00", manufcode=manufcode, orig_fcf=fcf)
 
 
@@ -95,13 +95,13 @@ def zcl_decoders(self, src_nwk_id, src_endpoint, target_ep, cluster_id, payload,
 
     # Check for duplicate ZCL frames
     if is_duplicate_zcl_frame(self, src_nwk_id, cluster_id, sqn, disable_default_response):
-        self.log.logging("zclDecoder", "Log", f"Duplicate frame found [{sqn}] {payload}")
+        self.log.logging("zclDecoder", "Log", f"Duplicate frame found [{sqn}] {payload}", src_nwk_id)
         return None
 
     # Log ZCL message details
     self.log.logging("zclDecoder", "Debug",
                      f"Zcl.ddr: {disable_default_response} GlobalCommand: {global_command} "
-                     f"Sqn: {sqn} ManufCode: {manufacturer_code} Command: {command} Data: {data} Payload: {payload}")
+                     f"Sqn: {sqn} ManufCode: {manufacturer_code} Command: {command} Data: {data} Payload: {payload}", src_nwk_id)
 
     if global_command:
         return buildframe_foundation_cluster(self, fcf, disable_default_response, command, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, manufacturer_code, data)
@@ -165,7 +165,7 @@ def zcl_decoders(self, src_nwk_id, src_endpoint, target_ep, cluster_id, payload,
     # Log unknown commands
     self.log.logging("zclDecoder", "Log",
                      f"Unknown Command: {command} NwkId: {src_nwk_id} Ep: {src_endpoint} Cluster: {cluster_id} "
-                     f"Payload: {data} - GlobalCommand: {global_command}, Sqn: {sqn}, ManufacturerCode: {manufacturer_code}")
+                     f"Payload: {data} - GlobalCommand: {global_command}, Sqn: {sqn}, ManufacturerCode: {manufacturer_code}", src_nwk_id)
 
     return frame
 
@@ -188,7 +188,7 @@ def buildframe_foundation_cluster(self, fcf, disable_default_response, command, 
         Processed frame data or None if not handled.
     """
 
-    self.log.logging("zclDecoder", "Debug", "zcl_decoders Sqn: %s/%s ManufCode: %s Command: %s Data: %s " % (int(sqn, 16), sqn, manufacturer_code, command, data))
+    self.log.logging("zclDecoder", "Debug", "zcl_decoders Sqn: %s/%s ManufCode: %s Command: %s Data: %s " % (int(sqn, 16), sqn, manufacturer_code, command, data), src_nwk_id)
     if command == "00":  # Read Attribute
         return foundation_cluster_read_attribute_request(self, frame, sqn, src_nwk_id, src_endpoint, TargetEp, cluster_id, manufacturer_code, data)
 
@@ -247,9 +247,9 @@ def foundation_cluster_discover_attribute_response(self, frame, Sqn, SrcNwkId, S
 
 
 def foundation_cluster_read_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
-    self.log.logging("zclDecoder", "Debug", "buildframe_read_attribute_request - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
+    self.log.logging("zclDecoder", "Debug", "buildframe_read_attribute_request - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data), SrcNwkId)
     if len(Data) % 4 != 0:
-        self.log.logging("zclDecoder", "Debug", "Most Likely Livolo Frame : %s (%s)" % (Data, len(Data)))
+        self.log.logging("zclDecoder", "Debug", "Most Likely Livolo Frame : %s (%s)" % (Data, len(Data)), SrcNwkId)
         return frame
 
     ManufSpec = "00"
@@ -272,7 +272,7 @@ def foundation_cluster_read_attribute_request(self, frame, Sqn, SrcNwkId, SrcEnd
 
 
 def foundation_cluster_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
-    self.log.logging("zclDecoder", "Debug", "buildframe_write_attribute_request - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
+    self.log.logging("zclDecoder", "Debug", "buildframe_write_attribute_request - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data), SrcNwkId)
 
     ManufSpec = "00"
     ManufCode = "0000"
@@ -305,7 +305,7 @@ def foundation_cluster_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEn
 
 
 def foundation_cluster_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
-    self.log.logging("zclDecoder", "Debug", "buildframe_write_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
+    self.log.logging("zclDecoder", "Debug", "buildframe_write_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data), SrcNwkId)
 
     # This is based on assumption that we only Write 1 attribute at a time
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId + "0000" + Data
@@ -313,7 +313,7 @@ def foundation_cluster_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcE
 
 
 def foundation_cluster_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
-    self.log.logging("zclDecoder", "Debug", "buildframe_read_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
+    self.log.logging("zclDecoder", "Debug", "buildframe_read_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data), SrcNwkId)
 
     nbAttribute = 0
     idx = 0
@@ -345,7 +345,7 @@ def foundation_cluster_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEn
 
 
 def foundation_cluster_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
-    self.log.logging("zclDecoder", "Debug", "buildframe_report_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
+    self.log.logging("zclDecoder", "Debug", "buildframe_report_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data), SrcNwkId)
 
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
     nbAttribute = 0
@@ -370,7 +370,7 @@ def foundation_cluster_report_attribute_response(self, frame, Sqn, SrcNwkId, Src
 
 
 def foundation_cluster_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
-    self.log.logging("zclDecoder", "Debug", "buildframe_configure_reporting_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
+    self.log.logging("zclDecoder", "Debug", "buildframe_configure_reporting_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data), SrcNwkId)
 
     if len(Data) == 2:
         # The response tells that all Attributes have been correctly configured
@@ -397,7 +397,7 @@ def foundation_cluster_configure_reporting_response(self, frame, Sqn, SrcNwkId, 
 
 def foundation_cluster_read_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_read_configure_reporting_response - %s %s %s Data: %s" % (
-        SrcNwkId, SrcEndPoint, ClusterId, Data))
+        SrcNwkId, SrcEndPoint, ClusterId, Data), SrcNwkId)
   
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId  
     
@@ -440,7 +440,7 @@ def foundation_cluster_read_configure_reporting_response(self, frame, Sqn, SrcNw
                 idx += 1
                                       
             self.log.logging("zclDecoder", "Debug", "buildframe_read_configure_reporting_response - NwkId: %s Ep: %s Cluster: %s Attribute: %s Status: %s DataType: %s Min: %s Max: %s Change: %s" % (
-                SrcNwkId, SrcEndPoint, ClusterId, attribute, status, DataType, MinInterval, MaxInterval, Change))
+                SrcNwkId, SrcEndPoint, ClusterId, attribute, status, DataType, MinInterval, MaxInterval, Change), SrcNwkId)
 
     return encapsulate_plugin_frame("8122", buildPayload, frame[len(frame) - 4 : len(frame) - 2])    
     
@@ -450,15 +450,15 @@ def foundation_cluster_read_configure_reporting_response(self, frame, Sqn, SrcNw
 
 def buildframe_for_cluster_0003(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data ):
     if Command == "00":  # Identify
-        self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_0003 - Identify command Time: %s" % Data[:4])
+        self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_0003 - Identify command Time: %s" % Data[:4], SrcNwkId)
         return None
 
     if Command == "01":  # Identify Query
-        self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_0003 - Identify Query ")
+        self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_0003 - Identify Query ", SrcNwkId)
         return None
 
     if Command == "40":  # Trigger effect
-        self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_0003 - Trigger Effect: %s   %s" % ( Data[:2], Data[2:4]))
+        self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_0003 - Trigger Effect: %s   %s" % ( Data[:2], Data[2:4]), SrcNwkId)
         return None
 
 
@@ -485,7 +485,7 @@ def buildframe_8060_add_group_member_ship_response(self, frame, Sqn, SrcNwkId, S
     #MsgStatus = MsgData[8:10]
     #MsgGroupID = MsgData[10:14]
     #MsgSrcAddr = MsgData[14:18]
-    self.log.logging("zclDecoder", "Debug", "buildframe_8060_add_group_member_ship_response - Data: %s" % Data)
+    self.log.logging("zclDecoder", "Debug", "buildframe_8060_add_group_member_ship_response - Data: %s" % Data, SrcNwkId)
         
     buildPayload = Sqn + SrcEndPoint + "0004" + Data[:2] + decode_endian_data(Data[2:6], "21") + SrcNwkId
     return encapsulate_plugin_frame("8060", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
@@ -498,10 +498,10 @@ def buildframe_8061_check_group_member_ship_response(self, frame, Sqn, SrcNwkId,
     #MsgStatus = MsgData[8:10]
     #MsgGroupID = MsgData[10:14]
     #MsgSrcAddr = MsgData[14:18]
-    self.log.logging("zclDecoder", "Debug", "buildframe_8061_check_group_member_ship_response - Data: %s" % Data)
+    self.log.logging("zclDecoder", "Debug", "buildframe_8061_check_group_member_ship_response - Data: %s" % Data, SrcNwkId)
     status = Data[:2]
     groupid = decode_endian_data(Data[2:6], "21")
-    self.log.logging("zclDecoder", "Debug", "buildframe_8061_    GroupId: %s Status: %s" %( groupid, status))
+    self.log.logging("zclDecoder", "Debug", "buildframe_8061_    GroupId: %s Status: %s" %( groupid, status), SrcNwkId)
     
 
     buildPayload = Sqn + SrcEndPoint + "0004" + status + groupid + SrcNwkId
@@ -516,10 +516,10 @@ def buildframe8062_look_for_group_member_ship_response(self, frame, Sqn, SrcNwkI
     #MsgGroupCount = MsgData[10:12]
     #MsgListOfGroup = MsgData[12 : lenMsgData - 4]
     #MsgSrcAddr = MsgData[lenMsgData - 4 : lenMsgData]
-    self.log.logging("zclDecoder", "Debug", "buildframe8062_look_for_group_member_ship_response - Data: %s" % Data)
+    self.log.logging("zclDecoder", "Debug", "buildframe8062_look_for_group_member_ship_response - Data: %s" % Data, SrcNwkId)
 
     if len(Data) < 4:
-        self.log.logging("zclDecoder", "Debug", "buildframe8062_look_for_group_member_ship_response - Uncomplete Data: %s" % Data)
+        self.log.logging("zclDecoder", "Debug", "buildframe8062_look_for_group_member_ship_response - Uncomplete Data: %s" % Data, SrcNwkId)
         self.log.logging("zclDecoder", "Debug", "   Sqn %s, SrcNwkId %s, SrcEndPoint %s, TargetEp %s, ClusterId %s frame %s" %(
             Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, frame))
         return frame
@@ -527,11 +527,11 @@ def buildframe8062_look_for_group_member_ship_response(self, frame, Sqn, SrcNwkI
     capacity = Data[:2]
     group_count = Data[2:4]
     
-    self.log.logging("zclDecoder", "Debug", "buildframe8062_ Group Count: %s" %group_count)
+    self.log.logging("zclDecoder", "Debug", "buildframe8062_ Group Count: %s" %group_count, SrcNwkId)
     group_list = ""
     idx = 0
     while idx < int(group_count,16) * 4:
-        self.log.logging("zclDecoder", "Debug", "buildframe8062_ GroupId: %s" %decode_endian_data( Data[ 4 + idx : (4 + idx) + 4 ], "21"))
+        self.log.logging("zclDecoder", "Debug", "buildframe8062_ GroupId: %s" %decode_endian_data( Data[ 4 + idx : (4 + idx) + 4 ], "21"), SrcNwkId)
         group_list += decode_endian_data( Data[ 4 + idx : (4 + idx) + 4 ], "21")
         idx += 4
         
@@ -546,7 +546,7 @@ def buildframe8063_remove_group_member_ship_response(self, frame, Sqn, SrcNwkId,
     # MsgStatus = MsgData[8:10]
     # MsgGroupID = MsgData[10:14]
     # MsgSrcAddr = MsgData[14:18]
-    self.log.logging("zclDecoder", "Debug", "buildframe8063_remove_group_member_ship_response - Data: %s" % Data)
+    self.log.logging("zclDecoder", "Debug", "buildframe8063_remove_group_member_ship_response - Data: %s" % Data, SrcNwkId)
 # SrcNwkId is not passed ----> Causes a false Error in GrpResponses.py function remove_group_member_ship_response
 #    buildPayload = Sqn + SrcEndPoint + "0004" + Data[:2] + decode_endian_data( Data[ 2:6 ], "21")
     buildPayload = Sqn + SrcEndPoint + "0004" + Data[:2] + decode_endian_data( Data[ 2:6 ], "21") + SrcNwkId
@@ -575,7 +575,7 @@ def buildframe_80x5_message(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Ta
     # sourcery skip: assign-if-exp
     # handle_message Sender: 0x0EC8 frame for plugin: 0180020011ff00010400060101020ec8020000112401b103
 
-    self.log.logging("zclDecoder", "Debug", "======> Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" % (MsgType, ClusterId, Command, Data, frame))
+    self.log.logging("zclDecoder", "Debug", "======> Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" % (MsgType, ClusterId, Command, Data, frame), SrcNwkId)
 
     # It looks like the ZiGate firmware was adding _unknown (which is not part of the norm)
     unknown_ = "02"   # Seems coming from ZiGate firmware !!!
@@ -605,14 +605,14 @@ def buildframe_for_cluster_0019(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint
     
     if Command == "04":
         # Image Page request
-        self.log.logging("zclDecoder", "Log", "Image Page request from '%s' for which no tests have been done so far. Please contact us" %SrcNwkId)
+        self.log.logging("zclDecoder", "Log", "Image Page request from '%s' for which no tests have been done so far. Please contact us" %SrcNwkId, SrcNwkId)
         return buildframe_for_cluster_8502(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
         
     if Command == "06":
         return buildframe_for_cluster_8503(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
         
     elif Command in OTA_UPGRADE_COMMAND:
-        self.log.logging("zclDecoder", "Debug", "zcl_decoders OTA Upgrade Command %s/%s data: %s" % (Command, OTA_UPGRADE_COMMAND[Command], Data))
+        self.log.logging("zclDecoder", "Debug", "zcl_decoders OTA Upgrade Command %s/%s data: %s" % (Command, OTA_UPGRADE_COMMAND[Command], Data), SrcNwkId)
         return frame
     return frame
 
@@ -620,7 +620,7 @@ def buildframe_for_cluster_0019(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint
 def buildframe_for_cluster_8501(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
 
     self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8501 Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" % (
-        '8501', ClusterId, Command, Data, frame))
+        '8501', ClusterId, Command, Data, frame), SrcNwkId)
 
     FieldControl = decode_endian_data(Data[:2], "20")
     ManufCode = decode_endian_data(Data[2:6], "21")
@@ -634,18 +634,18 @@ def buildframe_for_cluster_8501(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint
         MinBlockPeriod = '0000'
 
     self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8501 %s %s %s %s %s %s %s " % ( 
-        FieldControl, ManufCode, ImageType, ImageVersion, ImageOffset, MaxDataSize, MinBlockPeriod))  
+        FieldControl, ManufCode, ImageType, ImageVersion, ImageOffset, MaxDataSize, MinBlockPeriod), SrcNwkId)  
 
     IEEE = "0000000000000000"
     buildPayload = Sqn + SrcEndPoint + ClusterId + "02" + SrcNwkId + IEEE 
     buildPayload += ImageOffset + ImageVersion + ImageType + ManufCode + MinBlockPeriod + MaxDataSize + FieldControl
-    self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8501 payload: %s" %buildPayload)
+    self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8501 payload: %s" %buildPayload, SrcNwkId)
     return encapsulate_plugin_frame("8501", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
 def buildframe_for_cluster_8502(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8503 Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" % (
-        '8502', ClusterId, Command, Data, frame))
+        '8502', ClusterId, Command, Data, frame), SrcNwkId)
 
     FieldControl = decode_endian_data(Data[:2], "20")
     ManufCode = decode_endian_data(Data[2:6], "21")
@@ -663,14 +663,14 @@ def buildframe_for_cluster_8502(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint
     buildPayload = Sqn + SrcEndPoint + ClusterId + "02" + SrcNwkId
     buildPayload += ImageOffset + ImageVersion + ImageType + ManufCode + MaxDataSize + Pagesize + ResponseSpacing + FieldControl + RequestNodeAddress
     
-    self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8502 payload: %s" %buildPayload)
+    self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8502 payload: %s" %buildPayload, SrcNwkId)
     return encapsulate_plugin_frame("8502", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
     
     
 def buildframe_for_cluster_8503(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
 
     self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8503 Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" % (
-        '8503', ClusterId, Command, Data, frame))
+        '8503', ClusterId, Command, Data, frame), SrcNwkId)
 
     status = decode_endian_data(Data[:2], "20")
     ManufCode = decode_endian_data(Data[2:6], "21")
@@ -678,7 +678,7 @@ def buildframe_for_cluster_8503(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint
     ImageVersion = decode_endian_data(Data[10:18], "23")
 
     self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8503 %s %s %s %s" % ( 
-        status, ManufCode, ImageType, ImageVersion ))  
+        status, ManufCode, ImageType, ImageVersion ), SrcNwkId)  
 
     buildPayload = Sqn + SrcEndPoint + ClusterId + "02" + SrcNwkId + ImageVersion + ImageType + ManufCode + status
     return encapsulate_plugin_frame("8503", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
@@ -704,7 +704,7 @@ def buildframe_for_cluster_0020(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint
 
 
 def buildframe_0400_cmd(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data):
-    self.log.logging("zclDecoder", "Debug", "buildframe_0400_cmd - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
+    self.log.logging("zclDecoder", "Debug", "buildframe_0400_cmd - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data), SrcNwkId)
 
     # Zone Enroll Response
     enroll_response_code = Data[:2]
@@ -715,7 +715,7 @@ def buildframe_0400_cmd(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Target
 
 def buildframe_8400_cmd(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data):
     # IAS Zone Enroll request
-    self.log.logging("zclDecoder", "Debug", "buildframe_8400_cmd - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
+    self.log.logging("zclDecoder", "Debug", "buildframe_8400_cmd - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data), SrcNwkId)
     zonetype = decode_endian_data( Data[:4], '31')
     ManufacturerCode = decode_endian_data( Data[4:8], '21' )
     buildPayload = Sqn + zonetype + ManufacturerCode + SrcNwkId + SrcEndPoint
@@ -723,7 +723,7 @@ def buildframe_8400_cmd(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Target
 
 
 def buildframe_8401_cmd(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data):
-    self.log.logging("zclDecoder", "Debug", "buildframe_8401_cmd - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
+    self.log.logging("zclDecoder", "Debug", "buildframe_8401_cmd - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data), SrcNwkId)
     # Zone status change
 
     zone_status = decode_endian_data(Data[:4], "19")

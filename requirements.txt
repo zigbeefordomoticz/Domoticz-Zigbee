@@ -6,6 +6,7 @@ z4d-certified-devices
 distro
 pyserial-asyncio-fast
 zigpy_znp
+git+https://github.com/bouffalolab/zigpy-blz/
 zigpy_deconz
 bellows
 requests
