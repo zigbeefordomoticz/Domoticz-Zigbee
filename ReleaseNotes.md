@@ -18,6 +18,15 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
+## Sept. 2025 - Stable7.1.023 ( 2025.6 )
+
+- [Hardware] - Enhancement of ZLinky support (more color mode)
+- [Hardware] - Reporting Board name and Manuf Name for the recent Sonoff USB Silicon Labs dongles
+
+- [Technical] - Upgrade to more recent zigpy libs.
+- [Technical] - Support seting of Baudrates and Flow control (via the Domoticz HW menu)
+- [Technical] - Support of Bouffalo Lab Zigbee (BLZ) radios via zigpy layer
+
 ## May 2025 - Stable7.1.022 ( 2025.5)
 
 - [Hardware] - Full integration of GammaTroniques TICMeter
