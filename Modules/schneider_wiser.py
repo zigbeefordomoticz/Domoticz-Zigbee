@@ -298,6 +298,12 @@ def callbackDeviceAwake_Schneider_SetPoints(self, NwkId, EndPoint, cluster):
         schneider_data = self.ListOfDevices.setdefault(NwkId, {}).setdefault(SCHNEIDER_META_DATA, {})
         target_setpoint = schneider_data.get(TARGET_SETPOINT)
         timestamp_setpoint = schneider_data.get(TIMESTAMP_SETPOINT)
+        try:
+            # Check if the current setpoint is a valid integer
+            _ = int(thermostat_cluster_data[OCCUPIED_SETPOINT])
+        except ValueError:
+            self.ListOfDevices[NwkId]["Ep"][EndPoint][THERMOSTAT_CLUSTER][OCCUPIED_SETPOINT] = 2000  # default to 20.00°C
+        
         if target_setpoint is not None:
             if timestamp_setpoint is None:
                 schneider_setpoint(self, NwkId, target_setpoint, call_back=True)
