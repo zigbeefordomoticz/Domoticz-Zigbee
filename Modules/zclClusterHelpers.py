@@ -502,6 +502,10 @@ def compute_electrical_measurement_conso(self, nwk_id, src_ep, cluster_id, attr_
         '050f': {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # Puissance soutirée
         '090f': {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # Puissance soutirée Phase 2
         '0a0f': {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # Puissance soutirée Phase 3
+        
+        '0304': {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # TotalActivePower 
+        '0305': {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # TotalReactivePower 
+        '0306': {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # TotalApparentPower
     }
 
     if isinstance(raw_value, str):
