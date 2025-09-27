@@ -147,7 +147,7 @@ async def start_zigpy_task(self, channel, extended_pan_id):
     self.log.logging( "TransportZigpy", "Debug", f"start_zigpy_task -extendedPANID {self.pluginconf.pluginConf['extendedPANID']} {extended_pan_id}", )
 
     try:
-        await radio_start(self, self.statistics, self.pluginconf, self.use_of_zigpy_persistent_db, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extended_pan_id),
+        await radio_start(self, self.statistics, self.pluginconf, self.use_of_zigpy_persistent_db, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extended_pan_id)
 
     except Exception as e:
         self.log.logging("TransportZigpy", "Error", f"start_zigpy_task error in radio_start: {e}")
@@ -651,7 +651,6 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None, delayAft
     sequence = Sqn or self.app.get_sequence()
     addressmode = data["AddressMode"]
     extended_timeout = False if AckIsDisable else data.get("RxOnIdle", False)
-    delayAfterSent= delayAfterSent
     delay = data.get("Delay", None)
 
     self.log.logging("TransportZigpy", "Debug", f"process_raw_command: process_raw_command ready to request Function: {Function} NwkId: {NwkId}/{dEp} Cluster: {Cluster} Seq: {sequence} Payload: {payload.hex()} AddrMode: {addressmode} AckIsDisable: {AckIsDisable} Sqn: {Sqn}, Delay: {delay}, delayAfterSent {delayAfterSent}, Extended_TO: {extended_timeout}")
@@ -757,11 +756,11 @@ def _get_destination(self, NwkId, addressmode, Profile, Cluster, sEp, dEp, seque
         # Broadcast
         return int(NwkId, 16), "Broadcast"
 
-    elif addressmode == 0x01:
+    if addressmode == 0x01:
         # Group
         return int(NwkId, 16), "Multicast"
 
-    elif addressmode in (0x02, 0x07):
+    if addressmode in (0x02, 0x07):
         # 0x02 Short address
         # 0x07 Short address with No Ack (Zigate)
         try:
@@ -773,10 +772,13 @@ def _get_destination(self, NwkId, addressmode, Profile, Cluster, sEp, dEp, seque
 
         return destination, "Unicast"
 
-    elif addressmode in (0x03, 0x08):
+    if addressmode in (0x03, 0x08):
         # 0x03 IEEE
         # 0x08 IEEE with No Ack (Zigate)
-        return self.app.get_device(nwk=t.NWK(int(NwkId, 16))), "Unicast"    
+        return self.app.get_device(nwk=t.NWK(int(NwkId, 16))), "Unicast"
+    
+    self.log.logging( "TransportZigpy", "Error", f"_get_destination wrong address mode {addressmode} NwkId {NwkId}")
+    return None, None
 
 
 def push_APS_ACK_NACKto_plugin(self, nwkid, Cluster, sequence, result, lqi):
@@ -1116,22 +1118,26 @@ async def zigpy_request( self, device: zigpy.device.Device, profile: t.uint16_t,
     if not ack_is_disable:
         tx_options |= t.TransmitOptions.ACK
 
-    await self.app.send_packet(
-        t.ZigbeePacket(
-            src=src,
-            src_ep=src_ep,
-            dst=dst,
-            dst_ep=dst_ep,
-            tsn=sequence,
-            profile_id=profile,
-            cluster_id=cluster,
-            data=t.SerializableBytes(data),
-            extended_timeout=extended_timeout,
-            source_route=source_route,
-            tx_options=tx_options,
-            priority=priority,
+    try:
+        await self.app.send_packet(
+            t.ZigbeePacket(
+                src=src,
+                src_ep=src_ep,
+                dst=dst,
+                dst_ep=dst_ep,
+                tsn=sequence,
+                profile_id=profile,
+                cluster_id=cluster,
+                data=t.SerializableBytes(data),
+                extended_timeout=extended_timeout,
+                source_route=source_route,
+                tx_options=tx_options,
+                priority=priority,
+            )
         )
-    )
+    except Exception as e:
+        self.log.logging("TransportZigpy", "Error", f"zigpy_request: Error sending packet: {e}\n{traceback.format_exc()}")
+        raise zigpy.exceptions.DeliveryError(f"ZCL FAILURE: {e}") from e
 
     return (zigpy.zcl.foundation.Status.SUCCESS, "")
 
