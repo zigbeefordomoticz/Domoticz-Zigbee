@@ -1386,13 +1386,13 @@ def ReadAttributeRequest_0705(self, key):
             )
             ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0705", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
-def ReadAttributeRequest_070D(self, key):
+def ReadAttributeRequest_070d(self, key):
 
-    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_070D - Key: %s " % key, nwkid=key)
-    ListOfEp = getListOfEpForCluster(self, key, "070D")
+    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_070d - Key: %s " % key, nwkid=key)
+    ListOfEp = getListOfEpForCluster(self, key, "070d")
     for EPout in ListOfEp:
         listAttributes = []
-        for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "070D"):
+        for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "070d"):
             if iterAttr not in listAttributes:
                 listAttributes.append(iterAttr)
 
@@ -1400,10 +1400,10 @@ def ReadAttributeRequest_070D(self, key):
             self.log.logging(
                 "ReadAttributes",
                 "Debug",
-                "ReadAttributeRequest_070D - %s/%s - %s" % (key, EPout, listAttributes),
+                "ReadAttributeRequest_070d - %s/%s - %s" % (key, EPout, listAttributes),
                 nwkid=key,
             )
-            ReadAttributeReq(self, key, ZIGATE_EP, EPout, "070D", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
+            ReadAttributeReq(self, key, ZIGATE_EP, EPout, "070d", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 def ReadAttributeRequest_0702_0000(self, key):
     # Cluster 0x0702 Metering / Specific 0x0000
@@ -2007,8 +2007,8 @@ READ_ATTRIBUTES_REQUEST = {
     "0500": (ReadAttributeRequest_0500, "polling0500"),
     "0502": (ReadAttributeRequest_0502, "polling0502"),
     "0702": (ReadAttributeRequest_0702, "polling0702"),
-    "070d": (ReadAttributeRequest_0705, "polling0702"),
-    "070D": (ReadAttributeRequest_070D, "polling0702"),
+    "0705": (ReadAttributeRequest_0705, "polling0702"),
+    "070d": (ReadAttributeRequest_070d, "polling0702"),
     "0b01": (ReadAttributeRequest_0b01, "polling0b01"),
     "0b04": (ReadAttributeRequest_0b04, "polling0b04"),
     "0b05": (ReadAttributeRequest_0b05, "polling0b05"),
