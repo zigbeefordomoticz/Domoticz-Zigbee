@@ -114,6 +114,7 @@ class WebServer(object):
                                                  rest_req_topologie)
     from Classes.WebServer.rest_ZLinky import rest_zlinky
     from Classes.WebServer.rest_Gammatroniques import rest_TICMeter
+    from Classes.WebServer.rest_Chameleon import rest_mwa_tic
     from Classes.WebServer.sendresponse import sendResponse
     from Classes.WebServer.tools import (DumpHTTPResponseToLog,
                                          keepConnectionAlive)

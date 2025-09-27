@@ -42,6 +42,7 @@ def setup_list_rest_commands( self ):
         {"Name": "help", "Verbs": {"GET"}, "function": None},
         {"Name": "full-reprovisionning", "Verbs": {"PUT"}, "function": self.rest_full_reprovisionning},
         {"Name": "gamma-troniques-ticmeter", "Verbs": {"GET"}, "function": self.rest_TICMeter},
+        {"Name": "chameleon-ticmeter", "Verbs": {"GET"}, "function": self.rest_mwa_tic},
         {"Name": "log-error-history", "Verbs": {"GET"}, "function": self.rest_logErrorHistory},
         {"Name": "new-hrdwr", "Verbs": {"GET"}, "function": self.rest_new_hrdwr},
         {"Name": "nwk-stat", "Verbs": {"GET", "DELETE"}, "function": self.rest_nwk_stat},
