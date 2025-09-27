@@ -60,12 +60,17 @@ def decode_16bit_int(attribute_value):
     return struct.unpack("h", struct.pack("H", int(attribute_value[:4], 16)))[0]
 
 
-def decode_zigbee_24bit_int(attribute_value):
-    signed_int = struct.unpack("i", struct.pack("I", int("0" + attribute_value, 16)))[0]
-    if (signed_int & 0x00800000) != 0:
-        signed_int -= 0x01000000
-    return signed_int
-
+#def decode_zigbee_24bit_int(attribute_value):
+#    signed_int = struct.unpack("i", struct.pack("I", int("0" + attribute_value, 16)))[0]
+#    if (signed_int & 0x00800000) != 0:
+#        signed_int -= 0x01000000
+#    return signed_int
+def decode_zigbee_24bit_int(attribute_value: str) -> int:
+    value = int(attribute_value, 16) & 0xFFFFFF  # force into 24 bits
+    # check sign bit (0x800000 = 2^23)
+    if value & 0x800000:
+        return value - 0x1000000  # convert to negative
+    return value
 
 def decode_32bit_int(attribute_value):
     return struct.unpack("i", struct.pack("I", int(attribute_value[:8], 16)))[0]
@@ -497,6 +502,10 @@ def compute_electrical_measurement_conso(self, nwk_id, src_ep, cluster_id, attr_
         '050f': {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # Puissance soutirée
         '090f': {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # Puissance soutirée Phase 2
         '0a0f': {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # Puissance soutirée Phase 3
+        
+        '0304': {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # TotalActivePower 
+        '0305': {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # TotalReactivePower 
+        '0306': {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # TotalApparentPower
     }
 
     if isinstance(raw_value, str):

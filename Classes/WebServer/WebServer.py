@@ -84,12 +84,14 @@ class WebServer(object):
                                                rest_casa_device_list)
     from Classes.WebServer.rest_CfgReporting import (
         rest_cfgrpt_ondemand, rest_cfgrpt_ondemand_with_config)
+    from Classes.WebServer.rest_Chameleon import rest_chameleon_tic
     from Classes.WebServer.rest_change_ModelName import rest_change_model_name
     from Classes.WebServer.rest_device_params import rest_device_param
     from Classes.WebServer.rest_Device_Settings_Help import \
         rest_device_settings_help
     from Classes.WebServer.rest_Energy import (rest_req_nwk_full,
                                                rest_req_nwk_inter)
+    from Classes.WebServer.rest_Gammatroniques import rest_TICMeter
     from Classes.WebServer.rest_Groups import (rest_rescan_group,
                                                rest_scan_devices_for_group,
                                                rest_zGroup,
@@ -100,8 +102,8 @@ class WebServer(object):
     from Classes.WebServer.rest_NonOptimizedDevice import \
         non_optmize_device_configuration
     from Classes.WebServer.rest_Ota import (rest_ota_devices_for_manufcode,
-                                            rest_ota_firmware_list,
                                             rest_ota_firmware_available,
+                                            rest_ota_firmware_list,
                                             rest_ota_firmware_update)
     from Classes.WebServer.rest_PluginUpgrade import (
         certified_devices_update, rest_certified_devices_update,
@@ -113,7 +115,6 @@ class WebServer(object):
     from Classes.WebServer.rest_Topology import (rest_netTopologie,
                                                  rest_req_topologie)
     from Classes.WebServer.rest_ZLinky import rest_zlinky
-    from Classes.WebServer.rest_Gammatroniques import rest_TICMeter
     from Classes.WebServer.sendresponse import sendResponse
     from Classes.WebServer.tools import (DumpHTTPResponseToLog,
                                          keepConnectionAlive)

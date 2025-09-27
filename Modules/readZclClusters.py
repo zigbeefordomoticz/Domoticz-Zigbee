@@ -136,7 +136,7 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
     debug_logging(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value)
     
     if value is None:
-        self.log.logging("ZclClusters", "Debug", "---> Value is None", nwkid=MsgSrcAddr)
+        self.log.logging("ZclClusters", "Debug", "---> Value is None while raw: %s decoding: %s eval_function: %s , eval_formula: %s" %(raw_value, _decoding_value, _function, _eval_formula), nwkid=MsgSrcAddr)
         return
     
     if _action_list is None:
@@ -238,7 +238,7 @@ def _cluster_zcl_attribute_retrieval( self, cluster, attribute, parameter, MsgSr
 
     if cluster not in self.readZclClusters:
         self.log.logging("ZclClusters", "Error", " . _cluster_zcl_attribute_retrieval %s not found in %s" %(
-            cluster, str(self.readZclClusters)), nwkid = MsgSrcAddr)
+            cluster, str(self.readZclClusters)), nwkid=MsgSrcAddr)
         return None
     
     if (

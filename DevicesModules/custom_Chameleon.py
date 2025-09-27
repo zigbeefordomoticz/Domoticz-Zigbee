@@ -2,10 +2,9 @@
 
 # Tarif: 0x0702 / 0x030f ( BASE )
 
+from Modules.basicOutputs import read_attribute
 from Modules.tools import checkAndStoreAttributeValue
-
-
-
+from Modules.zigateConsts import ZIGATE_EP
 
 CONTACT_SEC = {
     0: "fermé",
@@ -129,7 +128,66 @@ def chameleon_stge(self, nwkid, ep, cluster, attribut, stge):
     checkAndStoreAttributeValue(self, nwkid, ep, cluster, "Couleur du lendemain", couleur_demain)
     checkAndStoreAttributeValue(self, nwkid, ep, cluster, "Préavis pointes mobiles", preavis_point_mobile)
     checkAndStoreAttributeValue(self, nwkid, ep, cluster, "Pointe mobile", pointe_mobile)
-    
     return stge
 
-    
+
+SMART_METERING_CLUSTER = "0702"
+ERL_Z3_LINKY_MODE = "0209"
+ERL_Z3_ADCO_ATTRIBUTE = "0308"
+ERL_Z3_NGTF_OPTARIF_ATTRIBUTE = "030f"
+
+SMART_METERING_070D_CLUSTER = "070d"
+ERL_Z3_PTEC_LTARF_ATTRIBUTE = "0102"
+ERL_Z3_STGE_DEMAIN_ATTRIBUTE = "0103"
+
+METERING_IDENTIFICATION_CLUSTER = "0b01"
+ERL_Z3_VERSION_TIC_ATTRIBUTE = "000a"
+ERL_Z3_PRM_ATTRIBUTE = "000c"
+ERL_Z3_PREF_ISOUSC_ATTRIBUTE = "000d"
+ERL_Z3_PCOUP_ATTRIBUTE = "000e"
+
+def erl_z3_master_info(self, nwkid):
+    """
+    Trigger reading attributes for ERL Z3.
+    Optimized to reduce repetition and make attribute checks more declarative.
+    """
+    self.log.logging("Chameleon", "Debug", f"erl_z3_master_info {nwkid}")
+
+    # Define attribute groups by cluster
+    attr_groups = {
+        "0000": [("4000", "firmware version")],  # Basic Cluster
+        "0702": [  # Smart Metering Cluster
+            (ERL_Z3_LINKY_MODE, "LINKY_MODE"),
+            (ERL_Z3_ADCO_ATTRIBUTE, "ADCO"),
+            (ERL_Z3_NGTF_OPTARIF_ATTRIBUTE, "NGTF/OPTARIF"),
+        ],
+        "070d": [  # Smart Metering 0x070d Cluster
+            (ERL_Z3_PTEC_LTARF_ATTRIBUTE, "PTEC/LTARF"),
+            (ERL_Z3_STGE_DEMAIN_ATTRIBUTE, "STGE/DEMAIN"),
+        ],
+        "0b01": [  # Metering Identification Cluster
+            (ERL_Z3_VERSION_TIC_ATTRIBUTE, "VERSION_TIC"),
+            (ERL_Z3_PRM_ATTRIBUTE, "PRM"),
+            (ERL_Z3_PREF_ISOUSC_ATTRIBUTE, "PREF_ISOUSC"),
+            (ERL_Z3_PCOUP_ATTRIBUTE, "PCOUP"),
+        ],
+    }
+
+    # Map cluster IDs to constants
+    cluster_map = {
+        "0000": "0000",
+        "0702": SMART_METERING_CLUSTER,
+        "070d": SMART_METERING_070D_CLUSTER,
+        "0b01": METERING_IDENTIFICATION_CLUSTER,
+    }
+
+    chameleon_tic_infos = self.ListOfDevices.get(nwkid, {})
+    chameleon_tic_ep = chameleon_tic_infos.get("Ep", {}).get("01", {})
+
+    # Iterate through clusters and attributes
+    for cluster_id, attributes in attr_groups.items():
+        cluster_data = chameleon_tic_ep.get(cluster_id, {})
+        for attr_id, attr_name in attributes:
+            if cluster_data is None or cluster_data.get(attr_id) is None:
+                self.log.logging( "Chameleon", "Debug", f"erl_z3_master_info reading {attr_name} for {nwkid}" )
+                read_attribute( self, nwkid, ZIGATE_EP, "01", cluster_map[cluster_id], "00", "00", "0000", 0x01, attr_id, ackIsDisabled=False, )

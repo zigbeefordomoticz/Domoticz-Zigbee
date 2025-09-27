@@ -70,6 +70,8 @@ ATTRIBUTES = {
     "0500": [0x0000, 0x0001, 0x0002],
     "0502": [0x0000],
     "0702": [0x0000, 0x0017, 0x0200, 0x0301, 0x0302, 0x0303, 0x0306, 0x0400],
+    "0705": [0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0010, 0x0011, 0x0020, 0x0021, 0x0022, 0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0040, 0x0080],
+    "070d": [0x0000, 0x0001],
     "000f": [0x0000, 0x0051, 0x0055, 0x006F, 0xFFFD],
     "0b01": [0x000D],
     "0b04": [ 0x0000, 0x0300, 0x030d, 0x0400, 0x0401, 0x0405, 0x0505, 0x0508, 0x050b, 0x050e, 0x0600, 0x0601, 0x0602, 0x0603, 0x0604, 0x0605],
@@ -1365,6 +1367,43 @@ def ReadAttributeRequest_0702(self, key):
                 checkTime=False,
             )
 
+def ReadAttributeRequest_0705(self, key):
+
+    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0705 - Key: %s " % key, nwkid=key)
+    ListOfEp = getListOfEpForCluster(self, key, "0705")
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "0705"):
+            if iterAttr not in listAttributes:
+                listAttributes.append(iterAttr)
+
+        if listAttributes:
+            self.log.logging(
+                "ReadAttributes",
+                "Debug",
+                "ReadAttributeRequest_0705 - %s/%s - %s" % (key, EPout, listAttributes),
+                nwkid=key,
+            )
+            ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0705", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
+
+def ReadAttributeRequest_070d(self, key):
+
+    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_070d - Key: %s " % key, nwkid=key)
+    ListOfEp = getListOfEpForCluster(self, key, "070d")
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "070d"):
+            if iterAttr not in listAttributes:
+                listAttributes.append(iterAttr)
+
+        if listAttributes:
+            self.log.logging(
+                "ReadAttributes",
+                "Debug",
+                "ReadAttributeRequest_070d - %s/%s - %s" % (key, EPout, listAttributes),
+                nwkid=key,
+            )
+            ReadAttributeReq(self, key, ZIGATE_EP, EPout, "070d", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 def ReadAttributeRequest_0702_0000(self, key):
     # Cluster 0x0702 Metering / Specific 0x0000
@@ -1968,6 +2007,8 @@ READ_ATTRIBUTES_REQUEST = {
     "0500": (ReadAttributeRequest_0500, "polling0500"),
     "0502": (ReadAttributeRequest_0502, "polling0502"),
     "0702": (ReadAttributeRequest_0702, "polling0702"),
+    "0705": (ReadAttributeRequest_0705, "polling0702"),
+    "070d": (ReadAttributeRequest_070d, "polling0702"),
     "0b01": (ReadAttributeRequest_0b01, "polling0b01"),
     "0b04": (ReadAttributeRequest_0b04, "polling0b04"),
     "0b05": (ReadAttributeRequest_0b05, "polling0b05"),

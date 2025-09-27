@@ -1,0 +1,11 @@
+{
+    "ClusterId": "0705",
+    "Description": "Smart Energy Key Establishment",
+    "Version": 1,
+    "Enabled": true,
+    "Debug": "Electric",
+    "Attributes": {
+        "0000": { "Enabled": true, "Name": "ClusterRevision", "DataType": "21", "Acc": "R", "Mandatory": true, "ActionList": [ "check_store_value"] },
+        "0001": { "Enabled": true, "Name": "CertificateUsed", "DataType": "30", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"]}
+    }
+}

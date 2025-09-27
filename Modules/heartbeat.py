@@ -20,6 +20,7 @@
 import datetime
 import time
 
+from DevicesModules.custom_Chameleon import erl_z3_master_info
 from Modules.basicOutputs import getListofAttribute
 from Modules.casaia import pollingCasaia
 from Modules.danfoss import danfoss_room_sensor_polling
@@ -91,8 +92,7 @@ CHECKING_DELAY_READATTRIBUTE = (( 60 // HEARTBEAT ) + 7)
 PING_DEVICE_VIA_GROUPID = 3567 // HEARTBEAT    # Secondes ( 59minutes et 45 secondes )
 FIRST_PING_VIA_GROUP = 127 // HEARTBEAT
 CHECKING_TICMETER_KEY_ATTRIBUTES = (30 // HEARTBEAT)  # 30 Sec
-
-
+CHECKING_ERLZ3_KEY_ATTRIBUTES = ( 300 // HEARTBEAT )  # 5 Min
 
 def attributeDiscovery(self, NwkId):
     # If Attributes not yet discovered, let's do it
@@ -669,6 +669,9 @@ def hr_process_device(self, Devices, NwkId):
     # Some battery based end device with ZigBee 30 use polling and can receive commands.
     # We should authporized them for Polling After Action, in order to get confirmation.
     
+    if self.ListOfDevices[ NwkId ].get("Chameleon") and device_hearbeat % CHECKING_ERLZ3_KEY_ATTRIBUTES == 0:
+        erl_z3_master_info(self, NwkId)
+        
     if model == "TICMeter" and (device_hearbeat % CHECKING_TICMETER_KEY_ATTRIBUTES == 0):
         collect_ticmeter_linky(self, NwkId)
 

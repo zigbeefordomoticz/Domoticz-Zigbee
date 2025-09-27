@@ -1459,7 +1459,7 @@ def zigateInit_Phase3(self):
                 self.readZclClusters,
                 self.pairing_in_progress
             )
-        if self.configureReporting:
+        if self.configureReporting and self.webserver:
             self.webserver.update_configureReporting(self.configureReporting )
 
     # Enable Group Management
@@ -1477,6 +1477,7 @@ def zigateInit_Phase3(self):
         self.webserver.update_networkenergy(self.networkenergy)
 
         # Create Network Map object
+
     if self.networkmap is None:
         self.networkmap = NetworkMap(
             self.zigbee_communication ,self.pluginconf, self.ControllerLink, self.ListOfDevices, Devices, self.HardwareID, self.log, self.pairing_in_progress
