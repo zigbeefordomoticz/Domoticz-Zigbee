@@ -1,0 +1,29 @@
+{
+    "ClusterId": "0705",
+    "Description": "Smart Energy Prepayment",
+    "Version": 1,
+    "Enabled": true,
+    "Debug": "Electric",
+    "Attributes": {
+        "0000": { "Enabled": true, "Name": "Payment Control Configuration", "DataType": "19", "Acc": "R", "Mandatory": true, "ActionList": [ "check_store_value"] },
+        "0001": { "Enabled": true, "Name": "Credit Remaining Signed", "DataType": "2b", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0002": { "Enabled": true, "Name": "Emergency Credit Remaining", "DataType": "2b", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0003": { "Enabled": true, "Name": "Credit Status", "DataType": "18", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0004": { "Enabled": true, "Name": "CreditRemaining", "DataType": "e2", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0005": { "Enabled": true, "Name": "Accumulated Debt", "DataType": "2b", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0006": { "Enabled": true, "Name": "OverallDebtCap", "DataType": "2b", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0010": { "Enabled": true, "Name": "EmergencyCredit Limit/Allowance ", "DataType": "23", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0011": { "Enabled": true, "Name": "EmergencyCredit Threshold", "DataType": "23", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0020": { "Enabled": true, "Name": "TotalCreditAdded", "DataType": "23", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0021": { "Enabled": true, "Name": "MaxCreditLimit", "DataType": "23", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0022": { "Enabled": true, "Name": "MaxCredit PerTopUp", "DataType": "23", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0030": { "Enabled": true, "Name": "FriendlyCredit Warning", "DataType": "20", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0031": { "Enabled": true, "Name": "LowCredit Warning", "DataType": "23", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0032": { "Enabled": true, "Name": "IHDLow CreditWarning", "DataType": "23", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0033": { "Enabled": true, "Name": "InterruptSuspendTime", "DataType": "20", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0034": { "Enabled": true, "Name": "RemainingFriendlyCreditTime", "DataType":  "21", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0035": { "Enabled": true, "Name": "NextFriendly CreditPeriod", "DataType":  "e2", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0040": { "Enabled": true, "Name": "CutOffValue", "DataType":  "2b", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0080": { "Enabled": true, "Name": "TokenCarrierID", "DataType": "42", "Acc": "W", "Mandatory": false, "ActionList": [ "check_store_value"] }
+    }
+}
