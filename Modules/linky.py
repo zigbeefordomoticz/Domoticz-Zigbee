@@ -9,6 +9,62 @@
 # Initial authors: zaraki673 & pipiche38
 #
 # SPDX-License-Identifier:    GPL-3.0 license
+"""
+Zigbee Linky (TIC Meter) Support Module for Domoticz
+====================================================
+
+This module provides helpers and utilities for handling **Linky smart meters** 
+via the Zigbee protocol in the Domoticz plugin. It focuses on interpreting, 
+decoding, and collecting data from the TIC (Télé-Information Client) interface 
+of ERL Z3 Linky devices.
+
+Main Features
+-------------
+- **Tariff Handling**:
+  - `LINKY_TARIF_MATRIX`: Maps raw PTEC values (e.g., HC, HP, EJPHN, EJPHPM) 
+    to Domoticz-compatible numeric and string values for display.
+  - `linky_tarif_color()`: Converts tariff codes into (nValue, sValue) pairs.
+
+- **Mode Handling**:
+  - `LINKY_MODEL_NAME`: Maps numeric values into TIC modes (historique, standard, mono, tri).
+  - `linky_mode_tic()`: Returns the configuration dictionary for the Linky TIC mode.
+
+- **Register Decoding**:
+  - `decode_registre_status()`: Decodes Linky "registre de statuts" frames into a 
+    dictionary of attributes (contact, cutoff organ, overvoltage, energy direction, etc.).
+
+- **Data Collection**:
+  - `collect_ticmeter_linky()`: Ensures essential TIC meter fields are present 
+    for a given device. If missing, it triggers Zigbee attribute reads with 
+    a 5-minute throttle.
+
+Constants
+---------
+- `LINKY_TARIF_MATRIX` : Maps tariff labels to (nValue, description).
+- `LINKY_MODEL_NAME`   : Maps mode values to TIC mode/configuration.
+- `TIC_MODE`           : Maps mode IDs to "historique" or "standard".
+- `LINKY_GRID`         : Maps grid type IDs to mono/tri.
+
+Functions
+---------
+- `linky_tarif_color(self, value)`
+    Translate Linky PTEC tariff values into Domoticz-compatible values.
+- `linky_mode_tic(self, value)`
+    Translate Linky TIC mode into mode/configuration.
+- `decode_registre_status(registre_status)`
+    Decode a raw Linky registre status frame into a structured dictionary.
+- `collect_ticmeter_linky(self, nwkid)`
+    Collect and update TIC meter attributes if missing, with throttled polling.
+
+Notes
+-----
+- This module integrates with the Domoticz Zigbee plugin framework and relies 
+  on `Modules.readAttributes` to perform actual Zigbee attribute reads.
+- Logging is performed through the plugin's `self.log` object.
+- The code is specific to ERL Z3 Linky-compatible devices but may be extended 
+  for other TIC-based meters.
+
+"""
 
 import time
 
@@ -67,16 +123,19 @@ LINKY_GRID = {
     1: "Triphasé",
 }
 
+
 def linky_tarif_color( self, value ):
     """ Translate the Linky PTEC value to a tuple of nValues and sValues for Domoticz """
     self.log.logging( "GammaTroniques", "Log", f"linky_tarif_color Tarif Color >{value}<")
     return LINKY_TARIF_MATRIX.get(value, (3, "Unknown Tarif"))
-   
+
+
 def linky_mode_tic( self, value ):
     """ Translate the Linky TIC Mode value to a dict of Mode and Config file to be used """
     self.log.logging( "GammaTroniques", "Log", f"linky_mode_tic Mode >{value}<")
     return LINKY_MODEL_NAME.get(value, { "Mode": ('unknown', 'unknown'), "Conf": "TICMeter-unknown" })
-        
+
+
 def decode_registre_status( registre_status):
     """ Decoding of Registre status Linky frame and return a dictionnary of values """
 
