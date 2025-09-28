@@ -1,6 +1,85 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Implementation of Zigbee for Domoticz plugin.
+#
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
 
+"""
+Chameleon Smart Metering (ERL Z3) Module
+========================================
 
-# Tarif: 0x0702 / 0x030f ( BASE )
+This module provides utilities to interact with and decode status registers (STGE) 
+and attributes of ERL Z3-compatible smart meters over Zigbee. It supports parsing 
+bitfield status values, mapping them to human-readable labels, and triggering 
+attribute reads from relevant Zigbee clusters.
+
+Key Features
+------------
+- Decode the STGE (Statuts / 0x0702 / 0x0200) register into meaningful fields:
+  * Contact sec
+  * Organe de coupure
+  * État du cache-bornes
+  * Surtension / Dépassement puissance
+  * Mode fonctionnement (producteur/consommateur)
+  * Sens énergie active
+  * Tarifs fournisseur et distributeur
+  * Horloge / Télé-information / Communication
+  * CPL status & synchronization
+  * Couleur du jour et du lendemain
+  * Préavis et pointe mobile
+
+- Store decoded attribute values with `checkAndStoreAttributeValue` for later use.
+
+- Provide attribute constants and mappings for Zigbee clusters:
+  * Smart Metering (0x0702, 0x070d)
+  * Metering Identification (0x0b01)
+  * Basic cluster (0x0000)
+
+- Trigger reading of missing Zigbee attributes via `erl_z3_master_info`.
+
+Dependencies
+------------
+- `Modules.basicOutputs.read_attribute` for Zigbee attribute reading
+- `Modules.tools.checkAndStoreAttributeValue` for storing values
+- `Modules.zigateConsts.ZIGATE_EP` endpoint constant
+
+Main Functions
+--------------
+- chameleon_stge(self, nwkid, ep, cluster, attribut, stge)
+    Decode the `stge` bitfield register and log/store all relevant attributes.
+
+- erl_z3_master_info(self, nwkid)
+    Trigger attribute reads for ERL Z3 devices, ensuring critical attributes 
+    are retrieved and kept up to date.
+
+Constants
+---------
+- CONTACT_SEC, ETAT_CACHE_BORNES, FONCTION_PROD_CONSO, SENS_ENERGIE,
+  HORLOGE, SORTIE_TIC, SORTIE_EURIDIS, STATUT_CPL, SYNCHRO_CPL, COULEUR
+    Dictionaries mapping raw register values to human-readable strings.
+
+- SMART_METERING_CLUSTER, SMART_METERING_070D_CLUSTER, 
+  METERING_IDENTIFICATION_CLUSTER
+    Zigbee cluster identifiers.
+
+- ERL_Z3_*_ATTRIBUTE
+    Attribute identifiers for smart metering and identification clusters.
+
+Usage
+-----
+Typical usage involves:
+1. Receiving a `stge` register from the smart meter and decoding it:
+   >>> chameleon_stge(self, nwkid, ep, cluster, attribut, stge)
+
+2. Periodically triggering a refresh of ERL Z3 attributes:
+   >>> erl_z3_master_info(self, nwkid)
+"""
 
 from Modules.basicOutputs import read_attribute
 from Modules.tools import checkAndStoreAttributeValue
@@ -130,7 +209,6 @@ def chameleon_stge(self, nwkid, ep, cluster, attribut, stge):
     checkAndStoreAttributeValue(self, nwkid, ep, cluster, "Pointe mobile", pointe_mobile)
     return stge
 
-
 SMART_METERING_CLUSTER = "0702"
 ERL_Z3_LINKY_MODE = "0209"
 ERL_Z3_ADCO_ATTRIBUTE = "0308"
@@ -191,3 +269,4 @@ def erl_z3_master_info(self, nwkid):
             if cluster_data is None or cluster_data.get(attr_id) is None:
                 self.log.logging( "Chameleon", "Debug", f"erl_z3_master_info reading {attr_name} for {nwkid}" )
                 read_attribute( self, nwkid, ZIGATE_EP, "01", cluster_map[cluster_id], "00", "00", "0000", 0x01, attr_id, ackIsDisabled=False, )
+    
