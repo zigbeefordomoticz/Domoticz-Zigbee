@@ -16,6 +16,9 @@
     Description: Update of Domoticz Widget
 """
 
+from Modules.basicOutputs import read_attribute
+from Modules.zigateConsts import ZIGATE_EP
+
 from Modules.domoticzAbstractLayer import (domo_check_unit,
                                            domo_read_Device_Idx,
                                            domo_read_nValue_sValue,
@@ -29,7 +32,7 @@ from Modules.domoTools import (RetreiveSignalLvlBattery,
                                remove_bad_cluster_type_entry,
                                update_domoticz_widget)
 from Modules.linky import linky_tarif_color
-from Modules.switchSelectorWidgets import (SWITCH_SELECTORS)
+from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import (get_deviceconf_parameter_value, str_round,
                            zigpy_plugin_sanity_check)
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
@@ -1370,6 +1373,16 @@ def process_p1meters_meter_with_summation(self, widget_type, Attribute_, value, 
     # Update Domoticz widget
     update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
+    if widget_type.startswith("P1Meter"):
+        # IN case we are updating a Linky sensor, we might have to update the Color if we have move from 0x0102 to 0x0100
+        if not get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "LINKY_COLOR_SENSOR"):
+            return
+
+        if Attribute_ == "0100" and parsed_value != cur_usage1 or Attribute_ == "0102" and parsed_value != cur_usage2:
+            self.log.logging(["Widget", "Electric"], "Debug", f"process_p1meters_meter_with_summation - Checking Linky color update for {device_id_ieee} {device_unit} {widget_type} {sValue}", NwkId)
+            if self.ListOfDevices.get(NwkId, {}).get("Model") in {"ERL Z3", "Linky Energy Sensor", }:
+                check_and_update_chameleon_erz3_linky_color_if_needed(  self, NwkId, Attribute_ )
+
 
 def process_p1meters_meter_with_instant_power(self, widget_type, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel):
     """Handles P1Meter_HPHC processing based on the Attribute type."""
@@ -1912,5 +1925,88 @@ def _retreive_summation_power(self, NwkId, Ep, summation_attribute="0000"):
         
         if value not in ({}, "", "0"):
             return int(float(value))
-
     return None
+
+
+def check_and_update_chameleon_erz3_linky_color_if_needed(self, nwkid, attribute):
+    """
+    Check and update the Chameleon ERL Z3 Linky color if needed.
+
+    This function monitors the active tariff period (HP/HC) for ERL Z3 Linky smart meters.
+    When a transition occurs (from HC → HP or HP → HC), it triggers a read of the
+    relevant Zigbee attributes to update the device's color status.
+
+    Parameters
+    ----------
+    self : object
+        Reference to the plugin or class instance that manages Zigbee devices.
+    nwkid : str
+        The Zigbee network identifier of the device.
+    attribute : str
+        The attribute ID being updated (e.g., "0100" for HC, "0102" for HP).
+
+    Logic
+    -----
+    - Verifies that the device model is "ERL Z3".
+    - Retrieves current attributes from the device (contract tariff, current tariff).
+    - If:
+        * Either tariff is missing, OR
+        * A tariff transition is detected (HC ↔ HP),
+      then two attributes are re-read from the smart meter:
+        * `PTEC/LTARF` (current tariff period)
+        * `STGE/DEMAIN` (color for the next day)
+
+    Triggered Reads
+    ---------------
+    - Cluster: `070d` (Smart Metering)
+      * Attribute `0102`: PTEC/LTARF (tariff period)
+      * Attribute `0103`: STGE/DEMAIN (color of tomorrow)
+
+    Notes
+    -----
+    - `HC` and `HP` sets define recognized labels for off-peak (heures creuses) and 
+      peak (heures pleines) periods.
+    - Avoids unnecessary polling by only reading attributes when a change is detected.
+
+    Returns
+    -------
+    None
+    """
+    SMART_METERING_070D_CLUSTER = "070d"
+    ERL_Z3_PTEC_LTARF_ATTRIBUTE = "0102"
+    ERL_Z3_STGE_DEMAIN_ATTRIBUTE = "0103"
+
+    HC = {"HC..", "HEURES CREUSES", "BHC", "HCJB", "WHC", "HCJW", "RHC", "HCJR"}
+    HP = {"HP..", "HEURES PLEINES", "BHP", "HPJB", "WHP", "HPJW", "RHP", "HPJR"}
+
+    device_infos = self.ListOfDevices.get(nwkid, {})
+    if device_infos.get("Model") != {"ERL Z3"}:
+        return
+
+    # Get the current color context from the device
+    chameleon_tic_ep = device_infos.get("Ep", {}).get("01", {})
+    chameleon_attributes = chameleon_tic_ep.get("Chameleon", {})
+    contract_tarif = chameleon_attributes.get("NGTF/OPTARIF")
+    current_tarif = chameleon_attributes.get("PTEC/LTARF")
+
+    # Condition: missing tariff OR tariff transition detected
+    if (
+        current_tarif is None
+        or contract_tarif is None
+        or (current_tarif in HC and attribute == "0102")
+        or (current_tarif in HP and attribute == "0100")
+    ):
+        # Trigger Zigbee attribute reads
+        self.log.logging(["Widget", "Electric"], "Log", f"check_and_update_chameleon_erz3_linky_color_if_needed for {nwkid} request PTEC,LTARF,STGE DEMAIN", nwkid)
+        read_attribute(
+            self, nwkid, ZIGATE_EP, "01",
+            SMART_METERING_070D_CLUSTER, "00", "00", "0000",
+            0x01, ERL_Z3_PTEC_LTARF_ATTRIBUTE,
+            ackIsDisabled=False,
+        )
+        read_attribute(
+            self, nwkid, ZIGATE_EP, "01",
+            SMART_METERING_070D_CLUSTER, "00", "00", "0000",
+            0x01, ERL_Z3_STGE_DEMAIN_ATTRIBUTE,
+            ackIsDisabled=False,
+        )
