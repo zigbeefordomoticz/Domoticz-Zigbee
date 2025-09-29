@@ -453,6 +453,9 @@ def compute_metering_conso(self, nwk_id, msg_src_ep, msg_cluster_id, msg_attr_id
     multiplier = int(cluster_data.get("0301", 1)) if multiplier is None else multiplier
     divisor = int(cluster_data.get("0302", 1)) if divisor is None else divisor
 
+    # Prevent division by zero (force minimum value of 1)
+    divisor = divisor if divisor != 0 else 1  
+    
     # Compute final consumption value
     conso = round((conso * multiplier) / divisor, 3)
 
