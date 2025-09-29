@@ -578,7 +578,18 @@ def debug_logging(self, nwkid, ep, cluster, attribute, dtype, attsize, raw_data,
         return
     
     cluster_description = self.readZclClusters.get(cluster, {}).get("Description", "Unknown cluster")
-    attribute_description = self.readZclClusters.get(cluster, {}).get("Attributes", {}).get(attribute, {}).get("Name", "Unknown attribute")
+    attribute_description = None
+    
+    model = _get_model_name( self, nwkid)
+    if model is not None and model in self.DeviceConf:
+        # Debug each step
+        conf = self.DeviceConf[model]
+        cluster_data = conf.get("Ep", {}).get(ep, {}).get(cluster, {})
+        if isinstance(cluster_data, dict):
+            attribute_description = cluster_data.get("Attributes", {}).get(attribute, {}).get("Name", None)
+
+    if attribute_description is None:
+        attribute_description = self.readZclClusters.get(cluster, {}).get("Attributes", {}).get(attribute, {}).get("Name", "Unknown Zcl standard attribute")
 
     self.log.logging( "ZclClusters", "Log", f"readZclCluster - Ox{nwkid}/{ep} 0x{cluster} {cluster_description} - attribute: 0x{attribute} {attribute_description} raw_data: {raw_data} value: {value}", nwkid)
 
