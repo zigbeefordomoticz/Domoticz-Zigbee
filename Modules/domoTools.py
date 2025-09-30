@@ -257,10 +257,7 @@ def update_domoticz_widget(self, Devices, DeviceId, Unit, nValue, sValue, Batter
     _cur_nValue, cur_sValue = domo_read_nValue_sValue(self, Devices, DeviceId, Unit)
     widget_name = domo_read_Name( self, Devices, DeviceId, Unit, )
 
-    self.log.logging( "WidgetUpdate", "Debug", "update_domoticz_widget %s:%s:%s  %3s:%3s:%5s (%15s)" % (
-        nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, widget_name), self.IEEE2NWK[ DeviceId ])
-    
-    update_needed = (
+    update_needed = bool(
         _cur_nValue != int(nValue)
         or cur_sValue != sValue
         or (Color_ != "" and _current_color != Color_)
@@ -268,10 +265,13 @@ def update_domoticz_widget(self, Devices, DeviceId, Unit, nValue, sValue, Batter
         or _current_battery_level != int(BatteryLvl)
         or _current_TimedOut
     )
-    
+
+    self.log.logging( "WidgetUpdate", "Debug", "update_domoticz_widget %s:%s:%s  %3s:%3s:%5s (%15s) - update needed: %s" % (
+        nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, widget_name, update_needed), self.IEEE2NWK[ DeviceId ])
+
     if not update_needed:
         return
-    
+
     force_update_conf = self.pluginconf.pluginConf["forceSwitchSelectorPushButton"] and ForceUpdate_ and _cur_nValue == int(nValue) and cur_sValue == sValue
 
     if force_update_conf:
