@@ -1378,7 +1378,9 @@ def process_p1meters_meter_with_summation(self, widget_type, Attribute_, value, 
         if not get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "LINKY_COLOR_SENSOR"):
             return
 
-        if Attribute_ == "0100" and parsed_value != cur_usage1 or Attribute_ == "0102" and parsed_value != cur_usage2:
+        self.log.logging(["Widget", "Electric"], "Debug", f"process_p1meters_meter_with_summation - Checking Linky color update for {device_id_ieee} {device_unit} {widget_type} {parsed_value} versus {cur_usage1}/{cur_usage2} ({type(cur_usage1)}-{type(cur_usage1)}/{type(cur_usage2)})", NwkId)
+
+        if (Attribute_ == "0100" and parsed_value != cur_usage1) or (Attribute_ == "0102" and parsed_value != cur_usage2):
             self.log.logging(["Widget", "Electric"], "Debug", f"process_p1meters_meter_with_summation - Checking Linky color update for {device_id_ieee} {device_unit} {widget_type} {sValue}", NwkId)
             if self.ListOfDevices.get(NwkId, {}).get("Model") in {"ERL Z3", "Linky Energy Sensor", }:
                 check_and_update_chameleon_erz3_linky_color_if_needed(  self, NwkId, Attribute_ )
@@ -1980,24 +1982,28 @@ def check_and_update_chameleon_erz3_linky_color_if_needed(self, nwkid, attribute
     HP = {"HP..", "HEURES PLEINES", "BHP", "HPJB", "WHP", "HPJW", "RHP", "HPJR"}
 
     device_infos = self.ListOfDevices.get(nwkid, {})
-    if device_infos.get("Model") != {"ERL Z3"}:
+    if device_infos.get("Model") not in {"ERL Z3", "Linky Energy Sensor", }:
+        self.log.logging(["Widget", "Electric"], "Debug", f"check_and_update_chameleon_erz3_linky_color_if_needed for {nwkid} not a targeted model {device_infos.get('Model')}", nwkid)
         return
 
     # Get the current color context from the device
     chameleon_tic_ep = device_infos.get("Ep", {}).get("01", {})
-    chameleon_attributes = chameleon_tic_ep.get("Chameleon", {})
+    chameleon_attributes = device_infos.get("Chameleon", {})
     contract_tarif = chameleon_attributes.get("NGTF/OPTARIF")
     current_tarif = chameleon_attributes.get("PTEC/LTARF")
 
-    # Condition: missing tariff OR tariff transition detected
-    if (
-        current_tarif is None
-        or contract_tarif is None
+    # Condition: missing tarif OR tariff transition detected
+    triger_read_attributes = (
+        ( current_tarif is None)
+        or (contract_tarif is None)
         or (current_tarif in HC and attribute == "0102")
-        or (current_tarif in HP and attribute == "0100")
-    ):
+        or (current_tarif in HP and attribute == "0100") )
+
+    self.log.logging(["Widget", "Electric"], "Debug", f"check_and_update_chameleon_erz3_linky_color_if_needed for {nwkid} current_tarif: {current_tarif} contract_tarif: {contract_tarif} triger_read_attributes {triger_read_attributes}", nwkid)
+    
+    if triger_read_attributes:
         # Trigger Zigbee attribute reads
-        self.log.logging(["Widget", "Electric"], "Log", f"check_and_update_chameleon_erz3_linky_color_if_needed for {nwkid} request PTEC,LTARF,STGE DEMAIN", nwkid)
+        self.log.logging(["Widget", "Electric"], "Log", f"check_and_update_chameleon_erz3_linky_color_if_needed for PTEC/LTARF and DEMAN for {nwkid}", nwkid)
         read_attribute(
             self, nwkid, ZIGATE_EP, "01",
             SMART_METERING_070D_CLUSTER, "00", "00", "0000",
