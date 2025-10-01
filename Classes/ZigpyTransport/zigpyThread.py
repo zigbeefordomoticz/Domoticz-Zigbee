@@ -10,6 +10,40 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
+"""
+Zigbee Transport Module for Domoticz Plugin.
+
+This module provides the core functionality for handling Zigbee communication
+using the Zigpy library within the Domoticz plugin framework. It manages the
+Zigpy event loop, radio configuration, command dispatching, and transmission
+of Zigbee messages (unicast, multicast, broadcast). It supports multiple radio
+modules including EZSP (Bellows), ZNP, deCONZ, and BLZ.
+
+Key features:
+- Asynchronous event loop for non-blocking operations.
+- Configuration setup for different radio backends.
+- Command processing and error handling with retries.
+- Concurrency limiting per device to prevent overload.
+- Integration with Domoticz via queues for sending/receiving data.
+
+Dependencies:
+- zigpy: Core Zigbee stack.
+- bellows: For EZSP (EmberZNet) support.
+- zigpy_znp: For ZNP (TI CC2531) support.
+- zigpy_deconz: For deCONZ support.
+- asyncio: For asynchronous operations.
+- queue: For thread-safe communication with Domoticz.
+
+Configuration:
+- Relies on pluginconf for settings like channel, extended PAN ID, and radio module.
+- Uses logging via self.log for debugging and status updates.
+
+Usage:
+- Initialize via start_zigpy_thread(self).
+- Send commands via writer_queue with JSON-formatted data.
+- Receive responses via forwarder_queue.
+"""
+
 import asyncio
 import contextlib
 import functools
@@ -48,7 +82,13 @@ VERIFY_KEY_DELAY = 6
 
 
 def stop_zigpy_thread(self):
-    """ will send a STOP message to the writer_queue in order to stop the thread """
+    """
+    Stops the Zigpy thread by sending a STOP message to the writer_queue.
+
+    This function sets the zigpy_running flag to False and cancels any manual
+    topology or interference scan tasks to ensure clean shutdown.
+    """
+
     self.log.logging("TransportZigpy", "Debug", "stop_zigpy_thread - Stopping zigpy thread")
     if self.writer_queue:
         self.writer_queue.put_nowait("STOP")
@@ -63,6 +103,13 @@ def stop_zigpy_thread(self):
 
 
 def start_zigpy_thread(self):
+    """
+    Starts the Zigpy thread if it is not already running.
+
+    Sets the appropriate event loop policy for Windows compatibility and
+    initializes the thread via setup_zigpy_thread if necessary.
+    """
+    
     self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - Starting Zigpy thread")
 
     # Set appropriate event loop policy for Windows compatibility
@@ -77,7 +124,12 @@ def start_zigpy_thread(self):
 
 
 def setup_zigpy_thread(self):
-    """Setup and start the Zigpy thread."""
+    """
+    Sets up and starts the Zigpy thread as a daemon.
+
+    Creates a new Thread instance targeting zigpy_thread_function and starts it.
+    The thread name includes the hardware ID for identification.
+    """
     self.log.logging("TransportZigpy", "Debug", "setup_zigpy_thread - Initializing Zigpy thread")
 
     # Create and start a new thread
@@ -88,7 +140,13 @@ def setup_zigpy_thread(self):
 
 
 def zigpy_thread_function(self):
-    """Initialize and run the Zigpy event loop for Zigbee communication."""
+    """
+    Main function for the Zigpy thread: initializes and runs the event loop.
+
+    Includes a random startup delay, creates a new event loop, enables debug
+    mode if configured, and runs start_zigpy_task. Handles exceptions and
+    ensures the loop is closed on exit.
+    """
     self.log.logging("TransportZigpy", "Log", "zigpyThread starting with a random sleep")
 
     # Adding a random delay to stagger thread start times
@@ -132,6 +190,12 @@ def zigpy_thread_function(self):
 
 
 async def start_zigpy_task(self, channel, extended_pan_id):
+    """
+    Asynchronous task to start the Zigpy application and run the worker loop.
+
+    Configures channel and extended PAN ID from plugin config, starts the radio,
+    initializes the writer_queue, runs the worker_loop, and handles shutdown.
+    """
     self.log.logging("TransportZigpy", "Debug", "start_zigpy_task - Starting zigpy thread")
     self.zigpy_running = True
     
@@ -192,7 +256,12 @@ async def start_zigpy_task(self, channel, extended_pan_id):
 
 
 async def _shutdown_remaining_task(self):
-    """Cleanup tasks tied to the service's shutdown."""
+    """
+    Cleans up all outstanding asyncio tasks during shutdown.
+
+    Cancels all tasks except the current one, waits for completion, and logs
+    any exceptions. Ensures graceful termination of pending operations.
+    """
     # Get all tasks except the current one
     tasks = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
     
@@ -223,7 +292,26 @@ async def _shutdown_remaining_task(self):
     
 
 async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0):
+    """
+    Initializes the Zigpy application for the specified radio module.
 
+    Sets up configuration based on the radio module (EZSP, ZNP, deCONZ, BLZ),
+    applies optional configurations, starts the application, loads persistent
+    DB if enabled, and performs post-startup actions.
+
+    Args:
+        statistics: Statistics tracker object.
+        pluginconf: Plugin configuration object.
+        use_of_zigpy_persistent_db: Flag to enable persistent DB.
+        radiomodule (str): Type of radio module ('ezsp', 'znp', 'deCONZ', 'blz').
+        serialPort (str): Serial port path for the radio.
+        auto_form (bool): Whether to auto-form the network.
+        set_channel (int): Channel to set for the network.
+        set_extendedPanId (int): Extended PAN ID to set.
+
+    Returns:
+        None
+    """
     self.log.logging("TransportZigpy", "Debug", "In radio_start %s" %radiomodule)
     config = None
 
@@ -294,7 +382,21 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
 
 
 def ezsp_configuration_setup(self, bellows_conf, serialPort, serial_specifics):
-    """Setup configuration for EZSP radio module."""
+    """
+    Sets up the configuration dictionary for EZSP (Bellows) radio module.
+
+    Includes device path, baudrate, flow control, and optional policies like
+    unsecured rejoins, end device children limit, and TX power mode.
+
+    Args:
+        self: Instance of the transport class.
+        bellows_conf: Bellows configuration module.
+        serialPort (str): Serial port for the device.
+        serial_specifics (dict): Serial communication specifics.
+
+    Returns:
+        dict: Configuration dictionary for the EZSP application.
+    """
     config = {
         zigpy.config.CONF_DEVICE: {
             zigpy.config.CONF_DEVICE_PATH: serialPort,
@@ -330,7 +432,21 @@ def ezsp_configuration_setup(self, bellows_conf, serialPort, serial_specifics):
 
 
 def znp_configuration_setup(self, znp_conf, serialPort, serial_specifics):
-    """Setup configuration for ZNP radio module."""
+    """
+    Sets up the configuration dictionary for ZNP radio module.
+
+    Includes device path, baudrate, flow control, and optional settings like
+    endpoint preference and TX power.
+
+    Args:
+        self: Instance of the transport class.
+        znp_conf: ZNP configuration module.
+        serialPort (str): Serial port for the device.
+        serial_specifics (dict): Serial communication specifics.
+
+    Returns:
+        dict: Configuration dictionary for the ZNP application.
+    """
     config = {
         zigpy.config.CONF_DEVICE: {
             zigpy.config.CONF_DEVICE_PATH: serialPort,
@@ -354,7 +470,20 @@ def znp_configuration_setup(self, znp_conf, serialPort, serial_specifics):
 
 
 def deconz_configuration_setup(self, deconz_conf, serialPort, serial_specifics):
-    """Setup configuration for deCONZ radio module."""
+    """
+    Sets up the configuration dictionary for deCONZ radio module.
+
+    Basic configuration including device path, baudrate, and flow control.
+
+    Args:
+        self: Instance of the transport class.
+        deconz_conf: deCONZ configuration module.
+        serialPort (str): Serial port for the device.
+        serial_specifics (dict): Serial communication specifics.
+
+    Returns:
+        dict: Configuration dictionary for the deCONZ application.
+    """
     return {
         zigpy.config.CONF_DEVICE: {
             zigpy.config.CONF_DEVICE_PATH: serialPort, 
@@ -369,7 +498,20 @@ def deconz_configuration_setup(self, deconz_conf, serialPort, serial_specifics):
 
 
 def blz_configuration_setup(self, blz_conf, serialPort, serial_specifics):
-    """Setup configuration for deCONZ radio module."""
+    """
+    Sets up the configuration dictionary for BLZ radio module.
+
+    Basic configuration including device path, baudrate (default 2M), and flow control.
+
+    Args:
+        self: Instance of the transport class.
+        blz_conf: BLZ configuration module.
+        serialPort (str): Serial port for the device.
+        serial_specifics (dict): Serial communication specifics.
+
+    Returns:
+        dict: Configuration dictionary for the BLZ application.
+    """
     return {
         zigpy.config.CONF_DEVICE: {
             zigpy.config.CONF_DEVICE_PATH: serialPort, 
@@ -384,7 +526,19 @@ def blz_configuration_setup(self, blz_conf, serialPort, serial_specifics):
 
 
 def optional_configuration_setup(self, config, radio_conf, set_extendedPanId, set_channel):
+    """
+    Applies optional Zigpy configuration settings.
 
+    Sets extended PAN ID, channel, source routing, OTA, topology scan, watchdog,
+    database persistence, network backup, and startup energy scan based on plugin config.
+
+    Args:
+        self: Instance of the transport class.
+        config (dict): Base configuration dictionary to update.
+        radio_conf: Radio-specific configuration module.
+        set_extendedPanId (int): Extended PAN ID to set if non-zero.
+        set_channel (int): Channel to set if non-zero.
+    """
     # In case we have to set the Extended PAN Id
     if set_extendedPanId != 0:
         config[zigpy.config.CONF_NWK][zigpy.config.CONF_NWK_EXTENDED_PAN_ID] = "%s" % ( t.EUI64(t.uint64_t(set_extendedPanId).serialize()) )
@@ -430,7 +584,19 @@ def optional_configuration_setup(self, config, radio_conf, set_extendedPanId, se
 
 
 async def _radio_startup(self, statistics, pluginconf, use_of_zigpy_persistent_db, new_network, radiomodule):
-    
+    """
+    Performs startup operations for the radio after configuration.
+
+    Starts the application, forms a new network if requested, displays network
+    info, sets the network key, and runs post-startup actions.
+
+    Args:
+        statistics: Statistics tracker.
+        pluginconf: Plugin configuration.
+        use_of_zigpy_persistent_db: Persistent DB flag.
+        new_network (bool): Whether to form a new network.
+        radiomodule (str): Radio module type.
+    """
     try:
         await self.app.startup(
             self.statistics,
@@ -463,6 +629,16 @@ async def _radio_startup(self, statistics, pluginconf, use_of_zigpy_persistent_d
     
 
 def post_coordinator_startup(self, radiomodule):
+    """
+    Performs actions after coordinator startup, such as sending network info to the plugin.
+
+    Forwards network information, controller endpoints, node descriptors, and
+    simulates an off/on event via plugin frames.
+
+    Args:
+        self: Instance of the transport class.
+        radiomodule (str): Radio module type.
+    """
     # Send Network information to plugin, in order to poplulate various objetcs
     self.forwarder_queue.put(build_plugin_8009_frame_content(self, radiomodule))
 
@@ -482,6 +658,12 @@ def post_coordinator_startup(self, radiomodule):
 
 
 def display_network_infos(self):
+    """
+    Logs detailed network information from the Zigpy application state.
+
+    Includes PAN ID, extended PAN ID, channel, channel mask, NWK update ID,
+    device IEEE and NWK, network key, sequence, and counter.
+    """
     self.log.logging( "TransportZigpy", "Status", "++ Network settings")
     self.log.logging( "TransportZigpy", "Status", f"  PAN ID:                0x{self.app.state.network_info.pan_id:04X}")
     self.log.logging( "TransportZigpy", "Status", f"  Extended PAN ID:       {self.app.state.network_info.extended_pan_id}")
@@ -496,6 +678,12 @@ def display_network_infos(self):
 
 
 async def worker_loop(self):
+    """
+    Main worker loop for processing commands from the writer_queue.
+
+    Runs while zigpy_running is True, fetches commands, dispatches them,
+    and handles exceptions. Exits on "STOP" command or cancellation.
+    """
     self.log.logging("TransportZigpy", "Debug", "worker_loop - ZigyTransport: worker_loop start.")
 
     try:
@@ -532,6 +720,16 @@ async def worker_loop(self):
 
 
 async def process_incoming_command(self, command_to_send):
+    """
+    Processes a single incoming command from the queue.
+
+    Parses JSON data and dispatches to the appropriate handler, catching and
+    logging specific Zigbee-related exceptions.
+
+    Args:
+        self: Instance of the transport class.
+        command_to_send (str): JSON string containing the command data.
+    """
     data = json.loads(command_to_send)
     try:
         await dispatch_command(self, data)
@@ -549,7 +747,14 @@ async def process_incoming_command(self, command_to_send):
 
 
 async def get_next_command(self):
-    """Get the next command in the writer Queue."""
+    """
+    Asynchronously retrieves the next command from the writer_queue.
+
+    Polls the queue with a short sleep on empty, returns None on error.
+
+    Returns:
+        str or None: The next command string or None on error.
+    """
     while True:
         try:
             return self.writer_queue.get_nowait()
@@ -563,6 +768,17 @@ async def get_next_command(self):
 
 
 async def dispatch_command(self, data):
+    """
+    Dispatches the parsed command data to the appropriate handler function.
+
+    Supports commands like backup, permit-to-join, raw commands, device removal,
+    network status, certification, channel/PAN ID/LED/TX power/time setting,
+    and scans.
+
+    Args:
+        self: Instance of the transport class.
+        data (dict): Parsed JSON command data with 'cmd' and 'datas' keys.
+    """
     cmd = data["cmd"]
     datas = data["datas"]
     delayAfterSent = datas.get("delayAfterSent", 0) if datas else 0
@@ -614,6 +830,15 @@ async def dispatch_command(self, data):
 
 
 async def _permit_to_joint(self, data):
+    """
+    Handles the PERMIT-TO-JOIN command to open the network for device joining.
+
+    Sets a timer and calls the app's permit method, with special handling for deCONZ.
+
+    Args:
+        self: Instance of the transport class.
+        data (dict): Command data with 'datas' containing Duration and targetRouter.
+    """
     log = self.log
     radiomodule = self._radiomodule
     app = self.app
@@ -640,6 +865,22 @@ async def _permit_to_joint(self, data):
 
 
 async def process_raw_command(self, data, AckIsDisable=False, Sqn=None, delayAfterSent=0):
+    """
+    Processes a raw Zigbee command and determines the transmission type.
+
+    Extracts parameters, determines destination and transport type (broadcast,
+    multicast, unicast), and calls the appropriate send function.
+
+    Args:
+        self: Instance of the transport class.
+        data (dict): Raw command data with keys like Function, Profile, Cluster, etc.
+        AckIsDisable (bool): Whether to disable APS ACK.
+        Sqn (int): Sequence number.
+        delayAfterSent (float): Delay after sending.
+
+    Returns:
+        None
+    """
     Function = data["Function"]
     TimeStamp = data["timestamp"]
     Profile = data["Profile"]
@@ -674,12 +915,46 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None, delayAft
 
 
 async def _broadcast_command(self, Profile, Cluster, sEp, dEp, sequence, payload):
+    """
+    Sends a broadcast Zigbee command.
+
+    Uses app.broadcast and adds a wait between requests.
+
+    Args:
+        self: Instance of the transport class.
+        Profile (int): Zigbee profile ID.
+        Cluster (int): Zigbee cluster ID.
+        sEp (int): Source endpoint.
+        dEp (int): Destination endpoint.
+        sequence (int): Sequence number.
+        payload (bytes): Command payload.
+
+    Returns:
+        tuple: (result, message) from the broadcast operation.
+    """
     result, msg = await self.app.broadcast(Profile, Cluster, sEp, dEp, 0x0, 0x0, sequence, payload)
     await asyncio.sleep(2 * WAITING_TIME_BETWEEN_REQUESTS)
     return result, msg
 
 
 async def _multicast_command(self, NwkId, Profile, Cluster, sEp, sequence, payload):
+    """
+    Sends a multicast Zigbee command to a group.
+
+    Uses app.mrequest with the group ID.
+
+    Args:
+        self: Instance of the transport class.
+        NwkId (str): Group ID as hex string.
+        Profile (int): Zigbee profile ID.
+        Cluster (int): Zigbee cluster ID.
+        sEp (int): Source endpoint.
+        sequence (int): Sequence number.
+        payload (bytes): Command payload.
+
+    Returns:
+        tuple: (result, message) from the multicast operation.
+    """
     destination = int(NwkId, 16)
     self.log.logging("TransportZigpy", "Debug", f"process_raw_command Multicast: {destination}")
     result, msg = await self.app.mrequest(destination, Profile, Cluster, sEp, sequence, payload)
@@ -751,7 +1026,25 @@ async def _unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequen
 
 
 def _get_destination(self, NwkId, addressmode, Profile, Cluster, sEp, dEp, sequence, payload):
+    """
+    Determines the destination device and transport type for a command.
 
+    Handles broadcast, multicast, and unicast based on address mode and NWK ID.
+
+    Args:
+        self: Instance of the transport class.
+        NwkId (str): Network ID as hex string.
+        addressmode (int): Addressing mode (0x00-0x08).
+        Profile (int): Profile ID.
+        Cluster (int): Cluster ID.
+        sEp (int): Source endpoint.
+        dEp (int): Destination endpoint.
+        sequence (int): Sequence number.
+        payload (bytes): Payload.
+
+    Returns:
+        tuple: (destination object or int, str transport type) or (None, None) on error.
+    """
     if int(NwkId, 16) >= 0xFFFB:  
         # Broadcast
         return int(NwkId, 16), "Broadcast"
@@ -782,6 +1075,20 @@ def _get_destination(self, NwkId, addressmode, Profile, Cluster, sEp, dEp, seque
 
 
 def push_APS_ACK_NACKto_plugin(self, nwkid, Cluster, sequence, result, lqi):
+    """
+    Forwards APS ACK/NACK status to the plugin via forwarder_queue.
+
+    Updates statistics and skips for coordinator (nwkid=0000). Converts result
+    to int if necessary.
+
+    Args:
+        self: Instance of the transport class.
+        nwkid (str): Network ID as hex.
+        Cluster (int): Cluster ID.
+        sequence (int): Sequence number.
+        result: Result status (int or serializable).
+        lqi (int): Link Quality Indicator.
+    """
     # Looks like Zigate return an int, while ZNP returns a status.type
     self.log.logging("TransportZigpy", "Debug", f"push_APS_ACK_NACK to_plugin - {nwkid} - Result: {result} LQI: {lqi}")
     if nwkid == "0000":
@@ -802,7 +1109,17 @@ def push_APS_ACK_NACKto_plugin(self, nwkid, Cluster, sequence, result, lqi):
 
 
 def properyly_display_data(Datas):
+    """
+    Formats a dictionary of data into a readable log string.
 
+    Converts specific keys (Profile, Cluster, etc.) to hex format for display.
+
+    Args:
+        Datas (dict): Data dictionary to format.
+
+    Returns:
+        str: Formatted log string like "{'key': value, ...}".
+    """
     log = "{"
     for x in Datas:
         value = Datas[x]
@@ -822,7 +1139,18 @@ def properyly_display_data(Datas):
 
 
 def log_exception(self, exception, error, cmd, data):
+    """
+    Logs an exception with context including stack trace and command data.
 
+    Uses properyly_display_data for formatting data.
+
+    Args:
+        self: Instance of the transport class.
+        exception (str): Exception type name.
+        error: Exception instance.
+        cmd (str): Command name.
+        data (dict): Command data.
+    """
     context = {
         "Exception": str(exception),
         "Message code:": str(error),
@@ -841,6 +1169,14 @@ def log_exception(self, exception, error, cmd, data):
 
 
 def check_transport_readiness(self):
+    """
+    Checks if the transport is ready based on the radio module.
+
+    Returns True for zigate/deCONZ/ezsp/blz, and checks ZNP sequence for znp.
+
+    Returns:
+        bool: True if ready, False otherwise.
+    """
     radiomodule = self._radiomodule
     if radiomodule in {"zigate", "deCONZ", "ezsp", "blz"}:
         return True
@@ -853,6 +1189,18 @@ def check_transport_readiness(self):
 
 
 def measure_execution_time(func):
+    """
+    Decorator to measure and log execution time of async functions.
+
+    Logs timing if ZigpyReactTime is enabled, updates statistics, and logs
+    detailed device info on completion.
+
+    Args:
+        func (callable): Async function to decorate.
+
+    Returns:
+        callable: Wrapped function.
+    """
     @functools.wraps(func)
     async def wrapper(self, *args, **kwargs):
         t_start = None
@@ -1091,8 +1439,29 @@ async def _send_and_retry(
 
 
 async def zigpy_request( self, device: zigpy.device.Device, profile: t.uint16_t, cluster: t.uint16_t, src_ep: t.uint8_t, dst_ep: t.uint8_t, sequence: t.uint8_t, data: bytes, *, ack_is_disable: bool = True, use_ieee: bool = False, extended_timeout: bool = False, priority: bool = t.PacketPriority.NORMAL) -> tuple[zigpy.zcl.foundation.Status, str]:
-    """Submit and send data out as an unicast transmission."""
+    """
+    Submits a unicast Zigbee packet via the app.send_packet method.
 
+    Builds the ZigbeePacket with addressing, options, and source routing if enabled.
+    Logs errors on failure.
+
+    Args:
+        self: Instance of the transport class.
+        device: Target Zigpy device.
+        profile: Profile ID.
+        cluster: Cluster ID.
+        src_ep: Source endpoint.
+        dst_ep: Destination endpoint.
+        sequence: TSN sequence.
+        data: Payload bytes.
+        ack_is_disable: Disable ACK (default True).
+        use_ieee: Use IEEE addressing (default False).
+        extended_timeout: Extended timeout flag.
+        priority: Packet priority.
+
+    Returns:
+        tuple: (Status, str message) - SUCCESS on send, DeliveryError on failure.
+    """
     self.log.logging(
         "TransportZigpy", 
         "Debug", 
@@ -1136,15 +1505,44 @@ async def zigpy_request( self, device: zigpy.device.Device, profile: t.uint16_t,
             )
         )
     except Exception as e:
-        self.log.logging("TransportZigpy", "Error", f"zigpy_request: Error sending packet: {e}\n{traceback.format_exc()}")
-        raise zigpy.exceptions.DeliveryError(f"ZCL FAILURE: {e}") from e
+        self.log.logging(
+            "TransportZigpy",
+            "Error",
+            (
+                "zigpy_request: Error sending packet\n"
+                f"  src={src}, src_ep={src_ep}, dst={dst}, dst_ep={dst_ep}, tsn={sequence}\n"
+                f"  profile_id={profile}, cluster_id={cluster}, data={data.hex() if isinstance(data,(bytes,bytearray)) else data}\n"
+                f"  extended_timeout={extended_timeout}, source_route={source_route}, "
+                f"tx_options={tx_options}, priority={priority}\n"
+                f"  Exception={e}\n"
+                f"  Traceback:\n{traceback.format_exc()}"
+            ),
+        )
+        return (zigpy.exceptions.DeliveryError, f"ZCL FAILURE: {e}")
 
     return (zigpy.zcl.foundation.Status.SUCCESS, "")
 
 
 async def zigpy_mrequest( self, group_id: t.uint16_t, profile: t.uint8_t, cluster: t.uint16_t, src_ep: t.uint8_t, sequence: t.uint8_t, data: bytes, *, hops: int = 0, non_member_radius: int = 3,):
-    """Submit and send data out as a multicast transmission."""
+    """
+    Submits a multicast Zigbee packet to a group.
 
+    Builds and sends the packet with group addressing.
+
+    Args:
+        self: Instance of the transport class.
+        group_id: Group ID.
+        profile: Profile ID.
+        cluster: Cluster ID.
+        src_ep: Source EP.
+        sequence: TSN.
+        data: Payload.
+        hops: Radius for hops.
+        non_member_radius: Non-member radius.
+
+    Returns:
+        tuple: (Status.SUCCESS, "") on send.
+    """
 
     await self.app.send_packet(
         t.ZigbeePacket(
@@ -1165,8 +1563,26 @@ async def zigpy_mrequest( self, group_id: t.uint16_t, profile: t.uint8_t, cluste
 
 
 async def zigpy_broadcast( self, profile: t.uint16_t, cluster: t.uint16_t, src_ep: t.uint8_t, dst_ep: t.uint8_t, grpid: t.uint16_t, radius: int, sequence: t.uint8_t, data: bytes, broadcast_address: t.BroadcastAddress = t.BroadcastAddress.RX_ON_WHEN_IDLE, ) -> tuple[zigpy.zcl.foundation.Status, str]:
-    """Submit and send data out as an unicast transmission."""
+    """
+    Submits a broadcast Zigbee packet.
 
+    Builds and sends the packet with broadcast addressing.
+
+    Args:
+        self: Instance of the transport class.
+        profile: Profile ID.
+        cluster: Cluster ID.
+        src_ep: Source EP.
+        dst_ep: Dest EP.
+        grpid: Group ID (unused?).
+        radius: Broadcast radius.
+        sequence: TSN.
+        data: Payload.
+        broadcast_address: Broadcast address type.
+
+    Returns:
+        tuple: (Status.SUCCESS, "") on send.
+    """
     await self.app.send_packet(
         t.ZigbeePacket(
             src=t.AddrModeAddress( addr_mode=t.AddrMode.NWK, address=self.state.node_info.nwk ),
@@ -1326,6 +1742,14 @@ def _cleanup_unused_concurrency_state(self):
             
 
 def specific_endpoints(self):
+    """
+    Checks if the plugin configuration enables specific endpoint handling.
+
+    Returns True if any supported plugin (Terncy, Konke, etc.) is enabled.
+
+    Returns:
+        bool: True if specific endpoints needed.
+    """
     supported_plugins = ["Terncy", "Konke", "Wiser", "Orvibo", "Livolo", "Wiser2"]
 
     return any(
