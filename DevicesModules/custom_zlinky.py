@@ -139,6 +139,8 @@ def _normalize_tarif(self, op_tarifaire):
         base_tarifaire = "EJP"  # Treat any EJPx as EJP
     elif op_tarifaire == "HEURES PLEINES":
         base_tarifaire = "HC"
+    elif op_tarifaire == "H PLEINE/CREUSE":   # Fix https://easydomoticz.com/forum/viewtopic.php?t=14468
+        base_tarifaire = "HC"
     else:
         base_tarifaire = op_tarifaire
     self.log.logging("ZLinky", "Debug", f"_normalize_tarif {op_tarifaire} -> {base_tarifaire}")
