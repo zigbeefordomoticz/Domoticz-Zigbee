@@ -31,7 +31,7 @@ from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, TypeFromCluster,
                                remove_bad_cluster_type_entry,
                                update_domoticz_widget)
-from Modules.linky import linky_tarif_color
+from Modules.linky import linky_tarif_color, linky_tarif_color_ntarf
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import (get_deviceconf_parameter_value, str_round,
                            zigpy_plugin_sanity_check)
@@ -159,10 +159,17 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
     if ClusterType == "Alarm" and WidgetType == "LinkyCurrentTarif" and Attribute_ == "0039":
+        # Notification via LTARF
         nValue, sValue = linky_tarif_color( self, value )
         self.log.logging( "Widget", "Log", f"LinkyTarif Tarif Color {value} => {nValue}:{sValue}", NwkId, )
         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
+    if ClusterType == "Alarm" and WidgetType == "LinkyCurrentTarif" and Attribute_ == "0020":
+        # Notification via NTARF
+        nValue, sValue = linky_tarif_color_ntarf( self, value )
+        self.log.logging( "Widget", "Log", f"LinkyTarif Tarif Color {value} => {nValue}:{sValue}", NwkId, )
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+        
     if ClusterType == "Alarm" and WidgetType == "LinkyNextDayColor" and Attribute_ == "0003":
         nValue, sValue = linky_tarif_color( self, value )
         self.log.logging( "Widget", "Log", f"LinkyTarif Tarif Color {value} => {nValue}:{sValue}", NwkId, )
