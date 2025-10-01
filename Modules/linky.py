@@ -103,6 +103,11 @@ LINKY_TARIF_MATRIX = {
     "HPJR": (4, "Rouge HP")
 }
 
+LINKY_NTARF_TARIF_MATRIX = {
+    0: (0, "All Hours"),
+    1: (1, "Off-peak Hours"),
+    2: (2, "Peak Hours"),
+}
 
 LINKY_MODEL_NAME = {
     0: { "Mode": ('historique', 'mono'), "Conf": "TICMeter-mono" },
@@ -126,13 +131,17 @@ LINKY_GRID = {
 
 def linky_tarif_color( self, value ):
     """ Translate the Linky PTEC value to a tuple of nValues and sValues for Domoticz """
-    self.log.logging( "GammaTroniques", "Log", f"linky_tarif_color Tarif Color >{value}<")
-    return LINKY_TARIF_MATRIX.get(value, (3, "Unknown Tarif"))
+    self.log.logging( ["GammaTroniques", "Chameleon"], "Log", f"linky_tarif_color Tarif Color >{value}<")
+    return LINKY_TARIF_MATRIX.get(value, (3, f"PTEC: {value} Unknown Tarif"))
 
+def linky_tarif_color_ntarf( self, value ):
+    """ Translate the Linky NTARF value to a tuple of nValues and sValues for Domoticz """
+    self.log.logging( ["GammaTroniques", "Chameleon"], "Log", f"linky_tarif_color_ntarf Tarif Color >{value}<")
+    return LINKY_NTARF_TARIF_MATRIX.get(value, (3, f"NTARF: {value} Unknown Tarif"))
 
 def linky_mode_tic( self, value ):
     """ Translate the Linky TIC Mode value to a dict of Mode and Config file to be used """
-    self.log.logging( "GammaTroniques", "Log", f"linky_mode_tic Mode >{value}<")
+    self.log.logging( ["GammaTroniques", "Chameleon"], "Log", f"linky_mode_tic Mode >{value}<")
     return LINKY_MODEL_NAME.get(value, { "Mode": ('unknown', 'unknown'), "Conf": "TICMeter-unknown" })
 
 
