@@ -76,7 +76,9 @@ LINKY_TARIF_MATRIX = {
     
     "HC..": (1, "Off-peak Hours"),
     "HP..": (2, "Peak Hours"),
-    "HEURES CREUSES": (1, "Off-peak Hours"),
+    "HEURE CREUSE": (1, "Off-peak Hours"),
+    "HEURES PLEINES": (2, "Peak Hours"),
+    "HEURE CREUSE": (1, "Off-peak Hours"),
     "HEURES PLEINES": (2, "Peak Hours"),
 
     "00": (1, "Off-peak Hours"),
