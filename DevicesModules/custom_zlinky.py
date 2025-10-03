@@ -262,7 +262,13 @@ def _normalize_hchp_color(self, ltarf_value):
     if ltarf_value == "HEURES PLEINES":
         self.log.logging("ZLinky", "Debug", f"_normalize_hchp_color {ltarf_value} --> HP..")
         return "HP.."
+    elif ltarf_value == "HEURE PLEINE":
+        self.log.logging("ZLinky", "Debug", f"_normalize_hchp_color {ltarf_value} --> HP..")
+        return "HP.."
     elif ltarf_value == "HEURES CREUSES":
+        self.log.logging("ZLinky", "Debug", f"_normalize_hchp_color {ltarf_value} --> HC..")
+        return "HC.."
+    elif ltarf_value == "HEURE CREUSE":
         self.log.logging("ZLinky", "Debug", f"_normalize_hchp_color {ltarf_value} --> HC..")
         return "HC.."
 
