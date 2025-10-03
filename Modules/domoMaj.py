@@ -1985,8 +1985,8 @@ def check_and_update_chameleon_erz3_linky_color_if_needed(self, nwkid, attribute
     ERL_Z3_PTEC_LTARF_ATTRIBUTE = "0102"
     ERL_Z3_STGE_DEMAIN_ATTRIBUTE = "0103"
 
-    HC = {"HC..", "HEURES CREUSES", "BHC", "HCJB", "WHC", "HCJW", "RHC", "HCJR"}
-    HP = {"HP..", "HEURES PLEINES", "BHP", "HPJB", "WHP", "HPJW", "RHP", "HPJR"}
+    HC = {"HC..", "HEURES CREUSES", "HEURE CREUSE", "BHC", "HCJB", "WHC", "HCJW", "RHC", "HCJR"}
+    HP = {"HP..", "HEURES PLEINES", "HEURE PLEINE", "BHP", "HPJB", "WHP", "HPJW", "RHP", "HPJR"}
 
     device_infos = self.ListOfDevices.get(nwkid, {})
     if device_infos.get("Model") not in {"ERL Z3", "Linky Energy Sensor", }:
