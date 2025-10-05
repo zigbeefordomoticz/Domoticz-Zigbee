@@ -1522,7 +1522,7 @@ async def zigpy_request( self, device: zigpy.device.Device, profile: t.uint16_t,
         return (asyncio.TimeoutError, f"ZCL FAILURE: {e}")
   
     except zigpy.exceptions.DeliveryError as e:
-          self.log.logging(
+        self.log.logging(
             "TransportZigpy",
             "Debug",
             (
