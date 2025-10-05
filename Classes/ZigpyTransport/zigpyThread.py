@@ -1519,7 +1519,7 @@ async def zigpy_request( self, device: zigpy.device.Device, profile: t.uint16_t,
                 f"  Traceback:\n{traceback.format_exc()}"
             ),
         )
-        return (    except asyncio.TimeoutError as e:, f"ZCL FAILURE: {e}")
+        return (asyncio.TimeoutError, f"ZCL FAILURE: {e}")
   
     except zigpy.exceptions.DeliveryError as e:
           self.log.logging(
