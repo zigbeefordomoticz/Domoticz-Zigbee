@@ -76,10 +76,10 @@ LINKY_TARIF_MATRIX = {
     
     "HC..": (1, "Off-peak Hours"),
     "HP..": (2, "Peak Hours"),
-    "HEURE CREUSE": (1, "Off-peak Hours"),
+    "HEURES CREUSES": (1, "Off-peak Hours"),
     "HEURES PLEINES": (2, "Peak Hours"),
     "HEURE CREUSE": (1, "Off-peak Hours"),
-    "HEURES PLEINES": (2, "Peak Hours"),
+    "HEURE PLEINE": (2, "Peak Hours"),
 
     "00": (1, "Off-peak Hours"),
     "01": (2, "Peak Hours"),
@@ -105,11 +105,24 @@ LINKY_TARIF_MATRIX = {
     "HPJR": (4, "Rouge HP")
 }
 
-LINKY_NTARF_TARIF_MATRIX = {
-    0: (0, "All Hours"),
+BASE_LINKY_NTARF_TARIF_MATRIX = {
+    1: (2, "Peak Hours")
+}
+    
+HCHP_LINKY_NTARF_TARIF_MATRIX = {
     1: (1, "Off-peak Hours"),
     2: (2, "Peak Hours"),
 }
+
+TEMPO_LINKY_NTARF_TARIF_MATRIX = { 
+    1: (1, "Off-peak Hours"),   # HC Bleu
+    2: (2, "Peak Hours"),  # HP Bleu
+    3: (1, "Off-peak Hours"),   # HC Blanc
+    4: (2, "Peak Hours"),  # HP Blanc
+    5: (1, "Off-peak Hours"),   # HC Rouge
+    6: (2, "Peak Hours"),  # HP Rouge
+}
+
 
 LINKY_MODEL_NAME = {
     0: { "Mode": ('historique', 'mono'), "Conf": "TICMeter-mono" },
@@ -136,11 +149,43 @@ def linky_tarif_color( self, value ):
     self.log.logging( ["GammaTroniques", "Chameleon"], "Log", f"linky_tarif_color Tarif Color >{value}<")
     return LINKY_TARIF_MATRIX.get(value, (3, f"PTEC: {value} Unknown Tarif"))
 
-def linky_tarif_color_ntarf( self, value ):
-    """ Translate the Linky NTARF value to a tuple of nValues and sValues for Domoticz """
-    self.log.logging( ["GammaTroniques", "Chameleon"], "Log", f"linky_tarif_color_ntarf Tarif Color >{value}<")
-    return LINKY_NTARF_TARIF_MATRIX.get(value, (3, f"NTARF: {value} Unknown Tarif"))
 
+def _get_option_tarif(self, nwkid):
+    
+    MANUFACTURER_ATTRIBUTS ={
+        "GammaTroniques": "NGTF",
+        "Chameleon": "NGTF/OPTARIF",
+        "ZLinky": "OPTARIF"
+    }
+    
+    device = self.ListOfDevices.get(nwkid)
+    for manufacturer, attr in MANUFACTURER_ATTRIBUTS.items():
+        if manufacturer in device:
+            return device[manufacturer].get(attr)
+          
+    return None
+
+
+def linky_tarif_color_ntarf( self, nwkid, value ):
+    """ Translate the Linky NTARF value to a tuple of nValues and sValues for Domoticz """
+    self.log.logging( ["GammaTroniques", "Chameleon", "ZLinky"], "Log", f"linky_tarif_color_ntarf Tarif Color >{value}<")
+    
+    opt_tarif = _get_option_tarif(self, nwkid)
+    self.log.logging( ["GammaTroniques", "Chameleon", "ZLinky"], "Log", f"Option Tarifaire retreived >{opt_tarif}<")
+    
+    if opt_tarif == "BASE":
+        return BASE_LINKY_NTARF_TARIF_MATRIX.get(value, (3, f"NTARF: {value} Unknown Tarif"))
+    
+    if opt_tarif in ( "HCHP 22h-6h", "H PLEINE/CREUSE"):
+        return HCHP_LINKY_NTARF_TARIF_MATRIX.get(value, (3, f"NTARF: {value} Unknown Tarif"))
+    
+    if opt_tarif == "TEMPO":
+        return TEMPO_LINKY_NTARF_TARIF_MATRIX.get(value, (3, f"NTARF: {value} Unknown Tarif"))
+    
+
+    return (3, f"NTARF: {value} Unknown Contract/Tarif")
+
+    
 def linky_mode_tic( self, value ):
     """ Translate the Linky TIC Mode value to a dict of Mode and Config file to be used """
     self.log.logging( ["GammaTroniques", "Chameleon"], "Log", f"linky_mode_tic Mode >{value}<")
