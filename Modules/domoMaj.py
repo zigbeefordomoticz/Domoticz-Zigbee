@@ -166,7 +166,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
 
     if ClusterType == "Alarm" and WidgetType == "LinkyCurrentTarif" and Attribute_ == "0020":
         # Notification via NTARF
-        nValue, sValue = linky_tarif_color_ntarf( self, value )
+        nValue, sValue = linky_tarif_color_ntarf( self, NwkId, value )
         self.log.logging( "Widget", "Log", f"LinkyTarif Tarif Color {value} => {nValue}:{sValue}", NwkId, )
         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
         
