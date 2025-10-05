@@ -1504,6 +1504,39 @@ async def zigpy_request( self, device: zigpy.device.Device, profile: t.uint16_t,
                 priority=priority,
             )
         )
+
+    except asyncio.TimeoutError as e:
+        self.log.logging(
+            "TransportZigpy",
+            "Debug",
+            (
+                "zigpy_request: Timeout while sending packet\n"
+                f"  src={src}, src_ep={src_ep}, dst={dst}, dst_ep={dst_ep}, tsn={sequence}\n"
+                f"  profile_id={profile}, cluster_id={cluster}, data={data.hex() if isinstance(data,(bytes,bytearray)) else data}\n"
+                f"  extended_timeout={extended_timeout}, source_route={source_route}, "
+                f"tx_options={tx_options}, priority={priority}\n"
+                f"  Exception={e}\n"
+                f"  Traceback:\n{traceback.format_exc()}"
+            ),
+        )
+        return (    except asyncio.TimeoutError as e:, f"ZCL FAILURE: {e}")
+  
+    except zigpy.exceptions.DeliveryError as e:
+          self.log.logging(
+            "TransportZigpy",
+            "Debug",
+            (
+                "zigpy_request: Error sending packet\n"
+                f"  src={src}, src_ep={src_ep}, dst={dst}, dst_ep={dst_ep}, tsn={sequence}\n"
+                f"  profile_id={profile}, cluster_id={cluster}, data={data.hex() if isinstance(data,(bytes,bytearray)) else data}\n"
+                f"  extended_timeout={extended_timeout}, source_route={source_route}, "
+                f"tx_options={tx_options}, priority={priority}\n"
+                f"  Exception={e}\n"
+                f"  Traceback:\n{traceback.format_exc()}"
+            ),
+        )
+        return (zigpy.exceptions.DeliveryError, f"ZCL FAILURE: {e}")
+      
     except Exception as e:
         self.log.logging(
             "TransportZigpy",
