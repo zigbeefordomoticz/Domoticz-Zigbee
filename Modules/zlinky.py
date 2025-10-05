@@ -41,9 +41,9 @@ ZLINKY_MODE = {
 
 ZLINKY_UPGRADE_PATHS = { 
     "ZLinky_TIC": (
-        "ZLinky_TIC-historique-mono", "ZLinky_TIC-historique-tri",
-        "ZLinky_TIC-standard-mono", "ZLinky_TIC-standard-mono-prod",
-        "ZLinky_TIC-standard-tri", "ZLinky_TIC-standard-tri-prod"),
+    "ZLinky_TIC-historique-mono", "ZLinky_TIC-historique-tri",
+    "ZLinky_TIC-standard-mono", "ZLinky_TIC-standard-mono-prod",
+    "ZLinky_TIC-standard-tri", "ZLinky_TIC-standard-tri-prod"),
     "ZLinky_TIC-historique-mono": ( "ZLinky_TIC-standard-mono", "ZLinky_TIC-standard-mono-prod"),
     "ZLinky_TIC-historique-tri": ( "ZLinky_TIC-standard-tri", "ZLinky_TIC-standard-tri-prod" ),
     "ZLinky_TIC-standard-mono-prod": (),
@@ -274,19 +274,19 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
         return "00|Normal"
 
     flevel = (value * 100) / isousc
-    self.log.logging( "Cluster", "Debug", "zlinky_check_alarm - %s/%s flevel- %s %s %s" % (MsgSrcAddr, MsgSrcEp, value, isousc, flevel), MsgSrcAddr, )
+    self.log.logging( "ZLinky", "Debug", "zlinky_check_alarm - %s/%s flevel- %s %s %s" % (MsgSrcAddr, MsgSrcEp, value, isousc, flevel), MsgSrcAddr, )
 
     if flevel > ISOUSC_THRESHOLD_MAX:
-        self.log.logging( "Cluster", "Debug", "zlinky_check_alarm - %s/%s Alarm-01" % (MsgSrcAddr, MsgSrcEp), MsgSrcAddr, )
+        self.log.logging( "ZLinky", "Debug", "zlinky_check_alarm - %s/%s Alarm-01" % (MsgSrcAddr, MsgSrcEp), MsgSrcAddr, )
         return "03|Reach >98 %% of Max subscribe %s" % (isousc)
 
        
     elif flevel > ISOUSC_THRESHOLD_MED:
-        self.log.logging( "Cluster", "Debug", "zlinky_check_alarm - %s/%s Alarm-02" % (MsgSrcAddr, MsgSrcEp), MsgSrcAddr, )
+        self.log.logging( "ZLinky", "Debug", "zlinky_check_alarm - %s/%s Alarm-02" % (MsgSrcAddr, MsgSrcEp), MsgSrcAddr, )
         return "02|Reach >90 %% of Max subscribe %s" % (isousc)
 
         
-    self.log.logging( "Cluster", "Debug", "zlinky_check_alarm - %s/%s Alarm-03" % (MsgSrcAddr, MsgSrcEp), MsgSrcAddr, )
+    self.log.logging( "ZLinky", "Debug", "zlinky_check_alarm - %s/%s Alarm-03" % (MsgSrcAddr, MsgSrcEp), MsgSrcAddr, )
     return "00|Normal"
 
 
@@ -333,7 +333,7 @@ def linky_device_conf(self, nwkid):
     if not protocol_linky:
         mode = get_linky_mode_from_ep(self, nwkid)
         if mode:
-            self.log.logging("Cluster", "Status", f"linky_device_conf {nwkid} found 0xff66/0x0300: {mode}")
+            self.log.logging("ZLinky", "Status", f"linky_device_conf {nwkid} found 0xff66/0x0300: {mode}")
             zlinky_info['PROTOCOL Linky'] = mode
             return ZLINKY_MODE[mode]["Conf"]
         else:
@@ -342,7 +342,7 @@ def linky_device_conf(self, nwkid):
     if protocol_linky not in ZLINKY_MODE:
         return "ZLinky_TIC"
     
-    self.log.logging("Cluster", "Debug", f"linky_device_conf {nwkid} found Protocol Linky: {protocol_linky}")
+    self.log.logging("ZLinky", "Debug", f"linky_device_conf {nwkid} found Protocol Linky: {protocol_linky}")
     return ZLINKY_MODE[protocol_linky]["Conf"]
 
  
