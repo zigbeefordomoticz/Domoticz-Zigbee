@@ -397,11 +397,21 @@ def ezsp_configuration_setup(self, bellows_conf, serialPort, serial_specifics):
     Returns:
         dict: Configuration dictionary for the EZSP application.
     """
+    # The bellows implementation of flow control is a bit special
+    # if config[zigpy.config.CONF_DEVICE_FLOW_CONTROL] is None:
+    #     xon_xoff, rtscts = True, False
+    # else:
+    #     xon_xoff, rtscts = False, True
+
+    flow_control = serial_specifics.get("FlowControl", None)
+    if flow_control == "software":
+        flow_control = None
+
     config = {
         zigpy.config.CONF_DEVICE: {
             zigpy.config.CONF_DEVICE_PATH: serialPort,
             zigpy.config.CONF_DEVICE_BAUDRATE: serial_specifics.get("Baudrate", 115200),
-            zigpy.config.CONF_DEVICE_FLOW_CONTROL: serial_specifics.get("FlowControl", None)
+            zigpy.config.CONF_DEVICE_FLOW_CONTROL: flow_control
         },
         zigpy.config.CONF_NWK: {
         },
