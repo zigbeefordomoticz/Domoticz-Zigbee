@@ -31,6 +31,10 @@ def bellows_extract_versioning_for_plugin(self, brd_manuf, brd_name, version):
     elif brd_name == 'ZBDongle-E':
         # Sonoff ZBDongle-E
         firmware_branch = "32"
+        
+    elif brd_name == 'Dongle Plus MG24':
+        # Sonoff Dongle Plus MG24
+        firmware_branch = "33"
 
     # 6.10.3.0 build 297
     firmware_major_version = "%02d" % int(version[:2].replace('.', ''))

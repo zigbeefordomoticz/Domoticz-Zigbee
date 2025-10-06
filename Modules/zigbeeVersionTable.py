@@ -25,6 +25,7 @@ FIRMWARE_BRANCH = {
     "30": "Elelabs, ELR02x",
     "31": "Elelabs, ELU01x",
     "32": "ZBDongle-E (ezsp)",
+    "33": "Dongle Plus MG24 (ezsp)",
 
     # deCONZ
     "40": "ConBee II",
