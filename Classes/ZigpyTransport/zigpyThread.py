@@ -909,6 +909,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None, delayAft
     destination, transport_needs = _get_destination(self, NwkId, addressmode, Profile, Cluster, sEp, dEp, sequence, payload)
 
     if destination is None:
+        self.log.logging("TransportZigpy", "Log", f"process_raw_command: unable to find destination/transport for request {properyly_display_data(data)} - aborting")
         return
 
     if transport_needs == "Broadcast":
@@ -1070,7 +1071,7 @@ def _get_destination(self, NwkId, addressmode, Profile, Cluster, sEp, dEp, seque
             destination = self.app.get_device(nwk=t.NWK(int(NwkId, 16)))
 
         except KeyError:
-            self.log.logging( "TransportZigpy", "Error", f"_get_destination unable to get destination. Nwkid {NwkId} AddrMode {addressmode}")
+            self.log.logging( "TransportZigpy", "Log", f"_get_destination unable to get destination. Nwkid {NwkId} AddrMode {addressmode}")
             destination = None
 
         return destination, "Unicast"
