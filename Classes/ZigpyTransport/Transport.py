@@ -105,33 +105,86 @@ class ZigpyTransport(object):
         pass
 
 
-    def thread_transport_shutdown(self):
-        self.log.logging("Transport", "Debug", "Shutting down zigpy thread")
-        stop_zigpy_thread(self)
-        self.log.logging("Transport", "Debug", "Zigpy thread stopped")
+    #def thread_transport_shutdown(self):
+    #    self.log.logging("Transport", "Debug", "Shutting down zigpy thread")
+    #    stop_zigpy_thread(self)
+    #    self.log.logging("Transport", "Debug", "Zigpy thread stopped")
 
-        self.log.logging("Transport", "Debug", "Shutting down zigpy forwarder thread")
-        stop_forwarder_thread(self)
-        self.log.logging("Transport", "Debug", "Zigpy forwarder stopped")
+    #    self.log.logging("Transport", "Debug", "Shutting down zigpy forwarder thread")
+    #    stop_forwarder_thread(self)
+    #    self.log.logging("Transport", "Debug", "Zigpy forwarder stopped")
 
-        self.log.logging("Transport", "Debug", "Zigpy thread join with 5 seconds timeout")
-        self.zigpy_thread.join(timeout=120)
-        if self.zigpy_thread.is_alive():
-            self.log.logging("Transport", "Error", "Zigpy thread did not terminate within 5 seconds")
-            active_threads = threading.enumerate()
-            thread_info = [(t.name, t.ident, t.is_alive()) for t in active_threads]
-            self.log.logging("Transport", "Error", f"Active threads: {thread_info}")
-        else:
-            self.log.logging("Transport", "Debug", "Zigpy join completed")
+    #    self.log.logging("Transport", "Debug", "Zigpy thread join with 5 seconds timeout")
+    #    self.zigpy_thread.join(timeout=120)
+    #    if self.zigpy_thread.is_alive():
+    #        self.log.logging("Transport", "Error", "Zigpy thread did not terminate within 5 seconds")
+    #        active_threads = threading.enumerate()
+    #        thread_info = [(t.name, t.ident, t.is_alive()) for t in active_threads]
+    #        self.log.logging("Transport", "Error", f"Active threads: {thread_info}")
+    #    else:
+    #        self.log.logging("Transport", "Debug", "Zigpy join completed")
  
+    #    self.log.logging("Transport", "Debug", "Zigpy forwarder thread join with 5 seconds timeout")
+    #    self.forwarder_thread.join(timeout=5)
+    #    if self.forwarder_thread.is_alive():
+    #        self.log.logging("Transport", "Error", "Forwarder thread did not terminate within 5 seconds")
+    #    else:
+    #        self.log.logging("Transport", "Debug", "Forwarder join completed")
+    #    
+    #    self.log.logging("Transport", "Status", "Zigpy transport threads shutdown attempted")
 
-        self.log.logging("Transport", "Debug", "Zigpy forwarder thread join with 5 seconds timeout")
-        self.forwarder_thread.join(timeout=5)
-        if self.forwarder_thread.is_alive():
-            self.log.logging("Transport", "Error", "Forwarder thread did not terminate within 5 seconds")
-        else:
-            self.log.logging("Transport", "Debug", "Forwarder join completed")
-        
+    def thread_transport_shutdown(self):
+        self.log.logging("Transport", "Debug", "Starting Zigpy transport shutdown sequence")
+
+        # --- Stop Zigpy Thread ---
+        try:
+                self.log.logging("Transport", "Debug", "Stopping zigpy thread")
+                stop_zigpy_thread(self)
+                self.log.logging("Transport", "Debug", "Zigpy thread stop requested")
+        except Exception as e:
+            self.log.logging("Transport", "Error", f"Error stopping zigpy thread: {e}")
+
+        # --- Stop Forwarder Thread ---
+        try:
+                stop_forwarder_thread(self)
+                self.log.logging("Transport", "Debug", "Zigpy forwarder stop requested")
+        except Exception as e:
+            self.log.logging("Transport", "Error", f"Error stopping zigpy forwarder thread: {e}")
+
+        # --- Join Zigpy Thread ---
+        try:
+            thread = getattr(self, "zigpy_thread", None)
+            if thread is not None:
+                self.log.logging("Transport", "Debug", "Joining zigpy thread (timeout 120s)")
+                thread.join(timeout=120)
+                if thread.is_alive():
+                    self.log.logging("Transport", "Error", "Zigpy thread did not terminate within 120 seconds")
+                    active_threads = threading.enumerate()
+                    thread_info = [(t.name, t.ident, t.is_alive()) for t in active_threads]
+                    self.log.logging("Transport", "Error", f"Active threads: {thread_info}")
+                else:
+                    self.log.logging("Transport", "Debug", "Zigpy thread join completed")
+            else:
+                self.log.logging("Transport", "Log", "Zigpy thread not found or not started")
+        except Exception as e:
+            self.log.logging("Transport", "Error", f"Error joining zigpy thread: {e}")
+
+        # --- Join Forwarder Thread ---
+        try:
+            thread = getattr(self, "forwarder_thread", None)
+            if thread is not None:
+                self.log.logging("Transport", "Debug", "Joining zigpy forwarder thread (timeout 5s)")
+                thread.join(timeout=5)
+                if thread.is_alive():
+                    self.log.logging("Transport", "Error", "Forwarder thread did not terminate within 5 seconds")
+                else:
+                    self.log.logging("Transport", "Debug", "Forwarder join completed")
+            else:
+                self.log.logging("Transport", "Log", "Forwarder thread not found or not started")
+        except Exception as e:
+            self.log.logging("Transport", "Error", f"Error joining forwarder thread: {e}")
+
+        # --- Summary ---
         self.log.logging("Transport", "Status", "Zigpy transport threads shutdown attempted")
 
 
