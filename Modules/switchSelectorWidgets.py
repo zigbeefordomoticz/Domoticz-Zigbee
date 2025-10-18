@@ -457,7 +457,7 @@ SWITCH_SELECTORS = {
         "ForceUpdate": True
     },
     # Deveco KEPZB-110 Keypad
-    "KeypadAction": {
+    "KeypadFeedback": {
         "00": (0, "00"),
         "01": (1, "10"),
         "02": (2, "20"),
