@@ -758,6 +758,11 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
 
     self.log.logging( "Command", "Debug", f"handle_command_setlevel : Set Level for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} Level: {Level} TS0601_DP: {is_tst0601_data_points_defined}", Nwkid, )
 
+    if DeviceType == "KeypadFeedback":
+        # For Develco/Frient Intelligent Keypad, we get here what needs to be answer to the Get Panel Status from Peypad
+        _keypad_feedback_response(self, Nwkid, EPout, Level)
+        return
+
     if DeviceType == "ThermoSetpoint":
         _set_level_setpoint(self, Devices, DeviceID, Unit, Nwkid, EPout, model_name, Level, BatteryLevel, SignalLevel,DeviceType, forceUpdateDev )
         return
@@ -1396,3 +1401,24 @@ def handle_command_setcolor(self,Devices, DeviceID, Unit, Level, Color, Nwkid, E
 
     # Use nValue=15 as https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1680
     update_domoticz_widget(self, Devices, DeviceID, Unit, 15, str(Level), BatteryLevel, SignalLevel, str(Color))
+
+
+def _keypad_feedback_response(self, Nwkid, EPout, Level):
+
+    KEYPAD_WIDGET_MATRIX = {
+        "01": "Disarm",
+        "04": "ArmHome",
+        "03": "ArmNight",
+        "02": "ArmAllZones",
+        "05": "InvalidCode",
+        "06": "NotReady",
+        "07": "AlreadyDiarmed",
+    }
+
+    if "IAS_KEYPAD" not in self.ListOfDevices[Nwkid]:
+        self.ListOfDevices[Nwkid]["IAS_KEYPAD"] = {}
+
+    self.ListOfDevices[Nwkid]["IAS_KEYPAD"]["Current"] = {
+        "CurrentArmMode": KEYPAD_WIDGET_MATRIX.get("%02x" % Level, "Unknown")
+        }
+

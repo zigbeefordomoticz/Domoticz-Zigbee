@@ -262,7 +262,9 @@ def handle_ias_ace_command( self, Devices, srcnwkid, srcep, sqn, model_name, com
         
         if is_ias_keyboard:
             self.log.logging("inRawAPS", "Log", "IAS Keyboard - %s %s %s" % (arm_mode, arm_mode_description, payload))
-            self.ListOfDevices[srcnwkid]["IAS_ACE"] = {
+            if "IAS_KEYPAD" not in self.ListOfDevices[srcnwkid]:
+                self.ListOfDevices[srcnwkid]["IAS_KEYPAD"] = {}
+            self.ListOfDevices[srcnwkid]["IAS_KEYPAD"]["Last"] = {
                 "LastArmMode": arm_mode,
                 "LastArmModeDescription": arm_mode_description,
                 "Code": decode_kepzb_110_hex_string(payload[2:]),
@@ -287,7 +289,8 @@ def handle_ias_ace_command( self, Devices, srcnwkid, srcep, sqn, model_name, com
     elif IAS_ACE_COMMANDS.get(command) == "Get Panel Status":
         # Get Panel Status. This command is used by ACE clients to request an update to the status of the ACE server.
         # On receipt of this command, the ACE server responds with the status of the security system. 
-        self.log.logging("inRawAPS", "Log", "IAS ACE Get Panel Status Not Implemented: %s - %s" % (command, payload))
+        self.log.logging("inRawAPS", "Log", "IAS ACE Get Panel Status %s - %s" % (command, payload))
+        get_panel_status_response( self, Devices, srcnwkid, srcep, sqn )
 
     else:
         self.log.logging("inRawAPS", "Log", "IAS ACE unknown command: %s - %s" % (command, payload))
@@ -318,5 +321,29 @@ def get_panel_status_response( self, Devices, srcnwkid, srcep, sqn ):
     audible_notification: str = "00"  # No Audible Notification
     alarm_status: str = "00"  # No Alarm
 
+    panel_status = get_panel_status_from_widget( self, Devices, srcnwkid, srcep )
     status_payload = panel_status + seconds_remaining + audible_notification + alarm_status
+    self.log.logging("inRawAPS", "Log", "get_panel_status_response: Panel Status: %s Payload: %s" % (panel_status, status_payload))
     zcl_raw_get_panel_status_response(self, "01", srcep, srcnwkid, sqn, status_payload)
+    
+def get_panel_status_from_widget( self, Devices, srcnwkid, srcep ):
+    """
+    Get Panel Status from Widget
+    """
+    
+    PANEL_STATUS_RETURN_CODES = {
+        "Disarm": 0x00,
+        "ArmHome": 0x01,
+        "ArmNight": 0x02,
+        "ArmAllZones": 0x03,
+        #"InvalidCode",
+        "NotReady": 0x06,
+        "AlreadyDiarmed": 0x00
+    }
+
+
+    if "IAS_KEYPAD" not in self.ListOfDevices[srcnwkid]:
+        return "06"  # Disarmed
+
+    last_status = self.ListOfDevices[srcnwkid]["IAS_KEYPAD"].get("Current", {})
+    return PANEL_STATUS_RETURN_CODES.get(last_status.get("CurrentArmMode", "06"))
