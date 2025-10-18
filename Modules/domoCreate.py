@@ -785,11 +785,6 @@ SIMPLE_WIDGET = {
         "Subtype": 19,
         "Switchtype": 0,
     },
-    "KeypadAlarm": {
-        "Type": 243,
-        "Subtype": 22,
-        "Switchtype": 0
-    },
     "LiquidLevel": {
         "Type": 243,
         "Subtype": 6,
