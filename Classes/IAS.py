@@ -236,7 +236,7 @@ class IAS_Zone_Management:
 
         if is_device_enrollment_completed(self, NwkId):
             self.logging("Debug", f"IAS device Enrollment Request for {NwkId}/{Ep} ZoneType: {ZoneType} already completed")
-            check_IAS_CIE_Address(self, NwkId, Ep)
+            IAS_Zone_enrollment_response(self, NwkId, Ep, sqn, ZONE_ID)
             return
 
         # Receiving an Enrollment Request
