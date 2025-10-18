@@ -19,10 +19,9 @@
 import struct
 import time
 
-from Modules.basicOutputs import write_attribute
 from Modules.bindings import bindDevice
 from Modules.sendZigateCommand import raw_APS_request
-from Modules.tools import get_and_inc_ZCL_SQN, getEpForCluster
+from Modules.tools import get_and_inc_ZCL_SQN, getEpForCluster, get_deviceconf_parameter_value
 from Modules.zigateConsts import ZIGATE_EP
 from Zigbee.zclCommands import (zcl_ias_wd_command_squawk,
                                 zcl_ias_wd_command_start_warning,
@@ -129,7 +128,11 @@ class IAS_Zone_Management:
     def IAS_device_enrollment(self, NwkId):
         # This is coming from the plugin.
         # Let's see first if anything has to be done
-        if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("MOSZB-140", "SMSZB-120"):
+        _model_name = self.ListOfDevices[NwkId].get("Model", "")
+        if (
+            get_deviceconf_parameter_value(self, _model_name, "CIE_NOT_TRIGGER_ENROLMENT")
+            or _model_name in ("MOSZB-140", "SMSZB-120")
+            ):
             # Frient trigger itself the Device Enrollment
             return
         
