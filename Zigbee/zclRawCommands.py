@@ -133,7 +133,7 @@ def zcl_raw_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_i
     payload += "%04x" % struct.unpack(">H", struct.pack("H", int(attribute, 16)))[0]  # Attribute Id
     payload += data_type  # Attribute Data Type
     if data_type not in ( "41", "42"):
-            payload += decode_endian_data(data, data_type)
+        payload += decode_endian_data(data, data_type)
     else:
         payload += data
     
@@ -776,15 +776,38 @@ IAS_ACE_COMMANDS = {
     #'GetZoneStatus': 0x09
 }
 
+IAS_RESPONSES = {
+    'Arm Response': 0x00,
+    'Get Zone ID Map Response': 0x01,
+    'Get Zone Information Changed': 0x02,
+    'Zone Status Changed': 0x03,
+    'Panel Status Changed': 0x04,
+    'Get Panel Status Response': 0x05,
+    'Set Bypassed Zone List': 0x06,
+    'Bypass Response': 0x07,
+    'Get Zone Status Response': 0x08,
+}
+
 
 def zcl_raw_ias_ace_commands_arm(self, EPin, EPout, nwkid, arm_mode, arm_code, zone_id, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
     zcl_command_formated_logging( self, "IAS_ACE (Raw)", nwkid, EPout, "0501", arm_mode, arm_code, zone_id, groupaddrmode, ackIsDisabled)
 
-    cmd = IAS_ACE_COMMANDS["Arm"]
+    cmd = "%02x" %IAS_ACE_COMMANDS["Arm"]
     Cluster = "0501"
     cluster_frame = 0b00010001
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + cmd + "%02x" % arm_mode + "%02x" % arm_code + "%02x" % zone_id
+    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    return sqn
+
+
+def zcl_raw_get_panel_status_response(self, EPin, EPout, nwkid, sqn, status_payload, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
+    zcl_command_formated_logging( self, "zcl_raw_get_panel_status", nwkid, EPout, "0501", groupaddrmode, ackIsDisabled)
+
+    cmd = "%02x" %IAS_ACE_COMMANDS["Get Panel Status Response"]
+    Cluster = "0501"
+    cluster_frame = 0b00010001
+    payload = "%02x" % cluster_frame + sqn + cmd + status_payload
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
 

@@ -13,6 +13,7 @@
 
 from Modules.casaia import CASAIA_MANUF_CODE, casaiaReadRawAPS
 from Modules.domoMaj import MajDomoDevice
+from Modules.heiman import heimanReadRawAPS
 from Modules.ikeaTradfri import ikea_openclose_remote, ikeaReadRawAPS
 from Modules.legrand_netatmo import legrandReadRawAPS
 from Modules.livolo import livoloReadRawAPS
@@ -21,11 +22,10 @@ from Modules.orvibo import orviboReadRawAPS
 from Modules.philips import philipsReadRawAPS
 from Modules.pollControl import receive_poll_cluster
 from Modules.schneider_wiser import schneiderReadRawAPS
-from Modules.tuya import tuyaReadRawAPS
-from Modules.heiman import heimanReadRawAPS
-from Modules.tuyaTools import tuya_manufacturer_device
-
 from Modules.tools import get_deviceconf_parameter_value
+from Modules.tuya import tuyaReadRawAPS
+from Modules.tuyaTools import tuya_manufacturer_device
+from Zigbee.zclRawCommands import zcl_raw_get_panel_status_response
 
 # Requires Zigate firmware > 3.1d
 CALLBACK_TABLE = {
@@ -306,3 +306,17 @@ def decode_kepzb_110_hex_string(hex_string: str) -> str:
     content_bytes = data[1:1 + length]
 
     return content_bytes.decode('ascii', errors='ignore')
+
+
+def get_panel_status_response( self, Devices, srcnwkid, srcep, sqn ):
+    """
+    Handle IAS ACE Get Panel Status Response command
+    """
+
+    panel_status: str = "00"  # Disarmed
+    seconds_remaining: str = "00"  # No seconds remaining
+    audible_notification: str = "00"  # No Audible Notification
+    alarm_status: str = "00"  # No Alarm
+
+    status_payload = panel_status + seconds_remaining + audible_notification + alarm_status
+    zcl_raw_get_panel_status_response(self, "01", srcep, srcnwkid, sqn, status_payload)
