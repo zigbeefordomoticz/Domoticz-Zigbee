@@ -1404,6 +1404,7 @@ def handle_command_setcolor(self,Devices, DeviceID, Unit, Level, Color, Nwkid, E
 
 
 def _keypad_feedback_response(self, Nwkid, EPout, Level):
+    self.log.logging("Command", "Debug", f"_keypad_feedback_response : {Level} ({type(Level)})", Nwkid)
 
     KEYPAD_WIDGET_MATRIX = {
         "01": "Disarm",
