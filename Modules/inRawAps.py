@@ -321,7 +321,7 @@ def get_panel_status_response( self, Devices, srcnwkid, srcep, sqn ):
     audible_notification: str = "00"  # No Audible Notification
     alarm_status: str = "00"  # No Alarm
 
-    panel_status = get_panel_status_from_widget( self, Devices, srcnwkid, srcep )
+    panel_status = "%02x" %get_panel_status_from_widget( self, Devices, srcnwkid, srcep )
     status_payload = panel_status + seconds_remaining + audible_notification + alarm_status
     self.log.logging("inRawAPS", "Log", "get_panel_status_response: Panel Status: %s Payload: %s" % (panel_status, status_payload))
     zcl_raw_get_panel_status_response(self, "01", srcep, srcnwkid, sqn, status_payload)
