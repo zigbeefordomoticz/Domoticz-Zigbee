@@ -268,7 +268,7 @@ def handle_ias_ace_command( self, Devices, srcnwkid, srcep, sqn, model_name, com
                 "Code": payload[2:],
                 "Sqn": sqn,
             }
-            text_message = arm_mode_description + payload[2:]
+            text_message = arm_mode_description + "," + payload[2:]
             MajDomoDevice(self, Devices, srcnwkid, srcep, "0501", text_message)
             return
         
