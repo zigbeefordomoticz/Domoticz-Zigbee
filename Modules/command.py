@@ -1404,22 +1404,22 @@ def handle_command_setcolor(self,Devices, DeviceID, Unit, Level, Color, Nwkid, E
 
 
 def _keypad_feedback_response(self, Nwkid, EPout, Level):
-    self.log.logging("Command", "Debug", f"_keypad_feedback_response : {Level} ({type(Level)})", Nwkid)
+    self.log.logging("Command", "Log", f"_keypad_feedback_response : {Level} ({type(Level)})", Nwkid)
 
     KEYPAD_WIDGET_MATRIX = {
-        "01": "Disarm",
-        "04": "ArmHome",
-        "03": "ArmNight",
-        "02": "ArmAllZones",
-        "05": "InvalidCode",
-        "06": "NotReady",
-        "07": "AlreadyDiarmed",
+        10: "Disarm",
+        40: "ArmHome",
+        30: "ArmNight",
+        20: "ArmAllZones",
+        50: "InvalidCode",
+        60: "NotReady",
+        70: "AlreadyDiarmed",
     }
 
     if "IAS_KEYPAD" not in self.ListOfDevices[Nwkid]:
         self.ListOfDevices[Nwkid]["IAS_KEYPAD"] = {}
 
     self.ListOfDevices[Nwkid]["IAS_KEYPAD"]["Current"] = {
-        "CurrentArmMode": KEYPAD_WIDGET_MATRIX.get("%02x" % Level, "Unknown")
+        "CurrentArmMode": KEYPAD_WIDGET_MATRIX.get(Level, "Unknown")
         }
 
