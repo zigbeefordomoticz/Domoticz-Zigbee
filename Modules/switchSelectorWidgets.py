@@ -456,6 +456,19 @@ SWITCH_SELECTORS = {
         "toggle": (1, "10"),
         "ForceUpdate": True
     },
+    # Deveco KEPZB-110 Keypad
+    "KeypadAction": {
+        "00": (0, "00"),
+        "01": (1, "10"),
+        "02": (2, "20"),
+        "03": (3, "30"),
+        "04": (4, "40"),
+        "05": (5, "50"),
+        "06": (6, "60"),
+        "07": (7, "70"),
+        "OffHidden": True,
+        "LevelNames": "Off|Disarmed|ArmAllZones|ArmNight|ArmHome|InvalidCode|NotReady|AlreadyDiarmed",
+    },
     "KF204Switch": {
         "00": (0, "00"),
         "01": (1, "10"),
