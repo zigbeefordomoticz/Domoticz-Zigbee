@@ -110,21 +110,31 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
         # "03" Arm All Zones - Command Arm 0x00 - Payload Arm all Zone 0x03
         # "04" Disarm - Command 0x00 - Payload Disarm 0x00
 
-        if Command == "00" and Data[0:2] == "00":
-            # Disarm
-            MajDomoDevice(self, Devices, srcnwkid, srcep, "0006", "04")
+        if Command == "00":
+            payload = Data[:2]
+            # Arm/Disarm Command
+            if payload == "00":
+                # Disarm
+                MajDomoDevice(self, Devices, srcnwkid, srcep, "0006", "04")
 
-        elif Command == "00" and Data[0:2] == "01":
-            # Command Arm Day (Home Zones Only)
-            MajDomoDevice(self, Devices, srcnwkid, srcep, "0006", "01")
+            elif payload == "01":
+                # Command Arm Day (Home Zones Only)
+                MajDomoDevice(self, Devices, srcnwkid, srcep, "0006", "01")
 
-        elif Command == "00" and Data[0:2] == "03":
-            # Arm All Zones
-            MajDomoDevice(self, Devices, srcnwkid, srcep, "0006", "03")
+            elif payload == "03":
+                # Arm All Zones
+                MajDomoDevice(self, Devices, srcnwkid, srcep, "0006", "03")
 
         elif Command == "02":
             # Emergency
             MajDomoDevice(self, Devices, srcnwkid, srcep, "0006", "01")
+
+        elif Command == "07":
+            # Get Panel Status. This command is used by ACE clients to request an update to the status of the ACE server
+            self.log.logging("inRawAPS", "Log", "IAS ACE Get Panel Status Not Implemented: %s - %s" % (Command, Data))
+
+        else:
+            self.log.logging("inRawAPS", "Log", "IAS ACE unknown command: %s - %s" % (Command, Data))
 
         return
 
