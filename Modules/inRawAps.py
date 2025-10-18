@@ -110,6 +110,8 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
         # "03" Arm All Zones - Command Arm 0x00 - Payload Arm all Zone 0x03
         # "04" Disarm - Command 0x00 - Payload Disarm 0x00
 
+        self.log.logging("inRawAPS", "Log", "IAS ACE command: %s - %s" % (Command, Data))
+
         if Command == "00":
             payload = Data[:2]
             # Arm/Disarm Command
@@ -130,7 +132,8 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
             MajDomoDevice(self, Devices, srcnwkid, srcep, "0006", "01")
 
         elif Command == "07":
-            # Get Panel Status. This command is used by ACE clients to request an update to the status of the ACE server
+            # Get Panel Status. This command is used by ACE clients to request an update to the status of the ACE server.
+            # On receipt of this command, the ACE server responds with the status of the security system. 
             self.log.logging("inRawAPS", "Log", "IAS ACE Get Panel Status Not Implemented: %s - %s" % (Command, Data))
 
         else:
