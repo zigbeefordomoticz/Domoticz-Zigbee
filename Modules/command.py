@@ -156,7 +156,8 @@ ACTIONATORS = [
     "KeypadLockout",
     "TamperSwitch",
     "PollingControl",
-    "PollingControlV2"
+    "PollingControlV2",
+    "KeypadFeedback"
 ]
 
 
