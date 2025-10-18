@@ -265,10 +265,10 @@ def handle_ias_ace_command( self, Devices, srcnwkid, srcep, sqn, model_name, com
             self.ListOfDevices[srcnwkid]["IAS_ACE"] = {
                 "LastArmMode": arm_mode,
                 "LastArmModeDescription": arm_mode_description,
-                "Code": payload[2:],
+                "Code": decode_kepzb_110_hex_string(payload[2:]),
                 "Sqn": sqn,
             }
-            text_message = arm_mode_description + "," + payload[2:]
+            text_message = arm_mode_description + "," + decode_kepzb_110_hex_string(payload[2:])
             MajDomoDevice(self, Devices, srcnwkid, srcep, "0501", text_message)
             return
         
@@ -293,3 +293,16 @@ def handle_ias_ace_command( self, Devices, srcnwkid, srcep, sqn, model_name, com
         self.log.logging("inRawAPS", "Log", "IAS ACE unknown command: %s - %s" % (command, payload))
 
     return
+
+
+def decode_kepzb_110_hex_string(hex_string: str) -> str:
+    # Convertir la chaîne hexadécimale en bytes
+    data = bytes.fromhex(hex_string)
+
+    # Le premier byte indique la longueur utile
+    length = data[0]
+
+    # Extraire les bytes correspondants à cette longueur
+    content_bytes = data[1:1 + length]
+
+    return content_bytes.decode('ascii', errors='ignore')
