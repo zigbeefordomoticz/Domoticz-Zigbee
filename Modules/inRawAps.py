@@ -24,7 +24,8 @@ from Modules.orvibo import orviboReadRawAPS
 from Modules.philips import philipsReadRawAPS
 from Modules.pollControl import receive_poll_cluster
 from Modules.schneider_wiser import schneiderReadRawAPS
-from Modules.tools import get_deviceconf_parameter_value
+from Modules.tools import (get_device_config_param,
+                           get_deviceconf_parameter_value)
 from Modules.tuya import tuyaReadRawAPS
 from Modules.tuyaTools import tuya_manufacturer_device
 from Zigbee.zclRawCommands import (zcl_raw_arm_response,
@@ -304,12 +305,13 @@ def _handle_ias_keyboard_arm(self, Devices, nwkid, ep, sqn, arm_mode, arm_desc, 
     Handle IAS keypad 'Arm' commands with PIN code input.
     """
     EXIT_DELAY = 30  # seconds
+    exit_delay = get_device_config_param(self, nwkid, "ARM_EXIT_DELAY") or EXIT_DELAY
     if "IAS_KEYPAD" not in self.ListOfDevices.get(nwkid, {}):
         self.ListOfDevices.setdefault(nwkid, {})["IAS_KEYPAD"] = {}
 
-    decoded_code = decode_kepzb_110_hex_string(payload[2:])
+    decoded_code = _decode_kepzb_110_hex_string(payload[2:])
     self.ListOfDevices[nwkid]["IAS_KEYPAD"]["Last"] = {
-        "TimeStamp": time.time() + EXIT_DELAY,
+        "TimeStamp": time.time() + exit_delay,
         "LastArmMode": arm_mode,
         "LastArmModeDescription": arm_desc,
         "Code": decoded_code,
@@ -320,6 +322,11 @@ def _handle_ias_keyboard_arm(self, Devices, nwkid, ep, sqn, arm_mode, arm_desc, 
 
     text_message = f"{arm_desc},{decoded_code}"
     MajDomoDevice(self, Devices, nwkid, ep, "0501", text_message)
+
+    if not _pin_code_valid(self, nwkid, decoded_code):
+        self.log.logging("inRawAPS", "Warn", f"IAS Keyboard - Invalid PIN code for {arm_desc} {decoded_code} versus expected {get_device_config_param(self, nwkid, 'DISARM_PINCODE')}")
+        arm_response(self, nwkid, ep, sqn, "04")  # InvalidCode
+        return
 
     ARM_NOTIFICATION_RESPONSE = {
         "Disarm": "00",
@@ -334,8 +341,17 @@ def _handle_ias_keyboard_arm(self, Devices, nwkid, ep, sqn, arm_mode, arm_desc, 
     if arm_desc in ARM_NOTIFICATION_RESPONSE:
         arm_response(self, nwkid, ep, sqn, ARM_NOTIFICATION_RESPONSE[arm_desc])
 
+def _pin_code_valid(self, nwkid, pin_code: str) -> bool:
+    """
+    Validate the PIN code.
+    """
+    disarm_pincode = get_device_config_param(self, nwkid, "DISARM_PINCODE")
+    if disarm_pincode == "":
+        return True  # No PIN code set, accept any code
+    return False if disarm_pincode is None else pin_code == disarm_pincode
 
-def decode_kepzb_110_hex_string(hex_string: str) -> str:
+
+def _decode_kepzb_110_hex_string(hex_string: str) -> str:
     """
     Decode Develco KEYZB-110 keypad PIN payload.
     The first byte is the ASCII string length.
