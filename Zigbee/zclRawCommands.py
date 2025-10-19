@@ -782,7 +782,7 @@ IAS_RESPONSES = {
     'Get Zone Information Changed': 0x02,
     'Zone Status Changed': 0x03,
     'Panel Status Changed': 0x04,
-    'Get Zone ID Map': 0x05,
+    'Get Panel Status Response': 0x05,
     'Set Bypassed Zone List': 0x06,
     'Bypass Response': 0x07,
     'Get Zone Status Response': 0x08,
@@ -794,7 +794,7 @@ def zcl_raw_ias_ace_commands_arm(self, EPin, EPout, nwkid, arm_mode, arm_code, z
 
     cmd = "%02x" %IAS_ACE_COMMANDS["Arm"]
     Cluster = "0501"
-    cluster_frame = 0b00010001
+    cluster_frame = 0b00010001. # Client to Server
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + cmd + "%02x" % arm_mode + "%02x" % arm_code + "%02x" % zone_id
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
@@ -806,7 +806,7 @@ def zcl_raw_get_panel_status_response(self, EPin, EPout, nwkid, sqn, status_payl
 
     cmd = "%02x" %IAS_RESPONSES["Get Panel Status Response"]
     Cluster = "0501"
-    cluster_frame = 0b00010001
+    cluster_frame = 0b00011001 # Server to Client
     payload = "%02x" % cluster_frame + sqn + cmd + status_payload
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
