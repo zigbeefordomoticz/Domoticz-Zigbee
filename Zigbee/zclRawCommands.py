@@ -789,28 +789,128 @@ IAS_RESPONSES = {
 }
 
 
-def zcl_raw_ias_ace_commands_arm(self, EPin, EPout, nwkid, arm_mode, arm_code, zone_id, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
-    zcl_command_formated_logging( self, "IAS_ACE (Raw)", nwkid, EPout, "0501", arm_mode, arm_code, zone_id, groupaddrmode, ackIsDisabled)
+#def zcl_raw_ias_ace_commands_arm(self, EPin, EPout, nwkid, arm_mode, arm_code, zone_id, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
+#    zcl_command_formated_logging( self, "IAS_ACE (Raw)", nwkid, EPout, "0501", arm_mode, arm_code, zone_id, groupaddrmode, ackIsDisabled)
+#
+#    cmd = "%02x" %IAS_ACE_COMMANDS["Arm"]
+#    Cluster = "0501"
+#    cluster_frame = 0b00010001  # Client to Server
+#    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+#    payload = "%02x" % cluster_frame + sqn + cmd + "%02x" % arm_mode + "%02x" % arm_code + "%02x" % zone_id
+#    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+#    return sqn
+#
+#
+#def zcl_raw_get_panel_status_response(self, EPin, EPout, nwkid, sqn, status_payload, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
+#    zcl_command_formated_logging( self, "zcl_raw_get_panel_status", nwkid, EPout, "0501", groupaddrmode, ackIsDisabled)
+#
+#    cmd = "%02x" %IAS_RESPONSES["Get Panel Status Response"]
+#    Cluster = "0501"
+#    cluster_frame = 0b00001001  # Server to Client, with Default Response
+#    payload = "%02x" % cluster_frame + sqn + cmd + status_payload
+#    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+#    return sqn
+#
+#
+#def zcl_raw_arm_response(self, EPin, EPout, nwkid, sqn, status_payload, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
+#    zcl_command_formated_logging( self, "zcl_raw_arm_response", nwkid, EPout, "0501", groupaddrmode, ackIsDisabled)
+#    cmd = "%02x" %IAS_RESPONSES["Arm Response"]
+#    Cluster = "0501"
+#    cluster_frame = 0b00001001  # Server to Client, with Default Response
+#    payload = "%02x" % cluster_frame + sqn + cmd + status_payload
+#    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+#    return sqn
 
-    cmd = "%02x" %IAS_ACE_COMMANDS["Arm"]
+
+def zcl_raw_ias_ace_commands_arm( self, EPin, EPout, nwkid, arm_mode, arm_code, zone_id, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE, ):
+    """
+    Send a raw IAS ACE 'Arm' command frame to a Zigbee device.
+
+    This function builds and sends the IAS ACE "Arm" command (Cluster 0x0501)
+    from a client to a server, instructing the device to arm a security zone.
+
+    Args:
+        EPin (int): Zigate (source) endpoint.
+        EPout (int): Destination device endpoint.
+        nwkid (str): 16-bit Zigbee network address of the target device (hex string).
+        arm_mode (int): Arm mode (e.g. 0x00 = Disarm, 0x01 = Arm Day/Home, 0x03 = Arm Away).
+        arm_code (int): Optional PIN or code value (usually 0 or ASCII digit).
+        zone_id (int): Zone identifier to arm (0xFF if all zones).
+        groupaddrmode (bool, optional): True if sending in group addressing mode. Defaults to False.
+        ackIsDisabled (bool, optional): True to disable APS acknowledgment. Defaults to DEFAULT_ACK_MODE.
+
+    Returns:
+        str: The Zigbee transaction sequence number (SQN) used for this request.
+    """
     Cluster = "0501"
-    cluster_frame = 0b00010001  # Client to Server
+    cmd = f"{IAS_ACE_COMMANDS['Arm']:02x}"
+    zcl_command_formated_logging( self, "IAS_ACE (Arm)", nwkid, EPout, Cluster, arm_mode, arm_code, zone_id, groupaddrmode, ackIsDisabled )
+
+    cluster_frame = 0b00010001  # Frame control: client → server
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
-    payload = "%02x" % cluster_frame + sqn + cmd + "%02x" % arm_mode + "%02x" % arm_code + "%02x" % zone_id
-    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    payload = f"{cluster_frame:02x}{sqn}{cmd}{arm_mode:02x}{arm_code:02x}{zone_id:02x}"
+
+    raw_APS_request( self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled, )
     return sqn
 
 
-def zcl_raw_get_panel_status_response(self, EPin, EPout, nwkid, sqn, status_payload, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
-    zcl_command_formated_logging( self, "zcl_raw_get_panel_status", nwkid, EPout, "0501", groupaddrmode, ackIsDisabled)
+def zcl_raw_get_panel_status_response( self, EPin, EPout, nwkid, sqn, status_payload, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE, ):
+    """
+    Send a raw IAS ACE 'Get Panel Status Response' frame.
 
-    cmd = "%02x" %IAS_RESPONSES["Get Panel Status Response"]
+    This function responds to a 'Get Panel Status' request with a status payload.
+
+    Args:
+        EPin (int): Zigate (source) endpoint.
+        EPout (int): Destination device endpoint.
+        nwkid (str): 16-bit Zigbee network address of the requester (hex string).
+        sqn (str): The sequence number of the original command being responded to.
+        status_payload (str): Encoded payload containing panel status details (hex string).
+        groupaddrmode (bool, optional): True if sending in group addressing mode. Defaults to False.
+        ackIsDisabled (bool, optional): True to disable APS acknowledgment. Defaults to DEFAULT_ACK_MODE.
+
+    Returns:
+        str: The sequence number used for this response.
+    """
     Cluster = "0501"
-    cluster_frame = 0b00001001  # Server to Client, with Default Response
-    payload = "%02x" % cluster_frame + sqn + cmd + status_payload
-    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    cmd = f"{IAS_RESPONSES['Get Panel Status Response']:02x}"
+    zcl_command_formated_logging( self, "IAS_ACE (Get Panel Status Response)", nwkid, EPout, Cluster, groupaddrmode, ackIsDisabled )
+
+    cluster_frame = 0b00001001  # Frame control: server → client
+    payload = f"{cluster_frame:02x}{sqn}{cmd}{status_payload}"
+
+    raw_APS_request( self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled, )
     return sqn
 
+
+def zcl_raw_arm_response( self, EPin, EPout, nwkid, sqn, status_payload, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE, ):
+    """
+    Send a raw IAS ACE 'Arm Response' frame.
+
+    This function sends the IAS ACE "Arm Response" (Cluster 0x0501) from a server to a client,
+    typically acknowledging an 'Arm' command.
+
+    Args:
+        EPin (int): Zigate (source) endpoint.
+        EPout (int): Destination device endpoint.
+        nwkid (str): 16-bit Zigbee network address of the requester (hex string).
+        sqn (str): The sequence number of the original 'Arm' command.
+        status_payload (str): Encoded payload containing the arm status result (hex string).
+        groupaddrmode (bool, optional): True if sending in group addressing mode. Defaults to False.
+        ackIsDisabled (bool, optional): True to disable APS acknowledgment. Defaults to DEFAULT_ACK_MODE.
+
+    Returns:
+        str: The sequence number used for this response.
+    """
+    Cluster = "0501"
+    cmd = f"{IAS_RESPONSES['Arm Response']:02x}"
+    zcl_command_formated_logging( self, "IAS_ACE (Arm Response)", nwkid, EPout, Cluster, groupaddrmode, ackIsDisabled )
+
+    cluster_frame = 0b00001001  # Frame control: server → client
+    payload = f"{cluster_frame:02x}{sqn}{cmd}{status_payload}"
+
+    raw_APS_request( self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled, )
+    return sqn
 
 # Cluster 0502 IAS WD
 
