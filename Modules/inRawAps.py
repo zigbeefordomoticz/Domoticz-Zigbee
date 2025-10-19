@@ -11,6 +11,8 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 
+import time
+
 from Modules.casaia import CASAIA_MANUF_CODE, casaiaReadRawAPS
 from Modules.domoMaj import MajDomoDevice
 from Modules.heiman import heimanReadRawAPS
@@ -225,7 +227,6 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
         func(self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
 
 
-
 def handle_ias_ace_command(self, Devices, nwkid, ep, sqn, model_name, command, payload):
     """
     Handle IAS ACE (Intruder Alarm System - Arm Control Equipment) commands.
@@ -302,11 +303,13 @@ def _handle_ias_keyboard_arm(self, Devices, nwkid, ep, sqn, arm_mode, arm_desc, 
     """
     Handle IAS keypad 'Arm' commands with PIN code input.
     """
+    EXIT_DELAY = 30  # seconds
     if "IAS_KEYPAD" not in self.ListOfDevices.get(nwkid, {}):
         self.ListOfDevices.setdefault(nwkid, {})["IAS_KEYPAD"] = {}
 
     decoded_code = decode_kepzb_110_hex_string(payload[2:])
     self.ListOfDevices[nwkid]["IAS_KEYPAD"]["Last"] = {
+        "TimeStamp": time.time() + EXIT_DELAY,
         "LastArmMode": arm_mode,
         "LastArmModeDescription": arm_desc,
         "Code": decoded_code,
@@ -344,14 +347,27 @@ def decode_kepzb_110_hex_string(hex_string: str) -> str:
     return data[1:1 + length].decode("ascii", errors="ignore")
 
     
-def get_panel_status_response(self, Devices, srcnwkid, srcep, sqn):
+def get_panel_status_response(self, Devices, nwkid, ep, sqn):
     """
     Handle IAS ACE Get Panel Status Response command.
     """
-    panel_status = f"{_get_panel_status_from_widget(self, srcnwkid):02x}"
-    payload = panel_status + "0000"  # seconds_remaining=00, audible_notification=00, alarm_status=00
+    panel_status = f"{_get_panel_status_from_widget(self, nwkid):02x}"
+    seconds_remaining = _get_remaining_time(self, nwkid)
+    audible_notification = "00"
+    alarm_status = "00"
+    
+    payload = panel_status + seconds_remaining + audible_notification + alarm_status
     self.log.logging("inRawAPS", "Log", f"get_panel_status_response: Panel Status={panel_status} Payload={payload}")
-    zcl_raw_get_panel_status_response(self, "01", srcep, srcnwkid, sqn, payload)
+    zcl_raw_get_panel_status_response( self, "01", ep, nwkid, sqn, payload )
+
+
+def _get_remaining_time(self, nwkid):
+    """
+    Get remaining time for exit/entry delay from widget or memory.
+    """
+    now = time.time()
+    second_remaining = now - self.ListOfDevices.get(nwkid, {}).get("IAS_KEYPAD", {}).get("Last", {}).get("TimeStamp", now)
+    return f"{second_remaining:02x}"
 
 
 def _get_panel_status_from_widget(self, nwkid):
