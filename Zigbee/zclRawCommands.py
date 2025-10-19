@@ -782,7 +782,7 @@ IAS_RESPONSES = {
     'Get Zone Information Changed': 0x02,
     'Zone Status Changed': 0x03,
     'Panel Status Changed': 0x04,
-    'Get Panel Status Response': 0x05,
+    'Get Zone ID Map': 0x05,
     'Set Bypassed Zone List': 0x06,
     'Bypass Response': 0x07,
     'Get Zone Status Response': 0x08,
