@@ -771,7 +771,7 @@ IAS_ACE_COMMANDS = {
     #'Panic': 0x04,
     #'GetZoneID Map': 0x05,
     #'GetZoneInformation': 0x06,
-    #'GetPanelStatus': 0x07,
+    'GetPanelStatus': 0x07,
     #'GetBypassedZoneList': 0x08,
     #'GetZoneStatus': 0x09
 }
@@ -804,7 +804,7 @@ def zcl_raw_ias_ace_commands_arm(self, EPin, EPout, nwkid, arm_mode, arm_code, z
 def zcl_raw_get_panel_status_response(self, EPin, EPout, nwkid, sqn, status_payload, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
     zcl_command_formated_logging( self, "zcl_raw_get_panel_status", nwkid, EPout, "0501", groupaddrmode, ackIsDisabled)
 
-    cmd = "%02x" %IAS_ACE_COMMANDS["Get Panel Status Response"]
+    cmd = "%02x" %IAS_RESPONSES["Get Panel Status Response"]
     Cluster = "0501"
     cluster_frame = 0b00010001
     payload = "%02x" % cluster_frame + sqn + cmd + status_payload
