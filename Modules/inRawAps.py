@@ -310,15 +310,16 @@ def _handle_ias_keyboard_arm(self, Devices, nwkid, ep, sqn, arm_mode, arm_desc, 
         self.ListOfDevices.setdefault(nwkid, {})["IAS_KEYPAD"] = {}
 
     decoded_code = _decode_kepzb_110_hex_string(payload[2:])
+
     self.ListOfDevices[nwkid]["IAS_KEYPAD"]["Last"] = {
-        "TimeStamp": time.time() + exit_delay,
+        "TimeStamp": (time.time() + exit_delay),
         "LastArmMode": arm_mode,
         "LastArmModeDescription": arm_desc,
         "Code": decoded_code,
         "Sqn": sqn,
     }
 
-    self.log.logging("inRawAPS", "Log", f"IAS Keyboard - {arm_mode} {arm_desc} {payload} Decoded PIN: {decoded_code}")
+    self.log.logging("inRawAPS", "Log", f"IAS Keyboard - {arm_mode} {arm_desc} {payload} Decoded PIN: {decoded_code} Last: {self.ListOfDevices[nwkid]['IAS_KEYPAD']['Last']}")
 
     text_message = f"{arm_desc},{decoded_code}"
     MajDomoDevice(self, Devices, nwkid, ep, "0501", text_message)
@@ -382,7 +383,7 @@ def _get_remaining_time(self, nwkid):
     Get remaining time for exit/entry delay from widget or memory.
     """
     now = time.time()
-    second_remaining = now - self.ListOfDevices.get(nwkid, {}).get("IAS_KEYPAD", {}).get("Last", {}).get("TimeStamp", now)
+    second_remaining = int(now - self.ListOfDevices.get(nwkid, {}).get("IAS_KEYPAD", {}).get("Last", {}).get("TimeStamp", now))
     return f"{second_remaining:02x}"
 
 
