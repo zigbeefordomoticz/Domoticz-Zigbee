@@ -806,7 +806,7 @@ def zcl_raw_get_panel_status_response(self, EPin, EPout, nwkid, sqn, status_payl
 
     cmd = "%02x" %IAS_RESPONSES["Get Panel Status Response"]
     Cluster = "0501"
-    cluster_frame = 0b00011001  # Server to Client
+    cluster_frame = 0b00001001  # Server to Client, with Default Response
     payload = "%02x" % cluster_frame + sqn + cmd + status_payload
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
