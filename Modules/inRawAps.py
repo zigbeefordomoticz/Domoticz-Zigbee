@@ -346,4 +346,4 @@ def get_panel_status_from_widget( self, Devices, srcnwkid, srcep ):
         return "06"  # Disarmed
 
     last_status = self.ListOfDevices[srcnwkid]["IAS_KEYPAD"].get("Current", {})
-    return PANEL_STATUS_RETURN_CODES.get(last_status.get("CurrentArmMode", "06"))
+    return PANEL_STATUS_RETURN_CODES.get(last_status.get("CurrentArmMode", 0x06))
