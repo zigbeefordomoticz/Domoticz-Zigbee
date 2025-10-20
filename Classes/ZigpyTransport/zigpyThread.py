@@ -316,7 +316,7 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
     config = None
 
     serial_specifics = self._serialPort_communication_specifics or {}
-    
+
     try:
         if radiomodule == "ezsp":
             import bellows.config as radio_specific_conf
@@ -351,7 +351,12 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
         self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
         self.log.logging("TransportZigpy", "Error", "%s" %traceback.format_exc())       
 
-    optional_configuration_setup(self, config, radio_specific_conf, set_extendedPanId, set_channel)
+    try:
+        optional_configuration_setup(self, config, radio_specific_conf, set_extendedPanId, set_channel)
+
+    except Exception as e:
+        self.log.logging( "TransportZigpy", "Error", "Error while applying optional configuration to Radio: %s on port %s with %s" %( radiomodule, serialPort, e) )
+        self.log.logging("TransportZigpy", "Error", "%s" %traceback.format_exc())
 
     try:
         if radiomodule in ["znp", "deCONZ", "ezsp", "blz"]:
@@ -375,9 +380,15 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
 
     if self.use_of_zigpy_persistent_db and self.app:
         self.log.logging( "TransportZigpy", "Status", "++ Use of Zigpy Persistent Db")
-        await self.app._load_db()
+        try:
+            await self.app._load_db()
+        except Exception as e:
+            self.log.logging( "TransportZigpy", "Error", "++ Error loading Zigpy Persistent Db: %s" %e)
 
-    await _radio_startup(self, statistics, pluginconf, use_of_zigpy_persistent_db, new_network, radiomodule)
+    try:
+        await _radio_startup(self, statistics, pluginconf, use_of_zigpy_persistent_db, new_network, radiomodule)
+    except Exception as e:
+        self.log.logging( "TransportZigpy", "Error", "Error during radio startup: %s" %e)
     self.log.logging( "TransportZigpy", "Debug", "Exiting co-rounting radio_start")
 
 
