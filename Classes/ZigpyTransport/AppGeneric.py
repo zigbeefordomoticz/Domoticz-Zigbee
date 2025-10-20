@@ -45,7 +45,7 @@ async def _load_db(self) -> None:
     try:
         await super(type(self),self)._load_db()
     except Exception as e:
-        self.log.logging("TransportZigpy", "Error", f"Failed to load database: {e}")
+        LOGGER.error("error loading Zigpy Persistent Db", exc_info=e)
         raise
 
 
