@@ -29,7 +29,8 @@ from Modules.tools import (get_device_config_param,
 from Modules.tuya import tuyaReadRawAPS
 from Modules.tuyaTools import tuya_manufacturer_device
 from Zigbee.zclRawCommands import (zcl_raw_arm_response,
-                                   zcl_raw_get_panel_status_response)
+                                   zcl_raw_get_panel_status_response,
+                                   zcl_raw_panel_status_change)
 
 # Requires Zigate firmware > 3.1d
 CALLBACK_TABLE = {
@@ -327,6 +328,8 @@ def _handle_ias_keyboard_arm(self, Devices, nwkid, ep, sqn, arm_mode, arm_desc, 
     if not _pin_code_valid(self, nwkid, decoded_code):
         self.log.logging("inRawAPS", "Warn", f"IAS Keyboard - Invalid PIN code for {arm_desc} {decoded_code} versus expected {get_device_config_param(self, nwkid, 'DISARM_PINCODE')}")
         arm_response(self, nwkid, ep, sqn, "04")  # InvalidCode
+        _update_keypad_datastructure(self, nwkid, "InvalidCode")
+        send_panel_status_change(self, nwkid, ep, sqn, "InvalidCode")
         return
 
     ARM_NOTIFICATION_RESPONSE = {
@@ -340,7 +343,21 @@ def _handle_ias_keyboard_arm(self, Devices, nwkid, ep, sqn, arm_mode, arm_desc, 
     }
 
     if arm_desc in ARM_NOTIFICATION_RESPONSE:
+        _update_keypad_datastructure(self, nwkid, arm_desc)
         arm_response(self, nwkid, ep, sqn, ARM_NOTIFICATION_RESPONSE[arm_desc])
+        send_panel_status_change(self, nwkid, ep, sqn, arm_desc)
+
+
+def _update_keypad_datastructure(self, nwkid, arm_desc):
+
+    if "IAS_KEYPAD" not in self.ListOfDevices[nwkid]:
+        self.ListOfDevices[nwkid]["IAS_KEYPAD"] = {}
+
+    self.ListOfDevices[nwkid]["IAS_KEYPAD"]["Current"] = {
+        "CurrentArmMode": arm_desc
+        }
+
+
 
 def _pin_code_valid(self, nwkid, pin_code: str) -> bool:
     """
@@ -370,11 +387,11 @@ def get_panel_status_response(self, Devices, nwkid, ep, sqn):
     """
     panel_status = f"{_get_panel_status_from_widget(self, nwkid):02x}"
     seconds_remaining = _get_remaining_time(self, nwkid)
-    audible_notification = "00"
+    audible_notification = "00" if seconds_remaining == "00" else "03"
     alarm_status = "00"
     
     payload = panel_status + seconds_remaining + audible_notification + alarm_status
-    self.log.logging("inRawAPS", "Log", f"get_panel_status_response: Panel Status={panel_status} Payload={payload}")
+    self.log.logging("inRawAPS", "Log", f"get_panel_status_response: {nwkid}/{ep} Panel Status={panel_status} Payload={payload}")
     zcl_raw_get_panel_status_response( self, "01", ep, nwkid, sqn, payload )
 
 
@@ -409,5 +426,21 @@ def _get_panel_status_from_widget(self, nwkid):
 
 def arm_response(self, nwkid, ep, sqn, arm_notification_code):
     """Send IAS ACE Arm Response."""
-    self.log.logging("inRawAPS", "Log", f"arm_response: {nwkid} - {arm_notification_code}")
+    self.log.logging("inRawAPS", "Log", f"arm_response: {nwkid}/{ep} - {arm_notification_code}")
     zcl_raw_arm_response(self, "01", ep, nwkid, sqn, arm_notification_code)
+    
+    
+def send_panel_status_change(self, nwkid, ep, sqn, panel_status_code):
+    """Send IAS ACE Panel Status Change Notification."""
+    self.log.logging("inRawAPS", "Log", f"send_panel_status_change: {nwkid}/{ep} - {panel_status_code}")
+    
+    panel_status = _get_panel_status_from_widget(self, nwkid)
+    seconds_remaining = _get_remaining_time(self, nwkid)
+    audible_notification = "00" if seconds_remaining == "00" else "03"
+    alarm_status = "00"
+    payload = panel_status + seconds_remaining + audible_notification + alarm_status
+
+    self.log.logging("inRawAPS", "Log", f"send_panel_status_change: {nwkid}/{ep} Panel Status={panel_status} Payload={payload}")
+    zcl_raw_panel_status_change( self, "01", ep, nwkid, sqn, payload, )
+
+
