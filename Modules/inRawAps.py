@@ -383,7 +383,8 @@ def _get_remaining_time(self, nwkid):
     Get remaining time for exit/entry delay from widget or memory.
     """
     now = time.time()
-    second_remaining = int(now - self.ListOfDevices.get(nwkid, {}).get("IAS_KEYPAD", {}).get("Last", {}).get("TimeStamp", now))
+    second_remaining = int(self.ListOfDevices.get(nwkid, {}).get("IAS_KEYPAD", {}).get("Last", {}).get("TimeStamp", now) - now)
+    second_remaining = max(second_remaining, 0)
     return f"{second_remaining:02x}"
 
 
