@@ -434,7 +434,7 @@ def send_panel_status_change(self, nwkid, ep, sqn, panel_status_code):
     """Send IAS ACE Panel Status Change Notification."""
     self.log.logging("inRawAPS", "Log", f"send_panel_status_change: {nwkid}/{ep} - {panel_status_code}")
     
-    panel_status = _get_panel_status_from_widget(self, nwkid)
+    panel_status = f"{_get_panel_status_from_widget(self, nwkid):02x}"
     seconds_remaining = _get_remaining_time(self, nwkid)
     audible_notification = "00" if seconds_remaining == "00" else "03"
     alarm_status = "00"
