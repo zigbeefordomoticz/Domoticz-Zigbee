@@ -1,3 +1,122 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Implementation of Zigbee for Domoticz plugin.
+#
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+"""
+IAS ACE (Intruder Alarm System - Arm Control Equipment) Command Handler
+=======================================================================
+
+This module implements the logic for handling Zigbee IAS ACE (Cluster 0x0501)
+commands, typically used by security keypads (e.g. Develco KEYZB-110)
+and control panels in alarm systems.
+
+It manages the bidirectional communication between Zigbee IAS devices and
+the Domoticz environment, including interpreting arm/disarm commands,
+handling keypad PIN code inputs, sending panel status updates, and
+generating appropriate Zigbee ZCL responses.
+
+----------------------------------------------------------------------
+Main Responsibilities
+----------------------------------------------------------------------
+
+1. **Command Dispatching**
+   - Decodes and handles IAS ACE commands (`Arm`, `Emergency`, `Get Panel Status`, etc.).
+   - Routes commands either to a general handler or a dedicated IAS keypad handler.
+
+2. **Keypad Interaction**
+   - Decodes keypad payloads (PIN codes, arm mode).
+   - Stores the last arm command and PIN used by a given device.
+   - Generates feedback responses (LEDs, tones, panel status) per IAS specification.
+
+3. **Panel Status Management**
+   - Tracks and updates the current arm/disarm status of devices.
+   - Handles exit/entry delays and status transitions (e.g. arming, in alarm, not ready).
+   - Builds and sends IAS ACE ZCL responses such as `ArmResponse` and `PanelStatusChanged`.
+
+4. **Integration with Domoticz**
+   - Synchronizes Zigbee IAS states with Domoticz virtual devices through `MajDomoDevice`.
+
+----------------------------------------------------------------------
+Key Functions
+----------------------------------------------------------------------
+
+- **handle_ias_ace_command()**
+  Entry point for processing incoming IAS ACE Zigbee commands.
+  Determines the command type and dispatches to the appropriate handler.
+
+- **handle_ias_keyboard_arm()**
+  Processes keypad `Arm` requests with PIN validation.
+  Updates the device state and schedules exit delay timers.
+
+- **get_panel_status_response()**
+  Responds to `Get Panel Status` Zigbee requests with the current alarm state.
+
+- **send_panel_status_change()**
+  Sends asynchronous `PanelStatusChanged` notifications when state transitions occur.
+
+- **store_panel_status() / get_panel_status_from_widget()**
+  Maintains and retrieves the current panel status for each Zigbee node.
+
+- **decode_kepzb_110_hex_string()**
+  Decodes Develco KEYZB-110 PIN payload from hexadecimal to ASCII format.
+
+- **ias_keypad_feedback_*()**
+  A family of helper functions that send feedback to the keypad to update
+  LEDs or indicate specific alarm states (armed, not ready, alarm, etc.).
+
+----------------------------------------------------------------------
+Constants
+----------------------------------------------------------------------
+
+- `IAS_ACE_COMMANDS` : Mapping of IAS ACE command IDs to readable names.
+- `ARM_COMMANDS` : Translation of arm mode codes to textual states.
+- `ARM_NOTIFICATION_RESPONSE` : Maps textual states to ZCL notification codes.
+- `PANEL_STATUS_DESC_TO_CODE` / `PANEL_STATUS_CODE_TO_DESC` :
+  Bidirectional mappings between panel status names and their numeric codes.
+- `ARM_COMMAND_DISPATCH` : Defines cluster/value/notification triplets for arm actions.
+
+----------------------------------------------------------------------
+Dependencies
+----------------------------------------------------------------------
+
+- **Modules.domoMaj.MajDomoDevice**
+  Updates corresponding Domoticz devices with the current IAS state.
+
+- **Modules.tools**
+  Provides helpers such as `get_and_inc_ZCL_SQN`, `get_device_config_param`,
+  and `get_deviceconf_parameter_value`.
+
+- **Zigbee.zclRawCommands**
+  Provides low-level functions for crafting and sending ZCL raw responses:
+  - `zcl_raw_arm_response`
+  - `zcl_raw_get_panel_status_response`
+  - `zcl_raw_panel_status_change`
+
+----------------------------------------------------------------------
+Usage Example
+----------------------------------------------------------------------
+
+The command is then interpreted and translated into the appropriate
+Domoticz updates and Zigbee responses.
+
+----------------------------------------------------------------------
+Author
+----------------------------------------------------------------------
+Patrick Pichon, 2025
+
+----------------------------------------------------------------------
+License
+----------------------------------------------------------------------
+This module is distributed under the same license as the parent Zigbee
+integration or Domoticz plugin it belongs to.
+"""
 
 import time
 
