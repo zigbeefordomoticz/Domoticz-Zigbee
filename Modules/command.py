@@ -1420,20 +1420,20 @@ def keypad_feedback_response(self, Nwkid, EPout, Level):
     
     KEYPAD_WIDGET_MATRIX = {
         # Level -> ARM Command Response
-        00: {"Off", None},
-        10: {"Disarm", ias_keypad_feedback_disarm},
-        20: {"ArmAllZones", ias_keypad_feedback_arming_away},
-        30: {"ArmNight", ias_keypad_feedback_arming_night},
-        40: {"ArmHome", ias_keypad_feedback_arming_stay},
-        50: {"InvalidCode", ias_keyboard_feedback_pincode_invalid},
-        60: {"NotReady", ias_keypad_not_ready},
-        70: {"ExitDelay", ias_keypad_exit_delay},
-        80: {"EntryDelay", ias_keypad_entry_delay},
-        90: {"InAlarm", ias_keypad_in_alarm},
+        00: ("Off", None),
+        10: ("Disarm", ias_keypad_feedback_disarm),
+        20: ("ArmAllZones", ias_keypad_feedback_arming_away),
+        30: ("ArmNight", ias_keypad_feedback_arming_night),
+        40: ("ArmHome", ias_keypad_feedback_arming_stay),
+        50: ("InvalidCode", ias_keyboard_feedback_pincode_invalid),
+        60: ("NotReady", ias_keypad_not_ready),
+        70: ("ExitDelay", ias_keypad_exit_delay),
+        80: ("EntryDelay", ias_keypad_entry_delay),
+        90: ("InAlarm", ias_keypad_in_alarm),
     }
     
     if Level in KEYPAD_WIDGET_MATRIX:
-        arm_desc, arm_function = KEYPAD_WIDGET_MATRIX[ Level ]
-        self.log.logging("Command", "Log", f"keypad_feedback_response : Keypad Arm Command Response: {Nwkid} EPout: {EPout} Level: {Level} -> {arm_desc}", Nwkid)  
-        if arm_function:
-            arm_function(self, Nwkid, EPout)
+        arm_desc, func = KEYPAD_WIDGET_MATRIX[ Level ]
+        self.log.logging("Command", "Log", f"keypad_feedback_response : Response: {Nwkid} EPout: {EPout} Level: {Level} -> {arm_desc}", Nwkid)  
+        if func:
+            func(self, Nwkid, EPout)
