@@ -38,7 +38,7 @@ ARM_NOTIFICATION_RESPONSE = {
     "AlreadyDisarmed": "06",
 }
 
-PANEL_STATUS = {
+PANEL_STATUS_DESC_TO_CODE = {
     "Disarm": 0x00,
     "ArmHome": 0x01,
     "ArmNight": 0x02,
@@ -51,6 +51,20 @@ PANEL_STATUS = {
     "ArmingNight": 0x09,
     "ArmingAway": 0x0A,
 }
+PANEL_STATUS_CODE_TO_DESC = {
+    "00": "Disarm",
+    "01": "ArmHome",
+    "02": "ArmNight",
+    "03": "ArmAllZones",
+    "04": "ExitDelay",
+    "05": "EntryDelay",
+    "06": "NotReady",
+    "07": "InAlarm",
+    "08": "ArmingStay",
+    "09": "ArmingNight",
+    "0A": "ArmingAway",
+}
+
 
 ARM_COMMAND_DISPATCH = {  
     # Cluster, Value, NotificationCode
@@ -172,14 +186,14 @@ def handle_ias_keyboard_arm(self, Devices, nwkid, ep, sqn, arm_mode, arm_desc, p
     #    send_panel_status_change(self, nwkid, ep, sqn, arm_desc)
 
 
-def store_panel_status(self, nwkid, arm_desc):
-
+def store_panel_status(self, nwkid, arm_code):
+    self.log.logging("inRawAPS", "Log", f"store_panel_status: {nwkid} - {arm_code}")
     if "IAS_KEYPAD" not in self.ListOfDevices[nwkid]:
         self.ListOfDevices[nwkid]["IAS_KEYPAD"] = {}
 
     self.ListOfDevices[nwkid]["IAS_KEYPAD"]["Current"] = {
-        "CurrentArmMode": arm_desc,
-        "CurrentArmModeDescription": PANEL_STATUS.get(arm_desc, "NotReady"),
+        "CurrentArmMode": arm_code,
+        "CurrentArmModeDescription": PANEL_STATUS_CODE_TO_DESC.get(arm_code, "NotReady"),
         }
 
 
@@ -190,7 +204,7 @@ def get_panel_status_from_widget(self, nwkid):
     keypad_data = self.ListOfDevices.get(nwkid, {}).get("IAS_KEYPAD", {}).get("Current", {})
     if keypad_data == {}:
         return None
-    return PANEL_STATUS.get(keypad_data.get("CurrentArmMode", 0x06), 0x06)
+    return PANEL_STATUS_DESC_TO_CODE.get(keypad_data.get("CurrentArmModeDescription", 0x06), 0x06)
 
 
 def get_remaining_time(self, nwkid):
@@ -224,7 +238,7 @@ def ias_keyboard_feedback_arm_response_all_zone_disarmed(self, nwkid, ep):
 
 def ias_keyboard_feedback_arm_response_arming_stay(self, nwkid, ep):
     # this should be a response to an invalid PIN code
-    self.log.logging("inRawAPS", "Log", f"ias_keyboard_feedback_pincode_invalid: {nwkid}/{ep}")
+    self.log.logging("inRawAPS", "Log", f"ias_keyboard_feedback_arm_response_arming_stay: {nwkid}/{ep}")
     sqn = self.ListOfDevices[nwkid].get("IAS_KEYPAD", {}).get("Last", {}).get("Sqn", "00")
     zcl_raw_arm_response(self, "01", ep, nwkid, sqn, "01")
     ias_keypad_feedback_panel_status_arming_stay(self, nwkid, ep, )
@@ -232,7 +246,7 @@ def ias_keyboard_feedback_arm_response_arming_stay(self, nwkid, ep):
 
 def ias_keyboard_feedback_arm_response_arming_night(self, nwkid, ep):
     # this should be a response to an invalid PIN code
-    self.log.logging("inRawAPS", "Log", f"ias_keyboard_feedback_pincode_invalid: {nwkid}/{ep}")
+    self.log.logging("inRawAPS", "Log", f"ias_keyboard_feedback_arm_response_arming_night: {nwkid}/{ep}")
     sqn = self.ListOfDevices[nwkid].get("IAS_KEYPAD", {}).get("Last", {}).get("Sqn", "00")
     zcl_raw_arm_response(self, "01", ep, nwkid, sqn, "02")
     ias_keypad_feedback_panel_status_arming_night(self, nwkid, ep)
@@ -240,7 +254,7 @@ def ias_keyboard_feedback_arm_response_arming_night(self, nwkid, ep):
 
 def ias_keyboard_feedback_arm_response_arming_away(self, nwkid, ep):
     # this should be a response to an invalid PIN code
-    self.log.logging("inRawAPS", "Log", f"ias_keyboard_feedback_pincode_invalid: {nwkid}/{ep}")
+    self.log.logging("inRawAPS", "Log", f"ias_keyboard_feedback_arm_response_arming_away: {nwkid}/{ep}")
     sqn = self.ListOfDevices[nwkid].get("IAS_KEYPAD", {}).get("Last", {}).get("Sqn", "00")
     zcl_raw_arm_response(self, "01", ep, nwkid, sqn, "03")
     ias_keypad_feedback_panel_status_arming_away(self, nwkid, ep)
@@ -248,14 +262,14 @@ def ias_keyboard_feedback_arm_response_arming_away(self, nwkid, ep):
 
 def ias_keyboard_feedback_arm_response_invalid_code(self, nwkid, ep):
     # this should be a response to an invalid PIN code
-    self.log.logging("inRawAPS", "Log", f"ias_keyboard_feedback_pincode_invalid: {nwkid}/{ep}")
+    self.log.logging("inRawAPS", "Log", f"ias_keyboard_feedback_arm_response_invalid_code: {nwkid}/{ep}")
     sqn = self.ListOfDevices[nwkid].get("IAS_KEYPAD", {}).get("Last", {}).get("Sqn", "00")
     zcl_raw_arm_response(self, "01", ep, nwkid, sqn, "04")
 
 
 def ias_keyboard_feedback_not_ready(self, nwkid, ep):
     # this should be a response to an invalid PIN code
-    self.log.logging("inRawAPS", "Log", f"ias_keyboard_feedback_pincode_invalid: {nwkid}/{ep}")
+    self.log.logging("inRawAPS", "Log", f"ias_keyboard_feedback_not_ready: {nwkid}/{ep}")
     sqn = self.ListOfDevices[nwkid].get("IAS_KEYPAD", {}).get("Last", {}).get("Sqn", "00")
     zcl_raw_arm_response(self, "01", ep, nwkid, sqn, "05")
     ias_keypad_panel_status_not_ready(self, nwkid, ep)
@@ -264,7 +278,7 @@ def ias_keyboard_feedback_not_ready(self, nwkid, ep):
 def ias_keypad_feedback_panel_status_disarm(self, nwkid, ep):
     # Led Green 3s Fix
     # Code 0x00
-    self.log.logging("inRawAPS", "Log", f"ias_keypad_feedback_disarm: {nwkid}/{ep}")
+    self.log.logging("inRawAPS", "Log", f"ias_keypad_feedback_panel_status_disarm: {nwkid}/{ep}")
     store_panel_status(self, nwkid, "00")
     send_panel_status_change(self, nwkid, ep, get_and_inc_ZCL_SQN(self, nwkid), "00")
 
@@ -272,7 +286,7 @@ def ias_keypad_feedback_panel_status_disarm(self, nwkid, ep):
 def ias_keypad_feedback_panel_status_arming_stay(self, nwkid, ep, ):
     # Led Rouge Fix
     # Code 0x08
-    self.log.logging("inRawAPS", "Log", f"ias_keypad_feedback_arming_stay: {nwkid}/{ep}")
+    self.log.logging("inRawAPS", "Log", f"ias_keypad_feedback_panel_status_arming_stay: {nwkid}/{ep}")
     store_panel_status(self, nwkid, "01")
     send_panel_status_change(self, nwkid, ep, get_and_inc_ZCL_SQN(self, nwkid), "01")
 
@@ -280,7 +294,7 @@ def ias_keypad_feedback_panel_status_arming_stay(self, nwkid, ep, ):
 def ias_keypad_feedback_panel_status_arming_night(self, nwkid, ep):
     # Led Rouge Fix
     # Code 0x09
-    self.log.logging("inRawAPS", "Log", f"ias_keypad_feedback_arming_night: {nwkid}/{ep}")
+    self.log.logging("inRawAPS", "Log", f"ias_keypad_feedback_panel_status_arming_night: {nwkid}/{ep}")
     store_panel_status(self, nwkid, "02")
     send_panel_status_change(self, nwkid, ep, get_and_inc_ZCL_SQN(self, nwkid), "02")
 
@@ -288,7 +302,7 @@ def ias_keypad_feedback_panel_status_arming_night(self, nwkid, ep):
 def ias_keypad_feedback_panel_status_arming_away(self, nwkid, ep):
     # Led Rouge Fix
     # Code 0x0a
-    self.log.logging("inRawAPS", "Log", f"ias_keypad_feedback_arming_away: {nwkid}/{ep}")
+    self.log.logging("inRawAPS", "Log", f"ias_keypad_feedback_panel_status_arming_away: {nwkid}/{ep}")
     store_panel_status(self, nwkid, "03")
     send_panel_status_change(self, nwkid, ep, get_and_inc_ZCL_SQN(self, nwkid), "03")
 
@@ -296,7 +310,7 @@ def ias_keypad_feedback_panel_status_arming_away(self, nwkid, ep):
 def ias_keypad_panel_status_exit_delay(self, nwkid, ep):    
     # Exit Delay / grace period = exit delay
     # Code 0x04
-    self.log.logging("inRawAPS", "Log", f"ias_keypad_exit_delay: {nwkid}/{ep}")
+    self.log.logging("inRawAPS", "Log", f"ias_keypad_panel_status_exit_delay: {nwkid}/{ep}")
     store_panel_status(self, nwkid, "04")
     send_panel_status_change(self, nwkid, ep, get_and_inc_ZCL_SQN(self, nwkid), "04")
 
@@ -304,7 +318,7 @@ def ias_keypad_panel_status_exit_delay(self, nwkid, ep):
 def ias_keypad_panel_status_entry_delay(self, nwkid, ep):    
     # Entry Delay / Alarm detected, grace period = entry delay
     # Code 0x05
-    self.log.logging("inRawAPS", "Log", f"ias_keypad_entry_delay: {nwkid}/{ep}")
+    self.log.logging("inRawAPS", "Log", f"ias_keypad_panel_status_entry_delay: {nwkid}/{ep}")
     store_panel_status(self, nwkid, "05")
     send_panel_status_change(self, nwkid, ep, get_and_inc_ZCL_SQN(self, nwkid), "05")
 
@@ -312,7 +326,7 @@ def ias_keypad_panel_status_entry_delay(self, nwkid, ep):
 def ias_keypad_panel_status_not_ready(self, nwkid, ep):
     # Led Blinking  / Led 2 Yellow
     # Code 0x06
-    self.log.logging("inRawAPS", "Log", f"ias_keypad_not_ready: {nwkid}/{ep}")
+    self.log.logging("inRawAPS", "Log", f"ias_keypad_panel_status_not_ready: {nwkid}/{ep}")
     store_panel_status(self, nwkid, "06")
     send_panel_status_change(self, nwkid, ep, get_and_inc_ZCL_SQN(self, nwkid), "06")
 
@@ -320,7 +334,7 @@ def ias_keypad_panel_status_not_ready(self, nwkid, ep):
 def ias_keypad_panel_status_in_alarm(self, nwkid, ep):
     # Alarm detected
     # Code 0x07
-    self.log.logging("inRawAPS", "Log", f"ias_keypad_in_alarm: {nwkid}/{ep}")
+    self.log.logging("inRawAPS", "Log", f"ias_keypad_panel_status_in_alarm: {nwkid}/{ep}")
     store_panel_status(self, nwkid, "07")
     send_panel_status_change(self, nwkid, ep, get_and_inc_ZCL_SQN(self, nwkid), "07")
 
@@ -328,7 +342,7 @@ def ias_keypad_panel_status_in_alarm(self, nwkid, ep):
 def ias_keypad_panel_status_armed_night(self, nwkid, ep):    
     # Led Rouge Fix
     # Code 0x02
-    self.log.logging("inRawAPS", "Log", f"ias_keypad_armed_night: {nwkid}/{ep}")
+    self.log.logging("inRawAPS", "Log", f"ias_keypad_panel_status_armed_night: {nwkid}/{ep}")
     store_panel_status(self, nwkid, "09")
     send_panel_status_change(self, nwkid, ep, get_and_inc_ZCL_SQN(self, nwkid), "09")
 
@@ -336,7 +350,7 @@ def ias_keypad_panel_status_armed_night(self, nwkid, ep):
 def ias_keypad_panel_status_armed_home(self, nwkid, ep):    
     # Led Rouge Fix
     # Code 0x01
-    self.log.logging("inRawAPS", "Log", f"ias_keypad_armed_home: {nwkid}/{ep}")
+    self.log.logging("inRawAPS", "Log", f"ias_keypad_panel_status_armed_home: {nwkid}/{ep}")
     store_panel_status(self, nwkid, "08")
     send_panel_status_change(self, nwkid, ep, get_and_inc_ZCL_SQN(self, nwkid), "08")
 
@@ -344,6 +358,6 @@ def ias_keypad_panel_status_armed_home(self, nwkid, ep):
 def ias_keypad_panel_status_armed_all_zones(self, nwkid, ep):    
     # Led Rouge Fix
     # Code 0x03
-    self.log.logging("inRawAPS", "Log", f"ias_keypad_armed_all_zones: {nwkid}/{ep}")
+    self.log.logging("inRawAPS", "Log", f"ias_keypad_panel_status_armed_all_zones: {nwkid}/{ep}")
     store_panel_status(self, nwkid, "0a")
     send_panel_status_change(self, nwkid, ep, get_and_inc_ZCL_SQN(self, nwkid), "0a")
