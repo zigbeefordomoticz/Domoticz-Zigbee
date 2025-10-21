@@ -178,7 +178,8 @@ def store_panel_status(self, nwkid, arm_desc):
         self.ListOfDevices[nwkid]["IAS_KEYPAD"] = {}
 
     self.ListOfDevices[nwkid]["IAS_KEYPAD"]["Current"] = {
-        "CurrentArmMode": arm_desc
+        "CurrentArmMode": arm_desc,
+        "CurrentArmModeDescription": PANEL_STATUS.get(arm_desc, "NotReady"),
         }
 
 
@@ -189,7 +190,7 @@ def get_panel_status_from_widget(self, nwkid):
     keypad_data = self.ListOfDevices.get(nwkid, {}).get("IAS_KEYPAD", {}).get("Current", {})
     if keypad_data == {}:
         return None
-    return PANEL_STATUS.get(keypad_data.get("CurrentArmMode", "NotReady"), 0x06)
+    return PANEL_STATUS.get(keypad_data.get("CurrentArmMode", 0x06), 0x06)
 
 
 def get_remaining_time(self, nwkid):
