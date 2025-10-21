@@ -971,7 +971,10 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         sValue = value
         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
         return
-     
+    if ClusterType == "IAS_ACE" and WidgetType == "KeypadFeedback":
+        # do nothing, as this is only feedback frm Domoticz command
+        return
+
     if (
         WidgetType not in ("ThermoModeEHZBRTS", "HeatingSwitch", "HeatingStatus", "ThermoMode_2", "ThermoMode_3", "ThermoSetpoint", "ThermoOnOff", "Motionac01") 
         and ( 
