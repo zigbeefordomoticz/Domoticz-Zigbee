@@ -33,15 +33,16 @@ from Modules.domoticzAbstractLayer import (domo_read_Name,
 from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, update_domoticz_widget)
 from Modules.fanControl import change_fan_mode
-from Modules.ias_ace_commands import (ias_keyboard_feedback_pincode_invalid,
-                                      ias_keypad_entry_delay,
-                                      ias_keypad_exit_delay,
-                                      ias_keypad_feedback_arming_away,
-                                      ias_keypad_feedback_arming_night,
-                                      ias_keypad_feedback_arming_stay,
-                                      ias_keypad_feedback_disarm,
-                                      ias_keypad_in_alarm,
-                                      ias_keypad_not_ready)
+from Modules.ias_ace_commands import (
+    ias_keyboard_feedback_arm_response_all_zone_disarmed,
+    ias_keyboard_feedback_arm_response_arming_away,
+    ias_keyboard_feedback_arm_response_arming_night,
+    ias_keyboard_feedback_arm_response_arming_stay,
+    ias_keyboard_feedback_arm_response_invalid_code,
+    ias_keyboard_feedback_not_ready, ias_keypad_panel_status_armed_all_zones,
+    ias_keypad_panel_status_armed_home, ias_keypad_panel_status_armed_night,
+    ias_keypad_panel_status_entry_delay, ias_keypad_panel_status_exit_delay,
+    ias_keypad_panel_status_in_alarm)
 from Modules.ikeaTradfri import ikea_air_purifier_mode
 from Modules.legrand_netatmo import cable_connected_mode, legrand_fc40
 from Modules.livolo import livolo_OnOff
@@ -1417,19 +1418,19 @@ def keypad_feedback_response(self, Nwkid, EPout, Level):
     # 
     self.log.logging("Command", "Log", f"keypad_feedback_response : {Level} ({type(Level)})", Nwkid)
 
-    
+
     KEYPAD_WIDGET_MATRIX = {
         # Level -> ARM Command Response
         00: ("Off", None),
-        10: ("Disarm", ias_keypad_feedback_disarm),
-        20: ("ArmAllZones", ias_keypad_feedback_arming_away),
-        30: ("ArmNight", ias_keypad_feedback_arming_night),
-        40: ("ArmHome", ias_keypad_feedback_arming_stay),
-        50: ("InvalidCode", ias_keyboard_feedback_pincode_invalid),
-        60: ("NotReady", ias_keypad_not_ready),
-        70: ("ExitDelay", ias_keypad_exit_delay),
-        80: ("EntryDelay", ias_keypad_entry_delay),
-        90: ("InAlarm", ias_keypad_in_alarm),
+        10: ("Disarm", ias_keyboard_feedback_arm_response_all_zone_disarmed),
+        20: ("ArmAllZones", ias_keyboard_feedback_arm_response_arming_away),
+        30: ("ArmNight", ias_keyboard_feedback_arm_response_arming_night),
+        40: ("ArmHome", ias_keyboard_feedback_arm_response_arming_stay),
+        50: ("InvalidCode", ias_keyboard_feedback_arm_response_invalid_code),
+        60: ("NotReady", ias_keyboard_feedback_not_ready),
+        70: ("ExitDelay", ias_keypad_panel_status_exit_delay),
+        80: ("EntryDelay", ias_keypad_panel_status_entry_delay),
+        90: ("InAlarm", ias_keypad_panel_status_in_alarm),
     }
     
     if Level in KEYPAD_WIDGET_MATRIX:
