@@ -89,6 +89,8 @@ def handle_ias_ace_command(self, Devices, nwkid, ep, sqn, model_name, command, p
     if cmd_name == "Arm":
         # Retrieve device configuration once, to check if this is a keyboard
         is_ias_keyboard = get_deviceconf_parameter_value(self, model_name, "IAS_KEYBOARD")
+        self.log.logging("inRawAPS", "Log", f"IAS ACE Command: {command} ({cmd_name}) is_ias_keyboard={is_ias_keyboard}")
+
         arm_mode = payload[:2]
         arm_desc = ARM_COMMANDS.get(arm_mode, "Unknown")
         if is_ias_keyboard:
@@ -138,14 +140,13 @@ def get_panel_status_response(self, Devices, nwkid, ep, sqn):
     zcl_raw_get_panel_status_response( self, "01", ep, nwkid, sqn, payload )
 
 
-def send_panel_status_change(self, nwkid, ep, sqn, panel_status_code):
+def send_panel_status_change(self, nwkid, ep, sqn, panel_status_code, alarm_status="00"):
     """Send IAS ACE Panel Status Change Notification."""
     self.log.logging("inRawAPS", "Log", f"send_panel_status_change: {nwkid}/{ep} - {panel_status_code}")
     
     panel_status = panel_status_code
     seconds_remaining = get_remaining_time(self, nwkid)
     audible_notification = "03"
-    alarm_status = "00"
     payload = panel_status + seconds_remaining + audible_notification + alarm_status
 
     self.log.logging("inRawAPS", "Log", f"send_panel_status_change: {nwkid}/{ep} Panel Status={panel_status} Payload={payload}")
@@ -156,6 +157,8 @@ def handle_ias_keyboard_arm(self, Devices, nwkid, ep, sqn, arm_mode, arm_desc, p
     """
     Handle IAS keypad 'Arm' commands with PIN code input.
     """
+    self.log.logging("inRawAPS", "Log", f"handle_ias_keyboard_arm: {arm_mode} {arm_desc} Payload: {payload}")
+    
     EXIT_DELAY = 0xff  # Max / 255 seconds - The delay will be handled via the 
     exit_delay = get_device_config_param(self, nwkid, "ARM_EXIT_DELAY") or EXIT_DELAY
 
@@ -336,7 +339,7 @@ def ias_keypad_panel_status_in_alarm(self, nwkid, ep):
     # Code 0x07
     self.log.logging("inRawAPS", "Log", f"ias_keypad_panel_status_in_alarm: {nwkid}/{ep}")
     store_panel_status(self, nwkid, "07")
-    send_panel_status_change(self, nwkid, ep, get_and_inc_ZCL_SQN(self, nwkid), "07")
+    send_panel_status_change(self, nwkid, ep, get_and_inc_ZCL_SQN(self, nwkid), "07", alarm_status="01")
 
 
 def ias_keypad_panel_status_armed_night(self, nwkid, ep):    
