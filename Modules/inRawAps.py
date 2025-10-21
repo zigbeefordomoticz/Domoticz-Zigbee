@@ -11,11 +11,11 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 
-import time
 
 from Modules.casaia import CASAIA_MANUF_CODE, casaiaReadRawAPS
 from Modules.domoMaj import MajDomoDevice
 from Modules.heiman import heimanReadRawAPS
+from Modules.ias_ace_commands import handle_ias_ace_command
 from Modules.ikeaTradfri import ikea_openclose_remote, ikeaReadRawAPS
 from Modules.legrand_netatmo import legrandReadRawAPS
 from Modules.livolo import livoloReadRawAPS
@@ -24,13 +24,9 @@ from Modules.orvibo import orviboReadRawAPS
 from Modules.philips import philipsReadRawAPS
 from Modules.pollControl import receive_poll_cluster
 from Modules.schneider_wiser import schneiderReadRawAPS
-from Modules.tools import (get_device_config_param,
-                           get_deviceconf_parameter_value)
 from Modules.tuya import tuyaReadRawAPS
 from Modules.tuyaTools import tuya_manufacturer_device
-from Zigbee.zclRawCommands import (zcl_raw_arm_response,
-                                   zcl_raw_get_panel_status_response,
-                                   zcl_raw_panel_status_change)
+
 
 # Requires Zigate firmware > 3.1d
 CALLBACK_TABLE = {
@@ -227,220 +223,5 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
 
     if func:
         func(self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
-
-
-def handle_ias_ace_command(self, Devices, nwkid, ep, sqn, model_name, command, payload):
-    """
-    Handle IAS ACE (Intruder Alarm System - Arm Control Equipment) commands.
-    """
-
-    IAS_ACE_COMMANDS = {
-        "00": "Arm",
-        "01": "Bypass",
-        "02": "Emergency",
-        "03": "Fire",
-        "04": "Panic",
-        "05": "Get Zone ID Map",
-        "06": "Get Zone Information",
-        "07": "Get Panel Status",
-        "08": "Get Bypassed Zone List",
-        "09": "Get Zone Status",
-    }
-
-    cmd_name = IAS_ACE_COMMANDS.get(command)
-    self.log.logging("inRawAPS", "Log", f"IAS ACE Command: {command} ({cmd_name}) Payload: {payload}")
-
-    if not cmd_name:
-        self.log.logging("inRawAPS", "Warn", f"Unknown IAS ACE command: {command} - {payload}")
-        return
-
-    # Retrieve device configuration once
-    is_ias_keyboard = get_deviceconf_parameter_value(self, model_name, "CIE_NOT_TRIGGER_ENROLMENT")
-
-    # --- ARM Command ---
-    if cmd_name == "Arm":
-        _handle_arm_command(self, Devices, nwkid, ep, sqn, payload, is_ias_keyboard)
-
-    elif cmd_name == "Emergency":
-        MajDomoDevice(self, Devices, nwkid, ep, "0006", "01")
-
-    elif cmd_name == "Get Panel Status":
-        self.log.logging("inRawAPS", "Log", f"IAS ACE Get Panel Status {command} - {payload}")
-        get_panel_status_response(self, Devices, nwkid, ep, sqn)
-
-    else:
-        self.log.logging("inRawAPS", "Warn", f"Unhandled IAS ACE command: {cmd_name} ({command}) Payload: {payload}")
-
-
-def _handle_arm_command(self, Devices, nwkid, ep, sqn, payload, is_ias_keyboard):
-    arm_mode = payload[:2]
-
-    ARM_COMMANDS = {
-        "00": "Disarm",
-        "01": "ArmHome",
-        "02": "ArmNight",
-        "03": "ArmAllZones",
-    }
-
-    arm_desc = ARM_COMMANDS.get(arm_mode, "Unknown")
-    self.log.logging("inRawAPS", "Log", f"IAS ACE Arm Command: {arm_mode} ({arm_desc}) Payload: {payload}")
-    if is_ias_keyboard:
-        _handle_ias_keyboard_arm(self, Devices, nwkid, ep, sqn, arm_mode, arm_desc, payload)
-        return
-
-    # Simplified dispatch for arm modes
-    arm_actions = {
-        "Disarm": ("0006", "04", "00"),
-        "ArmHome": ("0006", "01", "01"),
-        "ArmAllZones": ("0006", "03", "03"),
-    }
-
-    if arm_desc in arm_actions:
-        cluster, value, notif_code = arm_actions[arm_desc]
-        MajDomoDevice(self, Devices, nwkid, ep, cluster, value)
-        arm_response(self, nwkid, ep, sqn, notif_code)
-
-
-def _handle_ias_keyboard_arm(self, Devices, nwkid, ep, sqn, arm_mode, arm_desc, payload):
-    """
-    Handle IAS keypad 'Arm' commands with PIN code input.
-    """
-    EXIT_DELAY = 30  # seconds
-    exit_delay = get_device_config_param(self, nwkid, "ARM_EXIT_DELAY") or EXIT_DELAY
-    if "IAS_KEYPAD" not in self.ListOfDevices.get(nwkid, {}):
-        self.ListOfDevices.setdefault(nwkid, {})["IAS_KEYPAD"] = {}
-
-    decoded_code = _decode_kepzb_110_hex_string(payload[2:])
-
-    self.ListOfDevices[nwkid]["IAS_KEYPAD"]["Last"] = {
-        "TimeStamp": (time.time() + exit_delay),
-        "LastArmMode": arm_mode,
-        "LastArmModeDescription": arm_desc,
-        "Code": decoded_code,
-        "Sqn": sqn,
-    }
-
-    self.log.logging("inRawAPS", "Log", f"IAS Keyboard - {arm_mode} {arm_desc} {payload} Decoded PIN: {decoded_code} Last: {self.ListOfDevices[nwkid]['IAS_KEYPAD']['Last']}")
-
-    text_message = f"{arm_desc},{decoded_code}"
-    MajDomoDevice(self, Devices, nwkid, ep, "0501", text_message)
-
-    if not _pin_code_valid(self, nwkid, decoded_code):
-        self.log.logging("inRawAPS", "Warn", f"IAS Keyboard - Invalid PIN code for {arm_desc} {decoded_code} versus expected {get_device_config_param(self, nwkid, 'DISARM_PINCODE')}")
-        arm_response(self, nwkid, ep, sqn, "04")  # InvalidCode
-        _update_keypad_datastructure(self, nwkid, "InvalidCode")
-        send_panel_status_change(self, nwkid, ep, sqn, "InvalidCode")
-        return
-
-    ARM_NOTIFICATION_RESPONSE = {
-        "Disarm": "00",
-        "ArmHome": "01",
-        "ArmNight": "02",
-        "ArmAllZones": "03",
-        "InvalidCode": "04",
-        "NotReady": "05",
-        "AlreadyDiarmed": "06",
-    }
-
-    if arm_desc in ARM_NOTIFICATION_RESPONSE:
-        _update_keypad_datastructure(self, nwkid, arm_desc)
-        arm_response(self, nwkid, ep, sqn, ARM_NOTIFICATION_RESPONSE[arm_desc])
-        send_panel_status_change(self, nwkid, ep, sqn, arm_desc)
-
-
-def _update_keypad_datastructure(self, nwkid, arm_desc):
-
-    if "IAS_KEYPAD" not in self.ListOfDevices[nwkid]:
-        self.ListOfDevices[nwkid]["IAS_KEYPAD"] = {}
-
-    self.ListOfDevices[nwkid]["IAS_KEYPAD"]["Current"] = {
-        "CurrentArmMode": arm_desc
-        }
-
-
-
-def _pin_code_valid(self, nwkid, pin_code: str) -> bool:
-    """
-    Validate the PIN code.
-    """
-    disarm_pincode = get_device_config_param(self, nwkid, "DISARM_PINCODE")
-    if disarm_pincode == "":
-        return True  # No PIN code set, accept any code
-    return False if disarm_pincode is None else pin_code == disarm_pincode
-
-
-def _decode_kepzb_110_hex_string(hex_string: str) -> str:
-    """
-    Decode Develco KEYZB-110 keypad PIN payload.
-    The first byte is the ASCII string length.
-    """
-    if not hex_string:
-        return ""
-    data = bytes.fromhex(hex_string)
-    length = data[0]
-    return data[1:1 + length].decode("ascii", errors="ignore")
-
-    
-def get_panel_status_response(self, Devices, nwkid, ep, sqn):
-    """
-    Handle IAS ACE Get Panel Status Response command.
-    """
-    panel_status = f"{_get_panel_status_from_widget(self, nwkid):02x}"
-    seconds_remaining = _get_remaining_time(self, nwkid)
-    audible_notification = "00" if seconds_remaining == "00" else "03"
-    alarm_status = "00"
-    
-    payload = panel_status + seconds_remaining + audible_notification + alarm_status
-    self.log.logging("inRawAPS", "Log", f"get_panel_status_response: {nwkid}/{ep} Panel Status={panel_status} Payload={payload}")
-    zcl_raw_get_panel_status_response( self, "01", ep, nwkid, sqn, payload )
-
-
-def _get_remaining_time(self, nwkid):
-    """
-    Get remaining time for exit/entry delay from widget or memory.
-    """
-    now = time.time()
-    second_remaining = int(self.ListOfDevices.get(nwkid, {}).get("IAS_KEYPAD", {}).get("Last", {}).get("TimeStamp", now) - now)
-    second_remaining = max(second_remaining, 0)
-    return f"{second_remaining:02x}"
-
-
-def _get_panel_status_from_widget(self, nwkid):
-    """
-    Get current IAS panel status from widget or memory.
-    """
-    PANEL_STATUS = {
-        "Disarm": 0x00,
-        "ArmHome": 0x01,
-        "ArmNight": 0x02,
-        "ArmAllZones": 0x03,
-        "ExitDelay": 0x04,
-        "EntryDelay": 0x05,
-        "NotReady": 0x06,
-        "InAlarm": 0x07,
-    }
-
-    keypad_data = self.ListOfDevices.get(nwkid, {}).get("IAS_KEYPAD", {}).get("Current", {})
-    return PANEL_STATUS.get(keypad_data.get("CurrentArmMode", "NotReady"), 0x06)
-
-
-def arm_response(self, nwkid, ep, sqn, arm_notification_code):
-    """Send IAS ACE Arm Response."""
-    self.log.logging("inRawAPS", "Log", f"arm_response: {nwkid}/{ep} - {arm_notification_code}")
-    zcl_raw_arm_response(self, "01", ep, nwkid, sqn, arm_notification_code)
-    
-    
-def send_panel_status_change(self, nwkid, ep, sqn, panel_status_code):
-    """Send IAS ACE Panel Status Change Notification."""
-    self.log.logging("inRawAPS", "Log", f"send_panel_status_change: {nwkid}/{ep} - {panel_status_code}")
-    
-    panel_status = f"{_get_panel_status_from_widget(self, nwkid):02x}"
-    seconds_remaining = _get_remaining_time(self, nwkid)
-    audible_notification = "00" if seconds_remaining == "00" else "03"
-    alarm_status = "00"
-    payload = panel_status + seconds_remaining + audible_notification + alarm_status
-
-    self.log.logging("inRawAPS", "Log", f"send_panel_status_change: {nwkid}/{ep} Panel Status={panel_status} Payload={payload}")
-    zcl_raw_panel_status_change( self, "01", ep, nwkid, sqn, payload, )
 
 

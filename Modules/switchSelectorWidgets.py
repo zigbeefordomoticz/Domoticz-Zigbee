@@ -470,7 +470,7 @@ SWITCH_SELECTORS = {
         "09": (9, "90"),
         "OffHidden": True,
         "ForceUpdate": False,
-        "LevelNames": "Off|Disarmed|ArmAllZones|ArmNight|ArmHome|InvalidCode|NotReady|AlreadyDiarmed|ExitDelay|EntryDelay",
+        "LevelNames": "Off|Disarmed|ArmAllZones|ArmNight|ArmHome|InvalidCode|NotReady|ExitDelay|EntryDelay|InAlarm",
     },
     "KF204Switch": {
         "00": (0, "00"),

@@ -33,6 +33,15 @@ from Modules.domoticzAbstractLayer import (domo_read_Name,
 from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, update_domoticz_widget)
 from Modules.fanControl import change_fan_mode
+from Modules.ias_ace_commands import (ias_keyboard_feedback_pincode_invalid,
+                                      ias_keypad_entry_delay,
+                                      ias_keypad_exit_delay,
+                                      ias_keypad_feedback_arming_away,
+                                      ias_keypad_feedback_arming_night,
+                                      ias_keypad_feedback_arming_stay,
+                                      ias_keypad_feedback_disarm,
+                                      ias_keypad_in_alarm,
+                                      ias_keypad_not_ready)
 from Modules.ikeaTradfri import ikea_air_purifier_mode
 from Modules.legrand_netatmo import cable_connected_mode, legrand_fc40
 from Modules.livolo import livolo_OnOff
@@ -760,7 +769,7 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
 
     if DeviceType == "KeypadFeedback":
         # For Develco/Frient Intelligent Keypad, we get here what needs to be answer to the Get Panel Status from Peypad
-        _keypad_feedback_response(self, Nwkid, EPout, Level)
+        keypad_feedback_response(self, Nwkid, EPout, Level)
         return
 
     if DeviceType == "ThermoSetpoint":
@@ -1403,23 +1412,28 @@ def handle_command_setcolor(self,Devices, DeviceID, Unit, Level, Color, Nwkid, E
     update_domoticz_widget(self, Devices, DeviceID, Unit, 15, str(Level), BatteryLevel, SignalLevel, str(Color))
 
 
-def _keypad_feedback_response(self, Nwkid, EPout, Level):
-    self.log.logging("Command", "Log", f"_keypad_feedback_response : {Level} ({type(Level)})", Nwkid)
+def keypad_feedback_response(self, Nwkid, EPout, Level):
+    # Purpose is to send back to Keypad the response of an Arm command
+    # 
+    self.log.logging("Command", "Log", f"keypad_feedback_response : {Level} ({type(Level)})", Nwkid)
 
+    
     KEYPAD_WIDGET_MATRIX = {
-        10: "Disarm",
-        40: "ArmHome",
-        30: "ArmNight",
-        20: "ArmAllZones",
-        50: "InvalidCode",
-        60: "NotReady",
-        70: "AlreadyDiarmed",
+        # Level -> ARM Command Response
+        00: {"Off", None},
+        10: {"Disarm", ias_keypad_feedback_disarm},
+        20: {"ArmAllZones", ias_keypad_feedback_arming_away},
+        30: {"ArmNight", ias_keypad_feedback_arming_night},
+        40: {"ArmHome", ias_keypad_feedback_arming_stay},
+        50: {"InvalidCode", ias_keyboard_feedback_pincode_invalid},
+        60: {"NotReady", ias_keypad_not_ready},
+        70: {"ExitDelay", ias_keypad_exit_delay},
+        80: {"EntryDelay", ias_keypad_entry_delay},
+        90: {"InAlarm", ias_keypad_in_alarm},
     }
-
-    if "IAS_KEYPAD" not in self.ListOfDevices[Nwkid]:
-        self.ListOfDevices[Nwkid]["IAS_KEYPAD"] = {}
-
-    self.ListOfDevices[Nwkid]["IAS_KEYPAD"]["Current"] = {
-        "CurrentArmMode": KEYPAD_WIDGET_MATRIX.get(Level, "Unknown")
-        }
-
+    
+    if Level in KEYPAD_WIDGET_MATRIX:
+        arm_desc, arm_function = KEYPAD_WIDGET_MATRIX[ Level ]
+        self.log.logging("Command", "Log", f"keypad_feedback_response : Keypad Arm Command Response: {Nwkid} EPout: {EPout} Level: {Level} -> {arm_desc}", Nwkid)  
+        if arm_function:
+            arm_function(self, Nwkid, EPout)
