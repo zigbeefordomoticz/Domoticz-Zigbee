@@ -971,8 +971,11 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         sValue = value
         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
         return
-    if ClusterType == "IAS_ACE" and WidgetType == "KeypadFeedback":
+
+    if WidgetType == "KeypadFeedback":
         # do nothing, as this is only feedback frm Domoticz command
+        self.log.logging("Widget", "Debug", "do nothing, as this is only feedback frm Domoticz command for %s/%s %s %s %s %s %s" %(
+            NwkId, Ep, model_name, ClusterId, ClusterType, WidgetType, value))
         return
 
     if (
