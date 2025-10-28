@@ -149,28 +149,108 @@ def zcl_raw_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_i
     return sqn
 
 
-def zcl_raw_default_response(self, nwkid, EPin, EPout, cluster, response_to_command, sqn, command_status="00", manufcode=None, orig_fcf=None):
+#def zcl_raw_default_response(self, nwkid, EPin, EPout, cluster, response_to_command, sqn, command_status="00", manufcode=None, orig_fcf=None):
+#    self.log.logging(
+#        "zclCommand", "Debug",
+#        f"zcl_raw_default_response {nwkid} {EPin} {EPout} {cluster} {sqn} for command {response_to_command} with Status: {command_status}, Manufcode: {manufcode}, OrigFCF: {orig_fcf}", nwkid
+#    )
+#
+#    if self.pluginconf.pluginConf.get("disableZCLDefaultResponse"):
+#        return
+#
+#    zcl_command_formated_logging(self, "Default_Response (Raw)", nwkid, EPout, cluster, response_to_command, sqn, command_status, manufcode, orig_fcf)
+#
+#    if response_to_command == "0b":
+#        return  # Never return a default response to a default response
+#
+#    if orig_fcf is None:
+#        orig_fcf = 0b00000000
+#    else:
+#        frame_type = "0"
+#        manufacturer_specific_bit = "1" if manufcode and manufcode != "0000" else "0"
+#        direction_bit = "1" if orig_fcf is not None and fcf_direction(orig_fcf) else "0"
+#        disable_default_response_bit = "0"
+#        frame_control_field = build_fcf( frame_type, manufacturer_specific_bit, direction_bit, disable_default_response_bit)
+#
+#    payload = frame_control_field
+#    if manufcode and manufcode != "0000":
+#        payload += manufcode[2:4] + manufcode[:2]
+#
+#    payload += sqn + "0b" + response_to_command + command_status
+#
+#    self.log.logging("zclCommand", "Debug", f"zcl_raw_default_response ==== payload: {payload}", nwkid)
+#
+#    raw_APS_request(
+#        self, nwkid, EPout, cluster, "0104", payload,
+#        zigpyzqn=sqn, zigate_ep=EPin, highpriority=True, ackIsDisabled=is_ack_tobe_disabled(self, nwkid)
+#    )
+#
+#    return sqn
+
+
+def zcl_raw_default_response( self, nwkid, cie_ep, dst_ep, cluster, response_to_command, sqn, command_status="00", manufcode=None, orig_fcf=None ):
+
+    """
+    Build and send a Zigbee Cluster Library (ZCL) Default Response frame.
+
+    This method constructs and sends a default response for a received ZCL command.
+    It prevents recursive responses, applies manufacturer-specific formatting when needed,
+    and uses plugin configuration flags to determine whether default responses are disabled.
+
+    Args:
+        nwkid (str): Network identifier (short address) of the target Zigbee device.
+        cie_ep (str): Input (local) endpoint of the coordinator or Zigate.
+        dst_ep (str): Output (remote) endpoint of the target device.
+        cluster (str): Cluster ID in hexadecimal format (e.g., "0006" for On/Off cluster).
+        response_to_command (str): The original ZCL command ID being acknowledged (e.g., "01").
+        sqn (str): Sequence number of the original ZCL command, as a two-character hexadecimal string.
+        command_status (str, optional): ZCL command status to report ("00" for success by default).
+        manufcode (str, optional): Manufacturer code as a 4-character hexadecimal string, or None.
+        orig_fcf (int, optional): Original frame control field from the received command, or None.
+
+    Returns:
+        str: The sequence number (`sqn`) of the sent ZCL Default Response.
+
+    Behavior:
+        - Does nothing if the plugin configuration `disableZCLDefaultResponse` is set.
+        - Ignores commands that are themselves Default Responses (command ID "0b").
+        - Builds a valid ZCL frame with proper Frame Control Field (FCF) and manufacturer-specific header.
+        - Sends the frame via `raw_APS_request()` with high priority.
+        - Logs each step for traceability under the "zclCommand" category.
+
+    Notes:
+        - The FCF bits are derived based on the presence of manufacturer code and direction flag.
+        - This method should not be called directly for ZCL command "0b" (Default Response).
+        - Ensure that all hex parameters (`sqn`, `response_to_command`, etc.) are two-character strings.
+    """
+
     self.log.logging(
         "zclCommand", "Debug",
-        f"zcl_raw_default_response {nwkid} {EPin} {EPout} {cluster} {sqn} for command {response_to_command} with Status: {command_status}, Manufcode: {manufcode}, OrigFCF: {orig_fcf}", nwkid
+        f"zcl_raw_default_response {nwkid} {cie_ep} {dst_ep} {cluster} {sqn} for command "
+        f"{response_to_command} with Status: {command_status}, Manufcode: {manufcode}, OrigFCF: {orig_fcf}",
+        nwkid
     )
 
     if self.pluginconf.pluginConf.get("disableZCLDefaultResponse"):
         return
 
-    zcl_command_formated_logging(self, "Default_Response (Raw)", nwkid, EPout, cluster, response_to_command, sqn, command_status, manufcode, orig_fcf)
+    zcl_command_formated_logging(
+        self, "Default_Response (Raw)", nwkid, dst_ep, cluster,
+        response_to_command, sqn, command_status, manufcode, orig_fcf
+    )
 
-    if response_to_command == "0b":
+    if response_to_command.lower() == "0b":
         return  # Never return a default response to a default response
 
     if orig_fcf is None:
         orig_fcf = 0b00000000
-    else:
-        frame_type = "0"
-        manufacturer_specific_bit = "1" if manufcode and manufcode != "0000" else "0"
-        direction_bit = "1" if orig_fcf is not None and fcf_direction(orig_fcf) else "0"
-        disable_default_response_bit = "0"
-        frame_control_field = build_fcf( frame_type, manufacturer_specific_bit, direction_bit, disable_default_response_bit)
+
+    frame_type = "0"
+    manufacturer_specific_bit = "1" if manufcode and manufcode != "0000" else "0"
+    direction_bit = "1" if fcf_direction(orig_fcf) else "0"
+    disable_default_response_bit = "0"
+    frame_control_field = build_fcf( frame_type, manufacturer_specific_bit, direction_bit, disable_default_response_bit )
+    self.log.logging("zclCommand", "Debug", f"zcl_raw_default_response ==== Source FCF {orig_fcf} to FCF: {frame_control_field}", nwkid)
 
     payload = frame_control_field
     if manufcode and manufcode != "0000":
@@ -180,10 +260,7 @@ def zcl_raw_default_response(self, nwkid, EPin, EPout, cluster, response_to_comm
 
     self.log.logging("zclCommand", "Debug", f"zcl_raw_default_response ==== payload: {payload}", nwkid)
 
-    raw_APS_request(
-        self, nwkid, EPout, cluster, "0104", payload,
-        zigpyzqn=sqn, zigate_ep=EPin, highpriority=True, ackIsDisabled=is_ack_tobe_disabled(self, nwkid)
-    )
+    raw_APS_request( self, nwkid, dst_ep, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=cie_ep, highpriority=True, ackIsDisabled=is_ack_tobe_disabled(self, nwkid) )
 
     return sqn
 
