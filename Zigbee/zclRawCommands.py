@@ -245,7 +245,7 @@ def zcl_raw_default_response( self, nwkid, cie_ep, dst_ep, cluster, response_to_
         fcf = 0b00               # Frame Type: Profile-wide
         fcf |= (manuf_spec << 2) # Manufacturer Specific
         fcf |= (1 << 3)          # Direction: Server → Client
-        fcf |= (disable_def_resp << 4)  # Disable Default Response
+        fcf |= (1 << 4)  # Disable Default Response
 
         return "%02x" %fcf
 
