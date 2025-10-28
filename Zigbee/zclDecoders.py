@@ -113,11 +113,10 @@ def zcl_decoders(self, src_nwk_id, src_endpoint, target_ep, cluster_id, payload,
         "zclDecoder",
         "Debug",
         (
-            f"SrcNWK: {src_nwk_id} SrcEP: {src_endpoint} TargetEP: {target_ep} "
-            f"ClusterID: {cluster_id} Payload: {payload} Frame: {frame} "
-            f"DisableDefaultRsp: {disable_default_response} GlobalCommand: {global_command} "
-            f"Sqn: {sqn} ManufCode: {manufacturer_code} Command: {command} "
-            f"Data: {data} Payload: {payload} Frame: {frame}"
+            f"SrcNWK: {src_nwk_id} SrcEP: {src_endpoint} TargetEP: {target_ep} ClusterID: {cluster_id}  "
+            f"FCF: {fcf} DisableDefaultRsp: {disable_default_response} GlobalCommand: {global_command} "
+            f"Sqn: {sqn} ManufCode: {manufacturer_code} Command: {command} Data: {data} "
+            f"Payload: {payload} Frame: {frame}"
         ),
         src_nwk_id,
     )
