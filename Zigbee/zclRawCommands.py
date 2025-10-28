@@ -224,6 +224,31 @@ def zcl_raw_default_response( self, nwkid, cie_ep, dst_ep, cluster, response_to_
         - Ensure that all hex parameters (`sqn`, `response_to_command`, etc.) are two-character strings.
     """
 
+    def build_default_response_fcf(orig_fcf: str) -> str:
+        """
+        Build the FCF for a ZCL Default Response based on the original FCF.
+
+        Rules:
+        - Frame Type: always Profile-wide (00)
+        - Direction: always Server → Client (1)
+        - Manufacturer Specific: copied from original
+        - Disable Default Response: copied from original
+        - Reserved bits: 0
+        """
+        # Extract bits from original FCF
+        orig_fcf = int(orig_fcf, 16)
+
+        manuf_spec = (orig_fcf >> 2) & 0b1
+        disable_def_resp = (orig_fcf >> 4) & 0b1
+
+        # Build new FCF
+        fcf = 0b00               # Frame Type: Profile-wide
+        fcf |= (manuf_spec << 2) # Manufacturer Specific
+        fcf |= (1 << 3)          # Direction: Server → Client
+        fcf |= (disable_def_resp << 4)  # Disable Default Response
+
+        return "%02x" %fcf
+
     self.log.logging(
         ["zclCommand", "zclDecoder"], "Debug",
         f"zcl_raw_default_response {nwkid} {cie_ep} {dst_ep} {cluster} {sqn} for command "
@@ -242,14 +267,8 @@ def zcl_raw_default_response( self, nwkid, cie_ep, dst_ep, cluster, response_to_
     if response_to_command.lower() == "0b":
         return  # Never return a default response to a default response
 
-    if orig_fcf is None:
-        orig_fcf = 0b00000000
-
-    frame_type = "0"
-    manufacturer_specific_bit = "1" if manufcode and manufcode != "0000" else "0"
-    direction_bit = "1" if fcf_direction(orig_fcf) else "0"
-    disable_default_response_bit = "0"
-    frame_control_field = build_fcf( frame_type, manufacturer_specific_bit, direction_bit, disable_default_response_bit )
+    frame_control_field = build_default_response_fcf( orig_fcf )
+    
     self.log.logging(["zclCommand", "zclDecoder"], "Debug", f"zcl_raw_default_response ==== Source FCF {orig_fcf} to FCF: {frame_control_field}", nwkid)
 
     payload = frame_control_field
