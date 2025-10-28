@@ -225,7 +225,7 @@ def zcl_raw_default_response( self, nwkid, cie_ep, dst_ep, cluster, response_to_
     """
 
     self.log.logging(
-        "zclCommand", "Debug",
+        ["zclCommand", "zclDecoder"], "Debug",
         f"zcl_raw_default_response {nwkid} {cie_ep} {dst_ep} {cluster} {sqn} for command "
         f"{response_to_command} with Status: {command_status}, Manufcode: {manufcode}, OrigFCF: {orig_fcf}",
         nwkid
@@ -250,7 +250,7 @@ def zcl_raw_default_response( self, nwkid, cie_ep, dst_ep, cluster, response_to_
     direction_bit = "1" if fcf_direction(orig_fcf) else "0"
     disable_default_response_bit = "0"
     frame_control_field = build_fcf( frame_type, manufacturer_specific_bit, direction_bit, disable_default_response_bit )
-    self.log.logging("zclCommand", "Debug", f"zcl_raw_default_response ==== Source FCF {orig_fcf} to FCF: {frame_control_field}", nwkid)
+    self.log.logging(["zclCommand", "zclDecoder"], "Debug", f"zcl_raw_default_response ==== Source FCF {orig_fcf} to FCF: {frame_control_field}", nwkid)
 
     payload = frame_control_field
     if manufcode and manufcode != "0000":
@@ -258,7 +258,7 @@ def zcl_raw_default_response( self, nwkid, cie_ep, dst_ep, cluster, response_to_
 
     payload += sqn + "0b" + response_to_command + command_status
 
-    self.log.logging("zclCommand", "Debug", f"zcl_raw_default_response ==== payload: {payload}", nwkid)
+    self.log.logging(["zclCommand", "zclDecoder"], "Debug", f"zcl_raw_default_response ==== payload: {payload}", nwkid)
 
     raw_APS_request( self, nwkid, dst_ep, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=cie_ep, highpriority=True, ackIsDisabled=is_ack_tobe_disabled(self, nwkid) )
 
