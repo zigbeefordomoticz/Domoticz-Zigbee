@@ -771,6 +771,7 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
     if DeviceType == "KeypadFeedback":
         # For Develco/Frient Intelligent Keypad, we get here what needs to be answer to the Get Panel Status from Peypad
         keypad_feedback_response(self, Nwkid, EPout, Level)
+        update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level) // 10, Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
         return
 
     if DeviceType == "ThermoSetpoint":
