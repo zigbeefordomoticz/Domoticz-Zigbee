@@ -1417,7 +1417,7 @@ def handle_command_setcolor(self,Devices, DeviceID, Unit, Level, Color, Nwkid, E
 def keypad_feedback_response(self, Nwkid, EPout, Level):
     # Purpose is to send back to Keypad the response of an Arm command
     # 
-    self.log.logging("Command", "Log", f"keypad_feedback_response : {Level} ({type(Level)})", Nwkid)
+    self.log.logging(["Command", "IAS_ACE"], "Debug", f"keypad_feedback_response : {Level} ({type(Level)})", Nwkid)
 
 
     KEYPAD_WIDGET_MATRIX = {
@@ -1436,6 +1436,6 @@ def keypad_feedback_response(self, Nwkid, EPout, Level):
     
     if Level in KEYPAD_WIDGET_MATRIX:
         arm_desc, func = KEYPAD_WIDGET_MATRIX[ Level ]
-        self.log.logging("Command", "Log", f"keypad_feedback_response : Response: {Nwkid} EPout: {EPout} Level: {Level} -> {arm_desc}", Nwkid)  
+        self.log.logging(["Command", "IAS_ACE"], "Debug", f"keypad_feedback_response : Response: {Nwkid} EPout: {EPout} Level: {Level} -> {arm_desc}", Nwkid)  
         if func:
             func(self, Nwkid, EPout)
