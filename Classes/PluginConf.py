@@ -254,6 +254,7 @@ SETTINGS = {
             "Heiman": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Humidity": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "IAS": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "IAS_ACE": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Ikea": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Illuminance": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Input": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
@@ -611,8 +612,40 @@ def _load_Settings(self):
 
 
 def _load_oldfashon(self, homedir, hardwareid):
-    # Import PluginConf.txt
-    # Migration
+    """
+    Locate and import legacy plugin configuration files.
+
+    This internal method searches for a legacy `PluginConf.txt` file within the
+    plugin configuration directory and imports it into the current configuration
+    structure using `_import_oldfashon_param()`.
+
+    The search order supports backward compatibility with multiple naming
+    patterns derived from the `hardwareid`, such as:
+      - PluginConf-<hardwareid:02d>.txt
+      - PluginConf-<hardwareid:2d>.txt
+      - PluginConf.txt
+
+    If no legacy file is found, a default configuration file is created by
+    calling `self.write_Settings()`.
+
+    Parameters
+    ----------
+    homedir : str or Path
+        Base directory for the plugin home. Currently unused but may be
+        required for compatibility with earlier versions.
+    hardwareid : int
+        The numeric hardware identifier used to locate a matching configuration
+        file (e.g., `PluginConf-01.txt`).
+
+    Side Effects
+    -------------
+    - Reads and parses legacy configuration files if present.
+    - Updates `self.pluginConf["filename"]` with the resolved file path.
+    - May modify `self.pluginConf` contents through `_import_oldfashon_param()`.
+    - Creates a default settings file if none exists.
+
+    """
+    # Locate legacy PluginConf file (supporting multiple naming variants)
     _filename = Path(self.pluginConf["pluginConfig"]) / ("PluginConf-%02d.txt" % hardwareid)
     if not os.path.isfile(_filename):
         _filename = Path(self.pluginConf["pluginConfig"]) / ("PluginConf-%2d.txt" % hardwareid)
@@ -620,22 +653,63 @@ def _load_oldfashon(self, homedir, hardwareid):
             _filename = Path(self.pluginConf["pluginConfig"]) / "PluginConf.txt"
             if not os.path.isfile(_filename):
                 self.write_Settings()
-                self.pluginConf["filename"] = str( _filename )
+                self.pluginConf["filename"] = str(_filename)
                 return
 
-    tmpPluginConf = ""
+    # Read legacy configuration file content
+    temp_pluginconf_data = ""
     if not os.path.isfile(_filename):
         return
+
     with open(_filename, "r") as myPluginConfFile:
-        tmpPluginConf += myPluginConfFile.read().replace("\n", "")
-    self.pluginConf["filename"] = str( _filename )
-    PluginConf = {}
-    _import_oldfashon_param(self, tmpPluginConf, self.pluginConf["filename"])
+        temp_pluginconf_data += myPluginConfFile.read().replace("\n", "")
+
+    # Record filename and import data
+    self.pluginConf["filename"] = str(_filename)
+    _import_oldfashon_param(self, temp_pluginconf_data, self.pluginConf["filename"])
 
 
-def _import_oldfashon_param(self, tmpPluginConf, filename):
+def _import_oldfashon_param(self, temp_pluginconf_data, filename):
+    """
+    Import and convert legacy plugin configuration data.
+
+    This internal method loads old-format configuration data (previously stored
+    as a Python dictionary literal) and converts it into the structured format
+    expected by the current plugin version. It parses the raw configuration
+    text using `eval()`, then normalizes each parameter according to its type
+    definition in the global `SETTINGS` dictionary.
+
+    The method logs detailed errors when parsing or type conversion fails, and
+    falls back to default parameter values when needed.
+
+    Parameters
+    ----------
+    temp_pluginconf_data : str
+        Raw text content of the legacy configuration file, expected to represent
+        a Python dictionary (e.g., "{'param1': 'value1', 'param2': 42}").
+    filename : str
+        Name or path of the file being imported, used for logging purposes.
+
+    Side Effects
+    -------------
+    - Updates `self.pluginConf` in place with imported or default values.
+    - Calls `self.write_Settings()` after import completion.
+    - Logs errors and warnings via `Domoticz.Error()`.
+
+    Notes
+    -----
+    - This method is intended for backward compatibility only and should not be
+      used for new configuration files.
+    - The function uses `eval()` to parse legacy data; in modern code, prefer
+      `json.loads()` for safer deserialization.
+    - The method validates parameter types according to `SETTINGS` definitions:
+        * `"hex"` values are converted from hexadecimal string to int.
+        * `"int"` and `"bool"` values are cast from string digits.
+        * `"path"` and `"str"` are assigned directly.
+
+    """
     try:
-        PluginConf = eval(tmpPluginConf)
+        plugin_conf_dict = eval(temp_pluginconf_data)
     except SyntaxError:
         Domoticz.Error("Syntax Error in %s, all plugin parameters set to default" % filename)
     except (NameError, TypeError, ZeroDivisionError):
@@ -643,10 +717,10 @@ def _import_oldfashon_param(self, tmpPluginConf, filename):
     else:
         for theme in SETTINGS:
             for param in SETTINGS[theme]["param"]:
-                if PluginConf.get(param):
+                if plugin_conf_dict.get(param):
                     if SETTINGS[theme]["param"][param]["type"] == "hex":
-                        if is_hex(PluginConf.get(param)):
-                            self.pluginConf[param] = int(PluginConf[param], 16)
+                        if is_hex(plugin_conf_dict.get(param)):
+                            self.pluginConf[param] = int(plugin_conf_dict[param], 16)
                         else:
                             Domoticz.Error(
                                 "Wrong parameter type for %s, keeping default %s"
@@ -655,46 +729,106 @@ def _import_oldfashon_param(self, tmpPluginConf, filename):
                             self.pluginConf[param] = self.pluginConf[param]["default"]
 
                     elif SETTINGS[theme]["param"][param]["type"] in ("bool", "int"):
-                        if PluginConf.get(param).isdigit():
-                            self.pluginConf[param] = int(PluginConf[param])
+                        if plugin_conf_dict.get(param).isdigit():
+                            self.pluginConf[param] = int(plugin_conf_dict[param])
                         else:
                             Domoticz.Error(
                                 "Wrong parameter type for %s, keeping default %s"
                                 % (param, self.pluginConf[param]["default"])
                             )
                             self.pluginConf[param] = self.pluginConf[param]["default"]
-                    elif SETTINGS[theme]["param"][param]["type"] == ("path", "str"):
-                        self.pluginConf[param] = PluginConf[param]
+
+                    elif SETTINGS[theme]["param"][param]["type"] in ("path", "str"):
+                        self.pluginConf[param] = plugin_conf_dict[param]
 
     self.write_Settings()
 
 
 def _path_check(self):
+    """
+    Validate and normalize all path-type configuration parameters.
+
+    This internal method iterates over all parameters defined in `SETTINGS`
+    and checks those with type `"path"`. It verifies that each configured path:
+      - Exists on the filesystem (unless it is an SSL certificate or key).
+      - Uses a normalized `Path` representation consistent with POSIX style.
+      - Is not a URL (entries containing "http" are skipped).
+
+    If the current path differs from its normalized form and
+    `self.pluginConf["PosixPathUpdate"]` is enabled, the path is updated
+    automatically. Otherwise, an error is logged.
+
+    Side Effects
+    -------------
+    - May modify entries in `self.pluginConf` if path normalization occurs.
+    - Logs messages via `Domoticz.Status()` or `Domoticz.Error()`.
+    - Calls `self.write_Settings()` if any updates were made.
+
+    Notes
+    -----
+    - The `SSLCertificate` and `SSLPrivateKey` paths are exempt from
+      existence checks.
+    - URL-based paths (those containing "http") are ignored.
+
+    """
     update_done = False
     for theme in SETTINGS:
         for param in SETTINGS[theme]["param"]:
             if SETTINGS[theme]["param"][param]["type"] != "path":
                 continue
-            if self.pluginConf[param].find("http") != -1:
-                # this is a url
+
+            if "http" in self.pluginConf[param]:
+                # Skip URL paths
                 continue
-            _path_name = Path( self.pluginConf[param] )
-            if param not in ( "SSLCertificate", "SSLPrivateKey") and not os.path.exists(_path_name):
-                Domoticz.Error("Cannot access path: %s" % _path_name)
-            if self.pluginConf[param] != str( _path_name ):
+
+            _path_name = Path(self.pluginConf[param])
+
+            if (
+                param not in ("SSLCertificate", "SSLPrivateKey")
+                and not os.path.exists(_path_name)
+            ):
+                Domoticz.Error(f"Cannot access path: {_path_name}")
+
+            if self.pluginConf[param] != str(_path_name):
                 if self.pluginConf["PosixPathUpdate"]:
-                    Domoticz.Status("Updating path from %s to %s" %( self.pluginConf[param], _path_name))
-                    self.pluginConf[param] = str( _path_name )
+                    Domoticz.Status(f"Updating path from {self.pluginConf[param]} to {_path_name}")
+                    self.pluginConf[param] = str(_path_name)
                     update_done = True
                 else:
-                    Domoticz.Error("Updating path from %s to %s is required, but no backward compatibility" %( self.pluginConf[param], _path_name))
+                    Domoticz.Error(
+                        f"Updating path from {self.pluginConf[param]} to {_path_name} "
+                        f"is required, but no backward compatibility"
+                    )
 
     if update_done:
         self.write_Settings()
 
 
 def _param_checking(self):
-    # Let"s check the Type
+    """
+    Validate and normalize plugin configuration parameters.
+
+    This internal method compares each parameter in `self.pluginConf` against
+    its definition in the global `SETTINGS` structure. If a parameter value
+    differs from its default, it performs type validation and normalization:
+    - Parameters defined as `"hex"` are converted from hexadecimal string
+      to integer form if necessary.
+    - Other parameters are left as-is.
+
+    After normalization, the method logs the final assigned values using
+    `Domoticz.Status()`.
+
+    Side Effects
+    -------------
+    - May convert parameter values in `self.pluginConf` (e.g., from str → int).
+    - Produces log output via `Domoticz.Status()` for each non-default value.
+
+    Notes
+    -----
+    Parameters whose current value matches the default are skipped.
+
+    """
+    # Validate and normalize configuration types
     for theme in SETTINGS:
         for param in SETTINGS[theme]["param"]:
             if self.pluginConf[param] == SETTINGS[theme]["param"][param]["default"]:
@@ -709,6 +843,23 @@ def _param_checking(self):
 
 
 def zigpy_setup(self):
+    """
+    Initialize or update Zigpy-specific configuration parameters in SETTINGS.
+
+    This method ensures that the Zigpy-related parameter `TXpower_set` is
+    correctly defined in the global `SETTINGS` structure. If found, its
+    definition is overwritten with a standardized parameter schema that
+    specifies type, default value, and associated metadata.
+
+    The method does not return anything but mutates the `SETTINGS` dictionary
+    in place.
+
+    Side Effects
+    -------------
+    Updates the `SETTINGS` global dictionary by assigning a new configuration
+    structure to the `TXpower_set` parameter.
+
+    """
     for theme in SETTINGS:
         for param in SETTINGS[theme]["param"]:
             if param == "TXpower_set":
@@ -723,28 +874,67 @@ def zigpy_setup(self):
 
                                
 def setup_folder_parameters(self, homedir):
+    """
+    Initialize and populate the plugin configuration folder paths.
 
+    This method iterates over the predefined `SETTINGS` structure and updates
+    the `self.pluginConf` dictionary with all relevant folder paths required
+    by the plugin (e.g., configuration, data, logs, OTA firmware, SSL certs).
+
+    Depending on the parameter name, paths are either derived from the given
+    `homedir` argument or built relative to `pluginHome`.
+
+    Parameters
+    ----------
+    homedir : str or Path
+        The base home directory path for the plugin. Used to resolve the
+        `homedirectory` configuration entry.
+
+    Side Effects
+    -------------
+    Updates `self.pluginConf` in place, adding or overwriting keys defined
+    under `SETTINGS[theme]["param"]`.
+
+    Notes
+    -----
+    - The following parameters are dynamically resolved relative to
+      `pluginHome`: pluginConfig, pluginData, pluginLogs, pluginOTAFirmware,
+      pluginReports, pluginWWW, SSLCertificate, SSLPrivateKey.
+    - Parameters not explicitly handled will be assigned their default value
+      as defined in `SETTINGS`.
+
+    """
     for theme in SETTINGS:
         for param in SETTINGS[theme]["param"]:
             if param == "pluginHome":
                 continue
+
             if param == "homedirectory":
-                self.pluginConf[param] = str( Path(homedir) )
+                self.pluginConf[param] = str(Path(homedir))
+
             elif param == "pluginConfig":
-                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "Conf")
+                self.pluginConf[param] = str(Path(self.pluginConf["pluginHome"]) / "Conf")
+
             elif param == "pluginData":
-                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "Data")
+                self.pluginConf[param] = str(Path(self.pluginConf["pluginHome"]) / "Data")
+
             elif param == "pluginLogs":
-                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "Logs")
+                self.pluginConf[param] = str(Path(self.pluginConf["pluginHome"]) / "Logs")
+
             elif param == "pluginOTAFirmware":
-                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "OTAFirmware")
+                self.pluginConf[param] = str(Path(self.pluginConf["pluginHome"]) / "OTAFirmware")
+
             elif param == "pluginReports":
-                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "Reports")
+                self.pluginConf[param] = str(Path(self.pluginConf["pluginHome"]) / "Reports")
+
             elif param == "pluginWWW":
-                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "www")
+                self.pluginConf[param] = str(Path(self.pluginConf["pluginHome"]) / "www")
+
             elif param == "SSLCertificate":
-                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "certs" / "server.crt")
+                self.pluginConf[param] = str(Path(self.pluginConf["pluginHome"]) / "certs" / "server.crt")
+
             elif param == "SSLPrivateKey":
-                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "certs" / "server.key")
+                self.pluginConf[param] = str(Path(self.pluginConf["pluginHome"]) / "certs" / "server.key")
+
             else:
                 self.pluginConf[param] = SETTINGS[theme]["param"][param]["default"]

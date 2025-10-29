@@ -33,6 +33,16 @@ from Modules.domoticzAbstractLayer import (domo_read_Name,
 from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, update_domoticz_widget)
 from Modules.fanControl import change_fan_mode
+from Modules.ias_ace_commands import (
+    ias_keyboard_feedback_arm_response_all_zone_disarmed,
+    ias_keyboard_feedback_arm_response_arming_away,
+    ias_keyboard_feedback_arm_response_arming_night,
+    ias_keyboard_feedback_arm_response_arming_stay,
+    ias_keyboard_feedback_arm_response_invalid_code,
+    ias_keyboard_feedback_not_ready, ias_keypad_panel_status_armed_all_zones,
+    ias_keypad_panel_status_armed_home, ias_keypad_panel_status_armed_night,
+    ias_keypad_panel_status_entry_delay, ias_keypad_panel_status_exit_delay,
+    ias_keypad_panel_status_in_alarm)
 from Modules.ikeaTradfri import ikea_air_purifier_mode
 from Modules.legrand_netatmo import cable_connected_mode, legrand_fc40
 from Modules.livolo import livolo_OnOff
@@ -157,7 +167,8 @@ ACTIONATORS = [
     "TamperSwitch",
     "PollingControl",
     "PollingControlV2",
-    "KeypadFeedback"
+    "KeypadFeedback",
+    "SOS"
 ]
 
 
@@ -756,6 +767,12 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
     is_tst0601_data_points_defined = ts0601_extract_data_point_infos( self, model_name)
 
     self.log.logging( "Command", "Debug", f"handle_command_setlevel : Set Level for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} Level: {Level} TS0601_DP: {is_tst0601_data_points_defined}", Nwkid, )
+
+    if DeviceType == "KeypadFeedback":
+        # For Develco/Frient Intelligent Keypad, we get here what needs to be answer to the Get Panel Status from Peypad
+        keypad_feedback_response(self, Nwkid, EPout, Level)
+        update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level) // 10, Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
+        return
 
     if DeviceType == "ThermoSetpoint":
         _set_level_setpoint(self, Devices, DeviceID, Unit, Nwkid, EPout, model_name, Level, BatteryLevel, SignalLevel,DeviceType, forceUpdateDev )
@@ -1395,3 +1412,30 @@ def handle_command_setcolor(self,Devices, DeviceID, Unit, Level, Color, Nwkid, E
 
     # Use nValue=15 as https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1680
     update_domoticz_widget(self, Devices, DeviceID, Unit, 15, str(Level), BatteryLevel, SignalLevel, str(Color))
+
+
+def keypad_feedback_response(self, Nwkid, EPout, Level):
+    # Purpose is to send back to Keypad the response of an Arm command
+    # 
+    self.log.logging(["Command", "IAS_ACE"], "Debug", f"keypad_feedback_response : {Level} ({type(Level)})", Nwkid)
+
+
+    KEYPAD_WIDGET_MATRIX = {
+        # Level -> ARM Command Response
+        00: ("Off", None),
+        10: ("Disarm", ias_keyboard_feedback_arm_response_all_zone_disarmed),
+        20: ("ArmAllZones", ias_keyboard_feedback_arm_response_arming_away),
+        30: ("ArmNight", ias_keyboard_feedback_arm_response_arming_night),
+        40: ("ArmHome", ias_keyboard_feedback_arm_response_arming_stay),
+        50: ("InvalidCode", ias_keyboard_feedback_arm_response_invalid_code),
+        60: ("NotReady", ias_keyboard_feedback_not_ready),
+        70: ("ExitDelay", ias_keypad_panel_status_exit_delay),
+        80: ("EntryDelay", ias_keypad_panel_status_entry_delay),
+        90: ("InAlarm", ias_keypad_panel_status_in_alarm),
+    }
+    
+    if Level in KEYPAD_WIDGET_MATRIX:
+        arm_desc, func = KEYPAD_WIDGET_MATRIX[ Level ]
+        self.log.logging(["Command", "IAS_ACE"], "Debug", f"keypad_feedback_response : Response: {Nwkid} EPout: {EPout} Level: {Level} -> {arm_desc}", Nwkid)  
+        if func:
+            func(self, Nwkid, EPout)

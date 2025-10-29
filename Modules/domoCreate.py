@@ -780,13 +780,10 @@ SIMPLE_WIDGET = {
     "Humi": {
         "widgetType": "Humidity"
     },
-    "KepypadText": {
-        "widgetType": "Text"
-    },
-    "KeypadAlarm": {
+    "KeypadText": {
         "Type": 243,
-        "Subtype": 22,
-        "Switchtype": 0
+        "Subtype": 19,
+        "Switchtype": 0,
     },
     "LiquidLevel": {
         "Type": 243,

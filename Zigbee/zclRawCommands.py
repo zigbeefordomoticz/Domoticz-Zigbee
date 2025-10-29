@@ -1,8 +1,14 @@
-# !/usr/bin/env python3
-# coding: utf-8 -*-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 #
-# Author: pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
 
 import struct
 
@@ -133,7 +139,7 @@ def zcl_raw_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_i
     payload += "%04x" % struct.unpack(">H", struct.pack("H", int(attribute, 16)))[0]  # Attribute Id
     payload += data_type  # Attribute Data Type
     if data_type not in ( "41", "42"):
-            payload += decode_endian_data(data, data_type)
+        payload += decode_endian_data(data, data_type)
     else:
         payload += data
     
@@ -143,28 +149,127 @@ def zcl_raw_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_i
     return sqn
 
 
-def zcl_raw_default_response(self, nwkid, EPin, EPout, cluster, response_to_command, sqn, command_status="00", manufcode=None, orig_fcf=None):
+#def zcl_raw_default_response(self, nwkid, EPin, EPout, cluster, response_to_command, sqn, command_status="00", manufcode=None, orig_fcf=None):
+#    self.log.logging(
+#        "zclCommand", "Debug",
+#        f"zcl_raw_default_response {nwkid} {EPin} {EPout} {cluster} {sqn} for command {response_to_command} with Status: {command_status}, Manufcode: {manufcode}, OrigFCF: {orig_fcf}", nwkid
+#    )
+#
+#    if self.pluginconf.pluginConf.get("disableZCLDefaultResponse"):
+#        return
+#
+#    zcl_command_formated_logging(self, "Default_Response (Raw)", nwkid, EPout, cluster, response_to_command, sqn, command_status, manufcode, orig_fcf)
+#
+#    if response_to_command == "0b":
+#        return  # Never return a default response to a default response
+#
+#    if orig_fcf is None:
+#        orig_fcf = 0b00000000
+#    else:
+#        frame_type = "0"
+#        manufacturer_specific_bit = "1" if manufcode and manufcode != "0000" else "0"
+#        direction_bit = "1" if orig_fcf is not None and fcf_direction(orig_fcf) else "0"
+#        disable_default_response_bit = "0"
+#        frame_control_field = build_fcf( frame_type, manufacturer_specific_bit, direction_bit, disable_default_response_bit)
+#
+#    payload = frame_control_field
+#    if manufcode and manufcode != "0000":
+#        payload += manufcode[2:4] + manufcode[:2]
+#
+#    payload += sqn + "0b" + response_to_command + command_status
+#
+#    self.log.logging("zclCommand", "Debug", f"zcl_raw_default_response ==== payload: {payload}", nwkid)
+#
+#    raw_APS_request(
+#        self, nwkid, EPout, cluster, "0104", payload,
+#        zigpyzqn=sqn, zigate_ep=EPin, highpriority=True, ackIsDisabled=is_ack_tobe_disabled(self, nwkid)
+#    )
+#
+#    return sqn
+
+
+def zcl_raw_default_response( self, nwkid, cie_ep, dst_ep, cluster, response_to_command, sqn, command_status="00", manufcode=None, orig_fcf=None ):
+
+    """
+    Build and send a Zigbee Cluster Library (ZCL) Default Response frame.
+
+    This method constructs and sends a default response for a received ZCL command.
+    It prevents recursive responses, applies manufacturer-specific formatting when needed,
+    and uses plugin configuration flags to determine whether default responses are disabled.
+
+    Args:
+        nwkid (str): Network identifier (short address) of the target Zigbee device.
+        cie_ep (str): Input (local) endpoint of the coordinator or Zigate.
+        dst_ep (str): Output (remote) endpoint of the target device.
+        cluster (str): Cluster ID in hexadecimal format (e.g., "0006" for On/Off cluster).
+        response_to_command (str): The original ZCL command ID being acknowledged (e.g., "01").
+        sqn (str): Sequence number of the original ZCL command, as a two-character hexadecimal string.
+        command_status (str, optional): ZCL command status to report ("00" for success by default).
+        manufcode (str, optional): Manufacturer code as a 4-character hexadecimal string, or None.
+        orig_fcf (int, optional): Original frame control field from the received command, or None.
+
+    Returns:
+        str: The sequence number (`sqn`) of the sent ZCL Default Response.
+
+    Behavior:
+        - Does nothing if the plugin configuration `disableZCLDefaultResponse` is set.
+        - Ignores commands that are themselves Default Responses (command ID "0b").
+        - Builds a valid ZCL frame with proper Frame Control Field (FCF) and manufacturer-specific header.
+        - Sends the frame via `raw_APS_request()` with high priority.
+        - Logs each step for traceability under the "zclCommand" category.
+
+    Notes:
+        - The FCF bits are derived based on the presence of manufacturer code and direction flag.
+        - This method should not be called directly for ZCL command "0b" (Default Response).
+        - Ensure that all hex parameters (`sqn`, `response_to_command`, etc.) are two-character strings.
+    """
+
+    def build_default_response_fcf(orig_fcf: str) -> str:
+        """
+        Build the FCF for a ZCL Default Response based on the original FCF.
+
+        Rules:
+        - Frame Type: always Profile-wide (00)
+        - Direction: always Server → Client (1)
+        - Manufacturer Specific: copied from original
+        - Disable Default Response: copied from original
+        - Reserved bits: 0
+        """
+        # Extract bits from original FCF
+        orig_fcf = int(orig_fcf, 16)
+
+        manuf_spec = (orig_fcf >> 2) & 0b1
+        disable_def_resp = (orig_fcf >> 4) & 0b1
+
+        # Build new FCF
+        fcf = 0b00               # Frame Type: Profile-wide
+        fcf |= (manuf_spec << 2) # Manufacturer Specific
+        fcf |= (1 << 3)          # Direction: Server → Client
+        fcf |= (1 << 4)  # Disable Default Response
+
+        return "%02x" %fcf
+
     self.log.logging(
-        "zclCommand", "Debug",
-        f"zcl_raw_default_response {nwkid} {EPin} {EPout} {cluster} {sqn} for command {response_to_command} with Status: {command_status}, Manufcode: {manufcode}, OrigFCF: {orig_fcf}", nwkid
+        ["zclCommand", "zclDecoder"], "Debug",
+        f"zcl_raw_default_response {nwkid} {cie_ep} {dst_ep} {cluster} {sqn} for command "
+        f"{response_to_command} with Status: {command_status}, Manufcode: {manufcode}, OrigFCF: {orig_fcf}",
+        nwkid
     )
 
     if self.pluginconf.pluginConf.get("disableZCLDefaultResponse"):
         return
 
-    zcl_command_formated_logging(self, "Default_Response (Raw)", nwkid, EPout, cluster, response_to_command, sqn, command_status, manufcode, orig_fcf)
+    zcl_command_formated_logging(
+        self, "Default_Response (Raw)", nwkid, dst_ep, cluster,
+        response_to_command, sqn, command_status, manufcode, orig_fcf
+    )
 
-    if response_to_command == "0b":
+    if response_to_command.lower() == "0b":
         return  # Never return a default response to a default response
 
-    if orig_fcf is None:
-        orig_fcf = 0b00000000
-    else:
-        frame_type = "0"
-        manufacturer_specific_bit = "1" if manufcode and manufcode != "0000" else "0"
-        direction_bit = "1" if orig_fcf is not None and fcf_direction(orig_fcf) else "0"
-        disable_default_response_bit = "0"
-        frame_control_field = build_fcf( frame_type, manufacturer_specific_bit, direction_bit, disable_default_response_bit)
+    frame_control_field = build_default_response_fcf( orig_fcf )
+    
+    self.log.logging(["zclCommand", "zclDecoder"], "Debug", f"zcl_raw_default_response ==== Source FCF {orig_fcf} to FCF: {frame_control_field}", nwkid)
 
     payload = frame_control_field
     if manufcode and manufcode != "0000":
@@ -172,12 +277,9 @@ def zcl_raw_default_response(self, nwkid, EPin, EPout, cluster, response_to_comm
 
     payload += sqn + "0b" + response_to_command + command_status
 
-    self.log.logging("zclCommand", "Debug", f"zcl_raw_default_response ==== payload: {payload}", nwkid)
+    self.log.logging(["zclCommand", "zclDecoder"], "Debug", f"zcl_raw_default_response ==== payload: {payload}", nwkid)
 
-    raw_APS_request(
-        self, nwkid, EPout, cluster, "0104", payload,
-        zigpyzqn=sqn, zigate_ep=EPin, highpriority=True, ackIsDisabled=is_ack_tobe_disabled(self, nwkid)
-    )
+    raw_APS_request( self, nwkid, dst_ep, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=cie_ep, highpriority=True, ackIsDisabled=is_ack_tobe_disabled(self, nwkid) )
 
     return sqn
 
@@ -771,23 +873,125 @@ IAS_ACE_COMMANDS = {
     #'Panic': 0x04,
     #'GetZoneID Map': 0x05,
     #'GetZoneInformation': 0x06,
-    #'GetPanelStatus': 0x07,
+    'GetPanelStatus': 0x07,
     #'GetBypassedZoneList': 0x08,
     #'GetZoneStatus': 0x09
 }
 
+IAS_RESPONSES = {
+    'Arm Response': 0x00,
+    'Get Zone ID Map Response': 0x01,
+    'Get Zone Information Changed': 0x02,
+    'Zone Status Changed': 0x03,
+    'Panel Status Changed': 0x04,
+    'Get Panel Status Response': 0x05,
+    'Set Bypassed Zone List': 0x06,
+    'Bypass Response': 0x07,
+    'Get Zone Status Response': 0x08,
+}
 
-def zcl_raw_ias_ace_commands_arm(self, EPin, EPout, nwkid, arm_mode, arm_code, zone_id, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
-    zcl_command_formated_logging( self, "IAS_ACE (Raw)", nwkid, EPout, "0501", arm_mode, arm_code, zone_id, groupaddrmode, ackIsDisabled)
 
-    cmd = IAS_ACE_COMMANDS["Arm"]
+def zcl_raw_ias_ace_commands_arm( self, EPin, EPout, nwkid, arm_mode, arm_code, zone_id, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE, ):
+    """
+    Send a raw IAS ACE 'Arm' command frame to a Zigbee device.
+
+    This function builds and sends the IAS ACE "Arm" command (Cluster 0x0501)
+    from a client to a server, instructing the device to arm a security zone.
+
+    Args:
+        EPin (int): Zigate (source) endpoint.
+        EPout (int): Destination device endpoint.
+        nwkid (str): 16-bit Zigbee network address of the target device (hex string).
+        arm_mode (int): Arm mode (e.g. 0x00 = Disarm, 0x01 = Arm Day/Home, 0x03 = Arm Away).
+        arm_code (int): Optional PIN or code value (usually 0 or ASCII digit).
+        zone_id (int): Zone identifier to arm (0xFF if all zones).
+        groupaddrmode (bool, optional): True if sending in group addressing mode. Defaults to False.
+        ackIsDisabled (bool, optional): True to disable APS acknowledgment. Defaults to DEFAULT_ACK_MODE.
+
+    Returns:
+        str: The Zigbee transaction sequence number (SQN) used for this request.
+    """
     Cluster = "0501"
-    cluster_frame = 0b00010001
+    cmd = f"{IAS_ACE_COMMANDS['Arm']:02x}"
+    zcl_command_formated_logging( self, "IAS_ACE (Arm)", nwkid, EPout, Cluster, arm_mode, arm_code, zone_id, groupaddrmode, ackIsDisabled )
+
+    cluster_frame = 0b00010001  # Frame control: client → server
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
-    payload = "%02x" % cluster_frame + sqn + cmd + "%02x" % arm_mode + "%02x" % arm_code + "%02x" % zone_id
-    raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    payload = f"{cluster_frame:02x}{sqn}{cmd}{arm_mode:02x}{arm_code:02x}{zone_id:02x}"
+
+    raw_APS_request( self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled, )
     return sqn
 
+
+def zcl_raw_panel_status_change( self, EPin, EPout, nwkid, sqn, status_payload, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE, ):
+
+    Cluster = "0501"
+    cmd = f"{IAS_RESPONSES['Panel Status Changed']:02x}"
+    zcl_command_formated_logging( self, "IAS_ACE (Panel Status Change)", nwkid, EPout, Cluster, groupaddrmode, ackIsDisabled )
+
+    cluster_frame = 0b00001001  # Frame control: server → client
+    payload = f"{cluster_frame:02x}{sqn}{cmd}{status_payload}"
+    raw_APS_request( self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled, )
+    return sqn
+
+    
+def zcl_raw_get_panel_status_response( self, EPin, EPout, nwkid, sqn, status_payload, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE, ):
+    """
+    Send a raw IAS ACE 'Get Panel Status Response' frame.
+
+    This function responds to a 'Get Panel Status' request with a status payload.
+
+    Args:
+        EPin (int): Zigate (source) endpoint.
+        EPout (int): Destination device endpoint.
+        nwkid (str): 16-bit Zigbee network address of the requester (hex string).
+        sqn (str): The sequence number of the original command being responded to.
+        status_payload (str): Encoded payload containing panel status details (hex string).
+        groupaddrmode (bool, optional): True if sending in group addressing mode. Defaults to False.
+        ackIsDisabled (bool, optional): True to disable APS acknowledgment. Defaults to DEFAULT_ACK_MODE.
+
+    Returns:
+        str: The sequence number used for this response.
+    """
+    Cluster = "0501"
+    cmd = f"{IAS_RESPONSES['Get Panel Status Response']:02x}"
+    zcl_command_formated_logging( self, "IAS_ACE (Get Panel Status Response)", nwkid, EPout, Cluster, groupaddrmode, ackIsDisabled )
+
+    cluster_frame = 0b00001001  # Frame control: server → client
+    payload = f"{cluster_frame:02x}{sqn}{cmd}{status_payload}"
+
+    raw_APS_request( self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled, )
+    return sqn
+
+
+def zcl_raw_arm_response( self, EPin, EPout, nwkid, sqn, status_payload, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE, ):
+    """
+    Send a raw IAS ACE 'Arm Response' frame.
+
+    This function sends the IAS ACE "Arm Response" (Cluster 0x0501) from a server to a client,
+    typically acknowledging an 'Arm' command.
+
+    Args:
+        EPin (int): Zigate (source) endpoint.
+        EPout (int): Destination device endpoint.
+        nwkid (str): 16-bit Zigbee network address of the requester (hex string).
+        sqn (str): The sequence number of the original 'Arm' command.
+        status_payload (str): Encoded payload containing the arm status result (hex string).
+        groupaddrmode (bool, optional): True if sending in group addressing mode. Defaults to False.
+        ackIsDisabled (bool, optional): True to disable APS acknowledgment. Defaults to DEFAULT_ACK_MODE.
+
+    Returns:
+        str: The sequence number used for this response.
+    """
+    Cluster = "0501"
+    cmd = f"{IAS_RESPONSES['Arm Response']:02x}"
+    zcl_command_formated_logging( self, "IAS_ACE (Arm Response)", nwkid, EPout, Cluster, groupaddrmode, ackIsDisabled )
+
+    cluster_frame = 0b00001001  # Frame control: server → client
+    payload = f"{cluster_frame:02x}{sqn}{cmd}{status_payload}"
+
+    raw_APS_request( self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled, )
+    return sqn
 
 # Cluster 0502 IAS WD
 

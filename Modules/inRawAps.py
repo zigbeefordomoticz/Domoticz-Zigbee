@@ -10,10 +10,12 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
-import struct
+
 
 from Modules.casaia import CASAIA_MANUF_CODE, casaiaReadRawAPS
 from Modules.domoMaj import MajDomoDevice
+from Modules.heiman import heimanReadRawAPS
+from Modules.ias_ace_commands import handle_ias_ace_command
 from Modules.ikeaTradfri import ikea_openclose_remote, ikeaReadRawAPS
 from Modules.legrand_netatmo import legrandReadRawAPS
 from Modules.livolo import livoloReadRawAPS
@@ -23,8 +25,8 @@ from Modules.philips import philipsReadRawAPS
 from Modules.pollControl import receive_poll_cluster
 from Modules.schneider_wiser import schneiderReadRawAPS
 from Modules.tuya import tuyaReadRawAPS
-from Modules.heiman import heimanReadRawAPS
 from Modules.tuyaTools import tuya_manufacturer_device
+
 
 # Requires Zigate firmware > 3.1d
 CALLBACK_TABLE = {
@@ -104,43 +106,9 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
         return
 
     if cluster == "0501":  # IAS ACE
-        # "00"
-        # "01" Arm Day (Home Zones Only) - Command Arm 0x00 - Payload 0x01
-        # "02" Emergency - Command Emergency 0x02
-        # "03" Arm All Zones - Command Arm 0x00 - Payload Arm all Zone 0x03
-        # "04" Disarm - Command 0x00 - Payload Disarm 0x00
-
-        self.log.logging("inRawAPS", "Log", "IAS ACE command: %s - %s" % (Command, Data))
-
-        if Command == "00":
-            payload = Data[:2]
-            # Arm/Disarm Command
-            if payload == "00":
-                # Disarm
-                MajDomoDevice(self, Devices, srcnwkid, srcep, "0006", "04")
-
-            elif payload == "01":
-                # Command Arm Day (Home Zones Only)
-                MajDomoDevice(self, Devices, srcnwkid, srcep, "0006", "01")
-
-            elif payload == "03":
-                # Arm All Zones
-                MajDomoDevice(self, Devices, srcnwkid, srcep, "0006", "03")
-
-        elif Command == "02":
-            # Emergency
-            MajDomoDevice(self, Devices, srcnwkid, srcep, "0006", "01")
-
-        elif Command == "07":
-            # Get Panel Status. This command is used by ACE clients to request an update to the status of the ACE server.
-            # On receipt of this command, the ACE server responds with the status of the security system. 
-            self.log.logging("inRawAPS", "Log", "IAS ACE Get Panel Status Not Implemented: %s - %s" % (Command, Data))
-
-        else:
-            self.log.logging("inRawAPS", "Log", "IAS ACE unknown command: %s - %s" % (Command, Data))
-
+        handle_ias_ace_command( self, Devices, srcnwkid, srcep, Sqn, model_name, Command, Data )
         return
-
+        
     if cluster == "0300":  # Color Control
         if Command == "0a":  # Move to Color Temperature
             color_temp_mired = payload[8:10] + payload[6:8]
@@ -255,3 +223,5 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
 
     if func:
         func(self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
+
+

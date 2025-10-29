@@ -129,7 +129,9 @@ BUILD_ATTRIBUTES = (
     "Operating Time",
     "DelayBindingAtPairing",
     "CertifiedDevice",
-    "OTAUpdate"
+    "OTAUpdate",
+    "IAS_KEYPAD",
+    "IAS_KEYPAD"
 )
 
 MANUFACTURER_ATTRIBUTES = (

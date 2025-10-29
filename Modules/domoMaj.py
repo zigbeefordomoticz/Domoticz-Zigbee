@@ -784,7 +784,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             # Green
             nValue = 1
         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-        
+
     if Attribute_ == "0006" and ClusterType == "FanControl" and WidgetType == "AirPurifierMode":
         nValue = value
         sValue = "%s" %(10 * value,)
@@ -964,6 +964,20 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         sValue = "%02x" %nValue
         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
         return
+    
+    if ClusterType == "IAS_ACE" and WidgetType == "KeypadText":
+        # IAS ACE KeypadText
+        nValue = 0
+        sValue = value
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+        return
+
+    if WidgetType == "KeypadFeedback":
+        # do nothing, as this is only feedback frm Domoticz command
+        self.log.logging("Widget", "Debug", "do nothing, as this is only feedback frm Domoticz command for %s/%s %s %s %s %s %s" %(
+            NwkId, Ep, model_name, ClusterId, ClusterType, WidgetType, value))
+        return
+
     if (
         WidgetType not in ("ThermoModeEHZBRTS", "HeatingSwitch", "HeatingStatus", "ThermoMode_2", "ThermoMode_3", "ThermoSetpoint", "ThermoOnOff", "Motionac01") 
         and ( 

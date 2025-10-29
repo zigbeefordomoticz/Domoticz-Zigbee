@@ -68,7 +68,17 @@ def send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpo
         # No check for zigate
         return False
 
-    self.log.logging("zclDecoder", "Debug",f"zcl_decoders default response disabled ? {disable_default_response} for command {command}", src_nwk_id)
+    self.log.logging(
+        "send_default_rsp",
+        "Debug",
+        (
+            f"FCF: {fcf} DisableDefResp: {disable_default_response} "
+            f"SrcNWK: {src_nwk_id} SrcEP: {src_endpoint} ClusterID: {cluster_id} "
+            f"Command: {command} SQN: {int(sqn, 16)}/0x{sqn} ManufCode: {manufcode} Status: {status}"
+        ),
+        src_nwk_id,
+    )
+
     if not disable_default_response:
         self.log.logging("zclDecoder", "Debug",f"zcl_decoders sending a default response {disable_default_response} for command {command}", src_nwk_id)
         zcl_raw_default_response(self, src_nwk_id, ZIGATE_EP, src_endpoint, cluster_id, command, sqn, command_status="00", manufcode=manufcode, orig_fcf=fcf)
@@ -99,9 +109,17 @@ def zcl_decoders(self, src_nwk_id, src_endpoint, target_ep, cluster_id, payload,
         return None
 
     # Log ZCL message details
-    self.log.logging("zclDecoder", "Debug",
-                     f"Zcl.ddr: {disable_default_response} GlobalCommand: {global_command} "
-                     f"Sqn: {sqn} ManufCode: {manufacturer_code} Command: {command} Data: {data} Payload: {payload}", src_nwk_id)
+    self.log.logging(
+        "zclDecoder",
+        "Debug",
+        (
+            f"SrcNWK: {src_nwk_id} SrcEP: {src_endpoint} TargetEP: {target_ep} ClusterID: {cluster_id}  "
+            f"FCF: {fcf} DisableDefaultRsp: {disable_default_response} GlobalCommand: {global_command} "
+            f"Sqn: {sqn} ManufCode: {manufacturer_code} Command: {command} Data: {data} "
+            f"Payload: {payload} Frame: {frame}"
+        ),
+        src_nwk_id,
+    )
 
     if global_command:
         return buildframe_foundation_cluster(self, fcf, disable_default_response, command, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, manufacturer_code, data)
@@ -187,8 +205,18 @@ def buildframe_foundation_cluster(self, fcf, disable_default_response, command, 
     Returns:
         Processed frame data or None if not handled.
     """
+    self.log.logging(
+        "zclDecoder",
+        "Debug",
+        (
+            f"FCF: {fcf} DisableDefaultRsp: {disable_default_response} "
+            f"Command: {command} Frame: {frame} SQN: {int(sqn, 16)}/0x{sqn} "
+            f"SrcNWK: {src_nwk_id} SrcEP: {src_endpoint} TargetEP: {TargetEp} "
+            f"ClusterID: {cluster_id} ManufCode: {manufacturer_code} Data: {data}"
+        ),
+        src_nwk_id,
+    )
 
-    self.log.logging("zclDecoder", "Debug", "zcl_decoders Sqn: %s/%s ManufCode: %s Command: %s Data: %s " % (int(sqn, 16), sqn, manufacturer_code, command, data), src_nwk_id)
     if command == "00":  # Read Attribute
         return foundation_cluster_read_attribute_request(self, frame, sqn, src_nwk_id, src_endpoint, TargetEp, cluster_id, manufacturer_code, data)
 
