@@ -69,7 +69,7 @@ def send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpo
         return False
 
     self.log.logging(
-        "send_default_rsp",
+        "zclDecoder",
         "Debug",
         (
             f"FCF: {fcf} DisableDefResp: {disable_default_response} "
