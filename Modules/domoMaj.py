@@ -33,7 +33,7 @@ from Modules.domoTools import (RetreiveSignalLvlBattery,
                                update_domoticz_widget)
 from Modules.linky import linky_tarif_color, linky_tarif_color_ntarf
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
-from Modules.tools import (get_deviceconf_parameter_value, str_round,
+from Modules.tools import (get_deviceconf_parameter_value, str_round, get_device_config_param,
                            zigpy_plugin_sanity_check)
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Modules.zlinky import (ZLINK_CONF_MODEL, get_instant_power,
