@@ -1269,6 +1269,25 @@ def retreive_cmd_payload_from_8002(Payload):
     return (zbee_zcl_ddr, GlobalCommand, Sqn, ManufacturerCode, Command, Data)
 
 
+def decode_fcf(fcf: str) -> Optional[dict]:
+    fcf = int(fcf,16)
+
+    frame_type = fcf & 0b00000011
+    manuf_spec = (fcf >> 2) & 0b1
+    direction = (fcf >> 3) & 0b1
+    disable_def_resp = (fcf >> 4) & 0b1
+
+    frame_types = {0: "Profile-wide", 1: "Cluster-specific", 2: "Reserved", 3: "Reserved"}
+    directions = {0: "Client→Server", 1: "Server→Client"}
+
+    return {
+        "Frame Type": frame_types[frame_type],
+        "Manufacturer Specific": bool(manuf_spec),
+        "Direction": directions[direction],
+        "Disable Default Response": bool(disable_def_resp),
+    }
+
+
 def fcf_direction(fcf: str) -> Optional[int]:
     """
     Extract the direction bit from the Frame Control Field (FCF).
