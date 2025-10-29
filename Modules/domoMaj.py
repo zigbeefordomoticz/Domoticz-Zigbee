@@ -210,7 +210,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         self.log.logging(["Widget", "Electric"], "Debug", "------>  Ampere3 : %s from Attribute: %s" % (sValue, Attribute_), NwkId)
         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
 
-    if "PWFactor" == ClusterType and WidgetType == "PowerFactor":
+    if ClusterType == "PWFactor" and WidgetType == "PowerFactor":
         self.log.logging(["Widget", "Electric"], "Debug", "PowerFactor %s WidgetType: %s Value: %s (%s)" % (
             NwkId, WidgetType, value, type(value)), NwkId)
 
@@ -860,6 +860,13 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
 
     if ClusterType == "Humi" and WidgetType in ("Humi", "Temp+Hum", "Temp+Hum+Baro"):  # humidite
         self.log.logging(["Widget", "Humidity"], "Debug", "------>  Humi: %s, WidgetType: >%s<" % (value, WidgetType), NwkId)
+
+        # Plugin will adjust value
+        humidity_adjustement = get_device_config_param(self, NwkId, "humi_calibration")
+        if humidity_adjustement and isinstance( humidity_adjustement, (int, float)):
+            value = value + humidity_adjustement
+            self.log.logging(["Widget", "Humidity"], "Debug", "------>  Humi adjusted with calibration %s to %s" % (humidity_adjustement, value), NwkId)
+
         # Humidity Status
         humi_status = calculate_humidity_status(value)
         current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0")
