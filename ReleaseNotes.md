@@ -18,6 +18,17 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
+## Oct. 2025 - Stable7.1.024 ( 2025.7) 
+
+   ** Last version supporting python 3.9 and 3.10 **
+
+- [Technical] - Major bug fixing in regards to Zigbee send default response. Could impact mainy devices and especially IAS
+- [Technical] - Latest zigpy libs version
+
+- [Hardware] - Integrating Develco/Frient Intelligent Keypad
+- [Hardware] - Integrate Chameleon ERL, Somfy Linky TIC
+
+
 ## Sept. 2025 - Stable7.1.023 ( 2025.6 )
 
 - [Hardware] - Enhancement of ZLinky support (more color mode)
