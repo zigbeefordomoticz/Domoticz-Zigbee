@@ -35,7 +35,7 @@ DATA_POINTS = {
 }
 
 def tuya_read_cluster_e001(self, Devices, NwkId, source_ep, clusterId, target_nwkid, target_ep, payload):
-    self.log.logging("TuyaTS011F", "Log", f"tuya_read_cluster_e001 - {clusterId} - {payload}")
+    self.log.logging("TuyaTS011F", "Debug", f"tuya_read_cluster_e001 - {clusterId} - {payload}")
     #'tuya_read_cluster_e001 - e001 - 09/4a/e6/05/01/0064 /0701000d'
     #'tuya_read_cluster_e001 - e001 - 09/4b/e6/05/01/0064 /0701000d'
     #'tuya_read_cluster_e001 - e001 - 09/4c/e7/01/01/0041 /030100fa040100c8'
