@@ -150,8 +150,7 @@ def legrandReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
             "---> Decoding cmd: 0x0a Group: %s, Ieee: %s Code: %s" % (LegrandGroupMemberShip, _ieee, _code),
         )
         status = "00"
-        # _ieee = '%08x' %struct.unpack('q',struct.pack('>Q',int(ieee,16)))[0]
-        _ieee = "4fa5820000740400"  # IEEE du Dimmer
+        _ieee = '%08x' %struct.unpack('q',struct.pack('>Q',int(ieee,16)))[0]
         send_legrand_command(self, Sqn, srcNWKID, srcEp, ClusterID, "10", status + _code + _ieee)
 
 
