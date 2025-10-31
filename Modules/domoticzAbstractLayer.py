@@ -16,9 +16,9 @@
 """
 
 import time
-#import DomoticzEx as Domoticz
-#DOMOTICZ_EXTENDED_API = True#
-import Domoticz as Domoticz
+import DomoticzEx as Domoticz
+DOMOTICZ_EXTENDED_API = True
+#import Domoticz as Domoticz
 
 DIMMABLE_WIDGETS = {
     (7, 1, 241): { "Widget": "Dimmable_Light", "Name": "RGBW", "partially_opened_nValue": 15},
