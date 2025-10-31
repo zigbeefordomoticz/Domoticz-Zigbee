@@ -18,6 +18,7 @@
 import time
 import DomoticzEx as Domoticz
 DOMOTICZ_EXTENDED_API = True
+
 #import Domoticz as Domoticz
 
 DIMMABLE_WIDGETS = {
@@ -35,7 +36,6 @@ DIMMABLE_WIDGETS = {
 
 }
 
-DOMOTICZ_EXTENDED_API = False
 
 DELAY_BETWEEN_TOUCH = 120
 
