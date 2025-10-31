@@ -1,4 +1,13 @@
-# (file committed at https://github.com/zigbeefordomoticz/Domoticz-Zigbee/commit/1438ef8bcbc6076b3221462b79fc584b467c4a25)
+#!/usr/bin/env bash
+# Implementation of Zigbee for Domoticz plugin.
+#
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 # Tools/backup_z4d.sh
 # Backup script for Domoticz and Domoticz-Zigbee plugin data.
 # Simplified plugin handling:
