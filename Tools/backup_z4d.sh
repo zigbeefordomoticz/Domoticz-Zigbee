@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+# (file committed at https://github.com/zigbeefordomoticz/Domoticz-Zigbee/commit/1438ef8bcbc6076b3221462b79fc584b467c4a25)
 # Tools/backup_z4d.sh
 # Backup script for Domoticz and Domoticz-Zigbee plugin data.
 # Simplified plugin handling:
@@ -76,45 +76,45 @@ while [[ $# -gt 0 ]]; do
     --domoticz-db)
       shift
       DOMOTICZ_DB_ARGS+=("$1")
-      ;; 
+      ;;
     --plugin-target-path)
       shift
       PLUGIN_TARGET_ARGS+=("$1")
-      ;; 
+      ;;
     --plugin-data)
       shift
       PLUGIN_DATA_ARGS+=("$1")
-      ;; 
+      ;;
     --plugin-db) # kept as alias historically
       shift
       PLUGIN_DATA_ARGS+=("$1")
-      ;; 
+      ;;
     --full-plugin-copy)
       FULL_PLUGIN_COPY=true
-      ;; 
+      ;;
     --dest)
       shift
       DEST="$1"
-      ;; 
+      ;;
     --stop-service)
       STOP_SERVICE=true
-      ;; 
+      ;;
     --retention)
       shift
       RETENTION_DAYS="$1"
-      ;; 
+      ;;
     --dry-run)
       DRY_RUN=true
-      ;; 
+      ;;
     -h|--help)
       show_help
       exit 0
-      ;; 
+      ;;
     *)
       echo "Unknown option: $1" >&2
       show_help
       exit 2
-      ;; 
+      ;;
   esac
   shift
 done
@@ -132,8 +132,7 @@ timestamp() { date -u +"%Y-%m-%d_%H-%M"; }
 
 # Resolve domoticz DB paths (prefer explicit args, otherwise probe common paths)
 DOMOTICZ_DB_PATHS=()
-if [ "
-${#DOMOTICZ_DB_ARGS[@]}" -gt 0 ]; then
+if [ "${#DOMOTICZ_DB_ARGS[@]}" -gt 0 ]; then
   for p in "${DOMOTICZ_DB_ARGS[@]}"; do
     if [ -f "$p" ]; then
       DOMOTICZ_DB_PATHS+=("$p")
@@ -202,7 +201,7 @@ sqlite_backup() {
   local dest="$2"
   if command -v sqlite3 >/dev/null 2>&1; then
     if [ "$DRY_RUN" = true ]; then
-      echo "[DRY-RUN] sqlite3 '$src' ".backup '$dest'""
+      echo "[DRY-RUN] sqlite3 '$src' \".backup '$dest'\""
     else
       sqlite3 "$src" ".backup '$dest'"
     fi
@@ -245,7 +244,7 @@ backup_plugin_key_files() {
   local conf_dir="${plugin_root%/}/Conf"
 
   # patterns to search in Data (and deeper) and in Conf
-  local -a patterns=( 
+  local -a patterns=( \
     -iname 'Coordinator-*.backup' \
     -o -iname 'DeviceList-*.txt' \
     -o -iname 'GroupsList-*.txt' \
@@ -289,4 +288,98 @@ if [ "${#DOMOTICZ_DB_PATHS[@]}" -eq 0 ] && [ "${#PLUGIN_ROOTS[@]}" -eq 0 ]; then
   exit 2
 fi
 
-... (truncated for brevity) ...
+echo "Backup destination: $DEST"
+echo "Retention (days): $RETENTION_DAYS"
+echo "Stop service: $STOP_SERVICE"
+echo "Full plugin copy: $FULL_PLUGIN_COPY"
+echo "Domoticz DB(s) found: ${DOMOTICZ_DB_PATHS[*]:-None}"
+echo "Plugin root(s) found: ${PLUGIN_ROOTS[*]:-None}"
+
+# Optionally stop domoticz for a clean snapshot
+if [ "$STOP_SERVICE" = true ]; then
+  SERVICE_NAME="$(find_domoticz_service || true)"
+  echo "Stopping service $SERVICE_NAME ..."
+  if [ "$DRY_RUN" = true ]; then
+    echo "[DRY-RUN] systemctl stop $SERVICE_NAME"
+  else
+    sudo systemctl stop "$SERVICE_NAME" || echo "Warning: failed to stop service $SERVICE_NAME" >&2
+    sleep 1
+  fi
+fi
+
+BACKUP_TS="$(timestamp)"
+BACKUP_DIR="${TMPDIR}/backup-${BACKUP_TS}"
+mkdir -p "$BACKUP_DIR"
+
+# Backup domoticz DBs (use sqlite .backup)
+for db in "${DOMOTICZ_DB_PATHS[@]}"; do
+  base="$(basename "$db")"
+  dest="${BACKUP_DIR}/${base}"
+  echo "Backing up Domoticz DB: $db -> $dest"
+  sqlite_backup "$db" "$dest"
+done
+
+# Backup plugin roots
+for root in "${PLUGIN_ROOTS[@]}"; do
+  bn="$(basename "$root")"
+  if [ "$FULL_PLUGIN_COPY" = true ]; then
+    dest="${BACKUP_DIR}/plugin-dir-${bn}"
+    echo "Full plugin root copy: $root -> $dest"
+    copy_dir "$root" "$dest"
+  else
+    dest="${BACKUP_DIR}/plugin-key-files-${bn}"
+    echo "Backing up key plugin files from: $root -> $dest"
+    backup_plugin_key_files "$root" "$dest"
+  fi
+done
+
+# Create metadata file
+cat > "${BACKUP_DIR}/backup-info.txt" <<EOF
+Created: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+Host: $(hostname)
+User: $(whoami)
+Domoticz DBs:
+$(for p in "${DOMOTICZ_DB_PATHS[@]:-}"; do echo " - $p"; done)
+Plugin roots:
+$(for p in "${PLUGIN_ROOTS[@]:-}"; do echo " - $p"; done)
+Full plugin copy: ${FULL_PLUGIN_COPY}
+Key plugin file patterns copied:
+ - Coordinator-*.backup
+ - DeviceList-*.txt
+ - GroupsList-*.txt
+ - zigpy_persistent_*.db
+ - Conf/PluginConf-*.json
+EOF
+
+# Archive & compress
+ARCHIVE_NAME="domoticz-backup-${BACKUP_TS}.tar.gz"
+ARCHIVE_PATH="${DEST}/${ARCHIVE_NAME}"
+echo "Creating archive: $ARCHIVE_PATH"
+if [ "$DRY_RUN" = true ]; then
+  echo "[DRY-RUN] tar -czf '$ARCHIVE_PATH' -C '$BACKUP_DIR' .'"
+else
+  tar -czf "$ARCHIVE_PATH" -C "$BACKUP_DIR" .
+  echo "Backup created: $ARCHIVE_PATH"
+fi
+
+# Start service again
+if [ "$STOP_SERVICE" = true ]; then
+  SERVICE_NAME="${SERVICE_NAME:-$(find_domoticz_service || true)}"
+  echo "Starting service $SERVICE_NAME ..."
+  if [ "$DRY_RUN" = true ]; then
+    echo "[DRY-RUN] systemctl start $SERVICE_NAME"
+  else
+    sudo systemctl start "$SERVICE_NAME" || echo "Warning: failed to start service $SERVICE_NAME" >&2
+  fi
+fi
+
+# Prune old backups
+echo "Pruning backups older than ${RETENTION_DAYS} days in ${DEST} ..."
+if [ "$DRY_RUN" = true ]; then
+  echo "[DRY-RUN] find '$DEST' -type f -name 'domoticz-backup-*.tar.gz' -mtime +${RETENTION_DAYS} -print -delete"
+else
+  find "$DEST" -type f -name 'domoticz-backup-*.tar.gz' -mtime +"${RETENTION_DAYS}" -print -delete || true
+fi
+
+echo "Done."
+exit 0
