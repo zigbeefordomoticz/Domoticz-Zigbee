@@ -119,7 +119,7 @@ try:
     from DomoticzEx import Devices, Images, Parameters, Settings
     #from Domoticz import Devices, Images, Parameters, Settings
 except ImportError:
-    passgit 
+    pass
 
 import gc
 import json
