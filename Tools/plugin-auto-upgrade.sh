@@ -146,6 +146,14 @@ update_git_config() {
         echo "ERROR while running command 'git pull', we continue."
         echo "Git Status: $(git status)"
     fi
+
+    git checkout stable8
+    ret="$?"
+    if [ "$ret" != "0" ] ; then
+        echo "ERROR while running command 'git checkout stable8', we continue."
+        echo "Git Status: $(git status)"
+    fi
+
 }
 
 
@@ -179,6 +187,7 @@ check_python_min_version() {
     COMBINED=$((MAJOR * 100 + MINOR))
     REQUIRED=$((MIN_MAJOR * 100 + MIN_MINOR))
 
+    echo "Found $PYTHON_VERSION version: $MAJOR.$MINOR and required is $MIN_MAJOR.$MIN_MINOR"
     if [ "$COMBINED" -lt "$REQUIRED" ]; then
         return 1
     fi
