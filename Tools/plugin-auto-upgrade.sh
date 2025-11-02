@@ -140,6 +140,7 @@ update_git_config() {
         return 0
     fi
 
+    echo "Performing 'git pull' to update the plugin..."
     git pull
     ret="$?"
     if [ "$ret" != "0" ] ; then
@@ -147,6 +148,7 @@ update_git_config() {
         echo "Git Status: $(git status)"
     fi
 
+    echo "Switching to 'stable8' branch..."
     git checkout stable8
     ret="$?"
     if [ "$ret" != "0" ] ; then
