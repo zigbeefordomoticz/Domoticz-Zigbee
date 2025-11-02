@@ -127,12 +127,62 @@ update_git_config() {
         git config --global pull.rebase false  # You can choose true or false based on your preference
     fi
 
-    git pull 
+    # Before performing a git pull, ensure the running python3 is new enough.
+    # Only allow automatic git pull when Python is 3.11 or newer.
+    check_python_min_version 3 11
+    check_ret="$?"
+    if [ "$check_ret" = "1" ]; then
+        echo "Python version is older than 3.11. Skipping git pull update for safety."
+        echo "Please upgrade your Python interpreter to 3.11+ before attempting plugin upgrade."
+        return 0
+    elif [ "$check_ret" = "2" ]; then
+        echo "Could not determine Python version (or $PYTHON_VERSION not found). Skipping git pull."
+        return 0
+    fi
+
+    git pull
     ret="$?"
     if [ "$ret" != "0" ] ; then
-        echo "ERROR while running command 'git pull, we continue."
+        echo "ERROR while running command 'git pull', we continue."
         echo "Git Status: $(git status)"
     fi
+}
+
+
+# Check that $PYTHON_VERSION exists and has at least MIN_MAJOR.MIN_MINOR
+# Returns:
+# 0 -> version is >= required
+# 1 -> version is lower than required
+# 2 -> python command not found or unable to determine version
+check_python_min_version() {
+    MIN_MAJOR="$1"
+    MIN_MINOR="$2"
+
+    if ! command -v "$PYTHON_VERSION" &> /dev/null; then
+        echo "$PYTHON_VERSION not found in PATH"
+        return 2
+    fi
+
+    # Get major.minor from the python interpreter
+    PY_VER=$($PYTHON_VERSION -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || true)
+    if [ -z "$PY_VER" ]; then
+        echo "Unable to determine version for $PYTHON_VERSION"
+        return 2
+    fi
+
+    MAJOR=${PY_VER%%.*}
+    MINOR=${PY_VER##*.}
+    # sanitize
+    MAJOR=${MAJOR//[^0-9]/}
+    MINOR=${MINOR//[^0-9]/}
+
+    COMBINED=$((MAJOR * 100 + MINOR))
+    REQUIRED=$((MIN_MAJOR * 100 + MIN_MINOR))
+
+    if [ "$COMBINED" -lt "$REQUIRED" ]; then
+        return 1
+    fi
+    return 0
 }
 
 uninstall_modules_from_constraints() {
