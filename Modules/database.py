@@ -10,11 +10,20 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
-"""
-    Module: z_database.py
 
-    Description: Function to access Zigate Plugin Database & Dictionary
+"""Modules.database
 
+High-level helpers to load, save and clean the plugin DeviceList and
+related Zigbee database entries used by the Domoticz Zigbee plugin.
+
+This module exposes functions to read/write the legacy text/json
+device list, import local model configurations, validate and cleanup
+entries, and apply a number of device-specific fixes required at
+startup.
+
+All functions accept ``self`` as the first parameter and operate on the
+plugin instance state (for example ``self.ListOfDevices`` and
+``self.pluginconf``).
 """
 
 
@@ -148,8 +157,14 @@ MANUFACTURER_ATTRIBUTES = (
 
 
 def LoadDeviceList(self):
-    # Load DeviceList.txt into ListOfDevices
-    #
+    """Load devices into ``self.ListOfDevices``.
+
+    The function prefers the Domoticz plugin database when enabled and
+    falls back to the plugin's device list file. It runs a set of
+    cleanup and migration helpers to normalise entries and may update
+    plugin configuration flags. Returns the loader result string
+    (typically "Success") or True/False in some code paths.
+    """
     ListOfDevices_from_Domoticz = None
 
     # This can be enabled only with Domoticz version 2021.1 build 1395 and above, otherwise big memory leak
@@ -254,6 +269,18 @@ def LoadDeviceList(self):
 
 
 def loadTxtDatabase(self, dbName):
+    """Load and parse a legacy text device list file.
+
+    The file contains lines with "key : <python-literal>" where the
+    value is evaluated. Only entries with Version == '3' are loaded.
+
+    Args:
+        dbName: Path to the text database file to load
+
+    Returns:
+        str: "Success" when the parse completed without fatal problems,
+             otherwise "Failed"
+    """
     res = "Success"
     with open(dbName, "r", encoding='utf-8') as myfile2:
         self.log.logging("Database", "Debug", "Open : %s" % dbName)
@@ -291,7 +318,12 @@ def loadTxtDatabase(self, dbName):
 
 
 def _read_DeviceList_Domoticz(self):
+    """Read device list from Domoticz plugin configuration.
 
+    Returns:
+        tuple: (devices_dict, timestamp) where devices_dict contains device
+        entries filtered to only include known attributes used by the plugin
+    """
     ListOfDevices_from_Domoticz = getConfigItem(Key="ListOfDevices", Attribute="Devices")
     time_stamp = 0
     if "TimeStamp" in ListOfDevices_from_Domoticz:
@@ -322,7 +354,15 @@ def _read_DeviceList_Domoticz(self):
 
 
 def is_domoticz_recent(self, dz_timestamp, device_list_txt_filename):
+    """Check if Domoticz database is more recent than local file.
 
+    Args:
+        dz_timestamp: Unix timestamp from Domoticz database
+        device_list_txt_filename: Path to local device list file
+
+    Returns:
+        bool: True if Domoticz data is more recent than the file
+    """
     txt_timestamp = 0
     if os.path.isfile(device_list_txt_filename):
         txt_timestamp = os.path.getmtime(device_list_txt_filename)
@@ -335,6 +375,15 @@ def is_domoticz_recent(self, dz_timestamp, device_list_txt_filename):
 
 
 def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
+    """Persist the in-memory DeviceList to disk and Domoticz storage.
+
+    Uses heartbeat counting to throttle writes. Will write both legacy text
+    format and optionally JSON format files. If enabled and available, will
+    also persist to Domoticz plugin storage.
+
+    Args:
+        count: Number of heartbeats to wait between writes
+    """
     if self.HBcount < count:
         self.HBcount = self.HBcount + 1
         return
@@ -359,13 +408,18 @@ def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
     ):
         if _write_DeviceList_Domoticz(self) is None:
             # An error occured. Probably Dz.Configuration() is not available.
+            self.log.logging("Database", "Error", "WriteDeviceList - flush Plugin db to Domoticz failed, we secure it to %s file" % self.DeviceListName)
             _write_DeviceList_txt(self)
 
     self.HBcount = 0
 
 
 def _write_DeviceList_txt(self):
-    # Write in classic format ( .txt )
+    """Write device list in legacy text format.
+
+    Writes one device per line in "key : <python-literal>" format.
+    Handles various encoding and IO errors that can occur during write.
+    """
     _pluginData = Path( self.pluginconf.pluginConf["pluginData"] )
     _DeviceListFileName = _pluginData / self.DeviceListName
     try:
@@ -399,9 +453,13 @@ def _write_DeviceList_txt(self):
 
 
 def _write_DeviceList_json(self):
+    """Write device list as JSON file.
+
+    Creates a JSON file alongside the text database with sorted keys
+    and pretty printing enabled. Only called when JSON export is enabled
+    in plugin configuration.
+    """
     _pluginData = Path( self.pluginconf.pluginConf["pluginData"] )
-# Incorrect error issue    
-#    _DeviceListFileName = _pluginData / self.DeviceListName[:-3] + "json"
     _DeviceListFileName = _pluginData / (self.DeviceListName[:-3] + "json")
     self.log.logging("Database", "Debug", "Write %s = %s" % (_DeviceListFileName, str(self.ListOfDevices)))
     with open(_DeviceListFileName, "wt") as file:
@@ -410,13 +468,24 @@ def _write_DeviceList_json(self):
 
 
 def _write_DeviceList_Domoticz(self):
+    """Store device list in Domoticz plugin configuration.
+
+    Makes a copy of the device list and stores it along with a timestamp
+    in the Domoticz plugin configuration storage. Returns the result of
+    the setConfigItem call.
+    """
     ListOfDevices_for_save = self.ListOfDevices.copy()
     self.log.logging("Database", "Log", "WriteDeviceList - flush Plugin db to %s" % "Domoticz")
     return setConfigItem( Key="ListOfDevices", Attribute="Devices", Value={"TimeStamp": time.time(), "Devices": ListOfDevices_for_save} )
 
 
 def importDeviceConf(self):
-    # Import DeviceConf.txt
+    """Load legacy DeviceConf.txt configuration file.
+
+    The file contains a Python literal which is evaluated into
+    self.DeviceConf. Empty keys are removed afterwards. Returns
+    None implicitly on success, or early on parse errors.
+    """
     tmpread = ""
     self.DeviceConf = {}
     _pluginConfig = Path( self.pluginconf.pluginConf["pluginConfig"] )
@@ -440,11 +509,17 @@ def importDeviceConf(self):
 
 
 def import_local_device_conf(self):
+    """Load JSON model definitions from Local-Devices folder.
 
+    First loads legacy DeviceConf.txt, then processes each JSON file in the
+    Local-Devices directory. Updates self.DeviceConf with model definitions
+    and self.ModelManufMapping with any provided identifier mappings.
+
+    Files named README.md and .PRECIOUS are skipped. JSON parse errors
+    are logged but don't prevent processing other files.
+    """
     from os import listdir
     from os.path import isfile, join
-
-
 
     # Read DeviceConf for backward compatibility
     importDeviceConf(self)
@@ -504,13 +579,30 @@ def import_local_device_conf(self):
 
 
 def checkDevices2LOD(self, Devices):
+    """Mark each device with a consistency check flag.
 
+    Compares IEEE addresses in self.ListOfDevices with Domoticz runtime
+    devices and sets a ConsistencyCheck flag to "ok" or "not in DZ" for
+    each device that has Status="inDB".
+
+    Args:
+        Devices: Dictionary of Domoticz device objects
+    """
     for nwkid in self.ListOfDevices:
         self.ListOfDevices[nwkid]["ConsistencyCheck"] = ""
         if self.ListOfDevices[nwkid]["Status"] == "inDB":
             self.ListOfDevices[nwkid]["ConsistencyCheck"] = next(("ok" for dev in Devices if Devices[dev].DeviceID == self.ListOfDevices[nwkid]["IEEE"]), "not in DZ")
 
 def checkListOfDevice2Devices(self, Devices):
+    """Verify Domoticz widgets map to known plugin devices.
+
+    Iterates self.ListOfDomoticzWidget and logs any widgets that cannot
+    be mapped to a device in self.ListOfDevices via IEEE2NWK. Special
+    device IDs like 4-char and Zigate-XX- prefixed ones are skipped.
+
+    Args:
+        Devices: Dictionary of Domoticz device objects (unused)
+    """
     for widget_idx, widget_info in self.ListOfDomoticzWidget.items():
         self.log.logging("Database", "Debug", f"checkListOfDevice2Devices - {widget_idx} {type(widget_idx)} - {widget_info} {type(widget_info)}")
         
@@ -534,6 +626,14 @@ def checkListOfDevice2Devices(self, Devices):
 
 
 def saveZigateNetworkData(self, nkwdata):
+    """Save Zigate network data to Zigate.json file.
+
+    Args:
+        nkwdata: Network data structure to save
+
+    The data is written as pretty-printed JSON with sorted keys.
+    IOErrors during write are caught and logged.
+    """
     _pluginData = Path( self.pluginconf.pluginConf["pluginConfig"] )
     json_filename = _pluginData / "Zigate.json"
     self.log.logging("Database", "Debug", "Write " + json_filename + " = " + str(self.ListOfDevices))
@@ -545,10 +645,22 @@ def saveZigateNetworkData(self, nkwdata):
 
 
 def CheckDeviceList(self, key, val):
-    """
-    This function is call during DeviceList load
-    """
+    """Import and validate a single device entry from the device list.
 
+    Called during device list loading to process a single device. The
+    function validates the device status, ensures no duplicates exist,
+    and imports the appropriate attributes based on device type.
+
+    Special handling is applied for device "0000" (coordinator) and
+    for the resetPluginDS flag which limits imported attributes.
+
+    Args:
+        key: Network ID key as string
+        val: String containing Python literal device data
+
+    The function returns implicitly (None) and logs any validation
+    errors encountered.
+    """
     self.log.logging("Database", "Debug", "CheckDeviceList - Address search : " + str(key), key)
     self.log.logging("Database", "Debug2", "CheckDeviceList - with value : " + str(val), key)
 
@@ -649,7 +761,12 @@ def CheckDeviceList(self, key, val):
 
 
 def check_and_update_ForceAckCommands(self):
+    """Update ForceAckCommands list for devices based on model config.
 
+    Iterates all devices and updates their ForceAckCommands list from
+    the corresponding model configuration if available. Empty or missing
+    model entries result in an empty ForceAckCommands list.
+    """
     for x in self.ListOfDevices:
         if "Model" not in self.ListOfDevices[x]:
             continue
@@ -668,14 +785,28 @@ def check_and_update_ForceAckCommands(self):
 
 
 def fixing_consumption_lumi(self, key):
+    """Remove legacy 'Consumption' entries from Lumi device endpoints.
 
+    Args:
+        key: Network ID of the device to process
+    """
     for ep in self.ListOfDevices[key]["Ep"]:
         if "Consumption" in self.ListOfDevices[key]["Ep"][ep]:
             del self.ListOfDevices[key]["Ep"][ep]["Consumption"]
 
 
 def fixing_Issue566(self, key):
+    """Fix Issue #566 related to TRADFRI control outlet devices.
 
+    Removes problematic Cluster Revision entries and corrects ClusterType
+    assignment between endpoints 01 and 02.
+
+    Args:
+        key: Network ID of the device to process
+
+    Returns:
+        bool: True after applying fixes (or if no fixes needed)
+    """
     if "Model" not in self.ListOfDevices[key]:
         return False
     if self.ListOfDevices[key]["Model"] != "TRADFRI control outlet":
@@ -708,7 +839,14 @@ def fixing_Issue566(self, key):
 
 
 def fixing_iSQN_None(self, key):
+    """Remove iSQN entries that have None values.
 
+    Iterates through device attributes related to reporting and removes
+    any iSQN entries that have None values to prevent downstream errors.
+
+    Args:
+        key: Network ID of the device to process
+    """
     for DeviceAttribute in (
         STORE_CONFIGURE_REPORTING,
         "ReadAttributes",
@@ -730,7 +868,20 @@ def fixing_iSQN_None(self, key):
 
 
 def load_new_param_definition(self):
+    """Populate missing device parameters from model definitions.
 
+    For each device in ListOfDevices, copies default parameters from
+    DeviceConf[model]['Param'] if they don't already exist. Some
+    parameters are further mapped to plugin-wide configuration options
+    based on the manufacturer (e.g. PowerOnAfterOffOn behavior).
+
+    Special handling exists for:
+    - PowerOnAfterOffOn (manufacturer-specific defaults)
+    - PowerPollingFreq (device-specific polling intervals)
+    - OnOffPollingFreq (manufacturer-specific polling)
+    - AC201Polling (OWON/CASAIA specific)
+    - Various Netatmo LED and control parameters
+    """
     for key in self.ListOfDevices:
         if "Model" not in self.ListOfDevices[key]:
             continue
@@ -750,12 +901,6 @@ def load_new_param_definition(self):
 
             # Initiatilize the parameter with the Configuration.
             self.ListOfDevices[key]["Param"][param] = self.DeviceConf[model_name]["Param"][param]
-
-            # Overwrite the param by Existing Global parameter
-            # if param in ( 'fadingOff', 'moveToHueSatu'  ,'moveToColourTemp','moveToColourRGB','moveToLevel'):
-            #     # Use Global as default
-            #     if self.DeviceConf[ model_name ]['Param'][ param ] != self.pluginconf.pluginConf[ param ]:
-            #         self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf[ param ]
 
             if param == "Disabled" and "Disabled" in self.ListOfDevices[key]["Param"] and self.ListOfDevices[key]["Param"][ "Disabled" ]:
                 self.ListOfDevices[key]["Health"] = "Disabled"
@@ -867,13 +1012,33 @@ def load_new_param_definition(self):
 
 
 def remove_legacy_topology_datas(self):
+    """Remove legacy topology tables from all devices.
+
+    Removes the following legacy tables from each device:
+    - RoutingTable
+    - AssociatedDevices
+    - Neighbours
+
+    These tables are no longer used with newer topology handling.
+    """
     for device_info in self.ListOfDevices.values():
         for table_name in ("RoutingTable", "AssociatedDevices", "Neighbours"):
             device_info.pop(table_name, None)
 
 
 def cleanup_table_entries( self):
+    """Clean up invalid entries in device topology tables.
 
+    Iterates through RoutingTable, AssociatedDevices and Neighbours
+    tables for each device and removes entries that:
+    - Are not lists
+    - Missing Time or TimeStamp fields
+    - Have Time as int but empty Devices list
+    - Have Time field but not as an integer
+
+    The cleanup runs in a loop to handle cases where removals affect
+    list indices.
+    """
     for tablename in ("RoutingTable", "AssociatedDevices", "Neighbours" ):
         self.log.logging("NetworkMap", "Debug", "purge processing %s " %( tablename))
         for nwkid in self.ListOfDevices:
@@ -918,7 +1083,13 @@ def cleanup_table_entries( self):
 
           
 def profalux_fix_remote_device_model(self):
-    
+    """Fix model names for Profalux remote devices.
+
+    Identifies Profalux remote controls by their ZDeviceID (0201),
+    Manufacturer code (1110) and MacCapa (80) and ensures they have:
+    - Correct Manufacturer Name ("Profalux")
+    - Correct Model name ("Telecommande-Profalux")
+    """
     for x in self.ListOfDevices:
         
         if 'ZDeviceID' not in self.ListOfDevices[ x ] or self.ListOfDevices[ x ]['ZDeviceID'] != '0201':
@@ -940,8 +1111,18 @@ def profalux_fix_remote_device_model(self):
 
 
 def hack_ts0601(self, nwkid):
-    # Purpose is to rename the Model name of potential working TS0601 as a Thermostat
-    
+    """Update model names for TS0601 devices based on manufacturer.
+
+    Some TS0601 devices need their model names updated based on the
+    manufacturer to ensure proper handling. This function:
+    - Only processes devices with Model == 'TS0601'
+    - Logs errors if manufacturer info is missing/invalid
+    - Uses check_found_plugin_model() to determine correct model name
+    - Updates the model name if a different one is suggested
+
+    Args:
+        nwkid: Network ID of the device to process
+    """
     if ( 'Model' not in self.ListOfDevices[ nwkid ] or self.ListOfDevices[ nwkid ][ 'Model' ] != 'TS0601' ):
         return
     
@@ -961,7 +1142,16 @@ def hack_ts0601(self, nwkid):
 
 
 def hack_ts0601_error(self, nwkid, model, manufacturer=None):
-    # Looks like we have a TS0601 and something wrong !!!
+    """Log error details for TS0601 device configuration issues.
+
+    Args:
+        nwkid: Network ID of the problematic device
+        model: Model name of the device
+        manufacturer: Optional manufacturer information
+
+    Logs device details to help troubleshoot TS0601 configuration
+    problems.
+    """
     self.log.logging("Tuya", "Error", "This device is not correctly configured, please contact us with the here after information")
     self.log.logging("Tuya", "Error", "    - Device        %s" %nwkid )
     self.log.logging("Tuya", "Error", "    - Model         %s" %model )
@@ -969,7 +1159,17 @@ def hack_ts0601_error(self, nwkid, model, manufacturer=None):
      
 
 def hack_ts0601_rename_model( self, nwkid, modelName, manufacturer_name):
+    """Update TS0601 model name based on manufacturer info.
 
+    Uses check_found_plugin_model to determine the correct model name
+    for a TS0601 device given its manufacturer. Updates the model name
+    if a different one is suggested.
+
+    Args:
+        nwkid: Network ID of the device to update
+        modelName: Current model name (should be 'TS0601')
+        manufacturer_name: Manufacturer name to use for lookup
+    """
     suggested_model = check_found_plugin_model( self, modelName, manufacturer_name=manufacturer_name, manufacturer_code=None, device_id=None )
     
     if self.ListOfDevices[ nwkid ][ 'Model' ] != suggested_model:
@@ -978,7 +1178,15 @@ def hack_ts0601_rename_model( self, nwkid, modelName, manufacturer_name):
 
 
 def cleanup_ota(self, nwkid):
-    
+    """Clean up duplicate OTA upgrade entries.
+
+    Processes OTAUpgrade entries for a device and removes duplicates
+    based on Version and Type combinations. Keeps only the most recent
+    entry for each unique combination.
+
+    Args:
+        nwkid: Network ID of the device to clean up
+    """
     if "OTAUpgrade" not in self.ListOfDevices[ nwkid ]:
         return
 
@@ -1003,7 +1211,16 @@ def cleanup_ota(self, nwkid):
 
 
 def update_gamma_troniques_attributes_at_startup(self, nwkid):
-    """Update the GammaTroniques attributes at startup based on the Ep values."""
+    """Update GammaTroniques device attributes from endpoint data.
+
+    Copies mode values from endpoint 01's ff42 cluster into the device's
+    GammaTroniques attribute dictionary:
+    - 002c -> ModeTIC
+    - 002a -> ModeElect
+
+    Args:
+        nwkid: Network ID of the GammaTroniques device to update
+    """
     self.log.logging("GammaTroniques", "Debug", f"update_gamma_troniques_attributes_at_startup - Nwkid: {nwkid}")
 
     device = self.ListOfDevices.get(nwkid)
