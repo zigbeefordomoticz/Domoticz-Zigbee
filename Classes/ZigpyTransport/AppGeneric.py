@@ -193,7 +193,7 @@ def connection_lost(self, exc: Exception) -> None:
 
     LOGGER.warning("+ Connection to the radio was lost: %s %r", type(exc), exc)
 
-    if self.shutting_down or self.restarting:
+    if exc is None or self.shutting_down or self.restarting:
         LOGGER.warning("+ shutdown or restart in progress")
         return
 
