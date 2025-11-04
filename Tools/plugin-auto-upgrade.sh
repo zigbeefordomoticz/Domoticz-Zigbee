@@ -201,11 +201,33 @@ is_docker() {
     fi
 }
 
+check_python_and_branch() {
+    # inside Tools/plugin-auto-upgrade.sh
+
+    # Resolve the Tools directory relative to this script
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+    # Make sure python3 exists
+    if ! command -v python3 >/dev/null 2>&1; then
+      echo "python3 not found in PATH. Please install Python 3.11+ to switch to stable8."
+      exit 1
+    fi
+
+    # Run the check script in interactive (non-auto) mode.
+    # It will print version info and ask confirmation if appropriate.
+    python3 "$SCRIPT_DIR/check_python_and_branch.py" --no-simulate
+
+    # capture the script exit code if you want to act on it:
+    rc=$?
+    echo "check_python_and_branch.py exited with code $rc"
+}
+
 
 # Main script execution
 PYTHON_VERSION="python${1:-3}"
 PIP_VERSION="python${1:-3}"
 
+check_python_and_branch
 set_home
 print_env_details
 set_pip_options

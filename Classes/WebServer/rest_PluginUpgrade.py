@@ -39,6 +39,11 @@ def rest_plugin_upgrade(self, verb, data, parameters):
     # Identify the current Python version
     python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
     self.logging("Log", f"Current Python version: {python_version}")
+    self.logging("Error", "`************* IMPORTANT *************`")
+    self.logging("Error", "This plugin version is not anymore supported, please upgrade to stable8 branch if you want to benefit from the plugin evolutions")
+    self.logging("Error", "The 'stable8' branch requires Python 3.11 or above.")
+    self.logging("Error", " You may run the following command to switch to the supported branch: Tools/plugin-switch-stable8.sh")
+    self.logging("Error", "`************* IMPORTANT *************`")
 
     self.logging("Log", "Plugin Upgrade starting: %s" %(upgrade_script))
     
