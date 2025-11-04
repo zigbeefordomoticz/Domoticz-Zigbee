@@ -30,8 +30,35 @@ done
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$(dirname "$SCRIPT_DIR")"  # Go to parent directory of Tools/
 
+if ! $DRY_RUN; then
+    echo "WARNING: You are about to switch to the stable8 branch."
+    echo "This will update your plugin to a new major version."
+    echo ""
+
+    echo "IMPORTANT: Runtime Requirements"
+    echo "This command must be executed while:"
+    echo "1. Domoticz is running"
+    echo "2. The Zigbee plugin is active and running"
+    echo "3. The plugin is on the stable7 branch"
+
+    echo ""
+    read -p "Are you ready to proceed with the branch switch? (yes/no) " answer
+    if [[ ! "$answer" =~ ^[Yy][Ee][Ss]$ ]]; then
+        echo "Operation cancelled by user"
+        exit 1
+    fi
+    echo ""
+fi
+
 if $DRY_RUN; then
     echo "DRY RUN MODE - No changes will be made"
+    echo ""
+    echo "IMPORTANT: Runtime Requirements"
+    echo "This command must be executed while:"
+    echo "1. Domoticz is running"
+    echo "2. The Zigbee plugin is active and running"
+    echo "3. The plugin is on the stable7 branch"
+    echo ""
 fi
 
 # First check Python version requirements using check_python_and_branch.py
@@ -111,4 +138,9 @@ if $DRY_RUN; then
     echo "To perform the actual switch, run with: --I-want-to-update"
 else
     echo "Branch switch completed successfully"
+    echo ""
+    echo "IMPORTANT: Now you must go to the Plugin Web UI,"
+    echo "access the Admin section and perform a plugin upgrade"
+    echo "to ensure all required packages are properly updated."
+    echo ""
 fi
