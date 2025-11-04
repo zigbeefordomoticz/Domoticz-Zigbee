@@ -238,7 +238,7 @@ async def start_zigpy_task(self, channel, extended_pan_id):
     try:
         self.log.logging("TransportZigpy", "Debug", "Shutting down zigpy thread...")
         if self.app:
-            await self.app.shutdown()
+            shutdown_with_timeout(self, self.app)
 
     except Exception as e:
         self.log.logging("TransportZigpy", "Error", f"start_zigpy_task shutdown(self) error: {e}")
@@ -253,6 +253,18 @@ async def start_zigpy_task(self, channel, extended_pan_id):
     await _shutdown_remaining_task(self)
 
     self.log.logging("TransportZigpy", "Debug", "start_zigpy_task - exiting zigpy thread")
+
+
+async def shutdown_with_timeout(self, app, timeout=1.0):
+    try:
+        await asyncio.wait_for(app.shutdown(), timeout=timeout)
+        self.log.logging("TransportZigpy", "Log","Shutdown completed successfully.")
+        
+    except asyncio.TimeoutError:
+        self.log.logging("TransportZigpy", "Error",f"Shutdown timed out after {timeout} seconds. Forcing exit.")
+        # Optionally try to cancel tasks or close transports manually
+        with contextlib.suppress(Exception):
+            await app.close()  # if zigpy app supports it
 
 
 async def _shutdown_remaining_task(self):
