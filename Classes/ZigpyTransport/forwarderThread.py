@@ -39,7 +39,7 @@ def forwarder_thread(self):
             self.log.logging("TransportFrwder", "Debug", "Waiting for next message")
             message = self.forwarder_queue.get()
             if message == "STOP":
-                self.log.logging("TransportFrwder", "Log", "Forwarder thread stop in progress...")
+                self.log.logging("TransportFrwder", "Debug", "Forwarder thread stop in progress...")
                 break
 
             if message is None:
