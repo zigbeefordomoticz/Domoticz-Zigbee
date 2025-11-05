@@ -125,7 +125,7 @@ def start_zigpy_thread(self):
 
 def setup_zigpy_thread(self):
     """
-    Sets up and starts the Zigpy thread as a daemon.
+    Sets up and starts the Zigpy thread.
 
     Creates a new Thread instance targeting zigpy_thread_function and starts it.
     The thread name includes the hardware ID for identification.
