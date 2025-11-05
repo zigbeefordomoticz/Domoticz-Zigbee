@@ -134,7 +134,7 @@ def setup_zigpy_thread(self):
 
     # Create and start a new thread
     self.zigpy_thread = Thread(name=f"ZigpyCom_{self.hardwareid}", target=zigpy_thread_function, args=(self,))
-    self.zigpy_thread.daemon = True
+    self.zigpy_thread.daemon = False
     self.zigpy_thread.start()
     self.log.logging("TransportZigpy", "Debug", "setup_zigpy_thread - Zigpy thread started")
 

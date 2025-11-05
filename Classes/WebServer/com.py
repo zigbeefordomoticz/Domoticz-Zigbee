@@ -29,7 +29,7 @@ def startWebServer(self):
 
     # Create and start the server thread
     self.server_thread = threading.Thread( name="ZigbeeWebUI_%s" % self.hardwareID, target=run_server, args=(self,) )
-    self.server_thread.daemon = True  # This makes the thread exit when the main program exits
+    self.server_thread.daemon = False
     self.server_thread.start()
 
 
