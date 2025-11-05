@@ -40,6 +40,7 @@ def forwarder_thread(self):
             if message == "STOP":
                 self.log.logging("TransportFrwder", "Log", "Forwarder thread stop in progress...")
                 break
+
             if message is None:
                 continue
             if len(message) == 0:
@@ -47,12 +48,12 @@ def forwarder_thread(self):
             self.statistics._received += 1
             self.log.logging("TransportFrwder", "Debug", "Message to forward: %s" % message)
             forward_message(self, message)
+
         except queue.Empty:
             # Empty Queue, timeout.
             continue
         except Exception as e:
             self.log.logging("TransportFrwder", "Error", "forwarder_thread - Error while receiving a Coordinator command")
-
             handle_thread_error(self, e, message)
 
     self.log.logging("TransportFrwder", "Status", "++ Forwarder thread stopped. [1/3]")

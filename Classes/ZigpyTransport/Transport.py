@@ -126,9 +126,15 @@ class ZigpyTransport(object):
         # --- Join Zigpy Thread ---
         try:
             thread = getattr(self, "zigpy_thread", None)
+            self.log.logging("Transport", "Log", f"Thread object: {thread}, alive={thread.is_alive() if thread else 'N/A'}")
+            self.log.logging("Transport", "Log", f"Thread ident: {thread.ident if thread else 'N/A'}")
+            self.log.logging("Transport", "Log", f"Thread daemon: {thread.daemon if thread else 'N/A'}")
+
             if thread is not None:
                 self.log.logging("Transport", "Debug", "Joining zigpy thread (timeout 120s)")
+                self.zigpy_thread = None  # break self ↔ thread cycle
                 thread.join(timeout=120)
+                import gc; gc.collect()  # optional, ensures cleanup
                 if thread.is_alive():
                     self.log.logging("Transport", "Error", "Zigpy thread did not terminate within 120 seconds")
                     active_threads = threading.enumerate()
@@ -144,9 +150,15 @@ class ZigpyTransport(object):
         # --- Join Forwarder Thread ---
         try:
             thread = getattr(self, "forwarder_thread", None)
+            self.log.logging("Transport", "Log", f"Thread object: {thread}, alive={thread.is_alive() if thread else 'N/A'}")
+            self.log.logging("Transport", "Log", f"Thread ident: {thread.ident if thread else 'N/A'}")
+            self.log.logging("Transport", "Log", f"Thread daemon: {thread.daemon if thread else 'N/A'}")
+
             if thread is not None:
                 self.log.logging("Transport", "Debug", "Joining zigpy forwarder thread (timeout 5s)")
+                self.forwarder_thread = None  # break self ↔ thread cycle
                 thread.join(timeout=5)
+                import gc; gc.collect()  # optional, ensures cleanup
                 if thread.is_alive():
                     self.log.logging("Transport", "Error", "Forwarder thread did not terminate within 5 seconds")
                 else:
