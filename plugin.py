@@ -666,12 +666,13 @@ class BasePlugin:
 
         # Close CIE connection and shutdown transport thread
         if self.pluginconf and self.ControllerLink:
-            self.log.logging("Plugin", "Log", "onStop called shutding down CIE connection and transport thread")
+            self.log.logging("Plugin", "Log", "onStop called, shuting down CIE connection and transport thread")
             self.ControllerLink.thread_transport_shutdown()
             self.ControllerLink.close_cie_connection()
 
         # Stop WebServer
         if self.pluginconf and self.webserver:
+            self.log.logging("Plugin", "Log", "onStop called, shuting down WebUI thread")
             self.webserver.onStop()
 
         # Save plugin database
@@ -685,13 +686,13 @@ class BasePlugin:
 
         # Close logging management
         if self.pluginconf and self.log:
-            self.log.logging("Plugin", "Log", "Closing Logging Management")
+            self.log.logging("Plugin", "Log", "onStop called, shuting down LoggingManagement thread")
             self.log.closeLogFile()
 
         # Log running threads. We should have only the main thread (MainThread)
-        active_threads = threading.enumerate()
-        thread_info = [(t.name, t.ident, t.is_alive()) for t in active_threads]
-        Domoticz.Log("Remaining active threads: %s" % thread_info)
+        Domoticz.Log("Remaining active threads:")
+        for t in threading.enumerate():
+            Domoticz.Log(f"    - Thread {t.name}: alive={t.is_alive()}, ident={t.ident}, daemon={t.daemon}")
 
         # Update plugin health status
         self.PluginHealth["Flag"] = 3
