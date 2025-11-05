@@ -128,9 +128,9 @@ class ZigpyTransport(object):
             thread = getattr(self, "zigpy_thread", None)
             self.zigpy_thread = None   # <- important: break the circular reference
 
-            self.log.logging("Transport", "Log", f"Thread object: {thread}, alive={thread.is_alive() if thread else 'N/A'}")
-            self.log.logging("Transport", "Log", f"Thread ident: {thread.ident if thread else 'N/A'}")
-            self.log.logging("Transport", "Log", f"Thread daemon: {thread.daemon if thread else 'N/A'}")
+            self.log.logging("Transport", "Debug", f"Thread object: {thread}, alive={thread.is_alive() if thread else 'N/A'}")
+            self.log.logging("Transport", "Debug", f"Thread ident: {thread.ident if thread else 'N/A'}")
+            self.log.logging("Transport", "Debug", f"Thread daemon: {thread.daemon if thread else 'N/A'}")
 
             if thread:
                 self.log.logging("Transport", "Debug", "Joining zigpy thread (timeout 120s)")
@@ -153,9 +153,9 @@ class ZigpyTransport(object):
             thread = getattr(self, "forwarder_thread", None)
             self.forwarder_thread = None   # <- important: break the circular reference
 
-            self.log.logging("Transport", "Log", f"Thread object: {thread}, alive={thread.is_alive() if thread else 'N/A'}")
-            self.log.logging("Transport", "Log", f"Thread ident: {thread.ident if thread else 'N/A'}")
-            self.log.logging("Transport", "Log", f"Thread daemon: {thread.daemon if thread else 'N/A'}")
+            self.log.logging("Transport", "Debugg", f"Thread object: {thread}, alive={thread.is_alive() if thread else 'N/A'}")
+            self.log.logging("Transport", "Debugg", f"Thread ident: {thread.ident if thread else 'N/A'}")
+            self.log.logging("Transport", "Debugg", f"Thread daemon: {thread.daemon if thread else 'N/A'}")
 
             if thread :
                 self.log.logging("Transport", "Debug", "Joining zigpy forwarder thread (timeout 5s)")
