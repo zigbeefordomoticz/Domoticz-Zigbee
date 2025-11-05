@@ -474,9 +474,7 @@ def start_logging_thread(self):
         return
 
     self.logging_queue = PriorityQueue()
-    self.logging_thread = threading.Thread(
-        name="ZiGateLogging_%s" % self.HardwareID, target=logging_thread, args=(self,)
-    )
+    self.logging_thread = threading.Thread( name="LoggingManagement_%s" % self.HardwareID, target=logging_thread, args=(self,) )
     self.logging_thread.daemon = False
     self.logging_thread.start()
 
