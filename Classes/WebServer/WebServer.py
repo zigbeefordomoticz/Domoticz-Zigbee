@@ -204,7 +204,7 @@ class WebServer(object):
         
         self.server_thread = None
         self.client_threads = []
-        self.running = None
+        self.webui_running = None
         self.clients = {}
         
 

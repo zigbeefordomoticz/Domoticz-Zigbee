@@ -641,7 +641,11 @@ class BasePlugin:
         Returns:
             None
         """
-        Domoticz.Log("onStop()")
+        # Log onStop event
+        if self.pluginconf and self.log:
+            self.log.logging("Plugin", "Log", "onStop called")
+        else:
+            Domoticz.Log("onStop()")
 
         if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
             matomo_plugin_shutdown(self)
@@ -660,13 +664,10 @@ class BasePlugin:
         if self.pluginconf and self.pluginconf.pluginConf["ListImportedModules"]:
             list_all_modules_loaded(self)
 
-        # Log onStop event
-        if self.pluginconf and self.log:
-            self.log.logging("Plugin", "Log", "onStop called")
 
         # Close CIE connection and shutdown transport thread
         if self.pluginconf and self.ControllerLink:
-            self.log.logging("Plugin", "Log", "onStop called, shuting down CIE connection and transport thread")
+            self.log.logging("Plugin", "Log", "onStop called, shuting down CIE connection, transport and forwarder threads")
             self.ControllerLink.thread_transport_shutdown()
             self.ControllerLink.close_cie_connection()
 

@@ -24,6 +24,7 @@ def start_forwarder_thread(self):
 
 
 def stop_forwarder_thread(self):
+    self.forwarder_running = False
     self.forwarder_queue.put("STOP")
 
 
@@ -31,15 +32,19 @@ def forwarder_thread(self):
     self.log.logging("TransportFrwder", "Debug", "ZigpyTransport: thread_processing_and_sending Thread start.")
 
     self.forwarder_queue = queue.Queue()
-    
-    while self.running:
+    self.forwarder_running = True
+
+    while self.forwarder_running:
         message = None
         # Sending messages ( only 1 at a time )
         try:
             self.log.logging("TransportFrwder", "Debug", "Waiting for next message")
             message = self.forwarder_queue.get()
+            if not self.forwarder_running:
+                self.log.logging("TransportFrwder", "Log", f"Forwarder thread stop in progress via self.forwarder_running: {self.forwarder_running}...")
+                break
             if message == "STOP":
-                self.log.logging("TransportFrwder", "Debug", "Forwarder thread stop in progress...")
+                self.log.logging("TransportFrwder", "Log", f"Forwarder thread stop in progress via message: {message}...")
                 break
 
             if message is None:
