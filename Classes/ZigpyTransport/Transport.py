@@ -96,8 +96,15 @@ class ZigpyTransport(object):
     def open_cie_connection(self):
         self.log.logging("Transport", "Log", f"Radio model {self._radiomodule} Serial Port: {self._serialPort}, Communication specifics: {self._serialPort_communication_specifics}")
 
-        start_zigpy_thread(self)
-        start_forwarder_thread(self)
+        if not self.zigpy_thread:
+            start_zigpy_thread(self)
+        if not self.forwarder_thread:
+            start_forwarder_thread(self)
+
+        # Log running threads. We should have only the main thread (MainThread)
+        self.log.logging("Transport", "Log", "Active threads after open_cie_connection:")
+        for t in threading.enumerate():
+            self.log.logging("Transport", "Log", f"    - Thread {t.name}: alive={t.is_alive()}, ident={t.ident}, daemon={t.daemon}")
 
 
     def re_connect_cie(self):
@@ -129,7 +136,7 @@ class ZigpyTransport(object):
                 setattr(self, thread_attr, None)  # break self <-> thread cycle
 
                 self.log.logging(["Transport", "StopProcess"], "Debug", f"Thread object ({name}): {thread}, alive={thread.is_alive() if thread else 'N/A'}")
-                self.log.logging(["Transport", "StopProcess"], "Debug", f"Thread ident ({name}): {thread.ident if thread else 'N/A'}")
+                self.log.logging(["Transport", "StopProcess"], "Debug", f"Thread ident ({name}) : {thread.ident if thread else 'N/A'}")
                 self.log.logging(["Transport", "StopProcess"], "Debug", f"Thread daemon ({name}): {thread.daemon if thread else 'N/A'}")
 
                 if thread:
