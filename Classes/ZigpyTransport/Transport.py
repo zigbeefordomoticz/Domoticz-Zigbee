@@ -125,8 +125,9 @@ class ZigpyTransport(object):
                 if running_attr:
                     setattr(self, running_attr, False)
                 if stop_callable:
+                    self.log.logging(["Transport", "StopProcess"], "Debug", f"{name} stop requested")
                     stop_callable(self)
-                self.log.logging(["Transport", "StopProcess"], "Debug", f"{name} stop requested")
+
             except Exception as e:
                 self.log.logging(["Transport", "StopProcess"], "Error", f"Error stopping {name}: {e}")
 

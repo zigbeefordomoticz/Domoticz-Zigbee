@@ -33,8 +33,11 @@ def start_forwarder_thread(self):
     self.log.logging(["TransportFrwder", "StopProcess"], "Debug", f"Thread daemon: ZigpyForwarder_{self.hardwareid} {self.forwarder_thread.daemon if self.forwarder_thread else 'N/A'}")
 
 def stop_forwarder_thread(self):
+    self.log.logging(["TransportFrwder", "StopProcess"], "Debug", "stop_forwarder_thread()")
     self.forwarder_running = False
+
     self.forwarder_queue.put("STOP")
+    self.log.logging(["TransportFrwder", "StopProcess"], "Debug", "stop_forwarder_thread() - STOP sent!")
 
 
 def forwarder_thread(self):
@@ -48,7 +51,8 @@ def forwarder_thread(self):
         # Sending messages ( only 1 at a time )
         try:
             self.log.logging(["TransportFrwder",], "Debug", "Waiting for next message")
-            message = self.forwarder_queue.get()
+            message = self.forwarder_queue.get(timeout=1.0)
+
             if not self.forwarder_running:
                 self.log.logging(["TransportFrwder", "StopProcess"], "Log", f"Forwarder thread stop in progress via self.forwarder_running: {self.forwarder_running}...")
                 break
