@@ -109,7 +109,7 @@ def start_zigpy_thread(self):
     Sets the appropriate event loop policy for Windows compatibility and
     initializes the thread via setup_zigpy_thread if necessary.
     """
-    
+
     self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - Starting Zigpy thread")
 
     # Set appropriate event loop policy for Windows compatibility
@@ -122,6 +122,11 @@ def start_zigpy_thread(self):
     else:
         self.log.logging("TransportZigpy", "Warning", "start_zigpy_thread - Zigpy thread is already running.")
 
+    self.log.logging(["Transport", "StopProcess"], "Debug", f"Thread object: ZigpyCommunication_{self.hardwareid} {self.zigpy_thread}, alive={self.zigpy_thread.is_alive() if self.zigpy_thread else 'N/A'}")
+    self.log.logging(["Transport", "StopProcess"], "Debug", f"Thread ident : ZigpyCommunication_{self.hardwareid} {self.zigpy_thread.ident if self.zigpy_thread else 'N/A'}")
+    self.log.logging(["Transport", "StopProcess"], "Debug", f"Thread daemon: ZigpyCommunication_{self.hardwareid} {self.zigpy_thread.daemon if self.zigpy_thread else 'N/A'}")
+
+
 
 def setup_zigpy_thread(self):
     """
@@ -133,7 +138,7 @@ def setup_zigpy_thread(self):
     self.log.logging("TransportZigpy", "Debug", "setup_zigpy_thread - Initializing Zigpy thread")
 
     # Create and start a new thread
-    self.zigpy_thread = Thread(name=f"ZigpyTCommunication_{self.hardwareid}", target=zigpy_thread_function, args=(self,))
+    self.zigpy_thread = Thread(name=f"ZigpyCommunication_{self.hardwareid}", target=zigpy_thread_function, args=(self,))
     self.zigpy_thread.daemon = False
     self.zigpy_thread.start()
     self.log.logging("TransportZigpy", "Debug", "setup_zigpy_thread - Zigpy thread started")
@@ -387,6 +392,7 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
 
     try:
         await _radio_startup(self, statistics, pluginconf, use_of_zigpy_persistent_db, new_network, radiomodule)
+
     except Exception as e:
         self.log.logging( "TransportZigpy", "Error", "Error during radio startup: %s" %e)
     self.log.logging( "TransportZigpy", "Debug", "Exiting co-rounting radio_start")
