@@ -109,7 +109,7 @@ class ZigpyTransport(object):
 
 
     def thread_transport_shutdown(self):
-        self.log.logging("Transport", "Debug", "Starting Zigpy transport shutdown sequence")
+        self.log.logging(["Transport", "StopProcess"], "Debug", "Starting Zigpy transport shutdown sequence")
 
         # Helper to stop and join a thread with consistent logging and error handling
         def _stop_and_join(thread_attr: str, running_attr: str, stop_callable, name: str, timeout: float):
@@ -119,37 +119,37 @@ class ZigpyTransport(object):
                     setattr(self, running_attr, False)
                 if stop_callable:
                     stop_callable(self)
-                self.log.logging("Transport", "Debug", f"{name} stop requested")
+                self.log.logging(["Transport", "StopProcess"], "Debug", f"{name} stop requested")
             except Exception as e:
-                self.log.logging("Transport", "Error", f"Error stopping {name}: {e}")
+                self.log.logging(["Transport", "StopProcess"], "Error", f"Error stopping {name}: {e}")
 
             # Grab reference then break circular reference on the instance
             try:
                 thread = getattr(self, thread_attr, None)
                 setattr(self, thread_attr, None)  # break self <-> thread cycle
 
-                self.log.logging("Transport", "Debug", f"Thread object ({name}): {thread}, alive={thread.is_alive() if thread else 'N/A'}")
-                self.log.logging("Transport", "Debug", f"Thread ident ({name}): {thread.ident if thread else 'N/A'}")
-                self.log.logging("Transport", "Debug", f"Thread daemon ({name}): {thread.daemon if thread else 'N/A'}")
+                self.log.logging(["Transport", "StopProcess"], "Debug", f"Thread object ({name}): {thread}, alive={thread.is_alive() if thread else 'N/A'}")
+                self.log.logging(["Transport", "StopProcess"], "Debug", f"Thread ident ({name}): {thread.ident if thread else 'N/A'}")
+                self.log.logging(["Transport", "StopProcess"], "Debug", f"Thread daemon ({name}): {thread.daemon if thread else 'N/A'}")
 
                 if thread:
-                    self.log.logging("Transport", "Debug", f"Joining {name} (timeout {timeout}s)")
+                    self.log.logging(["Transport", "StopProcess"], "Debug", f"Joining {name} (timeout {timeout}s)")
                     thread.join(timeout=timeout)
                     import gc
                     gc.collect()
                     if thread.is_alive():
-                        self.log.logging("Transport", "Error", f"{name} did not terminate within {timeout} seconds")
+                        self.log.logging(["Transport", "StopProcess"], "Error", f"{name} did not terminate within {timeout} seconds")
                         # Provide active thread snapshot for debugging
                         with suppress(Exception):
                             active_threads = threading.enumerate()
                             thread_info = [(t.name, t.ident, t.is_alive()) for t in active_threads]
-                            self.log.logging("Transport", "Error", f"Active threads: {thread_info}")
+                            self.log.logging(["Transport", "StopProcess"], "Error", f"Active threads: {thread_info}")
                     else:
-                        self.log.logging("Transport", "Debug", f"{name} join completed")
+                        self.log.logging(["Transport", "StopProcess"], "Debug", f"{name} join completed")
                 else:
-                    self.log.logging("Transport", "Log", f"{name} not found or not started")
+                    self.log.logging(["Transport", "StopProcess"], "Log", f"{name} not found or not started")
             except Exception as e:
-                self.log.logging("Transport", "Error", f"Error joining {name}: {e}")
+                self.log.logging(["Transport", "StopProcess"], "Error", f"Error joining {name}: {e}")
 
         # Stop and join forwarder (short timeout)
         _stop_and_join(
@@ -170,7 +170,7 @@ class ZigpyTransport(object):
         )
 
         # --- Summary ---
-        self.log.logging("Transport", "Status", "Zigpy transport threads shutdown attempted")
+        self.log.logging(["Transport", "StopProcess"], "Status", "Zigpy transport threads shutdown attempted")
 
 
     def sendData(self, cmd, datas, sqn=None, highpriority=False, ackIsDisabled=False, waitForResponseIn=False, NwkId=None):

@@ -29,7 +29,7 @@ def stop_forwarder_thread(self):
 
 
 def forwarder_thread(self):
-    self.log.logging("TransportFrwder", "Debug", "ZigpyTransport: thread_processing_and_sending Thread start.")
+    self.log.logging(["TransportFrwder", "StopProcess"], "Debug", "ZigpyTransport: thread_processing_and_sending Thread start.")
 
     self.forwarder_queue = queue.Queue()
     self.forwarder_running = True
@@ -38,13 +38,13 @@ def forwarder_thread(self):
         message = None
         # Sending messages ( only 1 at a time )
         try:
-            self.log.logging("TransportFrwder", "Debug", "Waiting for next message")
+            self.log.logging(["TransportFrwder",], "Debug", "Waiting for next message")
             message = self.forwarder_queue.get()
             if not self.forwarder_running:
-                self.log.logging("TransportFrwder", "Log", f"Forwarder thread stop in progress via self.forwarder_running: {self.forwarder_running}...")
+                self.log.logging(["TransportFrwder", "StopProcess"], "Log", f"Forwarder thread stop in progress via self.forwarder_running: {self.forwarder_running}...")
                 break
             if message == "STOP":
-                self.log.logging("TransportFrwder", "Log", f"Forwarder thread stop in progress via message: {message}...")
+                self.log.logging(["TransportFrwder", "StopProcess"], "Log", f"Forwarder thread stop in progress via message: {message}...")
                 break
 
             if message is None:
@@ -52,17 +52,17 @@ def forwarder_thread(self):
             if len(message) == 0:
                 continue
             self.statistics._received += 1
-            self.log.logging("TransportFrwder", "Debug", "Message to forward: %s" % message)
+            self.log.logging(["TransportFrwder",], "Debug", "Message to forward: %s" % message)
             forward_message(self, message)
 
         except queue.Empty:
             # Empty Queue, timeout.
             continue
         except Exception as e:
-            self.log.logging("TransportFrwder", "Error", "forwarder_thread - Error while receiving a Coordinator command")
+            self.log.logging(["TransportFrwder", ], "Error", "forwarder_thread - Error while receiving a Coordinator command")
             handle_thread_error(self, e, message)
 
-    self.log.logging("TransportFrwder", "Status", "++ Forwarder thread stopped. [1/3]")
+    self.log.logging(["TransportFrwder", "StopProcess"], "Status", "++ Forwarder thread stopped. [1/3]")
 
 
 @time_spent_forwarder()
