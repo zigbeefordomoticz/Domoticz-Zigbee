@@ -18,10 +18,19 @@ from Classes.ZigpyTransport.tools import handle_thread_error
 
 
 def start_forwarder_thread(self):
-    self.forwarder_thread = Thread(name="ZigpyForwarder_%s" % self.hardwareid, target=forwarder_thread, args=(self,))
-    self.forwarder_thread.daemon = False
-    self.forwarder_thread.start()
+    self.log.logging("TransportFrwder", "Debug", "start_forwarder_thread.")
+    
+    # Start the Zigpy thread if it's not already running
+    if not hasattr(self, 'forwarder_thread') or not self.forwarder_thread or not self.forwarder_thread.is_alive():
+        self.forwarder_thread = Thread(name="ZigpyForwarder_%s" % self.hardwareid, target=forwarder_thread, args=(self,))
+        self.forwarder_thread.daemon = False
+        self.forwarder_thread.start()
+    else:
+        self.log.logging("TransportFrwder", "Error", "start_forwarder_thread - ZigpyForwarder thread is already running.")
 
+    self.log.logging(["TransportFrwder", "StopProcess"], "Debug", f"Thread object: ZigpyForwarder_{self.hardwareid} {self.forwarder_thread}, alive={self.forwarder_thread.is_alive() if self.forwarder_thread else 'N/A'}")
+    self.log.logging(["TransportFrwder", "StopProcess"], "Debug", f"Thread ident : ZigpyForwarder_{self.hardwareid} {self.forwarder_thread.ident if self.forwarder_thread else 'N/A'}")
+    self.log.logging(["TransportFrwder", "StopProcess"], "Debug", f"Thread daemon: ZigpyForwarder_{self.hardwareid} {self.forwarder_thread.daemon if self.forwarder_thread else 'N/A'}")
 
 def stop_forwarder_thread(self):
     self.forwarder_running = False
@@ -29,7 +38,7 @@ def stop_forwarder_thread(self):
 
 
 def forwarder_thread(self):
-    self.log.logging(["TransportFrwder", "StopProcess"], "Debug", "ZigpyTransport: thread_processing_and_sending Thread start.")
+    self.log.logging(["TransportFrwder", "StopProcess"], "Debug", "ZigpyTransport: Forwarded Thread start.")
 
     self.forwarder_queue = queue.Queue()
     self.forwarder_running = True
