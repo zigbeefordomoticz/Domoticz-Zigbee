@@ -97,9 +97,10 @@ def get_max_read_attributes(self, nwkid=None):
     Return the maximum number of attributes to read per request for a given Zigbee device.
 
     Priority order:
-        1. Device-specific configuration (highest priority)
-        2. Manufacturer override (based on IEEE prefix)
-        3. Plugin default (safest fallback)
+        1. Pairing mode
+        2. Device-specific configuration (highest priority)
+        3. Manufacturer override (based on IEEE prefix)
+        4. Plugin default (safest fallback)
     """
 
     # --- Device details ---
@@ -145,49 +146,9 @@ def get_max_read_attributes(self, nwkid=None):
     return final_chunk
 
 
-def get_max_read_attributes(self, nwkid=None):
-    """Return the maximum number of attributes to read per request for a given Zigbee device."""
-
-    # Manufacturer-specific overrides: value or callable returning the chunk size
-    MANUFACTURER_CHUNK_OVERRIDE = {
-        PREFIX_MACADDR_IKEA_TRADFRI: lambda default: default,  # conservative
-        PREFIX_MACADDR_TUYA: lambda _: 4,
-        PREFIX_MACADDR_CASAIA: lambda _: 6,
-        PREFIX_MACADDR_LIVOLO: lambda _: 3,
-        PREFIX_MACADDR_DEVELCO: lambda _: 12,
-        PREFIX_MACADDR_LEGRAND: lambda default: 3,
-        PREFIX_MACADDR_WIZER_HOME: lambda default: 8,
-    }
-
-    default_chunk = self.pluginconf.pluginConf.get("ReadAttributeChunk", 10)
-    chunk_size = get_device_config_param(self, nwkid, "ReadAttributeChunk") or default_chunk
-
-    device = self.ListOfDevices.get(nwkid, {})
-    ieee = device.get("IEEE", "")
-
-    # If pairing is still in progress, use conservative default
-    if device.get("PairingInProgress"):
-        return 3  # Fix 3 Attributes max during pairing
-
-    # Overwrite chunk_size if specif manufacturer
-    prefix = ieee[:PREFIX_MAC_LEN]
-    for prefix_set, func in MANUFACTURER_CHUNK_OVERRIDE.items():
-        if prefix in prefix_set:
-            chunk_size = func(default_chunk)
-            break
-
-    self.log.logging(
-        "ReadAttributes",
-        "Debug",
-        f"get_max_read_attributes({nwkid}) => {chunk_size}",
-        nwkid=nwkid,
-    )
-
-    return chunk_size
-
 def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec="00", manufacturer="0000", ackIsDisabled=True, checkTime=True, forceLen=False, maxReadAttributesByRequest=None):
 
-    maxReadAttributesByRequest = maxReadAttributesByRequest or get_max_read_attribute_value( self, addr )
+    maxReadAttributesByRequest = maxReadAttributesByRequest or get_max_read_attributes( self, addr )
 
     if forceLen:
         normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec, manufacturer, ackIsDisabled, force=True) 
