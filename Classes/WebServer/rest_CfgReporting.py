@@ -71,7 +71,8 @@ def rest_cfgrpt_ondemand_with_config(self, verb, data, parameters ):
         if self.ControllerData:
             return rest_cfgrpt_ondemand_with_config_get(self, verb, data, parameters , _response)
         return fake_cfgrpt_ondemand_with_config_get(self, verb, data, parameters , _response)
-       
+
+    return _response 
         
 def rest_cfgrpt_ondemand_with_config_delete(self, verb, data, parameters , _response):
     self.logging("Debug", f"rest_cfgrpt_ondemand_with_config_delete  {verb} {data} {parameters}")
@@ -213,12 +214,29 @@ def fake_cfgrpt_ondemand_with_config_put(self, verb, data, parameters , _respons
     return _response
 
 def convert_to_json( self, data ):
+    """
+    Convert a nested cluster-attribute dictionary into a JSON string with a structured list format.
+    
+    Args:
+        data (dict or None): Input dictionary containing clusters and their attributes.
+
+    Returns:
+        str: JSON string representing clusters and their attributes.
+    """
     # {"0006": {"Attributes": {"0000": {"DataType": "10", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0FFF", "Change": "01"}}}, 
     #  "0702": {"Attributes": {"0000": {"DataType": "25", "MinInterval": "FFFF", "MaxInterval": "0000", "TimeOut": "0000", "Change": "000000000000000a"}}}, 
     #  "0b04": {"Attributes": {"0505": {"DataType": "21", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000a"},
     #                          "0508": {"DataType": "21", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000a"}, 
     #                          "050b": {"DataType": "29", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000a"}}}}
     self.logging("Debug", f"convert_to_json Data {data}")
+    
+    if not data:
+        self.logging("Debug", "convert_to_json received None or empty data")
+        return json.dumps([])
+    if not isinstance(data, dict):
+        self.logging("Error", f"convert_to_json expected a dict but got {type(data).__name__}")
+        return json.dumps([])
+        
     cluster_list = []
 
     for cluster in data:
@@ -248,30 +266,33 @@ def get_cfg_rpt_record(self, NwkId):
     ):
         return self.DeviceConf[ self.ListOfDevices[NwkId]["Model"]]["ConfigureReporting" ]
 
-def datatype_formating( self, value, type):
+    return None
+
+
+def datatype_formating( self, value, data_type):
     
-    if type not in SIZE_DATA_TYPE:
+    if data_type not in SIZE_DATA_TYPE:
             
         return value
 
-    if SIZE_DATA_TYPE[ type ] == 1:
+    if SIZE_DATA_TYPE[ data_type ] == 1:
         return "%02x" %int( value, 16)
-    if SIZE_DATA_TYPE[ type ] == 2:
+    if SIZE_DATA_TYPE[ data_type ] == 2:
         return "%04x" %int( value, 16)
-    if SIZE_DATA_TYPE[ type ] == 3:
+    if SIZE_DATA_TYPE[ data_type ] == 3:
         return "%06x" %int( value, 16)
-    if SIZE_DATA_TYPE[ type ] == 4:
+    if SIZE_DATA_TYPE[ data_type ] == 4:
         return "%08x" %int( value, 16)
-    if SIZE_DATA_TYPE[ type ] == 5:
+    if SIZE_DATA_TYPE[ data_type ] == 5:
         return "%010x" %int( value, 16)
-    if SIZE_DATA_TYPE[ type ] == 6:
+    if SIZE_DATA_TYPE[ data_type ] == 6:
         return "%012x" %int( value, 16)
-    if SIZE_DATA_TYPE[ type ] == 7:
+    if SIZE_DATA_TYPE[ data_type ] == 7:
         return "%014x" %int( value, 16)
-    if SIZE_DATA_TYPE[ type ] == 8:
+    if SIZE_DATA_TYPE[ data_type ] == 8:
         return "%016x" %int( value, 16)
 
-    self.logging("Error", f"datatype_formating  unknown Data type {type} for value {value}")
+    self.logging("Error", f"datatype_formating  unknown Data data_type {data_type} for value {value}")
     return value
 
         
