@@ -177,41 +177,141 @@ def ikea_remoteN2_control_80A7( self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, 
         self.groupmgt.manageIkeaTradfriRemoteLeftRight(MsgSrcAddr, "left")
 
 
-def ikea_remote_control_8095( self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_ ):
-    
-    if self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP]["0005"]["0000"] == "long":
+def ikea_remote_control_8095(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_):
+    """
+    Handle IKEA Remote Control 8095 Zigbee commands.
+
+    This function decodes and processes commands coming from the IKEA remote control
+    (model 8095), updating Domoticz device states accordingly. It includes robust
+    error checking to prevent crashes due to missing or malformed device data.
+
+    Args:
+        Devices (dict): Domoticz devices dictionary.
+        MsgSrcAddr (str): Source network address of the device.
+        MsgEP (str): Endpoint identifier.
+        MsgClusterId (str): Zigbee cluster ID (e.g. "0006" for On/Off).
+        MsgCmd (str): Command ID within the cluster.
+        unknown_ (str): Additional command payload or diagnostic info.
+    """
+
+    # --- Sanity checks --------------------------------------------------------
+    if not MsgSrcAddr or MsgSrcAddr not in self.ListOfDevices:
+        self.log.logging("Ikea", "Error", f"Invalid or unknown source address: {MsgSrcAddr}")
         return
-    
-    self.log.logging("Ikea", "Debug", "ikea_remote_control_8095 - Command: %s" % MsgCmd, MsgSrcAddr)
-    
-    
-    if MsgClusterId == "0006" and MsgCmd == "02":
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", "toggle")
-    elif MsgClusterId == "0006" and MsgCmd == "00":
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", "click_down")
-    elif MsgClusterId == "0006" and MsgCmd == "01":
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", "click_up")
-    else:
-        self.log.logging( "Ikea", "Log", "Decode8095 - Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (
-            MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), )
-    self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+
+    device = self.ListOfDevices.get(MsgSrcAddr, {})
+    ep_data = device.get("Ep", {}).get(MsgEP)
+
+    if ep_data is None:
+        self.log.logging("Ikea", "Error", f"Missing endpoint {MsgEP} for device {MsgSrcAddr}")
+        return
+
+    if ep_data.get("0005", {}).get("0000") == "long":
+        return
+
+    self.log.logging("Ikea", "Debug", f"ikea_remote_control_8095 - Command: {MsgCmd}", MsgSrcAddr)
+
+    handled = False
+    if MsgClusterId == "0006":
+        if MsgCmd == "02":
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", "toggle")
+            handled = True
+        elif MsgCmd == "00":
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", "click_down")
+            handled = True
+        elif MsgCmd == "01":
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", "click_up")
+            handled = True
+
+    if not handled:
+        self.log.logging(
+            "Ikea", "Log",
+            f"Decode8095 - Addr: {MsgSrcAddr}, Ep: {MsgEP}, Cluster: {MsgClusterId}, "
+            f"Cmd: {MsgCmd}, Unknown: {unknown_}"
+        )
+
+        ep_data.setdefault(MsgClusterId, {})["0000"] = f"Cmd: {MsgCmd}, {unknown_}"
 
 
-def ikea_remote_switch_8085(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_):
+def ikea_remote_switch_8085(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_):
+    """
+    Handle IKEA Remote Switch 8085 Zigbee commands.
 
-    if MsgClusterId == "0008":
-        if MsgCmd == "05":  # Push Up
+    This function decodes commands from the IKEA 8085 remote switch and updates
+    the corresponding Domoticz device state. It includes robust validation and
+    error handling to avoid crashes from missing or malformed device data.
+
+    Args:
+        Devices (dict): Domoticz devices dictionary.
+        MsgSrcAddr (str): Source network address of the device.
+        MsgEP (str): Endpoint identifier.
+        MsgClusterId (str): Zigbee cluster ID (e.g., "0008" for Level Control).
+        MsgCmd (str): Command ID within the cluster.
+        unknown_ (str): Additional payload or diagnostic info.
+    """
+
+    # --- Validate presence of device and endpoint ----------------------------
+    if not MsgSrcAddr or MsgSrcAddr not in self.ListOfDevices:
+        self.log.logging("Ikea", "Error", f"Unknown source address: {MsgSrcAddr}")
+        return
+
+    device = self.ListOfDevices.get(MsgSrcAddr, {})
+    ep_data = device.get("Ep", {}).get(MsgEP)
+    if ep_data is None:
+        self.log.logging("Ikea", "Error", f"Missing endpoint {MsgEP} for device {MsgSrcAddr}")
+        return
+
+    self.log.logging("Ikea", "Debug", f"ikea_remote_switch_8085 - Cluster: {MsgClusterId}, Cmd: {MsgCmd}")
+
+    if MsgClusterId == "0008":  # Level Control Cluster
+        if MsgCmd == "05":      # Push Up
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", "02")
-        elif MsgCmd == "01":  # Push Down
+        elif MsgCmd == "01":    # Push Down
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", "03")
-        elif MsgCmd == "07":  # Release Up & Down
+        elif MsgCmd == "07":    # Release Up/Down
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", "04")
+        else:
+            self.log.logging("Ikea", "Log",
+                             f"Unhandled command in Cluster 0008: {MsgCmd} (Addr: {MsgSrcAddr}, Ep: {MsgEP})")
+    else:
+        self.log.logging("Ikea", "Log",
+                         f"Unhandled cluster: {MsgClusterId} (Cmd: {MsgCmd}, Addr: {MsgSrcAddr}, Ep: {MsgEP})")
 
-    self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = MsgCmd
+    ep_data.setdefault(MsgClusterId, {})["0000"] = MsgCmd
 
-def ikea_remote_switch_8095(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_):
+
+def ikea_remote_switch_8095(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_):
+    """
+    Handle IKEA Remote Switch 8095 Zigbee commands.
+
+    This function forwards the received command to Domoticz and updates the
+    internal device state safely. It includes validation to avoid crashes
+    due to missing device or endpoint structures.
+
+    Args:
+        Devices (dict): Domoticz devices dictionary.
+        MsgSrcAddr (str): Source network address of the device.
+        MsgEP (str): Endpoint identifier.
+        MsgClusterId (str): Zigbee cluster ID.
+        MsgCmd (str): Command ID within the cluster.
+        unknown_ (str): Additional payload or diagnostic info.
+    """
+
+    # --- Validate existence of device and endpoint ---------------------------
+    device = self.ListOfDevices.get(MsgSrcAddr)
+    if not device:
+        self.log.logging("Ikea", "Error", f"Unknown source address: {MsgSrcAddr}")
+        return
+
+    ep_data = device.get("Ep", {}).get(MsgEP)
+    if ep_data is None:
+        self.log.logging("Ikea", "Error", f"Missing endpoint {MsgEP} for device {MsgSrcAddr}")
+        return
+
     MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
-    self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+    self.log.logging("Ikea", "Debug", f"ikea_remote_switch_8095 - Sent command {MsgCmd} from {MsgSrcAddr}/{MsgEP}")
+
+    ep_data.setdefault(MsgClusterId, {})["0000"] = f"Cmd: {MsgCmd}, {unknown_}"
 
 
 def ikea_wireless_dimer_8085( self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_, MsgData ):

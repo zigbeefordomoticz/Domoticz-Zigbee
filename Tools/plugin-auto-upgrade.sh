@@ -184,6 +184,63 @@ update_python_modules() {
     fi
 }
 
+# Function to check if pip needs upgrade and perform upgrade if necessary
+check_and_upgrade_pip() {
+    echo " "
+    echo "(2a) check if pip needs upgrade"
+    echo ""
+
+    # Choose pip invoker depending on venv or system
+    if [ "$VENV_ACTIVATED" = true ]; then
+        PIP_INVOKER="$VENV_PATH/bin/python3 -m pip"
+    else
+        if [ "$(whoami)" == "root" ]; then
+            PIP_INVOKER="$PYTHON_VERSION -m pip"
+        else
+            PIP_INVOKER="sudo $PYTHON_VERSION -m pip"
+        fi
+    fi
+
+    # Ensure pip is available (try ensurepip if missing)
+    if ! $PIP_INVOKER --version >/dev/null 2>&1; then
+        echo "pip not found for invoker: $PIP_INVOKER. Attempting to install pip..."
+        if [ "$VENV_ACTIVATED" = true ]; then
+            $VENV_PATH/bin/python3 -m ensurepip --upgrade >/dev/null 2>&1 || true
+            $VENV_PATH/bin/python3 -m pip install --upgrade pip >/dev/null 2>&1 || true
+        else
+            $PYTHON_VERSION -m ensurepip --upgrade >/dev/null 2>&1 || true
+            if [ "$(whoami)" == "root" ]; then
+                $PYTHON_VERSION -m pip install --upgrade pip >/dev/null 2>&1 || true
+            else
+                sudo $PYTHON_VERSION -m pip install --upgrade pip >/dev/null 2>&1 || true
+            fi
+        fi
+    fi
+
+    # Check if pip is listed as outdated by pip itself
+    OUTDATED_LIST=$($PIP_INVOKER list --outdated --format=columns 2>/dev/null || true)
+    if echo "$OUTDATED_LIST" | awk 'NR>2 {print $1}' | grep -xq "pip"; then
+        echo "pip is outdated. Upgrading pip now..."
+        if [ "$VENV_ACTIVATED" = true ]; then
+            $VENV_PATH/bin/python3 -m pip install --upgrade pip
+        else
+            if [ "$(whoami)" == "root" ]; then
+                $PYTHON_VERSION -m pip install --upgrade pip
+            else
+                sudo $PYTHON_VERSION -m pip install --upgrade pip
+            fi
+        fi
+        rc="$?"
+        if [ "$rc" != "0" ]; then
+            echo "Warning: pip upgrade returned non-zero exit code $rc"
+        else
+            echo "pip upgraded successfully."
+        fi
+    else
+        echo "pip is up-to-date."
+    fi
+}
+
 # Function to print current version and latest git commit
 print_version_info() {
     echo "Current version  : $(cat .hidden/VERSION)"
@@ -201,11 +258,33 @@ is_docker() {
     fi
 }
 
+check_python_and_branch() {
+    # inside Tools/plugin-auto-upgrade.sh
+
+    # Resolve the Tools directory relative to this script
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+    # Make sure python3 exists
+    if ! command -v python3 >/dev/null 2>&1; then
+      echo "python3 not found in PATH. Please install Python 3.11+ to switch to stable8."
+      exit 1
+    fi
+
+    # Run the check script in interactive (non-auto) mode.
+    # It will print version info and ask confirmation if appropriate.
+    python3 "$SCRIPT_DIR/check_python_and_branch.py" --no-simulate
+
+    # capture the script exit code if you want to act on it:
+    rc=$?
+    echo "check_python_and_branch.py exited with code $rc"
+}
+
 
 # Main script execution
 PYTHON_VERSION="python${1:-3}"
 PIP_VERSION="python${1:-3}"
 
+check_python_and_branch
 set_home
 print_env_details
 set_pip_options
@@ -214,6 +293,7 @@ check_and_activate_venv
 print_version_info
 update_git_config
 uninstall_modules_from_constraints
+check_and_upgrade_pip
 update_python_modules
 
 echo " "
