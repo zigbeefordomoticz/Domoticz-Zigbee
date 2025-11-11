@@ -18,9 +18,15 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
-## Oct. 2025 - Stable7.1.024 ( 2025.7) 
+## Oct. 2025 - Stable7.1.025 ( 2025.8)
 
-   ** Last version supporting python 3.9 and 3.10 **
+- [Issue] - Fixing issue generating a Domoticz crash at shutdown (#1874)
+- [Issue] - Make Ikea functions more robust (#1881)
+- [Issue] - Make DNS functions more robust (#1871)
+- [Issue] - Mkae web_server rest_api on empty dict more robust (#1870)
+
+
+## Oct. 2025 - Stable7.1.024 ( 2025.7) 
 
 - [Technical] - Major bug fixing in regards to Zigbee send default response. Could impact mainy devices and especially IAS
 - [Technical] - Latest zigpy libs version
