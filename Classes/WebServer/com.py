@@ -29,7 +29,7 @@ def startWebServer(self):
 
     # Create and start the server thread
     self.server_thread = threading.Thread( name="ZigbeeWebUI_%s" % self.hardwareID, target=run_server, args=(self,) )
-    self.server_thread.daemon = True  # This makes the thread exit when the main program exits
+    self.server_thread.daemon = False
     self.server_thread.start()
 
 
@@ -152,7 +152,7 @@ def handle_client(self, client_socket, client_addr):
     client_socket.settimeout(1)
 
     try:
-        while self.running:
+        while self.webui_running:
             try:
                 # Let's receive the first chunck (to get the headers)
                 incoming_data = receive_data(self, client_socket)
@@ -396,11 +396,11 @@ def server_loop(self, ):
 
     This method runs the main server loop that accepts incoming client connections, 
     starts a new thread to handle each client, and manages exceptions and errors 
-    that occur during the process. The server continues to run as long as the `self.running` 
+    that occur during the process. The server continues to run as long as the `self.webui_running` 
     attribute is set to True.
 
     The method performs the following tasks:
-    1. Sets the `self.running` attribute to True to start the server loop.
+    1. Sets the `self.webui_running` attribute to True to start the server loop.
     2. Accepts incoming client connections using `self.server.accept()`.
     3. Logs the accepted connection and starts a new thread for each client using the `handle_client` method.
     4. Appends each client thread to `self.client_threads` for tracking.
@@ -416,8 +416,8 @@ def server_loop(self, ):
 
     """
     try:
-        self.running = True
-        while self.running:
+        self.webui_running = True
+        while self.webui_running:
             try:
                 client_socket, client_addr = self.server.accept()
 
@@ -474,7 +474,7 @@ def onDisconnect(self, Connection):
 
 def cleanup_threads(self):
     """Background thread to clean up completed client threads periodically."""
-    while self.running:
+    while self.webui_running:
         self.client_threads = [t for t in self.client_threads if t.is_alive()]
         time.sleep(15)
 
@@ -484,7 +484,7 @@ def onStop(self):
     self.logging("Log", "WebUI shutdown in process...")
     # Make sure that all remaining open connections are closed
     
-    self.running = False
+    self.webui_running = False
     
     time.sleep(1)  # Give some time for the server to stop accepting new connections
 

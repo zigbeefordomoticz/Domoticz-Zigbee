@@ -130,7 +130,6 @@ import re
 import sys
 import threading
 import time
-#import tracemalloc
 
 import z4d_certified_devices
 
@@ -197,6 +196,10 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
+
+#import tracemalloc
+
+
 
 VERSION_FILENAME = ".hidden/VERSION"
 
@@ -595,12 +598,15 @@ class BasePlugin:
         # Create Statistics object
         self.statistics = TransportStatistics(self.pluginconf, self.log, self.zigbee_communication)
 
-
         if len(self.ListOfDevices) > 10:
             # Don't do Energy Scan if too many objects, as Energy scan don't make the difference between real traffic and noise
             self.pluginconf.pluginConf["EnergyScanAtStatup"] = 0
 
-        start_zigbee_transport(self )
+        try:
+            start_zigbee_transport(self )
+
+        except Exception as e:
+            self.log.logging("Plugin", "Error", "Error while starting zigbee Transport %s" %e)
 
         if self.transport not in ("ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP", "ZigpyZiGate", "ZigpyBLZ", "None" ):
             self.log.logging("Plugin", "Debug", "Establish Zigate connection")
@@ -631,6 +637,12 @@ class BasePlugin:
 
         self.busy = False
 
+        # Log running threads. We should have only the main thread (MainThread)
+        self.log.logging("Plugin", "Log", "Active threads after onStart():")
+        for t in threading.enumerate():
+            self.log.logging("Plugin", "Log", f"    - Thread {t.name}: alive={t.is_alive()}, ident={t.ident}, daemon={t.daemon}")
+
+
 
     def onStop(self):
         """
@@ -641,7 +653,17 @@ class BasePlugin:
         Returns:
             None
         """
-        Domoticz.Log("onStop()")
+        # Log onStop event
+        if self.pluginconf and self.log:
+            self.log.logging("Plugin", "Log", "onStop called")
+        else:
+            Domoticz.Log("onStop()")
+
+        # Log running threads. We should have only the main thread (MainThread)
+        if self.pluginconf and self.log:
+            self.log.logging(["Plugin", "StopProcess"], "Log", "Active threads starting onstop():")
+            for t in threading.enumerate():
+                self.log.logging(["Transport", "StopProcess"], "Log", f"    - Thread {t.name}: alive={t.is_alive()}, ident={t.ident}, daemon={t.daemon}")
 
         if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
             matomo_plugin_shutdown(self)
@@ -649,7 +671,7 @@ class BasePlugin:
 
         # Flush ListOfDevices
         if self.log:
-            self.log.logging("Plugin", "Log", "Flushing plugin database onto disk")
+            self.log.logging(["Transport", "StopProcess"], "Log", "Flushing plugin database onto disk")
         if self.pluginconf:
             WriteDeviceList(self, 0)  # write immediatly
 
@@ -660,18 +682,16 @@ class BasePlugin:
         if self.pluginconf and self.pluginconf.pluginConf["ListImportedModules"]:
             list_all_modules_loaded(self)
 
-        # Log onStop event
-        if self.pluginconf and self.log:
-            self.log.logging("Plugin", "Log", "onStop called")
 
         # Close CIE connection and shutdown transport thread
         if self.pluginconf and self.ControllerLink:
-            self.log.logging("Plugin", "Log", "onStop called shutding down CIE connection and transport thread")
+            self.log.logging(["Transport", "StopProcess"], "Log", "onStop called, shuting down CIE connection, transport and forwarder threads")
             self.ControllerLink.thread_transport_shutdown()
             self.ControllerLink.close_cie_connection()
 
         # Stop WebServer
         if self.pluginconf and self.webserver:
+            self.log.logging(["Transport", "StopProcess"], "Log", "onStop called, shuting down WebUI thread")
             self.webserver.onStop()
 
         # Save plugin database
@@ -685,13 +705,13 @@ class BasePlugin:
 
         # Close logging management
         if self.pluginconf and self.log:
-            self.log.logging("Plugin", "Log", "Closing Logging Management")
+            self.log.logging(["Transport", "StopProcess"], "Log", "onStop called, shuting down LoggingManagement thread")
             self.log.closeLogFile()
 
         # Log running threads. We should have only the main thread (MainThread)
-        active_threads = threading.enumerate()
-        thread_info = [(t.name, t.ident, t.is_alive()) for t in active_threads]
-        Domoticz.Log("Remaining active threads: %s" % thread_info)
+        Domoticz.Log("Remaining active threads:")
+        for t in threading.enumerate():
+            Domoticz.Log(f"    - Thread {t.name}: alive={t.is_alive()}, ident={t.ident}, daemon={t.daemon}")
 
         # Update plugin health status
         self.PluginHealth["Flag"] = 3
@@ -1284,8 +1304,8 @@ def _start_zigpy_EZSP(self):
     self.pluginconf.pluginConf["ControllerInRawMode"] = True
     
 def _start_zigpy_BLZ(self):
-    import zigpy_blz
     import zigpy
+    import zigpy_blz
     from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                               SCHEMA_DEVICE)
 

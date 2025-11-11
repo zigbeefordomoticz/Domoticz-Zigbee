@@ -49,7 +49,7 @@ class LoggingManagement:
         self.FirmwareVersion = None
         self.FirmwareMajorVersion = None
         self.PluginVersion = None
-        self.running = True
+        self.logging_running = True
         self.logging_queue = None
         self.logging_thread = None
         self._startTime = int(time.time())
@@ -220,7 +220,7 @@ class LoggingManagement:
             domoticz_error_api("closeLogFile - logging_thread is None")
             return
 
-        self.running = False
+        self.logging_running = False
         if self.logging_queue is None:
             domoticz_error_api("closeLogFile - logging_queue is None")
             return
@@ -474,17 +474,16 @@ def start_logging_thread(self):
         return
 
     self.logging_queue = PriorityQueue()
-    self.logging_thread = threading.Thread(
-        name="ZiGateLogging_%s" % self.HardwareID, target=logging_thread, args=(self,)
-    )
+    self.logging_thread = threading.Thread( name="LoggingManagement_%s" % self.HardwareID, target=logging_thread, args=(self,) )
+    self.logging_thread.daemon = False
     self.logging_thread.start()
 
 
 def logging_thread(self):
 
     #domoticz_log_api("logging_thread - listening")
-    while self.running:
-        # We loop until self.running is set to False,
+    while self.logging_running:
+        # We loop until self.logging_running is set to False,
         # which indicate plugin shutdown
         logging_tuple = self.logging_queue.get()
         

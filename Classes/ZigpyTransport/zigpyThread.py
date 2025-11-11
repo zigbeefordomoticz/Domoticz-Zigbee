@@ -89,7 +89,7 @@ def stop_zigpy_thread(self):
     topology or interference scan tasks to ensure clean shutdown.
     """
 
-    self.log.logging("TransportZigpy", "Debug", "stop_zigpy_thread - Stopping zigpy thread")
+    self.log.logging(["TransportZigpy", "StopProcess"], "Debug", "stop_zigpy_thread - Stopping zigpy thread")
     if self.writer_queue:
         self.writer_queue.put_nowait("STOP")
     self.zigpy_running = False
@@ -109,7 +109,7 @@ def start_zigpy_thread(self):
     Sets the appropriate event loop policy for Windows compatibility and
     initializes the thread via setup_zigpy_thread if necessary.
     """
-    
+
     self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - Starting Zigpy thread")
 
     # Set appropriate event loop policy for Windows compatibility
@@ -122,10 +122,15 @@ def start_zigpy_thread(self):
     else:
         self.log.logging("TransportZigpy", "Warning", "start_zigpy_thread - Zigpy thread is already running.")
 
+    self.log.logging(["Transport", "StopProcess"], "Debug", f"Thread object: ZigpyCommunication_{self.hardwareid} {self.zigpy_thread}, alive={self.zigpy_thread.is_alive() if self.zigpy_thread else 'N/A'}")
+    self.log.logging(["Transport", "StopProcess"], "Debug", f"Thread ident : ZigpyCommunication_{self.hardwareid} {self.zigpy_thread.ident if self.zigpy_thread else 'N/A'}")
+    self.log.logging(["Transport", "StopProcess"], "Debug", f"Thread daemon: ZigpyCommunication_{self.hardwareid} {self.zigpy_thread.daemon if self.zigpy_thread else 'N/A'}")
+
+
 
 def setup_zigpy_thread(self):
     """
-    Sets up and starts the Zigpy thread as a daemon.
+    Sets up and starts the Zigpy thread.
 
     Creates a new Thread instance targeting zigpy_thread_function and starts it.
     The thread name includes the hardware ID for identification.
@@ -133,8 +138,8 @@ def setup_zigpy_thread(self):
     self.log.logging("TransportZigpy", "Debug", "setup_zigpy_thread - Initializing Zigpy thread")
 
     # Create and start a new thread
-    self.zigpy_thread = Thread(name=f"ZigpyCom_{self.hardwareid}", target=zigpy_thread_function, args=(self,))
-    self.zigpy_thread.daemon = True
+    self.zigpy_thread = Thread(name=f"ZigpyCommunication_{self.hardwareid}", target=zigpy_thread_function, args=(self,))
+    self.zigpy_thread.daemon = False
     self.zigpy_thread.start()
     self.log.logging("TransportZigpy", "Debug", "setup_zigpy_thread - Zigpy thread started")
 
@@ -252,7 +257,7 @@ async def start_zigpy_task(self, channel, extended_pan_id):
 
     await _shutdown_remaining_task(self)
 
-    self.log.logging("TransportZigpy", "Debug", "start_zigpy_task - exiting zigpy thread")
+    self.log.logging(["TransportZigpy", "StopProcess"], "Debug", "start_zigpy_task - exiting zigpy thread")
 
 
 async def _shutdown_remaining_task(self):
@@ -266,11 +271,11 @@ async def _shutdown_remaining_task(self):
     tasks = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
     
     if not tasks:
-        self.log.logging("TransportZigpy", "Debug", "No outstanding tasks to cancel")
+        self.log.logging(["TransportZigpy", "StopProcess"], "Debug", "No outstanding tasks to cancel")
         return
 
     # Log the number of tasks being cancelled
-    self.log.logging("TransportZigpy", "Debug", f"Cancelling {len(tasks)} outstanding tasks")
+    self.log.logging(["TransportZigpy", "StopProcess"], "Debug", f"Cancelling {len(tasks)} outstanding tasks")
 
     # Cancel all tasks
     for task in tasks:
@@ -286,9 +291,9 @@ async def _shutdown_remaining_task(self):
         pass
 
     except Exception as e:
-        self.log.logging("TransportZigpy", "Error", f"Error during task shutdown: {e}")
+        self.log.logging(["TransportZigpy", "StopProcess"], "Error", f"Error during task shutdown: {e}")
 
-    self.log.logging("TransportZigpy", "Debug", "Task cleanup completed")
+    self.log.logging(["TransportZigpy", "StopProcess"], "Debug", "Task cleanup completed")
     
 
 async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0):
@@ -387,6 +392,7 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
 
     try:
         await _radio_startup(self, statistics, pluginconf, use_of_zigpy_persistent_db, new_network, radiomodule)
+
     except Exception as e:
         self.log.logging( "TransportZigpy", "Error", "Error during radio startup: %s" %e)
     self.log.logging( "TransportZigpy", "Debug", "Exiting co-rounting radio_start")
@@ -718,8 +724,8 @@ async def worker_loop(self):
                     continue
 
                 # Handle the stop command and exit the loop gracefully
-                if command_to_send == "STOP":
-                    self.log.logging("TransportZigpy", "Debug", "worker_loop - Shutting down ... exit.")
+                if command_to_send == "STOP" or not self.zigpy_running:
+                    self.log.logging(["TransportZigpy", "StopProcess"], "Debug", "worker_loop - Shutting down ... exit.")
                     self.zigpy_running = False
                     break
 
@@ -737,7 +743,7 @@ async def worker_loop(self):
 
     finally:
         # Final cleanup if needed
-        self.log.logging("TransportZigpy", "Debug", "worker_loop - Exiting loop and cleaning up resources.")
+        self.log.logging(["TransportZigpy", "StopProcess"], "Debug", "TransportZigpy - Exiting loop and cleaning up resources.")
 
 
 async def process_incoming_command(self, command_to_send):

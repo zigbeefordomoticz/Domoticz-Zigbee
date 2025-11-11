@@ -305,6 +305,7 @@ SETTINGS = {
             "Python/Classes-ZigpyTransport-AppGeneric": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
 
             "ReadAttributes": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "StopProcess": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Schneider": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Sonoff": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Sunricher": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
