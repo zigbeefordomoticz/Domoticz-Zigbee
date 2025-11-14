@@ -696,6 +696,8 @@ class BasePlugin:
 
         # Save plugin database
         if self.PDMready and self.pluginconf:
+            if self.log:
+                self.log.logging(["Transport", "StopProcess"], "Log", "Flushing plugin database onto disk")
             WriteDeviceList(self, 0)
 
         # Print and save statistics if configured
