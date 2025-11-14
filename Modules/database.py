@@ -368,35 +368,36 @@ def _write_DeviceList_txt(self):
     # Write in classic format ( .txt )
     _pluginData = Path( self.pluginconf.pluginConf["pluginData"] )
     _DeviceListFileName = _pluginData / self.DeviceListName
+    _count = 0
     try:
         self.log.logging("Database", "Debug", "Write %s = %s" % (_DeviceListFileName, str(self.ListOfDevices)))
         with open(_DeviceListFileName, "wt", encoding='utf-8') as file:
             for key in self.ListOfDevices:
                 try:
                     file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
-                    
+                    _count += 1
                 except UnicodeEncodeError:
                     self.log.logging( "Database", "Error", "UnicodeEncodeError while while saving %s : %s on file" %( 
                         key, self.ListOfDevices[key]))
                     continue
-
                 except ValueError:
                     self.log.logging( "Database", "Error", "ValueError while saving %s : %s on file" %( 
                         key, self.ListOfDevices[key]))
                     continue
-                
                 except IOError:
                     self.log.logging( "Database", "Error", "IOError while writing to plugin Database %s" % _DeviceListFileName)
                     continue
-
         self.log.logging("Database", "Debug", "WriteDeviceList - flush Plugin db to %s" % _DeviceListFileName)
-        
     except FileNotFoundError:
         self.log.logging( "Database", "Error", "WriteDeviceList - File not found >%s<" %_DeviceListFileName)
-        
     except IOError:
         self.log.logging( "Database", "Error", "Error while Writing plugin Database %s" % _DeviceListFileName)
-
+    
+    if _count != len(self.ListOfDevices):
+        self.log.logging("Database", "Error", f"Plugin Database flushed on disk {_DeviceListFileName} {_count}/{len(self.ListOfDevices)} records")
+    else:
+        self.log.logging("Database", "Log", f"Plugin Database flushed on disk {_DeviceListFileName} {_count}/{len(self.ListOfDevices)} records")
+        
 
 def _write_DeviceList_json(self):
     _pluginData = Path( self.pluginconf.pluginConf["pluginData"] )
@@ -411,7 +412,7 @@ def _write_DeviceList_json(self):
 
 def _write_DeviceList_Domoticz(self):
     ListOfDevices_for_save = self.ListOfDevices.copy()
-    self.log.logging("Database", "Log", "WriteDeviceList - flush Plugin db to %s" % "Domoticz")
+    self.log.logging("Database", "Log", f"Plugin Database flushed on Domoticz {len(self.ListOfDevices)} records")
     return setConfigItem( Key="ListOfDevices", Attribute="Devices", Value={"TimeStamp": time.time(), "Devices": ListOfDevices_for_save} )
 
 
