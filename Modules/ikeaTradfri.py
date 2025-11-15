@@ -39,7 +39,6 @@ def ikeaReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
     self.log.logging("Ikea", "Debug", f"Ikea Read Raw APS nwkid: {srcNWKID} ep: {srcEp} , clusterId: {ClusterID}, dstnwkid: {dstNWKID}, dstep: {dstEP}, payload: {MsgPayload}", srcNWKID)
     
 
-
 def ikea_openclose_remote(self, Devices, NwkId, Ep, command, Data, Sqn):
 
 
@@ -57,10 +56,46 @@ def ikea_openclose_remote(self, Devices, NwkId, Ep, command, Data, Sqn):
         MajDomoDevice(self, Devices, NwkId, Ep, "0006", "02")
 
 
-def ikea_remote_control_8085( self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_ ):
-    self.log.logging("Ikea", "Debug", "ikea_remote_control_8085 - %s %s %s %s %s" %(
-        MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
-    
+def ikea_remote_control_8085(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_):
+    """
+    Decode and process events from the IKEA Remote Control (model 8085).
+
+    The function maps Zigbee cluster/command values to high-level actions
+    such as 'hold_down', 'click_up', etc. It updates the internal
+    `ListOfDevices` structure and informs Domoticz of the action through
+    `MajDomoDevice`.
+
+    Parameters
+    ----------
+    Devices : dict
+        Domoticz device list passed by the plugin framework.
+    MsgSrcAddr : str
+        Zigbee source address of the device.
+    MsgEP : str
+        Endpoint identifier.
+    MsgClusterId : str
+        Cluster ID (e.g., "0008").
+    MsgCmd : str
+        Command ID sent by the device.
+    unknown_ : Any
+        Additional data from the Zigbee frame (logged if unhandled).
+
+    Behavior
+    --------
+    - For cluster "0008", maps MsgCmd to a semantic action.
+    - Handles special case: when MsgCmd == "07" (release_up)
+      following a previous "hold_down".
+    - Stores the last selector in: ListOfDevices[src]["Ep"][ep][cluster]["0000"].
+    - Sends the action to Domoticz via MajDomoDevice.
+    - Logs detailed debug information.
+    """
+
+    self.log.logging(
+        "Ikea", "Debug",
+        f"ikea_remote_control_8085 - {MsgSrcAddr} {MsgEP} {MsgClusterId} {MsgCmd} {unknown_}",
+        MsgSrcAddr
+    )
+
     TYPE_ACTIONS = {
         "01": "hold_down",
         "02": "click_down",
@@ -69,21 +104,41 @@ def ikea_remote_control_8085( self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, Msg
         "06": "click_up",
         "07": "release_up",
     }
-        
+
+    # --- Access or initialize nested structure safely ---
+    dev = self.ListOfDevices.setdefault(MsgSrcAddr, {})
+    ep = dev.setdefault("Ep", {}).setdefault(MsgEP, {})
+    cluster = ep.setdefault(MsgClusterId, {})        # Current cluster
+    cluster_0005 = ep.setdefault("0005", {})
+
+    # --- Main decoding for cluster 0008 ---
     if MsgClusterId == "0008" and MsgCmd in TYPE_ACTIONS:
-        prev_selector = self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] if "0000" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId] else None
+
+        prev_selector = cluster.get("0000")
+
+        # Special case: release_up after hold_down
         if MsgCmd == "07" and prev_selector == "hold_down":
             selector = "release_down"
+            cluster_0005["0000"] = ""  # Reset
         else:
             selector = TYPE_ACTIONS[MsgCmd]
-        self.log.logging("Ikea", "Debug", "Decode8085 - Selector: %s" % selector, MsgSrcAddr)
+
+        self.log.logging("Ikea", "Debug", f"Decode8085 - Selector: {selector}", MsgSrcAddr)
+
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", selector)
-        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = selector
-    else:
-        self.log.logging( "Ikea", "Log", "ikea_remote_control_8085 -  Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" % (
-            MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
-        )
-        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+
+        # Store last selected action
+        cluster["0000"] = selector
+        return
+
+    # --- Unknown or unhandled case ---
+    self.log.logging(
+        "Ikea", "Log",
+        f"ikea_remote_control_8085 - Addr: {MsgSrcAddr}, Ep: {MsgEP}, Cluster: {MsgClusterId}, Cmd: {MsgCmd}, Unknown: {unknown_}"
+    )
+
+    cluster["0000"] = f"Cmd: {MsgCmd}, {unknown_}"
+
 
 def ikea_remote_control_80A7( self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_ ):
     
@@ -116,65 +171,114 @@ def ikea_remote_control_80A7( self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, Ms
         if self.groupmgt and TYPE_DIRECTIONS[MsgDirection] in ( "right", "left", ):
             self.groupmgt.manageIkeaTradfriRemoteLeftRight(MsgSrcAddr, TYPE_DIRECTIONS[MsgDirection])
 
-def ikea_remoteN2_control_80A7( self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_ ):
-    # Ikea Remote N2.
 
-    # 07 00 000000 righ click
-    # 08 00 000000 continue right long click
+def ikea_remoteN2_control_80A7(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unknown_):
+    """
+    Decode and process events from the IKEA Remote N2 (model 80A7).
 
-    # 01 01 000000 left click           
-    # 08 01 000000 continue left long click
+    This handler interprets cluster "0005" commands from the N2 remote and
+    converts them into semantic actions such as 'right_click', 'left_hold',
+    'right_release', etc.
+    The last selector is saved in `ListOfDevices[src]["Ep"][ep][cluster]["0000"]`
+    and the action is forwarded to Domoticz via `MajDomoDevice`.
 
-    # 09 00 000000 start long click    
-    # 09 eb 000000 release long click 
+    Parameters
+    ----------
+    Devices : dict
+        Domoticz devices structure.
+    MsgSrcAddr : str
+        Zigbee source address.
+    MsgEP : str
+        Endpoint.
+    MsgClusterId : str
+        Cluster ID (should be "0005" for this handler).
+    MsgCmd : str
+        Zigbee command ID.
+    MsgDirection : str
+        Direction field ("00" or "01").
+    unknown_ : Any
+        Extra frame data for logging in unhandled cases.
 
+    Behavior
+    --------
+    - Only cluster "0005" is processed; others are ignored.
+    - Handles mapping of (MsgCmd, MsgDirection) to left/right click/hold.
+    - Handles long press initiation (Cmd "09").
+    - Handles release logic based on previously stored selector.
+    - Integrates with group management if enabled.
+    """
 
-    self.log.logging("Ikea", "Debug", "ikea_remoteN2_control_80A7 - %s %s %s %s %s %s" % (
-        MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_), MsgSrcAddr)
+    self.log.logging(
+        "Ikea", "Debug",
+        f"ikea_remoteN2_control_80A7 - {MsgSrcAddr} {MsgEP} {MsgClusterId} "
+        f"{MsgCmd} {MsgDirection} {unknown_}",
+        MsgSrcAddr
+    )
 
+    # Only process cluster 0005 for this remote
     if MsgClusterId != "0005":
         return
 
-    N2_ACTIONS= {
-        # Cmd, Direction
-        ( "07", "00"): "right_click",
-        ( "08", "00"): "right_hold",
-        ( "07", "01"): "left_click",
-        ( "08", "01"): "left_hold"
+    # --- Ensure dictionary structure exists ---
+    dev = self.ListOfDevices.setdefault(MsgSrcAddr, {})
+    ep = dev.setdefault("Ep", {}).setdefault(MsgEP, {})
+    cluster = ep.setdefault(MsgClusterId, {})
+
+    # Mapping from (Cmd, Direction) → Action
+    N2_ACTIONS = {
+        ("07", "00"): "right_click",
+        ("08", "00"): "right_hold",
+        ("07", "01"): "left_click",
+        ("08", "01"): "left_hold",
     }
 
-    prev_selector = self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"]
+    prev_selector = cluster.get("0000")
+
+    # --- Special handling for Cmd == 09 ---
     if MsgCmd == "09":
+        # Long click starting → block 8095 actions
         if MsgDirection == "00":
-            # Starting Long Click. Block 8095 actions
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "long"
+            cluster["0000"] = "long"
             return
 
-        elif prev_selector == "left_hold":
+        # Release from hold state
+        if prev_selector == "left_hold":
             selector = "left_release"
-
+            cluster["0000"] = ""
         elif prev_selector == "right_hold":
             selector = "right_release"
-            
+            cluster["0000"] = ""
         else:
+            # Unexpected release without a known hold state
             return
-            
-    elif ( MsgCmd, MsgDirection) in N2_ACTIONS:
-        selector = N2_ACTIONS[ ( MsgCmd, MsgDirection) ]
-        
-    else:
-        self.log.logging("Ikea", "Error", "ikea_remoteN2_control_80A7 - %s/%s Unknow: %s %s %s" % (
-            MsgSrcAddr, MsgEP, MsgCmd, MsgDirection, unkown_), MsgSrcAddr)
-        return
-    
-    MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", selector)
-    self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = selector
-    self.log.logging("Ikea", "Debug", "ikea_remoteN2_control_80A7 - selector: %s" % selector, MsgSrcAddr)
 
-    if self.groupmgt and "right" in selector:
-        self.groupmgt.manageIkeaTradfriRemoteLeftRight(MsgSrcAddr, "right")
-    elif self.groupmgt and "left" in selector:
-        self.groupmgt.manageIkeaTradfriRemoteLeftRight(MsgSrcAddr, "left")
+    # --- Normal click/hold actions ---
+    elif (MsgCmd, MsgDirection) in N2_ACTIONS:
+        selector = N2_ACTIONS[(MsgCmd, MsgDirection)]
+
+    # --- Unknown/unhandled command ---
+    else:
+        self.log.logging(
+            "Ikea", "Error",
+            f"ikea_remoteN2_control_80A7 - {MsgSrcAddr}/{MsgEP} Unknown: "
+            f"{MsgCmd} {MsgDirection} {unknown_}",
+            MsgSrcAddr
+        )
+        return
+
+    # --- Notify Domoticz ---
+    MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", selector)
+    cluster["0000"] = selector
+
+    self.log.logging("Ikea", "Debug",
+        f"ikea_remoteN2_control_80A7 - selector: {selector}", MsgSrcAddr)
+
+    # --- Group management (optional) ---
+    if self.groupmgt:
+        if "right" in selector:
+            self.groupmgt.manageIkeaTradfriRemoteLeftRight(MsgSrcAddr, "right")
+        elif "left" in selector:
+            self.groupmgt.manageIkeaTradfriRemoteLeftRight(MsgSrcAddr, "left")
 
 
 def ikea_remote_control_8095(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_):
@@ -392,6 +496,7 @@ def ikea_wireless_dimer_8085( self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, Msg
             MsgSrcAddr,
         )
 
+
 def ikea_motion_sensor_8095(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, unknown_ ):
     if MsgClusterId == "0006" and MsgCmd == "42":  # Motion Sensor On
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0406", "01")
@@ -403,6 +508,7 @@ def ikea_motion_sensor_8095(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCm
         )
     self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
 
+
 def ikea_air_purifier_mode( self, NwkId, Ep, mode ):
     # Cluster 0xfc7d
     # Attribute 0x0006
@@ -412,7 +518,8 @@ def ikea_air_purifier_mode( self, NwkId, Ep, mode ):
     if mode not in ( 0, 1, 10, 20, 30, 40, 50 ):
         return
     write_attribute( self, NwkId, ZIGATE_EP, Ep, 'fc7d', '117c', '01', '0006', '20', '%02x' %mode, ackIsDisabled=False )
-    
+
+
 def ikea_air_purifier_cluster(self, Devices, NwkId, Ep, ClusterId, AttributeId, Data):
     
     self.log.logging( "Ikea", "Log", "ikea_air_purifier_cluster %s/%s %s %s %s" % ( NwkId, Ep, ClusterId, AttributeId, Data), )
