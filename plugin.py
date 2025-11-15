@@ -11,7 +11,7 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 """
-<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="7.1">
+<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="8.1">
     <description>
         <h1> Plugin Zigbee for domoticz</h1><br/>
             <br/><h2> Informations</h2><br/>
@@ -696,6 +696,8 @@ class BasePlugin:
 
         # Save plugin database
         if self.PDMready and self.pluginconf:
+            if self.log:
+                self.log.logging(["Transport", "StopProcess"], "Log", "Flushing plugin database onto disk")
             WriteDeviceList(self, 0)
 
         # Print and save statistics if configured
