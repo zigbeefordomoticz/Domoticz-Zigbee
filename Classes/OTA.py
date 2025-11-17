@@ -642,6 +642,9 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
     update_list_in_update(self, offset, length)
 
     logging(self, "Debug", f"ota_send_block - Block sent to {dest_addr}/{dest_ep} Received yet: {offset} Sent now: {length}")
+    
+    if length < max_data_size:
+        status = 0x97
 
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         raw_data_hex = "".join(f"{i:02x}" for i in raw_ota_data)
