@@ -149,45 +149,6 @@ def zcl_raw_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_i
     return sqn
 
 
-#def zcl_raw_default_response(self, nwkid, EPin, EPout, cluster, response_to_command, sqn, command_status="00", manufcode=None, orig_fcf=None):
-#    self.log.logging(
-#        "zclCommand", "Debug",
-#        f"zcl_raw_default_response {nwkid} {EPin} {EPout} {cluster} {sqn} for command {response_to_command} with Status: {command_status}, Manufcode: {manufcode}, OrigFCF: {orig_fcf}", nwkid
-#    )
-#
-#    if self.pluginconf.pluginConf.get("disableZCLDefaultResponse"):
-#        return
-#
-#    zcl_command_formated_logging(self, "Default_Response (Raw)", nwkid, EPout, cluster, response_to_command, sqn, command_status, manufcode, orig_fcf)
-#
-#    if response_to_command == "0b":
-#        return  # Never return a default response to a default response
-#
-#    if orig_fcf is None:
-#        orig_fcf = 0b00000000
-#    else:
-#        frame_type = "0"
-#        manufacturer_specific_bit = "1" if manufcode and manufcode != "0000" else "0"
-#        direction_bit = "1" if orig_fcf is not None and fcf_direction(orig_fcf) else "0"
-#        disable_default_response_bit = "0"
-#        frame_control_field = build_fcf( frame_type, manufacturer_specific_bit, direction_bit, disable_default_response_bit)
-#
-#    payload = frame_control_field
-#    if manufcode and manufcode != "0000":
-#        payload += manufcode[2:4] + manufcode[:2]
-#
-#    payload += sqn + "0b" + response_to_command + command_status
-#
-#    self.log.logging("zclCommand", "Debug", f"zcl_raw_default_response ==== payload: {payload}", nwkid)
-#
-#    raw_APS_request(
-#        self, nwkid, EPout, cluster, "0104", payload,
-#        zigpyzqn=sqn, zigate_ep=EPin, highpriority=True, ackIsDisabled=is_ack_tobe_disabled(self, nwkid)
-#    )
-#
-#    return sqn
-
-
 def zcl_raw_default_response( self, nwkid, cie_ep, dst_ep, cluster, response_to_command, sqn, command_status="00", manufcode=None, orig_fcf=None ):
 
     """
@@ -326,6 +287,7 @@ def zcl_raw_configure_reporting_requestv2(self, nwkid, epin, epout, cluster, dir
 
     raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
     return sqn
+
 
 def zcl_raw_read_report_config_request(self,nwkid, epin, epout, cluster, manuf_specific, manuf_code, attribute_list, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_raw_read_report_config_request %s %s %s %s %s %s %s" % (
@@ -640,6 +602,7 @@ def zcl_raw_ota_image_notify(self, nwkid, EPIn, EPout, PayloadType, QueryJitter,
     raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
     return sqn
 
+
 def zcl_raw_ota_query_next_image_response(self, sqn, nwkid, EPIn, EPout, status, ManufCode=None, Imagetype=None, FileVersion=None, imagesize=None ):
     self.log.logging("zclCommand", "Debug", "zcl_raw_ota_query_next_image_response %s %s %s %s %s %s %s %s" % (nwkid, EPIn, EPout, status, ManufCode, Imagetype, FileVersion, imagesize), nwkid)
     zcl_command_formated_logging( self, "OTA_Query_Next_Image_Resp (Raw)", nwkid, EPout, "0019", status, ManufCode, Imagetype, FileVersion, imagesize)
@@ -657,6 +620,7 @@ def zcl_raw_ota_query_next_image_response(self, sqn, nwkid, EPIn, EPout, status,
     raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
     return sqn
 
+
 def zcl_raw_ota_image_block_response_success(self, sqn, nwkid, EPIn, EPout, status, ManufCode, Imagetype, FileVersion, fileoffset, datasize, imagedata , ackIsDisabled=False):
     self.log.logging("zclCommand", "Debug", "zcl_raw_ota_image_block_response_success %s %s %s %s %s %s %s %s %s %s" % (nwkid, EPIn, EPout, status, ManufCode, Imagetype, FileVersion, fileoffset, datasize, len(imagedata)), nwkid)
     zcl_command_formated_logging( self, "OTA_Image_Block_Response_Success (Raw)", nwkid, EPout, "0019", status, ManufCode, Imagetype, FileVersion, fileoffset, datasize, imagedata , ackIsDisabled)
@@ -673,6 +637,7 @@ def zcl_raw_ota_image_block_response_success(self, sqn, nwkid, EPIn, EPout, stat
     raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=ackIsDisabled)
     return sqn
 
+
 def zcl_raw_ota_image_block_response_wait_for_data( self, nwkid, EPIn, EPout, waitforstatus, currenttime, requesttime, minblockperiod):
     zcl_command_formated_logging( self, "OTA_Image_Block_Response_Wait_for_Data (Raw)", nwkid, EPout, "0019", waitforstatus, currenttime, requesttime, minblockperiod)
     
@@ -683,6 +648,7 @@ def zcl_raw_ota_image_block_response_wait_for_data( self, nwkid, EPIn, EPout, wa
     raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
     return sqn
 
+
 def zcl_raw_ota_image_block_response_abort(self, nwkid, EPIn, EPout, abortstatus):
     zcl_command_formated_logging( self, "OTA_Image_Block_Response_Abort (Raw)", nwkid, EPout, "0019", abortstatus)
     
@@ -692,24 +658,8 @@ def zcl_raw_ota_image_block_response_abort(self, nwkid, EPIn, EPout, abortstatus
     payload = "%02x" % cluster_frame + sqn + Command + abortstatus
     raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
     return sqn   
-                                             
-#def zcl_raw_ota_upgrade_end_response(self, sqn, nwkid, EPIn, EPout, ManufCode, Imagetype, FileVersion, currenttime, upgradetime):
-#    # "0504"
-#    self.log.logging("zclCommand", "Log", "zcl_raw_ota_upgrade_end_response %s %s %s %s %s %s %s %s" % (nwkid, EPIn, EPout, ManufCode, Imagetype, FileVersion, currenttime, upgradetime), nwkid)
-#    zcl_command_formated_logging( self, "OTA_Upgrade_End_Response (Raw)", nwkid, EPout, "0019", ManufCode, Imagetype, FileVersion, currenttime, upgradetime)
-#    
-#    Command = "07"
-#    cluster_frame = 0b00001001   # Cluster Specific / Server to Client / With Default Response
-#    ManufCode = "%04x" % (struct.unpack(">H", struct.pack("H", int(ManufCode, 16)))[0])
-#    Imagetype = "%04x" % (struct.unpack(">H", struct.pack("H", int(Imagetype, 16)))[0])
-#    FileVersion = "%08x" % struct.unpack(">I", struct.pack("I", int(FileVersion, 16)))[0]
-#    currenttime = "%08x" % struct.unpack(">I", struct.pack("I", int(currenttime, 16)))[0]
-#    upgradetime = "%08x" % struct.unpack(">I", struct.pack("I", int(upgradetime, 16)))[0]
-#
-#    payload = "%02x" % cluster_frame + sqn + Command + ManufCode + Imagetype + FileVersion + currenttime + upgradetime
-#    raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
-#    return sqn
 
+                                           
 def zcl_raw_ota_upgrade_end_response(
     self, sqn, nwkid, EPIn, EPout, ManufCode, Imagetype, FileVersion, currenttime, upgradetime
 ):
@@ -1061,6 +1011,7 @@ def zcl_raw_ias_wd_command_start_warning(self, EPin, EPout, nwkid, warning_mode=
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
 
+
 def startwarning_payload(self, nwkid, warning_mode, strobe_mode, siren_level):
     
     if "Model" not in self.ListOfDevices[nwkid] or self.ListOfDevices[nwkid]["Model"] not in ('SIRZB-110', 'SRAC-23B-ZBSR', 'AV201029A', 'AV201024A'):
@@ -1068,6 +1019,7 @@ def startwarning_payload(self, nwkid, warning_mode, strobe_mode, siren_level):
     if strobe_mode and not warning_mode:
         return (warning_mode << 4) + (strobe_mode << 2) + siren_level
     return warning_mode + ( (strobe_mode) << 4) + (siren_level << 6)
+
 
 def zcl_raw_ias_wd_command_squawk(self, EPin, EPout, nwkid, squawk_mode, strobe, squawk_level, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_raw_ias_wd_command_squawk %s %s %s %s" % (nwkid, squawk_mode, strobe, squawk_level), nwkid)
@@ -1088,6 +1040,7 @@ def zcl_raw_ias_wd_command_squawk(self, EPin, EPout, nwkid, squawk_mode, strobe,
     self.log.logging("zclCommand", "Debug", "zcl_raw_ias_wd_command_squawk %s payload: %s (field1 %s)" % (nwkid, payload, field1), nwkid)
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
+
 
 def squawk_payload(self, nwkid,squawk_mode,strobe, squawk_level ):
     
