@@ -730,7 +730,7 @@ def ota_upgrade_end_response(self, sqn, dest_addr, dest_ep, intMsgImageVersion, 
             _ImageType,          # INT
             _FileVersion,        # INT
             UTCTime,             # INT
-            _UpgradeTime,        # INT
+            UTCTime,        # INT
         )
         logging( self, "Log", f"ota_management - zcl_raw_ota_upgrade_end_response( {sqn}, {dest_addr}, {ZIGATE_EP}, {dest_ep}, {_ManufacturerCode}, {_ImageType}, {_FileVersion}, {UTCTime}, {_UpgradeTime})", )
 
