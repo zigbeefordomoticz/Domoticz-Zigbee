@@ -693,22 +693,63 @@ def zcl_raw_ota_image_block_response_abort(self, nwkid, EPIn, EPout, abortstatus
     raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
     return sqn   
                                              
-def zcl_raw_ota_upgrade_end_response(self, sqn, nwkid, EPIn, EPout, ManufCode, Imagetype, FileVersion, currenttime, upgradetime):
-    # "0504"
-    self.log.logging("zclCommand", "Debug", "zcl_raw_ota_upgrade_end_response %s %s %s %s %s %s %s %s" % (nwkid, EPIn, EPout, ManufCode, Imagetype, FileVersion, currenttime, upgradetime), nwkid)
-    zcl_command_formated_logging( self, "OTA_Upgrade_End_Response (Raw)", nwkid, EPout, "0019", ManufCode, Imagetype, FileVersion, currenttime, upgradetime)
-    
-    Command = "07"
-    cluster_frame = 0b00011001   # Cluster Specific / Server to Client / With Default Response
-    ManufCode = "%04x" % (struct.unpack(">H", struct.pack("H", int(ManufCode, 16)))[0])
-    Imagetype = "%04x" % (struct.unpack(">H", struct.pack("H", int(Imagetype, 16)))[0])
-    FileVersion = "%08x" % struct.unpack(">I", struct.pack("I", int(FileVersion, 16)))[0]
-    currenttime = "%08x" % struct.unpack(">I", struct.pack("I", int(currenttime, 16)))[0]
-    upgradetime = "%08x" % struct.unpack(">I", struct.pack("I", int(upgradetime, 16)))[0]
+#def zcl_raw_ota_upgrade_end_response(self, sqn, nwkid, EPIn, EPout, ManufCode, Imagetype, FileVersion, currenttime, upgradetime):
+#    # "0504"
+#    self.log.logging("zclCommand", "Log", "zcl_raw_ota_upgrade_end_response %s %s %s %s %s %s %s %s" % (nwkid, EPIn, EPout, ManufCode, Imagetype, FileVersion, currenttime, upgradetime), nwkid)
+#    zcl_command_formated_logging( self, "OTA_Upgrade_End_Response (Raw)", nwkid, EPout, "0019", ManufCode, Imagetype, FileVersion, currenttime, upgradetime)
+#    
+#    Command = "07"
+#    cluster_frame = 0b00001001   # Cluster Specific / Server to Client / With Default Response
+#    ManufCode = "%04x" % (struct.unpack(">H", struct.pack("H", int(ManufCode, 16)))[0])
+#    Imagetype = "%04x" % (struct.unpack(">H", struct.pack("H", int(Imagetype, 16)))[0])
+#    FileVersion = "%08x" % struct.unpack(">I", struct.pack("I", int(FileVersion, 16)))[0]
+#    currenttime = "%08x" % struct.unpack(">I", struct.pack("I", int(currenttime, 16)))[0]
+#    upgradetime = "%08x" % struct.unpack(">I", struct.pack("I", int(upgradetime, 16)))[0]
+#
+#    payload = "%02x" % cluster_frame + sqn + Command + ManufCode + Imagetype + FileVersion + currenttime + upgradetime
+#    raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
+#    return sqn
 
-    payload = "%02x" % cluster_frame + sqn + Command + ManufCode + Imagetype + FileVersion + currenttime + upgradetime
-    raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
+def zcl_raw_ota_upgrade_end_response(
+    self, sqn, nwkid, EPIn, EPout, ManufCode, Imagetype, FileVersion, currenttime, upgradetime
+):
+    """
+    Build and send OTA Upgrade End Response (Command 0x07) as raw APS frame.
+    """
+
+    self.log.logging( "zclCommand", "Log", f"zcl_raw_ota_upgrade_end_response {nwkid} {EPIn} {EPout} " f"{ManufCode} {Imagetype} {FileVersion} {currenttime} {upgradetime}", nwkid )
+
+    zcl_command_formated_logging( self, "OTA_Upgrade_End_Response (Raw)", nwkid, EPout, "0019", ManufCode, Imagetype, FileVersion, currenttime, upgradetime )
+
+    # ZCL Frame Control:
+    # 0x19 = 0001 1001
+    # Frame Type = Cluster Specific (01)
+    # Manufacturer Specific = 0
+    # Direction = Server → Client (1)
+    # Disable Default Response = 1
+    frame_control = "19"
+    command_id = "07"
+
+    # Format all fields properly
+    ManufCode = f"{ManufCode:04x}"
+    Imagetype = f"{Imagetype:04x}"
+    FileVersion = f"{FileVersion:08x}"
+    currenttime = f"{currenttime:08x}"
+    upgradetime = f"{upgradetime:08x}"
+
+    # Construct raw payload
+    payload = ( frame_control + sqn + command_id + ManufCode + Imagetype + FileVersion + currenttime + upgradetime )
+
+    raw_APS_request(
+        self, nwkid, EPout, "0019", "0104",
+        payload,
+        zigpyzqn=sqn,
+        zigate_ep=EPIn,
+        ackIsDisabled=False
+    )
+
     return sqn
+
 
 def zcl_raw_ota_query_device_specific_file_response(self, nwkid, EPIn, EPout, status, ManufCode, Imagetype, FileVersion, imagesize):
     zcl_command_formated_logging( self, "OTA_Query_Device_Specific_File_Response (Raw)", nwkid, EPout, "0019", status, ManufCode, Imagetype, FileVersion, imagesize)

@@ -328,21 +328,21 @@ class OTAManagement(object):
         image_type = int(MsgData[22:26], 16)
         intMsgManufCode = int(MsgData[26:30], 16)
         MsgStatus = MsgData[30:32]
-        logging(self, "Debug", "OTA upgrade completed - %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s" % (
+        logging(self, "Log", "OTA upgrade completed - %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s" % (
             MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus))
 
         if self.ListInUpdate["NwkId"] is None:
-            logging(self, "Log", "ota_upgrade_end_request - Receive Firmware Completed from %s most likely a duplicated packet as there is nothing in Progress. " % MsgSrcAddr)
+            logging(self, "Log", "ota_upgrade_end_request - Receive Firmware Completed from %s with status %s most likely a duplicated packet as there is nothing in Progress. " % (MsgSrcAddr, MsgStatus))
 
             return
         if self.ListInUpdate["NwkId"] and MsgSrcAddr != self.ListInUpdate["NwkId"]:
-            logging(self, "Error", "ota_upgrade_end_request - OTA upgrade completed - %s not in Upgraded devices" % MsgSrcAddr)
+            logging(self, "Error", "ota_upgrade_end_request - OTA upgrade completed - %s with status %s not in Upgraded devices" % (MsgSrcAddr, MsgStatus))
 
             return
         if "StartTime" not in self.ListInUpdate:
             logging(self, "Error", "ota_upgrade_end_request - OTA upgrade completed - No Start Time for device: %s" % MsgSrcAddr)
-
             return
+
         if MsgStatus == "00":
             logging(self, "Status", "OTA upgrade completed with success - %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s" % (
                 MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus))
@@ -719,8 +719,21 @@ def ota_upgrade_end_response(self, sqn, dest_addr, dest_ep, intMsgImageVersion, 
     _ImageType = image_type
     _ManufacturerCode = intMsgManufCode
 
-    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
-        zcl_raw_ota_upgrade_end_response(self, sqn, dest_addr, ZIGATE_EP, dest_ep, "%04x" % _ManufacturerCode, "%04x" % _ImageType, "%08x" % _FileVersion, "%08x" %UTCTime, "%08x" % _UpgradeTime)
+    if self.pluginconf.pluginConf.get("ControllerInRawMode",False):
+        zcl_raw_ota_upgrade_end_response(
+            self,
+            sqn,
+            dest_addr,
+            ZIGATE_EP,
+            dest_ep,
+            _ManufacturerCode,   # INT
+            _ImageType,          # INT
+            _FileVersion,        # INT
+            UTCTime,             # INT
+            _UpgradeTime,        # INT
+        )
+        logging( self, "Log", f"ota_management - zcl_raw_ota_upgrade_end_response( {sqn}, {dest_addr}, {ZIGATE_EP}, {dest_ep}, {_ManufacturerCode}, {_ImageType}, {_FileVersion}, {UTCTime}, {_UpgradeTime})", )
+
     else:
         datas = "%02x" % ADDRESS_MODE["short"] + dest_addr + ZIGATE_EP + dest_ep
         datas += "%08x" % _UpgradeTime
