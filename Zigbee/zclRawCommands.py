@@ -603,21 +603,41 @@ def zcl_raw_ota_image_notify(self, nwkid, EPIn, EPout, PayloadType, QueryJitter,
     return sqn
 
 
-def zcl_raw_ota_query_next_image_response(self, sqn, nwkid, EPIn, EPout, status, ManufCode=None, Imagetype=None, FileVersion=None, imagesize=None ):
-    self.log.logging("zclCommand", "Debug", "zcl_raw_ota_query_next_image_response %s %s %s %s %s %s %s %s" % (nwkid, EPIn, EPout, status, ManufCode, Imagetype, FileVersion, imagesize), nwkid)
-    zcl_command_formated_logging( self, "OTA_Query_Next_Image_Resp (Raw)", nwkid, EPout, "0019", status, ManufCode, Imagetype, FileVersion, imagesize)
-    
-    Command = "02"
-    cluster_frame = 0b00011001    # Cluster Specific / Server to Client / With Default Response
-    payload = "%02x" % cluster_frame + sqn + Command + status
-    if status == "00":
-        ManufCode = "%04x" % (struct.unpack(">H", struct.pack("H", int(ManufCode, 16)))[0])
-        Imagetype = "%04x" % (struct.unpack(">H", struct.pack("H", int(Imagetype, 16)))[0])
-        FileVersion = "%08x" % struct.unpack(">I", struct.pack("I", int(FileVersion, 16)))[0]
-        imagesize = "%08x" % struct.unpack(">I", struct.pack("I", int(imagesize, 16)))[0]
-    
-        payload += ManufCode + Imagetype + FileVersion + imagesize
-    raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
+def zcl_raw_ota_query_next_image_response(
+    self, sqn, nwkid, EPIn, EPout, status,
+    ManufCode=None, Imagetype=None, FileVersion=None, imagesize=None
+):
+    """
+    Build and send OTA Query Next Image Response (Command 0x02).
+    All multi-byte fields use little-endian encoding as per Zigbee OTA spec.
+    """
+
+    self.log.logging( "zclCommand", "Debug", f"zcl_raw_ota_query_next_image_response {nwkid} {EPIn} {EPout} " f"{status} {ManufCode} {Imagetype} {FileVersion} {imagesize}", nwkid )
+
+    # Frame control: Specific Command, Server -> Client, Disable Default Response
+    frame_control = 0x19
+    command_id = 0x02
+
+    if status == 0x00:
+        # SUCCESS
+        payload_bytes = struct.pack( "<BBBBHHLL", frame_control, int(sqn, 16), command_id, 0x00, ManufCode, Imagetype, FileVersion, imagesize )
+    else:
+        # FAILURE / NO IMAGE AVAILABLE
+        payload_bytes = struct.pack( "<BBBB", frame_control, int(sqn, 16), command_id, status )
+
+    payload_hex = payload_bytes.hex()
+
+    zcl_command_formated_logging( self, "OTA_Query_Next_Image_Resp (Raw)", nwkid, EPout, "0019", payload_hex )
+
+    raw_APS_request(
+        self, nwkid, EPout,
+        "0019", "0104",
+        payload_hex,
+        zigpyzqn=sqn,
+        zigate_ep=EPIn,
+        ackIsDisabled=False
+    )
+
     return sqn
 
 

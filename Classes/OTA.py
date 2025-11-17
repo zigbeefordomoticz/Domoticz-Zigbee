@@ -460,15 +460,22 @@ class OTAManagement(object):
 
         # If we have already an OTA in progress, let's just respond that no image available for now
         if self.ListInUpdate["NwkId"] and self.ListInUpdate["NwkId"] != srcnwkid:
-            zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, '98')
+            zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, 0x98)
             return
 
         # Command: 0x01
 
         fieldcontrol = int(Data[:2],16)
-        manufcode = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[2:6], 16)))[0]
-        imagetype = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[6:10], 16)))[0]
-        currentVersion = "%08x" % struct.unpack("I", struct.pack(">I", int(Data[10:18], 16)))[0]
+        logging(self, "Debug", f" Manuf: {Data[2:6]} Type: {Data[6:10]} Version: {Data[10:18]}")
+        logging(self, "Debug", f" Manuf: {int(Data[2:6], 16)} Type: {int(Data[6:10], 16)} Version: {int(Data[10:18], 16)}")
+        #manufcode = int(Data[2:6], 16)
+        #imagetype = int(Data[6:10], 16)
+        #currentVersion = int(Data[10:18], 16)
+        manufcode = struct.unpack("H", bytes.fromhex(Data[2:6]))[0]
+        imagetype = struct.unpack("H", bytes.fromhex(Data[6:10]))[0]
+        currentVersion = struct.unpack("I", bytes.fromhex(Data[10:18]))[0]
+
+
         if fieldcontrol:
             hardwareversion = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[18:22], 16)))[0]
 
@@ -483,26 +490,36 @@ class OTAManagement(object):
 
         image_found = is_image_for_query_next_image_request( self, srcnwkid, manufcode, imagetype, currentVersion )
         if image_found:     
-            fileversion = "%08x" %image_found["originalVersion"]
-            imagesize = "%08x" %image_found["intSize"]
+            fileversion = image_found["originalVersion"]   # integer
+            imagesize = image_found["intSize"]           # integer
+            logging(self, "Debug", f"OTA Query Next Image request - Image found fileversion: 0x{fileversion:08x} imagesize: {imagesize}")
             
             if "autoServeOTA" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoServeOTA"]:
+                logging(self, "Debug", f"OTA Query Next Image request - autoServeOTA fileversion: 0x{fileversion:08x} imagesize: {imagesize}")
+
                 self.ListInUpdate["AuthorizedForUpdate"].append( srcnwkid )
-                return zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, '00', manufcode, imagetype, fileversion, imagesize)
-            
+                return zcl_raw_ota_query_next_image_response(
+                    self, Sqn, srcnwkid, ZIGATE_EP, srcep,
+                    0x00, manufcode, imagetype, fileversion, imagesize)
+
             elif srcnwkid in self.ListInUpdate["AuthorizedForUpdate"]:
                 # We are in the case were we get a request, but do not authorised selfserving OTA
-                return zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, '00', manufcode, imagetype, fileversion, imagesize)
-            
+                logging(self, "Debug", f"OTA Query Next Image request - AuthorizedForUpdate fileversion: {fileversion} imagesize: {imagesize}")
+
+                return zcl_raw_ota_query_next_image_response(
+                    self, Sqn, srcnwkid, ZIGATE_EP, srcep,
+                    0x00, manufcode, imagetype, fileversion, imagesize)
+
         elif "checkFirmwareAgainstZigbeeOTARepository" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["checkFirmwareAgainstZigbeeOTARepository"]:
-            if (int(manufcode,16), int(imagetype,16), int(currentVersion,16)) not in self.zigbee_ota_found_in_index:
-                _ota_available = check_ota_availability_from_index( self, int(manufcode,16), int(imagetype,16), int(currentVersion,16) )
+            if (manufcode, imagetype, currentVersion) not in self.zigbee_ota_found_in_index:
+                _ota_available = check_ota_availability_from_index( self, manufcode, imagetype, currentVersion )
                 if _ota_available:
-                    self.zigbee_ota_found_in_index.append( ( int(manufcode,16), int(imagetype,16), int(currentVersion,16))  )
-                    notify_ota_firmware_available(self, srcnwkid, int(manufcode,16), int(imagetype,16), int(currentVersion,16), _ota_available )
+                    self.zigbee_ota_found_in_index.append( ( manufcode, imagetype, currentVersion)  )
+                    notify_ota_firmware_available(self, srcnwkid, manufcode, imagetype, currentVersion, _ota_available )
 
         # No Image available
-        zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, '98')
+        logging( self, "Debug", ( f"OTA Query Next Image request - No Image Available for now" f"fileversion for : manufcode: 0x{manufcode:04x}, " f"imagetype: 0x{imagetype:04x}, " f"currentVersion: 0x{currentVersion:08x}" ) )
+        return zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, 0x98)
 
 
 # Local Routines and other helpers
@@ -910,17 +927,17 @@ def is_image_for_query_next_image_request( self, nwkid, manuf_code, image_type, 
                 ),
                 nwkid
             )
-            if int(manuf_code,16) != self.ListOfImages["Brands"][brand_name][file_name]["intManufCode"]:
+            if manuf_code != self.ListOfImages["Brands"][brand_name][file_name]["intManufCode"]:
                 continue
             logging(self, "Debug", "is_image_for_query_next_image_request - potential brand name found:%s ..." % brand_name, nwkid)
 
-            if int(image_type,16) != self.ListOfImages["Brands"][brand_name][file_name]["ImageType"]:
+            if image_type != self.ListOfImages["Brands"][brand_name][file_name]["ImageType"]:
                 continue
 
             logging(self, "Debug", "is_image_for_query_next_image_request - potential image type found:%s with version %s..." % (
                 brand_name, self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]), nwkid)
 
-            if int(file_version,16) < self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]:
+            if file_version < self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]:
                 logging(self, "Debug", "is_image_for_query_next_image_request - We have newest firmware available for this device")
                 return self.ListOfImages["Brands"][brand_name][file_name]
             
@@ -1468,7 +1485,7 @@ def check_ota_availability_from_index( self, manufcode, imagetype, fileversion )
     if self.zigbee_ota_index is None:
         return None
     logging(self, "Debug", "check_ota_availability_from_index: Index Size: %s Searching ImageType: 0x%04x (%s) Version: 0x%08x (%s) ManufCode: 0x%04x (%s)" %(
-        len(self.zigbee_ota_index), manufcode, manufcode, imagetype, imagetype, fileversion, fileversion))
+        len(self.zigbee_ota_index), imagetype, imagetype, fileversion, fileversion, manufcode, manufcode,))
 
     return next((_image for _image in self.zigbee_ota_index if (_image["manufacturerCode"] == manufcode and _image["imageType"] == imagetype and _image["fileVersion"] > fileversion)), {})
 
