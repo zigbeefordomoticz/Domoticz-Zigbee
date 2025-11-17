@@ -659,40 +659,49 @@ def zcl_raw_ota_image_block_response_abort(self, nwkid, EPIn, EPout, abortstatus
     raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
     return sqn   
 
-                                           
+
 def zcl_raw_ota_upgrade_end_response(
     self, sqn, nwkid, EPIn, EPout, ManufCode, Imagetype, FileVersion, currenttime, upgradetime
 ):
     """
     Build and send OTA Upgrade End Response (Command 0x07) as raw APS frame.
+
+    Uses struct to handle endian conversion for all multi-byte fields.
     """
 
-    self.log.logging( "zclCommand", "Log", f"zcl_raw_ota_upgrade_end_response {nwkid} {EPIn} {EPout} " f"{ManufCode} {Imagetype} {FileVersion} {currenttime} {upgradetime}", nwkid )
+    # --- Pack fields using little-endian format ---
+    # '<' = little-endian, H = uint16, L = uint32
+    payload_bytes = struct.pack(
+        "<BBBHHLLL",
+        int("0x19", 16),   # Frame control
+        int(sqn, 16),      # Sequence number
+        int("0x07", 16),   # Command ID
+        ManufCode,         # 16-bit
+        Imagetype,         # 16-bit
+        FileVersion,       # 32-bit
+        currenttime,       # 32-bit
+        upgradetime        # 32-bit
+    )
 
-    zcl_command_formated_logging( self, "OTA_Upgrade_End_Response (Raw)", nwkid, EPout, "0019", ManufCode, Imagetype, FileVersion, currenttime, upgradetime )
+    # Convert to hex string for logging/payload construction
+    payload_hex = payload_bytes.hex()
 
-    # ZCL Frame Control:
-    # 0x19 = 0001 1001
-    # Frame Type = Cluster Specific (01)
-    # Manufacturer Specific = 0
-    # Direction = Server → Client (1)
-    # Disable Default Response = 1
-    frame_control = "19"
-    command_id = "07"
+    # Logging
+    self.log.logging(
+        "zclCommand", "Log",
+        f"zcl_raw_ota_upgrade_end_response {nwkid} {EPIn} {EPout} "
+        f"{payload_hex}",
+        nwkid
+    )
 
-    # Format all fields properly
-    ManufCode = f"{ManufCode:04x}"
-    Imagetype = f"{Imagetype:04x}"
-    FileVersion = f"{FileVersion:08x}"
-    currenttime = f"{currenttime:08x}"
-    upgradetime = f"{upgradetime:08x}"
-
-    # Construct raw payload
-    payload = ( frame_control + sqn + command_id + ManufCode + Imagetype + FileVersion + currenttime + upgradetime )
+    zcl_command_formated_logging(
+        self, "OTA_Upgrade_End_Response (Raw)", nwkid, EPout, "0019",
+        payload_hex
+    )
 
     raw_APS_request(
         self, nwkid, EPout, "0019", "0104",
-        payload,
+        payload_hex,
         zigpyzqn=sqn,
         zigate_ep=EPIn,
         ackIsDisabled=False
