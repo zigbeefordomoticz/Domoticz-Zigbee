@@ -608,13 +608,35 @@ def _log_debug_image_not_found(self, image_type, brand):
     logging(self, "Debug", f"ota_load_image_to_zigate - Image {image_type} not found in {list(self.ListOfImages['Brands'][brand].keys())}")
 
 
+#def _format_image_data(self, decoded_header, force_version):
+#    return (
+#        f"{ADDRESS_MODE['short']:02x}0000"
+#        f"{decoded_header['file_id']} {decoded_header['header_version']} {decoded_header['header_length']} {decoded_header['header_fctl']}"
+#        f"{decoded_header['manufacturer_code']} {decoded_header['image_type']} {force_version or decoded_header['image_version']}"
+#        f"{decoded_header['stack_version']}{''.join('%02X' % i for i in decoded_header['header_str'])}{decoded_header['image_size']}"
+#        f"{decoded_header['security_cred_version']} {decoded_header['payload_offset']} {decoded_header['min_hw_version']} {decoded_header['max_hw_version']}"
+#    )
+
 def _format_image_data(self, decoded_header, force_version):
+    header_bytes = decoded_header['header_str'].encode('ascii')  # convert string back to bytes
+    header_hex = ''.join('%02X' % b for b in header_bytes)
+
     return (
         f"{ADDRESS_MODE['short']:02x}0000"
-        f"{decoded_header['file_id']} {decoded_header['header_version']} {decoded_header['header_length']} {decoded_header['header_fctl']}"
-        f"{decoded_header['manufacturer_code']} {decoded_header['image_type']} {force_version or decoded_header['image_version']}"
-        f"{decoded_header['stack_version']}{''.join('%02X' % i for i in decoded_header['header_str'])}{decoded_header['size']}"
-        f"{decoded_header['security_cred_version']} {decoded_header['upgrade_file_dest']} {decoded_header['min_hw_version']} {decoded_header['max_hw_version']}"
+        f"{decoded_header['file_id']} "
+        f"{decoded_header['header_version']} "
+        f"{decoded_header['header_length']} "
+        f"{decoded_header['header_fctl']} "
+        f"{decoded_header['manufacturer_code']} "
+        f"{decoded_header['image_type']} "
+        f"{force_version or decoded_header['image_version']} "
+        f"{decoded_header['stack_version']}"
+        f"{header_hex} "
+        f"{decoded_header['image_size']} "
+        f"{decoded_header['security_cred_version']} "
+        f"{decoded_header['payload_offset']} "
+        f"{decoded_header['min_hw_version']} "
+        f"{decoded_header['max_hw_version']}"
     )
 
 
@@ -1170,7 +1192,7 @@ def ota_scan_folder(self):  # OK 13/10
                 "intManufCode": headers["manufacturer_code"],
                 "originalVersion": headers["image_version"],
                 "intImageVersion": headers["image_version"],
-                "intSize": headers["size"],
+                "intSize": headers["image_size"],
             }
     # Check if there are any firmware images loaded
     if self.ListOfImages:
@@ -1207,26 +1229,29 @@ def check_image_valid_version(self, brand, image_type, ota_image_file, headers):
     return True
 
 
-def ota_extract_image_headers(self, subfolder, image):  # OK 13/10
-    # Load headers from the image
+def ota_extract_image_headers(self, subfolder, image):
     ota_image = _open_image_file(self, Path(self.pluginconf.pluginConf["pluginOTAFirmware"]) / subfolder / image)
-    if ota_image is None:
+
+    if not ota_image:
         return None
 
     offset = offset_start_firmware(self, ota_image)
     if offset is None:
         return None
 
-    logging(self, "Debug", "ota_extract_image_headers - offset:%s ..." % offset)
-    ota_image = ota_image[offset:]
+    ota_image = ota_image[offset:]  # trim before reading header
     headers = unpack_headers(self, ota_image)
-    _logging_headers(self, headers)
 
-    logging(
-        self,
-        "Status",
-        "Available Firmware - ManufCode: 0x%04x ImageType: 0x%04x FileVersion: 0x%08x Size: %8s Bytes Filename: %s"
-        % (headers["manufacturer_code"], headers["image_type"], headers["image_version"], headers["size"], image),
+    if headers is None:
+        return None
+
+    logging_OTA_headers(self, headers)
+    logging(self, "Status", "Available Firmware - ManufCode: 0x%04x ImageType: 0x%04x FileVersion: 0x%08x Size: %s Bytes Filename: %s" % (
+        headers["manufacturer_code"],
+        headers["image_type"],
+        headers["image_version"],
+        headers["image_size"],
+        image)
     )
 
     return headers["image_type"], headers, ota_image
@@ -1245,49 +1270,199 @@ def _open_image_file(self, filename):  # OK 13/10
     return ota_image
 
 
-def offset_start_firmware(self, ota_image):  # OK 13/10
-    # Search for the OTA Upgrade File Identifier ( “0x0BEEF11E” )
-    offset = None
-    return next(
-        (
-            i
-            for i in range(len(ota_image) - 4)
-            if hex(struct.unpack("<I", ota_image[i : i + 4])[0]) == "0xbeef11e"
-        ),
-        None,
-    )
+def offset_start_firmware(self, ota_image):
+    """Locate the OTA file identifier 0x0BEEF11E inside the firmware."""
+    
+    MAGIC = 0x0BEEF11E
+
+    for i in range(len(ota_image) - 4):
+        val = struct.unpack_from("<I", ota_image, i)[0]
+        if val == MAGIC:
+            logging(self, "Debug", f"Found OTA magic at offset {i}")
+            return i
+
+    logging(self, "Error", "Zigbee OTA magic not found in firmware image")
+    return None
 
 
-def unpack_headers(self, ota_image):  # OK 13/10
-    try:
-        header_data = list(struct.unpack("<LHHHHHLH32BLBQHH", ota_image[:69]))
-    except struct.error:
-        logging(self, "Error", f"ota_extract_image_headers - Error when unpacking: {ota_image[:69]}")
-        return None
+def debug_header_bytes(self, ota_image):
+    logging(self, "Debug", "---- OTA HEADER DEBUG ----")
+    logging(self, "Debug", f"Total file size: {len(ota_image)} bytes")
 
-    for i in range(8, 40):
-        if header_data[i] == 0x00:
-            header_data[i] = 0x20
+    # print first 80 bytes in hex, grouped for clarity
+    raw = ota_image[:80]
+    logging(self, "Debug", "Raw first 80 bytes:")
 
-    header_data_compact = header_data[:8] + [header_data[8:40]] + header_data[40:]
-    header_headers = [
-        "file_id",
-        "header_version",
-        "header_length",
-        "header_fctl",
-        "manufacturer_code",
-        "image_type",
-        "image_version",
-        "stack_version",
-        "header_str",
-        "size",
-        "security_cred_version",
-        "upgrade_file_dest",
-        "min_hw_version",
-        "max_hw_version",
-    ]
+    for i in range(0, 80, 16):
+        line = ota_image[i:i + 16]
+        logging(self, "Debug", f"  {i:04x}: {line.hex(' ')}")
 
-    return dict(zip(header_headers, header_data_compact))
+    logging(self, "Debug", "--------------------------")
+
+
+def unpack_headers(self, ota_image: bytes):
+    """
+    Parse a Zigbee OTA image header according to the Zigbee Cluster Library (ZCL)
+    OTA Upgrade specification (Cluster 0x0019).
+
+    This function works with **all vendors** (standard, Legrand, Tuya, Ikea, OSRAM,
+    Sonoff, Schneider, etc.) because it only parses the mandatory header fields,
+    checks the Field Control flags, and treats all other data as vendor-specific.
+
+    ---------------------------------------------------------------------------
+    Zigbee OTA Header Structure (Mandatory Section – Always Present)
+    ---------------------------------------------------------------------------
+    Offset | Size | Field Name          | Format | Description
+    -------+------+----------------------+--------+-------------------------------
+      0    |  4   | File Identifier      |  L     | Magic: 0x0BEEF11E (little-endian)
+      4    |  2   | Header Version       |  H     | Usually 0x0001
+      6    |  2   | Header Length        |  H     | Total header size in bytes
+      8    |  2   | Field Control        |  H     | Bitmask defining optional fields
+     10    |  2   | Manufacturer Code    |  H     | ZCL manufacturer ID
+     12    |  2   | Image Type           |  H     | Device-specific firmware type
+     14    |  4   | File Version         |  L     | Firmware version
+     18    |  2   | Stack Version        |  H     | Zigbee stack version
+     20    | 32   | Header String        | 32s    | ASCII name padded with 0x00
+     52    |  4   | Image Size           |  L     | Total firmware size
+
+    Total mandatory length = 56 bytes
+
+    ---------------------------------------------------------------------------
+    Optional Fields (based on Field Control bits)
+    ---------------------------------------------------------------------------
+    Bit 0 (0x01): Hardware version fields included:
+      - Minimum Hardware Version (uint16)
+      - Maximum Hardware Version (uint16)
+
+    Additional metadata may follow but is **vendor-specific** and not standardized.
+
+    ---------------------------------------------------------------------------
+    Vendor-Specific Fields
+    ---------------------------------------------------------------------------
+    Everything between:
+       offset + header_length
+       and
+       offset + parsed_optional_fields_end
+    is considered vendor-specific metadata.
+
+    Examples:
+      - Legrand firmwares add proprietary metadata directly after the header.
+      - Tuya OTAs embed custom TLV metadata.
+      - OSRAM and IKEA sometimes append signature blocks.
+
+    This function preserves vendor data in raw form under "vendor_data" without
+    attempting to parse it.
+
+    ---------------------------------------------------------------------------
+    Searching for the OTA Magic
+    ---------------------------------------------------------------------------
+    The function automatically finds the OTA header by scanning for:
+        0x1E F1 EE 0B   (little-endian 0x0BEEF11E)
+
+    This allows working with:
+      - Encapsulated OTAs
+      - Bootloader images prepended
+      - Vendor-wrapped images
+
+    ---------------------------------------------------------------------------
+    Returns:
+        dict with the following keys:
+
+        file_id: int
+        header_version: int
+        header_length: int
+        field_control: int
+        manufacturer_code: int
+        image_type: int
+        file_version: int
+        stack_version: int
+        header_string: str
+        image_size: int
+        min_hw_version: Optional[int]
+        max_hw_version: Optional[int]
+        sec_cred_version: Optional[int]
+        vendor_data: bytes  # raw vendor metadata block
+        payload_offset: int # absolute offset of firmware payload inside file
+
+    Raises:
+        ValueError: If the OTA magic cannot be found or the header is malformed.
+
+    ---------------------------------------------------------------------------
+    Example:
+        headers = unpack_headers(ota_data)
+        print(headers["manufacturer_code"])
+        print(headers["image_size"])
+    ---------------------------------------------------------------------------
+    """
+    debug_header_bytes(self, ota_image)
+    
+    # --- 1. Magic search ---
+    MAGIC = b"\x1e\xf1\xee\x0b"
+    offset = ota_image.find(MAGIC)
+    if offset < 0:
+        raise ValueError("OTA Magic not found in image (0x0BEEF11E).")
+
+    # --- 2. Base header (56 bytes) ---
+    fmt_base = "<L H H H H H L H 32s L"
+    BASE_HEADER_SIZE = struct.calcsize(fmt_base)
+
+    base_slice = ota_image[offset : offset + BASE_HEADER_SIZE]
+
+    (
+        file_id,
+        header_version,
+        header_length,
+        field_ctrl,
+        manufacturer_code,
+        image_type,
+        file_version,
+        stack_version,
+        header_str_raw,
+        image_size,
+    ) = struct.unpack(fmt_base, base_slice)
+
+    header_string = header_str_raw.rstrip(b"\x00").decode( "ascii", errors="ignore" )
+
+    # --- 3. Optional hardware version fields ---
+    min_hw = None
+    max_hw = None
+    sec_cred_version = None
+    extra_offset = offset + BASE_HEADER_SIZE
+
+    # Bit 0 → Hardware Version
+    if field_ctrl & 0x01:
+        fmt_hw = "<H H"
+        EXTRA_SIZE = struct.calcsize(fmt_hw)
+        hw_slice = ota_image[extra_offset : extra_offset + EXTRA_SIZE]
+        min_hw, max_hw = struct.unpack(fmt_hw, hw_slice)
+        extra_offset += EXTRA_SIZE
+
+    # Bit 2 → Security Credential Version
+    if field_ctrl & 0x04:
+        sec_cred_version = ota_image[extra_offset]
+        extra_offset += 1
+
+    # --- 4. Vendor-specific data (ignored by standard, preserved raw) ---
+    vendor_data = ota_image[offset + header_length : extra_offset]
+
+    # --- 5. Construct result dictionary ---
+    return {
+        "file_id": file_id,
+        "header_version": header_version,
+        "header_length": header_length,
+        "header_fctl": field_ctrl,
+        "manufacturer_code": manufacturer_code,
+        "image_type": image_type,
+        "image_version": file_version,
+        "stack_version": stack_version,
+        "header_str": header_string,
+        "image_size": image_size,
+        "min_hw_version": min_hw,
+        "max_hw_version": max_hw,
+        "security_cred_version": sec_cred_version,
+        "vendor_data": vendor_data,
+        "payload_offset": offset + header_length,
+    }
 
 
 def prepare_and_send_block(self, MsgSrcAddr, MsgEP, MsgFileOffset, intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, intMsgFieldControl, MsgSQN, disableACK=False):
@@ -1483,27 +1658,33 @@ def convert_time(seconds):
     return hours, minutes, seconds
 
 
-def _logging_headers(self, headers):  # OK 13/10
+def logging_OTA_headers(self, headers):
+    """
+    Print OTA header fields for debugging.
+
+    - Skips vendor_data and stack_version by default.
+    - Decodes file_version into Application Release/Build and Stack Release/Build.
+    - Decodes stack version and security credential version into human-readable names.
+    """
 
     if not self.pluginconf.pluginConf.get("debugOTA", False):
         return
 
-    excluded_attributs = {"stack_version", "security_cred_version", "image_version"}
-    
-    for attribut, value in headers.items():
-        if attribut not in excluded_attributs:
+    EXCLUDED_ATTRIBUTES = {"stack_version", "vendor_data", "image_version"}
+    for attr, value in headers.items():
+        if attr not in EXCLUDED_ATTRIBUTES:
             if isinstance(value, int):
-                logging(self, "Debug", f"==> {attribut}: 0x{value:X}")
+                logging( self, "Debug", f"==>    {attr}: 0x{value:X}")
             else:
-                logging(self, "Debug", f"==> {attribut}: {value}")
+                logging( self, "Debug", f"==>    {attr}: {value}")
 
     # Decoding File Version
-    image_version = headers["image_version"]
-    logging(self, "Debug", f"==> File Version: 0x{image_version:08X}")
-    logging(self, "Debug", f"==>    Application Release: 0x{(image_version & 0xFF000000) >> 24:02X}")
-    logging(self, "Debug", f"==>    Application Build: {(image_version & 0x00FF0000) >> 16}")
-    logging(self, "Debug", f"==>    Stack Release: {(image_version & 0x0000FF00) >> 8}")
-    logging(self, "Debug", f"==>    Stack Build: {image_version & 0x000000FF}")
+    file_version = headers["file_version"]
+    logging( self, "Debug", f"==>    File Version:        0x{file_version:08X}")
+    logging( self, "Debug", f"==>    Application Release: 0x{(file_version & 0xFF000000) >> 24:02X}", )
+    logging( self, "Debug", f"==>    Application Build:   {(file_version & 0x00FF0000) >> 16}", )
+    logging( self, "Debug", f"==>    Stack Release:       {(file_version & 0x0000FF00) >> 8}", )
+    logging( self, "Debug", f"==>    Stack Build:         {file_version & 0x000000FF}" )
 
     # Stack version
     stack_version = headers["stack_version"]
@@ -1513,16 +1694,26 @@ def _logging_headers(self, headers):  # OK 13/10
         0x0002: "ZigBee Pro",
         0x0003: "ZigBee IP",
     }
-    logging(self, "Debug", f"==> Stack Name: {stack_names.get(stack_version, 'Reserved')}")
+    logging( self, "Debug", f"==>    Stack Name:          {stack_names.get(stack_version, 'Reserved')}")
 
-    # Security Credential
-    security_cred_version = headers["security_cred_version"]
-    credential_names = {
-        0x00: "SE 1.0",
-        0x01: "SE 1.1",
-        0x02: "SE 2.0",
-    }
-    logging(self, "Debug", f"==> Security Credential: {credential_names.get(security_cred_version, 'Reserved')}")
+    # Security Credential Version (optional)
+    security_cred_version = headers.get("security_cred_version")
+    if security_cred_version is not None:
+        credential_names = {
+            0x00: "SE 1.0",
+            0x01: "SE 1.1",
+            0x02: "SE 2.0",
+        }
+        logging( self, "Debug", f"==>    Security Credential: {credential_names.get(security_cred_version, 'Reserved')}", )
+    else:
+        logging( self, "Debug", "==>     Security Credential: None")
+        
+    vendor_data = headers.get("vendor_data", b"")
+    if vendor_data:
+        max_len = 64  # print only first 64 bytes
+        data_to_log = vendor_data[:max_len]
+        hex_data = ' '.join(f'{b:02X}' for b in data_to_log)
+        logging( self, "Debug", f"==>    Vendor Data:         ({len(vendor_data)} bytes, first {len(data_to_log)} shown): {hex_data}")
 
 
 def display_percentage_progress(self, MsgSrcAddr, MsgEP, intMsgImageType, MsgFileOffset):
