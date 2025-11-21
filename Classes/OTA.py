@@ -608,15 +608,6 @@ def _log_debug_image_not_found(self, image_type, brand):
     logging(self, "Debug", f"ota_load_image_to_zigate - Image {image_type} not found in {list(self.ListOfImages['Brands'][brand].keys())}")
 
 
-#def _format_image_data(self, decoded_header, force_version):
-#    return (
-#        f"{ADDRESS_MODE['short']:02x}0000"
-#        f"{decoded_header['file_id']} {decoded_header['header_version']} {decoded_header['header_length']} {decoded_header['header_fctl']}"
-#        f"{decoded_header['manufacturer_code']} {decoded_header['image_type']} {force_version or decoded_header['image_version']}"
-#        f"{decoded_header['stack_version']}{''.join('%02X' % i for i in decoded_header['header_str'])}{decoded_header['image_size']}"
-#        f"{decoded_header['security_cred_version']} {decoded_header['payload_offset']} {decoded_header['min_hw_version']} {decoded_header['max_hw_version']}"
-#    )
-
 def _format_image_data(self, decoded_header, force_version):
     header_bytes = decoded_header['header_str'].encode('ascii')  # convert string back to bytes
     header_hex = ''.join('%02X' % b for b in header_bytes)
@@ -1283,23 +1274,6 @@ def offset_start_firmware(self, ota_image):
 
     logging(self, "Error", "Zigbee OTA magic not found in firmware image")
     return None
-
-#def offset_start_firmware(self, ota_image):
-#    """
-#    Locate the OTA file identifier 0x0BEEF11E inside the firmware.
-#
-#    Returns the offset of the **last occurrence** of the magic number,
-#    which usually corresponds to the actual OTA header containing the payload.
-#    """
-#    MAGIC = 0x0BEEF11E
-#    last_offset = None
-#
-#    for i in range(len(ota_image) - 4):
-#        val = struct.unpack_from("<I", ota_image, i)[0]
-#        if val == MAGIC:
-#            last_offset = i  # Keep updating to the latest occurrence
-#
-#    return last_offset
 
 
 def debug_header_bytes(self, ota_image):
