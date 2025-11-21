@@ -1284,6 +1284,23 @@ def offset_start_firmware(self, ota_image):
     logging(self, "Error", "Zigbee OTA magic not found in firmware image")
     return None
 
+#def offset_start_firmware(self, ota_image):
+#    """
+#    Locate the OTA file identifier 0x0BEEF11E inside the firmware.
+#
+#    Returns the offset of the **last occurrence** of the magic number,
+#    which usually corresponds to the actual OTA header containing the payload.
+#    """
+#    MAGIC = 0x0BEEF11E
+#    last_offset = None
+#
+#    for i in range(len(ota_image) - 4):
+#        val = struct.unpack_from("<I", ota_image, i)[0]
+#        if val == MAGIC:
+#            last_offset = i  # Keep updating to the latest occurrence
+#
+#    return last_offset
+
 
 def debug_header_bytes(self, ota_image):
     logging(self, "Debug", "---- OTA HEADER DEBUG ----")
