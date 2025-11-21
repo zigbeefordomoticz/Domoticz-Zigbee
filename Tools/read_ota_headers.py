@@ -13,6 +13,7 @@ This script:
 
 """
 
+
 import struct
 import argparse
 import textwrap
@@ -24,11 +25,27 @@ HEADER_STRING_SIZE = 32
 # Known vendors mapping
 VENDOR_MAP = {
     0x1021: "Legrand",
-    0x1037: "Tuya",
     0x1185: "IKEA",
-    0x100B: "OSRAM",
     0x1234: "Sonoff",
-    # Add more known manufacturer codes as needed
+    0x1002: "EMBER",
+    0x100B: "PHILIPS",
+    0x1037: "LUMI",
+    0x105E: "SCHNEIDER ELECTRIC",
+    0x1078: "COMPUTIME",
+    0x1110: "PROFALUX",
+    0x115C: "DANALOCK",
+    0x110C: "OSRAM",
+    0x113C: "OWON",
+    0x115F: "XIAOMI",
+    0x1166: "INNR",
+    0x117C: "IKEA OF SWEDEN",
+    0x1189: "LEDVANCE",
+    0x120B: "HEIMAN",
+    0x1246: "DANFOSS",
+    0x1268: "KONKE",
+    0xBBAA: "OSRAM-2",
+    0x1015: "Develco",
+    0x128B: "NODON",
 }
 
 #def find_header_offset(data):
