@@ -4,142 +4,54 @@ Standalone script to read and display Zigbee OTA firmware headers.
 
 This script:
 - Scans the file for the OTA header identifier (0x0BEEF11E)
-- Parses the mandatory 20-byte header
-- Parses the standard 32-byte header string
+- Parses the mandatory 56-byte header
 - Parses optional fields (if present)
 - Extracts vendor-specific data (if any)
-- Prints the first 64 bytes of the OTA file
+- Prints the *first 64 bytes of the actual firmware payload*
 - Prints the header in a clean table format
-
-Author: ChatGPT (2025)
 """
 
 import struct
 import argparse
 
 FILE_IDENTIFIER = 0x0BEEF11E
-MANDATORY_HEADER_SIZE = 20       # Correct Zigbee OTA spec
-HEADER_STRING_SIZE = 32
-BASE_HEADER_SIZE = 56            # 20 mandatory + 32 string + 4? Zigbee spec defines 56 bytes for minimal header
+
+# Zigbee OTA mandatory base header layout (56 bytes)
+BASE_HEADER_FORMAT = "<L H H H H H L H 32s L"
+BASE_HEADER_SIZE = struct.calcsize(BASE_HEADER_FORMAT)  # 56 bytes
 
 
+# ------------------------------------------------------------------------------
+# Find OTA Header Start
+# ------------------------------------------------------------------------------
 def find_header_offset(data):
     """Locate the OTA file identifier 0x0BEEF11E inside the firmware."""
-    
     MAGIC = 0x0BEEF11E
 
     for i in range(len(data) - 4):
-        val = struct.unpack_from("<I", data, i)[0]
-        if val == MAGIC:
+        if struct.unpack_from("<I", data, i)[0] == MAGIC:
             return i
-
     return None
 
-    
+
+# ------------------------------------------------------------------------------
+# Parse OTA Header
+# ------------------------------------------------------------------------------
 def unpack_headers(data: bytes) -> dict:
     """
-    Parse a Zigbee OTA image header according to the Zigbee Cluster Library (ZCL)
-    OTA Upgrade specification (Cluster 0x0019).
+    Parse a Zigbee OTA image header according to the Zigbee Cluster Library.
 
-    This function works with **all vendors** (standard, Legrand, Tuya, Ikea, OSRAM,
-    Sonoff, Schneider, etc.) because it only parses the mandatory header fields,
-    checks the Field Control flags, and treats all other data as vendor-specific.
-
-    ---------------------------------------------------------------------------
-    Zigbee OTA Header Structure (Mandatory Section – Always Present)
-    ---------------------------------------------------------------------------
-    Offset | Size | Field Name          | Format | Description
-    -------+------+----------------------+--------+-------------------------------
-      0    |  4   | File Identifier      |  L     | Magic: 0x0BEEF11E (little-endian)
-      4    |  2   | Header Version       |  H     | Usually 0x0001
-      6    |  2   | Header Length        |  H     | Total header size in bytes
-      8    |  2   | Field Control        |  H     | Bitmask defining optional fields
-     10    |  2   | Manufacturer Code    |  H     | ZCL manufacturer ID
-     12    |  2   | Image Type           |  H     | Device-specific firmware type
-     14    |  4   | File Version         |  L     | Firmware version
-     18    |  2   | Stack Version        |  H     | Zigbee stack version
-     20    | 32   | Header String        | 32s    | ASCII name padded with 0x00
-     52    |  4   | Image Size           |  L     | Total firmware size
-
-    Total mandatory length = 56 bytes
-
-    ---------------------------------------------------------------------------
-    Optional Fields (based on Field Control bits)
-    ---------------------------------------------------------------------------
-    Bit 0 (0x01): Hardware version fields included:
-      - Minimum Hardware Version (uint16)
-      - Maximum Hardware Version (uint16)
-
-    Additional metadata may follow but is **vendor-specific** and not standardized.
-
-    ---------------------------------------------------------------------------
-    Vendor-Specific Fields
-    ---------------------------------------------------------------------------
-    Everything between:
-       offset + header_length
-       and
-       offset + parsed_optional_fields_end
-    is considered vendor-specific metadata.
-
-    Examples:
-      - Legrand firmwares add proprietary metadata directly after the header.
-      - Tuya OTAs embed custom TLV metadata.
-      - OSRAM and IKEA sometimes append signature blocks.
-
-    This function preserves vendor data in raw form under "vendor_data" without
-    attempting to parse it.
-
-    ---------------------------------------------------------------------------
-    Searching for the OTA Magic
-    ---------------------------------------------------------------------------
-    The function automatically finds the OTA header by scanning for:
-        0x1E F1 EE 0B   (little-endian 0x0BEEF11E)
-
-    This allows working with:
-      - Encapsulated OTAs
-      - Bootloader images prepended
-      - Vendor-wrapped images
-
-    ---------------------------------------------------------------------------
-    Returns:
-        dict with the following keys:
-
-        file_id: int
-        header_version: int
-        header_length: int
-        field_control: int
-        manufacturer_code: int
-        image_type: int
-        file_version: int
-        stack_version: int
-        header_string: str
-        image_size: int
-        min_hw_version: Optional[int]
-        max_hw_version: Optional[int]
-        sec_cred_version: Optional[int]
-        vendor_data: bytes  # raw vendor metadata block
-        payload_offset: int # absolute offset of firmware payload inside file
-
-    Raises:
-        ValueError: If the OTA magic cannot be found or the header is malformed.
-
-    ---------------------------------------------------------------------------
-    Example:
-        headers = unpack_headers(ota_data)
-        print(headers["manufacturer_code"])
-        print(headers["image_size"])
-    ---------------------------------------------------------------------------
+    Works with Legrand, Tuya, IKEA, OSRAM, Sonoff, Schneider, etc.
     """
-    
-    # --- 1. Magic search ---
+
+    # --- 1. Find OTA header ---
     offset = find_header_offset(data)
+    if offset is None:
+        raise ValueError("OTA header magic 0x0BEEF11E not found.")
 
-    # --- 2. Base header (56 bytes) ---
-    fmt_base = "<L H H H H H L H 32s L"
-    BASE_HEADER_SIZE = struct.calcsize(fmt_base)
+    base = data[offset : offset + BASE_HEADER_SIZE]
 
-    base_slice = data[offset : offset + BASE_HEADER_SIZE]
-
+    # --- 2. Unpack mandatory 56-byte header ---
     (
         file_id,
         header_version,
@@ -151,42 +63,39 @@ def unpack_headers(data: bytes) -> dict:
         stack_version,
         header_str_raw,
         image_size,
-    ) = struct.unpack(fmt_base, base_slice)
+    ) = struct.unpack(BASE_HEADER_FORMAT, base)
 
+    header_string = header_str_raw.rstrip(b"\x00").decode("ascii", errors="ignore")
 
-    # --- 3. Optional hardware version fields ---
-    # After unpacking base header
+    # --- 3. Optional fields parsing ---
     extra_offset = offset + BASE_HEADER_SIZE
 
-    # Bit 0 → Hardware Version
-    min_hw_version, max_hw_version = None, None
+    # Optional: Hardware versions (Bit 0)
+    min_hw_version = max_hw_version = None
     if field_ctrl & 0x01:
-        fmt_hw = "<H H"
-        hw_size = struct.calcsize(fmt_hw)
-        hw_slice = data[extra_offset : extra_offset + hw_size]
-        min_hw_version, max_hw_version = struct.unpack(fmt_hw, hw_slice)
-        extra_offset += hw_size
+        min_hw_version, max_hw_version = struct.unpack_from("<HH", data, extra_offset)
+        extra_offset += 4
 
-    # Bit 1 - Upgrade File Destination (EUI64)
+    # Optional: Upgrade File Destination (Bit 1) → EUI64
+    upgrade_file_destination = None
     if field_ctrl & 0x0002:
-        eui = data[offset:offset+8]
-        upgrade_file_destination = eui.hex()
-        offset += 8
-    else:
-        upgrade_file_destination = None
+        upgrade_file_destination = data[extra_offset : extra_offset + 8].hex()
+        extra_offset += 8
 
-
-    # Bit 2 → Security Credential Version
+    # Optional: Security Credential Version (Bit 2)
     sec_cred_version = None
     if field_ctrl & 0x04:
         sec_cred_version = data[extra_offset]
         extra_offset += 1
 
-    # Vendor-specific data
-    vendor_data = data[extra_offset : offset + header_length]
-    # --- 5. Construct result dictionary ---
-    header_string = header_str_raw.rstrip(b"\x00").decode( "ascii", errors="ignore" )
-    
+    # --- 4. Vendor Data ---
+    vendor_data_start = extra_offset
+    vendor_data_end = offset + header_length
+    vendor_data = data[vendor_data_start:vendor_data_end]
+
+    # --- 5. Payload offset ---
+    payload_offset = offset + header_length
+
     return {
         "file_id": file_id,
         "header_version": header_version,
@@ -204,31 +113,31 @@ def unpack_headers(data: bytes) -> dict:
         "upgrade_file_destination": upgrade_file_destination,
         "vendor_data_length": len(vendor_data),
         "vendor_data": vendor_data,
-        "payload_offset": offset + header_length,
+        "payload_offset": payload_offset,
     }
 
 
+# ------------------------------------------------------------------------------
+# Read OTA File and Produce Final Data Structure
+# ------------------------------------------------------------------------------
 def read_ota_header(path):
     """Read and decode an OTA Zigbee header."""
     with open(path, "rb") as f:
         data = f.read()
 
-    header_offset = find_header_offset(data)
-    if header_offset is None:
-        raise ValueError("OTA Header ID (0x0BEEF11E) not found.")
+    headers = unpack_headers(data)
 
-    ota = data[header_offset:]
+    # Extract FIRST 64 BYTES OF THE ACTUAL PAYLOAD
+    start = headers["payload_offset"]
+    headers["first_64_bytes"] = data[start : start + 64]
 
-    headers = unpack_headers(ota)
-
-    return {
-        **headers,
-        "first_64_bytes": ota[:64],
-    }
+    return headers
 
 
+# ------------------------------------------------------------------------------
+# Pretty Printing
+# ------------------------------------------------------------------------------
 def print_headers(h):
-    """Pretty formatted header output."""
     print("\n==== Zigbee OTA Firmware Header ====\n")
 
     print(f"{'File ID':30} {h['file_id']:>10}   0x{h['file_id']:08X}")
@@ -267,11 +176,14 @@ def print_headers(h):
     print(f"{'Payload Offset':30} {h['payload_offset']}   0x{h['payload_offset']:X}")
     print()
 
-    print("-- First 64 bytes --")
+    print("-- First 64 bytes of Firmware Payload --")
     print(h["first_64_bytes"].hex(" "))
     print("\n====================================\n")
 
 
+# ------------------------------------------------------------------------------
+# Entry Point
+# ------------------------------------------------------------------------------
 def main():
     parser = argparse.ArgumentParser(description="Read Zigbee OTA firmware header")
     parser.add_argument("file", help="Path to the OTA firmware file")
@@ -283,4 +195,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
