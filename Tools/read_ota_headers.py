@@ -31,6 +31,22 @@ VENDOR_MAP = {
     # Add more known manufacturer codes as needed
 }
 
+#def find_header_offset(data):
+#    """
+#    Locate the OTA file identifier 0x0BEEF11E inside the firmware.
+#
+#    Returns the offset of the **last occurrence** of the magic number,
+#    which usually corresponds to the actual OTA header containing the payload.
+#    """
+#    MAGIC = FILE_IDENTIFIER
+#    last_offset = None
+#
+#    for i in range(len(data) - 4):
+#        val = struct.unpack_from("<I", data, i)[0]
+#        if val == MAGIC:
+#            last_offset = i  # Keep updating to the latest occurrence
+#
+#    return last_offset
 
 def find_header_offset(data):
     """Locate the OTA file identifier 0x0BEEF11E inside the firmware."""
@@ -167,7 +183,8 @@ def print_headers(h):
     print(f"{'Manufacturer Code':30} {h['manufacturer_code']:>10}   0x{h['manufacturer_code']:04X}")
     print(f"{'Vendor Name':30} {h['vendor_name']}")
     print(f"{'Image Type':30} {h['image_type']:>10}   0x{h['image_type']:04X}")
-    print(f"{'File Version':30} {h['image_version']:>10}   0x{h['image_version']:08X}")
+    print(f"{'Image Version':30} {h['image_version']:>10}   0x{h['image_version']:08X}")
+    print(f"{'Image Size':30} {h['image_size']:>10}   0x{h['image_size']:08X}")
     print(f"{'Stack Version':30} {h['stack_version']:>10}   0x{h['stack_version']:04X}")
     print(f"{'Header String':30} '{h['header_str']}'\n")
 
