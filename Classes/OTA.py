@@ -1421,31 +1421,32 @@ def unpack_headers(self, ota_image: bytes):
         image_size,
     ) = struct.unpack(fmt_base, base_slice)
 
-    header_string = header_str_raw.rstrip(b"\x00").decode( "ascii", errors="ignore" )
 
     # --- 3. Optional hardware version fields ---
-    min_hw = None
-    max_hw = None
-    sec_cred_version = None
+    # After unpacking base header
     extra_offset = offset + BASE_HEADER_SIZE
 
     # Bit 0 → Hardware Version
+    min_hw_version, max_hw_version = None, None
     if field_ctrl & 0x01:
         fmt_hw = "<H H"
-        EXTRA_SIZE = struct.calcsize(fmt_hw)
-        hw_slice = ota_image[extra_offset : extra_offset + EXTRA_SIZE]
-        min_hw, max_hw = struct.unpack(fmt_hw, hw_slice)
-        extra_offset += EXTRA_SIZE
+        hw_size = struct.calcsize(fmt_hw)
+        hw_slice = ota_image[extra_offset : extra_offset + hw_size]
+        min_hw_version, max_hw_version = struct.unpack(fmt_hw, hw_slice)
+        extra_offset += hw_size
 
     # Bit 2 → Security Credential Version
+    sec_cred_version = None
     if field_ctrl & 0x04:
         sec_cred_version = ota_image[extra_offset]
         extra_offset += 1
 
-    # --- 4. Vendor-specific data (ignored by standard, preserved raw) ---
-    vendor_data = ota_image[offset + header_length : extra_offset]
+    # Vendor-specific data
+    vendor_data = ota_image[extra_offset : offset + header_length]
 
     # --- 5. Construct result dictionary ---
+    header_string = header_str_raw.rstrip(b"\x00").decode( "ascii", errors="ignore" )
+    
     return {
         "file_id": file_id,
         "header_version": header_version,
@@ -1457,8 +1458,8 @@ def unpack_headers(self, ota_image: bytes):
         "stack_version": stack_version,
         "header_str": header_string,
         "image_size": image_size,
-        "min_hw_version": min_hw,
-        "max_hw_version": max_hw,
+        "min_hw_version": min_hw_version,
+        "max_hw_version": max_hw_version,
         "security_cred_version": sec_cred_version,
         "vendor_data": vendor_data,
         "payload_offset": offset + header_length,
