@@ -48,23 +48,6 @@ VENDOR_MAP = {
     0x128B: "NODON",
 }
 
-#def find_header_offset(data):
-#    """
-#    Locate the OTA file identifier 0x0BEEF11E inside the firmware.
-#
-#    Returns the offset of the **last occurrence** of the magic number,
-#    which usually corresponds to the actual OTA header containing the payload.
-#    """
-#    MAGIC = FILE_IDENTIFIER
-#    last_offset = None
-#
-#    for i in range(len(data) - 4):
-#        val = struct.unpack_from("<I", data, i)[0]
-#        if val == MAGIC:
-#            last_offset = i  # Keep updating to the latest occurrence
-#
-#    return last_offset
-
 def find_header_offset(data):
     """Locate the OTA file identifier 0x0BEEF11E inside the firmware."""
     MAGIC = FILE_IDENTIFIER
@@ -167,7 +150,7 @@ def unpack_headers(data: bytes) -> dict:
         "vendor_data": vendor_data,
         "vendor_tlv": vendor_tlv,
         "payload_offset": payload_offset,
-        "payload_first_64_bytes": payload_bytes,
+        "file_first_64_bytes": data[offset : offset + 128],  # first 128 bytes of payload
     }
 
 
@@ -177,6 +160,7 @@ def read_ota_header(path):
         data = f.read()
 
     headers = unpack_headers(data)
+    headers["file_size"] = len(data)  # Add total file size in bytes
     return headers
 
 
@@ -202,6 +186,7 @@ def print_headers(h):
     print(f"{'Image Type':30} {h['image_type']:>10}   0x{h['image_type']:04X}")
     print(f"{'Image Version':30} {h['image_version']:>10}   0x{h['image_version']:08X}")
     print(f"{'Image Size':30} {h['image_size']:>10}   0x{h['image_size']:08X}")
+    print(f"{'File Size':30} {h['file_size']:>10}   0x{h['file_size']:08X}")
     print(f"{'Stack Version':30} {h['stack_version']:>10}   0x{h['stack_version']:04X}")
     print(f"{'Header String':30} '{h['header_str']}'\n")
 
@@ -224,8 +209,8 @@ def print_headers(h):
         print("(none)")
     print()
 
-    print("-- Payload (first 64 bytes) --")
-    print(hexdump(h['payload_first_64_bytes']))
+    print("-- File (first 64 bytes) --")
+    print(hexdump(h['file_first_64_bytes']))
     print(f"\nPayload Offset: {h['payload_offset']}   0x{h['payload_offset']:X}")
     print("\n====================================\n")
 
