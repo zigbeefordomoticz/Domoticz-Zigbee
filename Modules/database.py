@@ -979,28 +979,44 @@ def hack_ts0601_rename_model( self, nwkid, modelName, manufacturer_name):
 
 
 def cleanup_ota(self, nwkid):
-    
-    if "OTAUpgrade" not in self.ListOfDevices[ nwkid ]:
+    """
+    Cleans up the OTAUpgrade entries for a given device (nwkid), keeping only
+    the latest unique (Version, Type) entries.
+    """
+    device = self.ListOfDevices.get(nwkid)
+    if not device:
         return
 
-    existing_upgrade = []
-    clean_ota = {}
+    ota_upgrades = device.get("OTAUpgrade")
+    if not ota_upgrades:
+        return
 
-    for stamp in sorted(self.ListOfDevices[ nwkid ]["OTAUpgrade"].keys(), reverse=True ):
-        version = self.ListOfDevices[ nwkid ]["OTAUpgrade"][ stamp ]["Version"]
-        image_type = self.ListOfDevices[ nwkid ]["OTAUpgrade"][ stamp ]["Type"]
-        if ( version, image_type) not in existing_upgrade:
-            time_stamp = self.ListOfDevices[ nwkid ]["OTAUpgrade"][ stamp ]["Time"]
-            clean_ota[ stamp ] = {
+    clean_ota = {}
+    seen_versions = set()
+
+    # Sort timestamps descending to keep latest versions first
+    for stamp in sorted(ota_upgrades.keys(), reverse=True):
+        entry = ota_upgrades.get(stamp, {})
+        version = entry.get("Version")
+        image_type = entry.get("Type")
+        time_stamp = entry.get("Time")
+
+        if version is None or image_type is None or time_stamp is None:
+            # Skip malformed entries
+            continue
+
+        key = (version, image_type)
+        if key not in seen_versions:
+            clean_ota[stamp] = {
                 "Time": time_stamp,
                 "Version": version,
                 "Type": image_type,
             }
-            existing_upgrade.append( ( version, image_type) )
-            continue
+            seen_versions.add(key)
+
     if clean_ota:
-        del self.ListOfDevices[ nwkid ]["OTAUpgrade"]
-        self.ListOfDevices[ nwkid ]["OTAUpgrade"] = dict(clean_ota)
+        # Replace OTAUpgrade dict with the cleaned one
+        self.ListOfDevices[nwkid]["OTAUpgrade"] = clean_ota
 
 
 def update_gamma_troniques_attributes_at_startup(self, nwkid):
