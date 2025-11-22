@@ -10,32 +10,59 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
+"""
+OTAManagement class for managing Over-The-Air (OTA) firmware updates.
 
-# """
-#     References:
-#         - https://www.nxp.com/docs/en/user-guide/JN-UG-3115.pdf ( section 40 - OTA Upgrade Cluster
-#         - https://github.com/fairecasoimeme/ZiGate/issues?utf8=%E2%9C%93&q=OTA
-#
-#     Server      Zigate      Client
-#
-#     0x0500 ----->
-#     0x0505 ----------------->
-#     0x8501 <------------------
-#     0x0502 ------------------>
-#
-#     0x8503 <------------------
-#
-#     'Upgraded Device':
-#         - Notified
-#         - Block Requested
-#         - Transfer Progress
-#         - Transfer Completed
-#         - Transfer Aborted
-#         - Timeout
-#
-# """
+Args:
+    zigbee_communitation: The Zigbee communication object.
+    PluginConf: The plugin configuration object.
+    DeviceConf: The device configuration object.
+    adminWidgets: The admin widgets object.
+    ZigateComm: The Zigate communication object.
+    HomeDirectory: The home directory path.
+    hardwareID: The hardware ID.
+    Devices: The list of Domoticz devices.
+    ListOfDevices: The global list of devices.
+    IEEE2NWK: The list of IEEE to NWKID mappings.
+    log: The logging object.
+    PluginHealth: The plugin health object.
+    readZclClusters: The ZCL clusters reader object.
 
+Attributes:
+    zigbee_communication: The Zigbee communication object.
+    HB: The heartbeat value.
+    ListOfDevices: The global list of devices.
+    IEEE2NWK: The list of IEEE to NWKID mappings.
+    Devices: The list of Domoticz devices.
+    DeviceConf: The device configuration object.
+    adminWidgets: The admin widgets object.
+    ControllerLink: The Zigate communication object.
+    pluginconf: The plugin configuration object.
+    homeDirectory: The home directory path.
+    log: The logging object.
+    PluginHealth: The plugin health object.
+    readZclClusters: The ZCL clusters reader object.
+    ListOfImages: The list of available firmware loaded at plugin startup.
+    ImageLoaded: The dictionary containing information about the loaded firmware image.
+    ListInUpdate: The dictionary containing information about the firmware update in progress.
+    authorized_device_downgrade: The dictionary containing information about devices authorized for downgrade.
+    zigbee_ota_index: The Zigbee OTA index.
+    zigbee_ota_found_in_index: The list of Zigbee OTA firmware found in the index.
+    once: Flag indicating if the OTA process has started.
 
+Methods:
+    _reset_ota_state: Reset the OTA update state.
+    cancel_current_firmware_update: Cancel the current firmware update.
+    ota_image_block_request: Handle the OTA image block request.
+    ota_image_page_request: Handle the OTA image page request.
+    ota_upgrade_end_request: Handle the OTA upgrade end request.
+    heartbeat: Perform the OTA heartbeat.
+    restapi_list_of_firmware: Get the list of available firmware.
+    restapi_firmware_update: Perform the firmware update.
+    query_next_image_request: Handle the OTA query next image request.
+"""
+
+import os
 import struct
 import time
 from datetime import datetime
@@ -55,7 +82,7 @@ from Zigbee.zclRawCommands import (zcl_raw_ota_image_block_response_success,
 # This file is maintained from the community, so make sure what you do.
 
 OTA_CLUSTER_ID = "0019"
-MAX_FRAME_DATA = 64
+MAX_FRAME_DATA = 48  # Conservative Max data size in a frame
 
 OTA_CODES = {
     "Danfoss": {"Folder": "DANFOSS", "ManufCode": 0x1246, "ManufName": "Danfoss", "Enabled": True},
@@ -83,57 +110,6 @@ OTA_CODES = {
 
 
 class OTAManagement(object):
-    """
-    OTAManagement class for managing Over-The-Air (OTA) firmware updates.
-
-    Args:
-        zigbee_communitation: The Zigbee communication object.
-        PluginConf: The plugin configuration object.
-        DeviceConf: The device configuration object.
-        adminWidgets: The admin widgets object.
-        ZigateComm: The Zigate communication object.
-        HomeDirectory: The home directory path.
-        hardwareID: The hardware ID.
-        Devices: The list of Domoticz devices.
-        ListOfDevices: The global list of devices.
-        IEEE2NWK: The list of IEEE to NWKID mappings.
-        log: The logging object.
-        PluginHealth: The plugin health object.
-        readZclClusters: The ZCL clusters reader object.
-
-    Attributes:
-        zigbee_communication: The Zigbee communication object.
-        HB: The heartbeat value.
-        ListOfDevices: The global list of devices.
-        IEEE2NWK: The list of IEEE to NWKID mappings.
-        Devices: The list of Domoticz devices.
-        DeviceConf: The device configuration object.
-        adminWidgets: The admin widgets object.
-        ControllerLink: The Zigate communication object.
-        pluginconf: The plugin configuration object.
-        homeDirectory: The home directory path.
-        log: The logging object.
-        PluginHealth: The plugin health object.
-        readZclClusters: The ZCL clusters reader object.
-        ListOfImages: The list of available firmware loaded at plugin startup.
-        ImageLoaded: The dictionary containing information about the loaded firmware image.
-        ListInUpdate: The dictionary containing information about the firmware update in progress.
-        authorized_device_downgrade: The dictionary containing information about devices authorized for downgrade.
-        zigbee_ota_index: The Zigbee OTA index.
-        zigbee_ota_found_in_index: The list of Zigbee OTA firmware found in the index.
-        once: Flag indicating if the OTA process has started.
-
-    Methods:
-        _reset_ota_state: Reset the OTA update state.
-        cancel_current_firmware_update: Cancel the current firmware update.
-        ota_image_block_request: Handle the OTA image block request.
-        ota_image_page_request: Handle the OTA image page request.
-        ota_upgrade_end_request: Handle the OTA upgrade end request.
-        heartbeat: Perform the OTA heartbeat.
-        restapi_list_of_firmware: Get the list of available firmware.
-        restapi_firmware_update: Perform the firmware update.
-        query_next_image_request: Handle the OTA query next image request.
-    """
 
 
     def __init__(
@@ -517,13 +493,20 @@ class OTAManagement(object):
         ota_client["ManufacturerCode"] = manufcode
         ota_client["ImageType"] = imagetype
         ota_client["CurrentImageVersion"] = currentVersion
+        
+        authorized_device_downgrade = self.authorized_device_downgrade.get(srcnwkid, False)
 
-        image_found = is_image_for_query_next_image_request( self, srcnwkid, manufcode, imagetype, currentVersion )
-        if image_found:     
+        image_found = is_image_for_query_next_image_request( self, srcnwkid, manufcode, imagetype, currentVersion , authorized_device_downgrade)
+        if image_found:
             fileversion = image_found["originalVersion"]   # integer
             imagesize = image_found["intSize"]           # integer
-            logging(self, "Debug", f"OTA Query Next Image request - Image found fileversion: 0x{fileversion:08x} imagesize: {imagesize}")
+
+            if authorized_device_downgrade:
+                logging(self, "Debug", f"OTA Query Next Image request - Device {srcnwkid} is authorized for downgrade.")
+                fileversion = image_found["originalVersion"] + 0x10100000
             
+            logging(self, "Debug", f"OTA Query Next Image request - Image found fileversion: 0x{fileversion:08x} imagesize: {imagesize}")
+
             if "autoServeOTA" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoServeOTA"]:
                 logging(self, "Debug", f"OTA Query Next Image request - autoServeOTA fileversion: 0x{fileversion:08x} imagesize: {imagesize}")
 
@@ -768,6 +751,17 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
         image_version_hex, image_type_hex, manufacturer_code_hex,
         length, raw_ota_data
     )
+
+    if self.pluginconf.pluginConf.get("EnableOTATracing", False):
+        trace_ota_block(
+            self,
+            dest_addr=dest_addr,
+            image_type_hex=image_type_hex,
+            offset=offset,
+            size=length,
+            sequence=sequence,
+            raw_ota_data=raw_ota_data,
+        )
 
     # Update progress tracking
     update_list_in_update(self, offset, length)
@@ -1082,9 +1076,8 @@ def logging(self, logType, message, nwkid=None):  # OK 13/10
     self.log.logging("OTA", logType, message, nwkid)
 
 
-def is_image_for_query_next_image_request( self, nwkid, manuf_code, image_type, file_version):
+def is_image_for_query_next_image_request( self, nwkid, manuf_code, image_type, file_version, authorized_device_downgrade):
 
-    authorized_device_downgrade = self.authorized_device_downgrade.get(nwkid, False)
     logging(self, "Debug", "is_image_for_query_next_image_request - %s %s %s Downgrade: %s" % (
         manuf_code, image_type, file_version, authorized_device_downgrade), nwkid)
 
@@ -1119,7 +1112,6 @@ def is_image_for_query_next_image_request( self, nwkid, manuf_code, image_type, 
             if file_version < self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]:
                 logging(self, "Debug", "is_image_for_query_next_image_request - We have newest firmware available for this device")
                 return self.ListOfImages["Brands"][brand_name][file_name]
-            
 
     return None
 
@@ -1260,12 +1252,15 @@ def _open_image_file(self, filename):  # OK 13/10
     try:
         with open(filename, "rb") as file:
             ota_image = file.read()
+
     except OSError as err:
-        logging(self, "Error", f"ota_extract_image_headers - error when opening {filename} - {err}")
+        logging(self, "Error", f"_open_image_file - error when opening {filename} - {err}")
         return None
+
     if len(ota_image) < 69:
-        logging(self, "Error", f"ota_extract_image_headers - invalid file size read {filename} - {len(ota_image)}")
+        logging(self, "Error", f"_open_image_file - invalid file size read {filename} - {len(ota_image)}")
         return None
+
     return ota_image
 
 
@@ -1952,3 +1947,32 @@ def _load_json_from_url( self, url ):
     logging(self, "Error", "loading_zigbee_ota_index: Unable to access %s Reason: %s" %(
         url, reason))
     return []
+
+
+def trace_ota_block(self, dest_addr, image_type_hex, offset, size, sequence, raw_ota_data):
+    """
+    Trace OTA block data into a dedicated file.
+
+    Filename:
+        ota_blocks_<dest_addr>_<image_type>.log
+
+    Logged fields:
+        timestamp | seq | offset | size | data_hex
+    """
+    filename = f"ota_blocks_{dest_addr}_{image_type_hex}.log"
+    log_path =  self.pluginconf.pluginConf.get("pluginLogs", "/tmp")
+    full_path = os.path.join(log_path, filename)
+
+    # Convert bytes → hex string
+    data_hex = raw_ota_data.hex()
+
+    try:
+        with open(full_path, "a", encoding="utf-8") as f:
+            ts = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            f.write(
+                f"{ts} | Seq:{sequence} | Offset:{offset} | "
+                f"Size:{size} | Data:{data_hex}\n"
+            )
+
+    except Exception as e:
+        logging(self, "Error", f"OTA trace logging {full_path} failed: {e}")
