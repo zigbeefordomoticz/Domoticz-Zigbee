@@ -62,6 +62,7 @@ Methods:
     query_next_image_request: Handle the OTA query next image request.
 """
 
+import math
 import os
 import struct
 import time
@@ -83,7 +84,8 @@ from Zigbee.zclRawCommands import (zcl_raw_ota_image_block_response_success,
 
 OTA_CLUSTER_ID = "0019"
 MAX_FRAME_DATA = 48  # Conservative Max data size in a frame
-
+LEGRAND_MANUF_CODE = 0x1021
+MAX_FRAME_DATA_LEGRAND = 62  # Legrand devices can handle bigger frames
 OTA_CODES = {
     "Danfoss": {"Folder": "DANFOSS", "ManufCode": 0x1246, "ManufName": "Danfoss", "Enabled": True},
     "Develco": {"Folder": "DEVELCO", "ManufCode": 0x1015, "ManufName": "Develco", "Enabled": True},
@@ -736,7 +738,11 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
         return False
 
     # Build block
-    max_data_size = min(block_request["MaxDataSize"], MAX_FRAME_DATA)
+    if in_update['intManufCode'] == LEGRAND_MANUF_CODE:
+        # Legrand devices requires 62 bytes max data size
+        max_data_size = min(block_request["MaxDataSize"], MAX_FRAME_DATA_LEGRAND)
+    else:
+        max_data_size = min(block_request["MaxDataSize"], MAX_FRAME_DATA)
     sequence, offset, length, raw_ota_data = build_ota_data_block(
         self, block_request, max_data_size
     )
@@ -1824,13 +1830,13 @@ def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgF
     _ieee = self.ListOfDevices[MsgSrcAddr]["IEEE"]
     _name = next((dev.Name for dev in self.Devices.values() if dev.DeviceID == _ieee), None)
 
-    # Estimate upload time
-    estimated_time = self.ListInUpdate["intSize"] // MsgMaxDataSize
-    if self.zigbee_communication == "zigpy":
-        estimated_time //= 4.5
+    # Estimate upload time. We expect to send 5 blocks in 1 second
+    block_size = min(MsgMaxDataSize, MAX_FRAME_DATA)
+    estimated_blocks = math.ceil(self.ListInUpdate["intSize"] / block_size)
+    estimated_time_sec = estimated_blocks / 5
 
     # Convert estimated time into hours, minutes, and seconds
-    _durhh, _durmm, _durss = convert_time(estimated_time)
+    _durhh, _durmm, _durss = convert_time(estimated_time_sec)
 
     # Generate notification text
     _textmsg = (f"Firmware update started for Device: {_name} with {self.ListInUpdate['FileName']} - "
