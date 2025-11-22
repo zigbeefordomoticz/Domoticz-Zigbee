@@ -995,7 +995,7 @@ def cleanup_ota(self, nwkid):
     seen_versions = set()
 
     # Sort timestamps descending to keep latest versions first
-    for stamp in sorted(ota_upgrades.keys(), reverse=True):
+    for stamp in sorted(ota_upgrades.keys(), key=lambda x: int(x), reverse=True):
         entry = ota_upgrades.get(stamp, {})
         version = entry.get("Version")
         image_type = entry.get("Type")
