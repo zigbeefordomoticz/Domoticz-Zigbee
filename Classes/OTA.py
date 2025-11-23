@@ -62,10 +62,14 @@ Methods:
     query_next_image_request: Handle the OTA query next image request.
 """
 
+import json
 import math
 import os
+import socket
 import struct
 import time
+import urllib.error
+import urllib.request
 from datetime import datetime
 from os import listdir
 from os.path import exists, isfile, join
@@ -83,9 +87,58 @@ from Zigbee.zclRawCommands import (zcl_raw_ota_image_block_response_success,
 # This file is maintained from the community, so make sure what you do.
 
 OTA_CLUSTER_ID = "0019"
-MAX_FRAME_DATA = 48  # Conservative Max data size in a frame
-LEGRAND_MANUF_CODE = 0x1021
-MAX_FRAME_DATA_LEGRAND = 62  # Legrand devices can handle bigger frames
+
+DEFAULT_OTA_PROFILE = {
+    "max_data": 48,
+    "min_delay": 0.15,
+    "retry": 3,
+}
+
+VENDOR_PROFILES = {
+    0x100B: {  # Philips Hue
+        "max_data": 48,
+        "min_delay": 0.20,
+        "retry": 3,
+        "notes": "Strict timing, small buffers, strong CRC/header validation."
+    },
+
+    0x118C: {  # IKEA (TRÅDFRI / Dirigera)
+        "max_data": 56,
+        "min_delay": 0.12,
+        "retry": 3,
+        "notes": "Generally robust; failures often mesh-related."
+    },
+
+    0x1021: {  # Legrand / Netatmo
+        "max_data": 62,
+        "min_delay": 0.14,
+        "retry": 3,
+        "notes": "Very picky image metadata; some devices require vendor-style packaging."
+    },
+
+    0x112D: {  # Develco / frient
+        "max_data": 56,
+        "min_delay": 0.16,
+        "retry": 2,
+        "notes": "Known mid-OTA stalls; allow long idle periods."
+    },
+
+    0x1224: {  # NodOn
+        "max_data": 52,
+        "min_delay": 0.12,
+        "retry": 3,
+        "notes": "Verify manufacturer/image type; some ‘No image available’ errors."
+    },
+
+    0x10A4: {  # Osram / LEDVANCE
+        "max_data": 56,
+        "min_delay": 0.12,
+        "retry": 3,
+        "notes": "Generally easier OTA; check mesh stability during upgrade."
+    },
+}
+
+
 OTA_CODES = {
     "Danfoss": {"Folder": "DANFOSS", "ManufCode": 0x1246, "ManufName": "Danfoss", "Enabled": True},
     "Develco": {"Folder": "DEVELCO", "ManufCode": 0x1015, "ManufName": "Develco", "Enabled": True},
@@ -261,14 +314,14 @@ class OTAManagement(object):
         intMsgManufCode = int(MsgData[34:38], 16)
         MsgMaxDataSize = int(MsgData[38:40],16)
         PageSize = int(MsgData[40:44],16)
-        ResponseSpacing = MsgData[44:48]
+        intResponseSpacing = int(MsgData[44:48],16)
         FieldControl = MsgData[48:50]
         intMsgFieldControl = int(FieldControl,16)
         if len(MsgData) == 64:
             RequestNodeAddress = MsgData[48:64]
 
         logging( self, "Debug", "ota_image_page_request - Request Firmware %s/%s Offset: %s Version: 0x%08x Type: 0x%04X Manuf: 0x%04X MaxSize: %s PageSize: %s ResponseSpacing: %s Control: 0x%02X" % (
-            MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgMaxDataSize, PageSize , int(ResponseSpacing,16), intMsgFieldControl, ),)
+            MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgMaxDataSize, PageSize , intResponseSpacing, intMsgFieldControl, ),)
 
         if self.ListInUpdate["NwkId"] is None:
             logging(self, "Debug", "ota_image_page_request - Async request from device: %s." % (MsgSrcAddr))
@@ -295,7 +348,7 @@ class OTAManagement(object):
                 intMsgImageVersion, 
                 intMsgImageType, 
                 intMsgManufCode, 
-                ResponseSpacing, 
+                intResponseSpacing, 
                 MsgMaxDataSize, 
                 intMsgFieldControl, 
                 "%02x" %_sqn, 
@@ -719,11 +772,10 @@ def update_list_in_update(self, offset, length):
     info["Sent"] = offset + length
 
 
-def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, block_request, disable_ack=False):
+def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, block_request, disable_ack=False, block_delay=DEFAULT_OTA_PROFILE["min_delay"]):
 
     images = self.ListOfImages.get("ImageType", {})
     in_update = self.ListInUpdate
-
     if image_type not in images:
         logging(self, "Error", f"ota_send_block - unknown image_type {image_type}")
         return False
@@ -737,15 +789,13 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
         )
         return False
 
-    # Build block
-    if in_update['intManufCode'] == LEGRAND_MANUF_CODE:
-        # Legrand devices requires 62 bytes max data size
-        max_data_size = min(block_request["MaxDataSize"], MAX_FRAME_DATA_LEGRAND)
-    else:
-        max_data_size = min(block_request["MaxDataSize"], MAX_FRAME_DATA)
-    sequence, offset, length, raw_ota_data = build_ota_data_block(
-        self, block_request, max_data_size
-    )
+    # Build block, and Minimum Block Request Delay
+    manufacturer_code = in_update['intManufCode']
+    ota_profile = VENDOR_PROFILES.get( manufacturer_code, DEFAULT_OTA_PROFILE )
+    max_data_size = min(block_request["MaxDataSize"], ota_profile["max_data"])
+    block_delay = min( block_delay, ota_profile["min_delay"] )
+
+    sequence, offset, length, raw_ota_data = build_ota_data_block( self, block_request, max_data_size )
 
     # Hex representations
     image_version_hex = f"{msg_image_version:08x}"
@@ -772,7 +822,7 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
     # Update progress tracking
     update_list_in_update(self, offset, length)
 
-    logging( self, "Debug", f"ota_send_block - Block sent to {dest_addr}/{dest_ep} " f"Received yet: {offset} Sent now: {offset}" )
+    logging( self, "Debug", f"ota_send_block - Block sent to {dest_addr}/{dest_ep} " f"Received yet: {offset} Sent now: {offset} Size: {max_data_size} Delay: {block_delay}" )
 
     # Determine OTA block status
     if length == 0 or data is None:
@@ -786,7 +836,7 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
             status = 0x80  # MALFORMED_COMMAND
             self.latest_request_was_malformed = True
     else:
-        status = 0x00  # Success
+        status = 0x00  # Successblock_request_delay
         self.latest_request_was_malformed = False
 
     # --- Raw mode (controller internal testing) ---
@@ -808,6 +858,7 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
             f"{length:02x}",
             raw_data_hex,
             ackIsDisabled=disable_ack,
+            min_block_delay=block_delay,
         )
 
     # --- Normal Zigate path ---
@@ -1549,7 +1600,9 @@ def prepare_and_send_block(
         MsgSrcAddr
     )
 
-    ota_send_block(self, MsgSrcAddr, MsgEP, intMsgImageType, intMsgImageVersion, block_request, disable_ack=disableACK)
+    block_request_delay = MsgBlockRequestDelay / 1000.0  # Convert ms to seconds
+
+    ota_send_block(self, MsgSrcAddr, MsgEP, intMsgImageType, intMsgImageVersion, block_request, disable_ack=disableACK, block_delay=block_request_delay)
     display_percentage_progress(self, MsgSrcAddr, MsgEP, intMsgImageType, MsgFileOffset)
 
 
@@ -1831,7 +1884,9 @@ def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgF
     _name = next((dev.Name for dev in self.Devices.values() if dev.DeviceID == _ieee), None)
 
     # Estimate upload time. We expect to send 5 blocks in 1 second
-    block_size = min(MsgMaxDataSize, MAX_FRAME_DATA)
+    ota_profile = VENDOR_PROFILES.get( intMsgManufCode, DEFAULT_OTA_PROFILE )
+    block_size = min(MsgMaxDataSize, ota_profile["max_data"])
+
     estimated_blocks = math.ceil(self.ListInUpdate["intSize"] / block_size)
     estimated_time_sec = estimated_blocks / 5
 
@@ -1920,38 +1975,39 @@ def notify_ota_firmware_available(self, srcnwkid, manufcode, imagetype, filevers
         logging(self, "Status", "   open an Issue on GitHub here: https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/new?assignees=&labels=&template=feature_request.md&title=")
 
 
-def _load_json_from_url( self, url ):
 
-    import json
-    import socket
-    import urllib.request
+def _load_json_from_url(self, url):
 
-    retry = 3
-    while retry:
+    retries = 3
+    last_reason = "unknown error"
+
+    for _ in range(retries):
         try:
-            with urllib.request.urlopen( url ) as response:
-                return json.loads( response.read() )
+            with urllib.request.urlopen(url, timeout=5) as response:
+                return json.load(response)
 
         except urllib.error.HTTPError as e:
-            if e.code in [429,504]:  # 429=too many requests, 504=gateway timeout
-                reason = f'{e.code} {str(e.reason)}'
+            # HTTPError may wrap a timeout
+            if e.code in (429, 504):
+                last_reason = f"HTTP {e.code}: {e.reason}"
             elif isinstance(e.reason, socket.timeout):
-                reason = f'HTTPError socket.timeout {e.reason} - {e}'
+                last_reason = f"HTTPError timeout: {e.reason}"
             else:
-                reason = f'unknown {e.reason} - {e}'
+                last_reason = f"HTTPError: {e.reason}"
+
         except urllib.error.URLError as e:
             if isinstance(e.reason, socket.timeout):
-                reason = f'URLError socket.timeout {e.reason} - {e}'
+                last_reason = f"URLError timeout: {e.reason}"
             else:
-                reason = f'unknown {e.reason} - {e}'
+                last_reason = f"URLError: {e.reason}"
+
         except socket.timeout as e:
-            reason = f'socket.timeout {e}'
+            last_reason = f"socket.timeout: {e}"
 
         time.sleep(1)
-        retry -= 1
 
-    logging(self, "Error", "loading_zigbee_ota_index: Unable to access %s Reason: %s" %(
-        url, reason))
+    logging(self, "Error",
+            f"loading_zigbee_ota_index: Unable to access {url} Reason: {last_reason}")
     return []
 
 
@@ -1966,7 +2022,7 @@ def trace_ota_block(self, dest_addr, image_type_hex, offset, size, sequence, raw
         timestamp | seq | offset | size | data_hex
     """
     filename = f"ota_blocks_{dest_addr}_{image_type_hex}.log"
-    log_path =  self.pluginconf.pluginConf.get("pluginLogs", "/tmp")
+    log_path = self.pluginconf.pluginConf.get("pluginLogs", "/tmp")
     full_path = os.path.join(log_path, filename)
 
     # Convert bytes → hex string

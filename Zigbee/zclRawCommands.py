@@ -203,10 +203,10 @@ def zcl_raw_default_response( self, nwkid, cie_ep, dst_ep, cluster, response_to_
         disable_def_resp = (orig_fcf >> 4) & 0b1
 
         # Build new FCF
-        fcf = 0b00               # Frame Type: Profile-wide
-        fcf |= (manuf_spec << 2) # Manufacturer Specific
-        fcf |= (1 << 3)          # Direction: Server → Client
-        fcf |= (1 << 4)  # Disable Default Response
+        fcf = 0b00                # Frame Type: Profile-wide
+        fcf |= (manuf_spec << 2)  # Manufacturer Specific
+        fcf |= (1 << 3)           # Direction: Server → Client
+        fcf |= (1 << 4)           # Disable Default Response
 
         return "%02x" %fcf
 
@@ -641,7 +641,7 @@ def zcl_raw_ota_query_next_image_response(
     return sqn
 
 
-def zcl_raw_ota_image_block_response_success(self, sqn, nwkid, EPIn, EPout, status, ManufCode, Imagetype, FileVersion, fileoffset, datasize, imagedata , ackIsDisabled=False):
+def zcl_raw_ota_image_block_response_success(self, sqn, nwkid, EPIn, EPout, status, ManufCode, Imagetype, FileVersion, fileoffset, datasize, imagedata , ackIsDisabled=False, min_block_delay=0):
     self.log.logging("zclCommand", "Debug", "zcl_raw_ota_image_block_response_success %s %s %s %s %s %s %s %s %s %s" % (nwkid, EPIn, EPout, status, ManufCode, Imagetype, FileVersion, fileoffset, datasize, len(imagedata)), nwkid)
     zcl_command_formated_logging( self, "OTA_Image_Block_Response_Success (Raw)", nwkid, EPout, "0019", status, ManufCode, Imagetype, FileVersion, fileoffset, datasize, imagedata , ackIsDisabled)
     
@@ -654,7 +654,7 @@ def zcl_raw_ota_image_block_response_success(self, sqn, nwkid, EPIn, EPout, stat
     fileoffset = "%08x" % struct.unpack(">I", struct.pack("I", int(fileoffset, 16)))[0]
 
     payload = "%02x" % cluster_frame + sqn + Command + status + ManufCode + Imagetype + FileVersion + fileoffset + datasize + imagedata
-    raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=ackIsDisabled)
+    raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=ackIsDisabled, delayAfterSent=min_block_delay)
     return sqn
 
 
