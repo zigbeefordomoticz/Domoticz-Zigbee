@@ -793,6 +793,11 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
     manufacturer_code = in_update['intManufCode']
     ota_profile = VENDOR_PROFILES.get( manufacturer_code, DEFAULT_OTA_PROFILE )
     max_data_size = min(block_request["MaxDataSize"], ota_profile["max_data"])
+    # Corrected logic for block_delay
+    if block_delay == 0:
+        block_delay = ota_profile["min_delay"]
+    else:
+        block_delay = min(block_delay, ota_profile["min_delay"])
     block_delay = min( block_delay, ota_profile["min_delay"] )
 
     sequence, offset, length, raw_ota_data = build_ota_data_block( self, block_request, max_data_size )
