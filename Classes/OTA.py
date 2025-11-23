@@ -90,14 +90,14 @@ OTA_CLUSTER_ID = "0019"
 
 DEFAULT_OTA_PROFILE = {
     "max_data": 48,
-    "min_delay": 0.15,
+    "min_delay": 0.300,
     "retry": 3,
 }
 
 VENDOR_PROFILES = {
     0x100B: {  # Philips Hue
         "max_data": 48,
-        "min_delay": 0.20,
+        "min_delay": 0.300,
         "retry": 3,
         "notes": "Strict timing, small buffers, strong CRC/header validation."
     },
@@ -793,12 +793,7 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
     manufacturer_code = in_update['intManufCode']
     ota_profile = VENDOR_PROFILES.get( manufacturer_code, DEFAULT_OTA_PROFILE )
     max_data_size = min(block_request["MaxDataSize"], ota_profile["max_data"])
-    # Corrected logic for block_delay
-    if block_delay == 0:
-        block_delay = ota_profile["min_delay"]
-    else:
-        block_delay = min(block_delay, ota_profile["min_delay"])
-    block_delay = min( block_delay, ota_profile["min_delay"] )
+    block_delay = ( ota_profile["min_delay"] if block_delay == 0 else min(block_delay, ota_profile["min_delay"]) )
 
     sequence, offset, length, raw_ota_data = build_ota_data_block( self, block_request, max_data_size )
 
