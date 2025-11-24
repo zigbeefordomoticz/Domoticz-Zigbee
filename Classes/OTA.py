@@ -428,16 +428,16 @@ class OTAManagement(object):
     def heartbeat(self):
         
         nwk_id = self.ListInUpdate["NwkId"]
+        if nwk_id is None:
+            logging(self, "Debug", "ota_heartbeat - nothing to do")
+            return
+
         process = self.ListInUpdate["Process"]
         image_type = self.ImageLoaded["image_type"]
         loaded_time_stamp = self.ImageLoaded["LoadedTimeStamp"]
         notified_time_stamp = self.ImageLoaded["NotifiedTimeStamp"]
         retry = self.ListInUpdate["Retry"]
         authorized_for_update = self.ListInUpdate["AuthorizedForUpdate"]
-
-        if nwk_id is None:
-            logging(self, "Debug", "ota_heartbeat - nothing to do")
-            return
 
         logging(
             self,
@@ -448,13 +448,14 @@ class OTAManagement(object):
 
         if nwk_id and self.ListInUpdate["Status"] == "Transfer Progress" and self.ListInUpdate["LastBlockSent"] != 0 and (
                 time.time() > self.ListInUpdate["LastBlockSent"] + 300):
+            # TODO: retry mechanism per device
             _handle_ota_timeout(self)
             return
 
         if nwk_id and self.ListInUpdate["LastBlockSent"] == 0 and loaded_time_stamp != 0:
             _retry_notification(self)
 
-        if retry == 10:
+        if retry == 10 or self.ImageLoaded["NotifiedTimeStamp"] != 0 and (time.time() > self.ImageLoaded["NotifiedTimeStamp"] + 600):
             _handle_timeout(self)
 
 
@@ -793,7 +794,7 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
     manufacturer_code = in_update['intManufCode']
     ota_profile = VENDOR_PROFILES.get( manufacturer_code, DEFAULT_OTA_PROFILE )
     max_data_size = min(block_request["MaxDataSize"], ota_profile["max_data"])
-    block_delay = ( ota_profile["min_delay"] if block_delay == 0 else min(block_delay, ota_profile["min_delay"]) )
+    block_delay = max(block_delay, ota_profile["min_delay"])
 
     sequence, offset, length, raw_ota_data = build_ota_data_block( self, block_request, max_data_size )
 
