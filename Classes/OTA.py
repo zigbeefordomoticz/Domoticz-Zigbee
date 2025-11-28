@@ -251,6 +251,7 @@ class OTAManagement(object):
         self.ImageLoaded["LoadedTimeStamp"] = 0
         self.ListInUpdate["Process"] = None
 
+
     def ota_image_block_request(self, MsgData):
         """
         Handle an OTA Image Block Request from a Zigbee device.
@@ -767,10 +768,14 @@ def update_list_in_update(self, offset, length):
     info = self.ListInUpdate
 
     now = time.time()
+    info["LastBlockSent"] = time.time()
     info["TimeStamps"] = now
     info["Status"] = "Transfer Progress"
     info["Received"] = offset
     info["Sent"] = offset + length
+
+    self.ImageLoaded["NotifiedTimeStamp"] = 0
+    
 
 
 def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, block_request, disable_ack=False, block_delay=DEFAULT_OTA_PROFILE["min_delay"]):
