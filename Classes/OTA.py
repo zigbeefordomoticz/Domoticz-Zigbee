@@ -96,7 +96,7 @@ DEFAULT_OTA_PROFILE = {
 
 VENDOR_PROFILES = {
     0x100B: {  # Philips Hue
-        "max_data": 48,
+        "max_data": 64,
         "min_delay": 0.300,
         "retry": 3,
         "notes": "Strict timing, small buffers, strong CRC/header validation."
