@@ -110,8 +110,8 @@ VENDOR_PROFILES = {
     },
 
     0x1021: {  # Legrand / Netatmo
-        "max_data": 62,
-        "min_delay": 0.14,
+        "max_data": 64,
+        "min_delay": 0.10,
         "retry": 3,
         "notes": "Very picky image metadata; some devices require vendor-style packaging."
     },
