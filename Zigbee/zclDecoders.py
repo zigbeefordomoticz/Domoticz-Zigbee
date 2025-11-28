@@ -145,7 +145,8 @@ def zcl_decoders(self, src_nwk_id, src_endpoint, target_ep, cluster_id, payload,
         return buildframe_80x5_message(self, "8085", frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, manufacturer_code, command, data)
 
     if cluster_id == "0019":
-        send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
+        if manufacturer_code not in {"1021", }:  # By pass Default Response as of Legrand GW
+            send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
         return buildframe_for_cluster_0019(self, command, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, data)
 
     if cluster_id == "0020":
