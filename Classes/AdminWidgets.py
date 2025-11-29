@@ -3,7 +3,12 @@
 #
 # Implementation of Zigbee for Domoticz plugin.
 #
-# SPDX-License-Identifier: GPL-3.0
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: badz & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
 
 """
 AdminWidget.py — Handles the creation and update of the Domoticz administration,
@@ -138,6 +143,7 @@ class AdminWidgets:
         if ID == -1:
             domoticz_error_api(f"createAdminWidget - Failed to create {widget_name}.")
 
+
     def createStatusWidget(self, Devices: Dict[int, Any]) -> None:
         """
         Create the Status widget (243.22).
@@ -162,6 +168,7 @@ class AdminWidgets:
             return
 
         self.updateStatusWidget(Devices, "Off")
+
 
     def createNotificationWidget(self, Devices: Dict[int, Any]) -> None:
         """
@@ -227,6 +234,7 @@ class AdminWidgets:
         if new_sValue != current:
             domo_update_api(self, Devices, deviceid, unit, new_nValue, new_sValue)
 
+
     def updateNotificationWidget(self, Devices: Dict[int, Any], notification: str) -> None:
         """
         Update the Notification widget text.
@@ -269,6 +277,7 @@ class AdminWidgets:
             Color: Unused parameter (kept for API consistency).
         """
         return
+
 
     def handleCommand(self, Command: str) -> None:
         """
