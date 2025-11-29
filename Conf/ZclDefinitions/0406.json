@@ -100,7 +100,7 @@
 
         "0030": { 
             "Enabled": true,
-            "Name": "" ,
+            "Name": "PhysicalContactOccupiedToUnoccupiedDelay" ,
             "DataType": "21",
             "Range": [ "0000", "fffe" ],
             "Acc": "R",
@@ -108,9 +108,20 @@
             "Mandatory": false,
             "ActionList": [ "check_store_value"]
         },
+        "0031": { 
+            "Enabled": true,
+            "Name": "PhysicalContactUnoccupiedToOccupiedDelay" ,
+            "DataType": "20",
+            "Range": [ "0000", "fffe" ],
+            "Acc": "R",
+            "Default": "0000",
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+
         "0032": { 
             "Enabled": true,
-            "Name": "" ,
+            "Name": "PhysicalContactUnoccupiedToOccupiedThreshold" ,
             "DataType": "21",
             "Range": [ "0000", "fffe" ],
             "Acc": "R",
