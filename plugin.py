@@ -536,7 +536,7 @@ class BasePlugin:
         self.WebUsername, self.WebPassword = self.domoticzdb_Preferences.retreiveWebUserNamePassword()
 
         self.adminWidgets = AdminWidgets( self.log , self.pluginconf, self.pluginParameters, self.ListOfDomoticzWidget, Devices, self.ListOfDevices, self.HardwareID, self.IEEE2NWK)
-        self.adminWidgets.updateStatusWidget(Devices, "Z4D Starting up")
+        self.adminWidgets.updateStatusWidget(Devices, "Z4D Starting up") 
 
         self.DeviceListName = "DeviceList-" + str(Parameters["HardwareID"]) + ".txt"
         self.log.logging("Plugin", "Log", "Z4D Database found: %s" % self.DeviceListName)
@@ -1539,6 +1539,8 @@ def zigateInit_Phase3(self):
         message = "Z4D with Zigpy, coordinator %s, firmware %s communication confirmed." % (
             self.pluginParameters["CoordinatorModel"], self.pluginParameters["CoordinatorFirmwareVersion"])
         self.log.logging("Plugin", "Status", message)
+        
+        self.adminWidgets.updateNotificationWidget(Devices, message)
 
     # If firmware above 3.0d, Get Network State
     if (self.HeartbeatCount % (3600 // HEARTBEAT)) == 0 and self.transport != "None":
