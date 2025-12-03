@@ -208,8 +208,8 @@ SETTINGS = {
         "Order": 12,
         "param": {
             "PosixPathUpdate": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
-            "storeDomoticzDatabase": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
-            "useDomoticzDatabase": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "storeDomoticzDb": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "useDomoticzDb": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "PluginLogMode": {"type": "list","list": { "system default": 0, "0600": 0o600, "0640": 0o640, "0644": 0o644},"default": 0,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "numDeviceListVersion": {"type": "int","default": 12,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
             "filename": { "type": "path", "default": "", "current": None, "restart": 1, "hidden": True, "Advanced": True, },
@@ -240,8 +240,10 @@ SETTINGS = {
             "Command": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "ConfigureReporting": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "CustomDevicePolling": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
-            "DZDB": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Danfoss": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "DNS": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "DZDB": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            
             "GammaTroniques": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Database": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "DeviceAnnoucement": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
@@ -553,7 +555,7 @@ class PluginConf:
         with open(pluginConfFile, "wt") as handle:
             json.dump(write_pluginConf, handle, sort_keys=True, indent=2)
 
-        if is_domoticz_db_available(self) and (self.pluginConf["useDomoticzDatabase"] or self.pluginConf["storeDomoticzDatabase"]):
+        if is_domoticz_db_available(self) and (self.pluginConf["useDomoticzDb"] or self.pluginConf["storeDomoticzDb"]):
             setConfigItem(Key="PluginConf", Value={"TimeStamp": time.time(), "b64Settings": write_pluginConf})
 
 
@@ -596,7 +598,7 @@ def _load_Settings(self):
             self.pluginConf[param] = _pluginConf[param]
 
     # Check Load
-    if is_domoticz_db_available(self) and self.pluginConf["useDomoticzDatabase"]:
+    if is_domoticz_db_available(self) and self.pluginConf["useDomoticzDb"]:
         Domoticz.Log("PluginConf Loaded from Dz: %s from Json: %s" % (len(_domoticz_pluginConf), len(_pluginConf)))
         if _domoticz_pluginConf:
             for x in _pluginConf:
