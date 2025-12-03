@@ -68,22 +68,22 @@ def check_plugin_version_against_dns(self, zigbee_communication, branch, zigate_
         tuple: (plugin_version, firmware_major, firmware_minor)
                If not available or unsupported, returns (0, 0, 0)
     """
-    self.log.logging("Plugin", "Debug", f"check_plugin_version_against_dns {zigbee_communication} {branch} {zigate_model}")
+    self.log.logging("DNS", "Debug", f"check_plugin_version_against_dns {zigbee_communication} {branch} {zigate_model}")
 
     plugin_version_txt = _get_dns_txt_record(self, PLUGIN_TXT_RECORD)
     if plugin_version_txt is None:
-        self.log.logging("Plugin", "Error", "Unable to get access to plugin expected version. Is Internet access available?")
+        self.log.logging("DNS", "Error", "Unable to get access to plugin expected version. Is Internet access available?")
         return (0, 0, 0)
 
     plugin_version_dict = _parse_dns_txt_record(plugin_version_txt)
-    self.log.logging("Plugin", "Debug", f"Plugin version DNS TXT: {plugin_version_dict}")
+    self.log.logging("DNS", "Debug", f"Plugin version DNS TXT: {plugin_version_dict}")
 
     firmware_version_dict = {}
     if zigbee_communication == "native":
         zigate_plugin_record = ZIGATE_DNS_RECORDS.get(zigate_model)
         firmware_version_txt = _get_dns_txt_record(self, zigate_plugin_record)
         firmware_version_dict = _parse_dns_txt_record(firmware_version_txt)
-        self.log.logging("Plugin", "Debug", f"Firmware version DNS TXT: {firmware_version_dict}")
+        self.log.logging("DNS", "Debug", f"Firmware version DNS TXT: {firmware_version_dict}")
 
     if zigbee_communication == "native":
         if (
@@ -100,7 +100,7 @@ def check_plugin_version_against_dns(self, zigbee_communication, branch, zigate_
         if branch in plugin_version_dict:
             return (plugin_version_dict[branch], 0, 0)
 
-    self.log.logging("Plugin", "Error", f"You are running {branch}-{plugin_version_txt}, a NOT SUPPORTED version.")
+    self.log.logging("DNS", "Error", f"You are running {branch}-{plugin_version_txt}, a NOT SUPPORTED version.")
     return (0, 0, 0)
 
 
@@ -128,10 +128,10 @@ def _get_dns_txt_record(self, record, timeout=DNS_REQ_TIMEOUT):
     try:
         try:
             answers = resolver.resolve(record, "TXT", tcp=False)
-            self.log.logging("Plugin", "Debug", f"_get_dns_txt_record: {record} via UDP: {answers}")
+            self.log.logging("DNS", "Debug", f"_get_dns_txt_record: {record} via UDP: {answers}")
         except dns.exception.DNSException:
             answers = resolver.resolve(record, "TXT", tcp=True)
-            self.log.logging("Plugin", "Debug", f"_get_dns_txt_record: {record} via TCP: {answers}")
+            self.log.logging("DNS", "Debug", f"_get_dns_txt_record: {record} via TCP: {answers}")
 
         txt_records = []
         for rdata in answers:
@@ -143,14 +143,14 @@ def _get_dns_txt_record(self, record, timeout=DNS_REQ_TIMEOUT):
 
     except dns.resolver.Timeout:
         self.internet_available = False
-        self.log.logging("Plugin", "Error", f"DNS resolution timed out for {record} after {timeout} seconds")
+        self.log.logging("DNS", "Error", f"DNS resolution timed out for {record} after {timeout} seconds")
     except dns.resolver.NoAnswer:
-        self.log.logging("Plugin", "Error", f"No DNS TXT answer found for {record}")
+        self.log.logging("DNS", "Error", f"No DNS TXT answer found for {record}")
     except dns.resolver.NoNameservers:
         self.internet_available = False
-        self.log.logging("Plugin", "Error", f"No nameservers found while resolving {record}")
+        self.log.logging("DNS", "Error", f"No nameservers found while resolving {record}")
     except Exception as e:
-        self.log.logging("Plugin", "Error", f"Unexpected error while resolving {record}: {e}")
+        self.log.logging("DNS", "Error", f"Unexpected error while resolving {record}: {e}")
 
     return None
 
@@ -198,13 +198,13 @@ def is_plugin_update_available(self, currentVersion, availVersion):
     availMaj, availMin, availUpd = availVersion.split(".")
 
     if availMaj > currentMaj:
-        self.log.logging("Plugin", "Status", f"Zigbee4Domoticz plugin: upgrade available: {availVersion}")
+        self.log.logging("DNS", "Status", f"Zigbee4Domoticz plugin: upgrade available: {availVersion}")
         return True
 
     if availMaj == currentMaj and (
         (availMin == currentMin and availUpd > currentUpd) or availMin > currentMin
     ):
-        self.log.logging("Plugin", "Status", f"Zigbee4Domoticz plugin: upgrade available: {availVersion}")
+        self.log.logging("DNS", "Status", f"Zigbee4Domoticz plugin: upgrade available: {availVersion}")
         return True
 
     return False
@@ -224,11 +224,11 @@ def is_zigate_firmware_available(self, currentMajorVersion, currentFirmwareVersi
     Returns:
         bool: True if a firmware update is available, False otherwise.
     """
-    self.log.logging("Plugin", "Debug", f"is_zigate_firmware_available {type(currentMajorVersion)}, {type(currentFirmwareVersion)}, {type(availfirmMajor)}, {type(availfirmMinor)}")
+    self.log.logging("DNS", "Debug", f"is_zigate_firmware_available {type(currentMajorVersion)}, {type(currentFirmwareVersion)}, {type(availfirmMajor)}, {type(availfirmMinor)}")
     if not (availfirmMinor and currentFirmwareVersion):
         return False
     if availfirmMinor > int(currentFirmwareVersion, 16):
-        self.log.logging("Plugin", "Debug", "Zigate Firmware update available")
+        self.log.logging("DNS", "Debug", "Zigate Firmware update available")
         return True
     return False
 
