@@ -168,35 +168,38 @@ def LoadDeviceList(self):
     ListOfDevices_from_Domoticz = None
 
     # This can be enabled only with Domoticz version 2021.1 build 1395 and above, otherwise big memory leak
-
-    if self.pluginconf.pluginConf["useDomoticzDatabase"] and Modules.tools.is_domoticz_db_available(self):
-        ListOfDevices_from_Domoticz, saving_time = _read_DeviceList_Domoticz(self)
-        self.log.logging(
-            "Database",
-            "Debug",
-            "Database from Dz is recent: %s Loading from Domoticz Db"
-            % is_domoticz_recent(self, saving_time, self.pluginconf.pluginConf["pluginData"] + self.DeviceListName)
-        )
-        res = "Success"
-
-    _pluginConf = Path( self.pluginconf.pluginConf["pluginData"] )
-    _DeviceListFileName = _pluginConf / self.DeviceListName
-    if os.path.isfile(_DeviceListFileName):
-        res = loadTxtDatabase(self, _DeviceListFileName)
-    else:
-        # Do not exist
+    use_domoticz_db = self.pluginconf.pluginConf.get("useDomoticzDb")
+    plugin_data = Path(self.pluginconf.pluginConf["pluginData"])
+    device_name = self.DeviceListName
+    device_list_txt_filename = plugin_data/ device_name
+    
+    if use_domoticz_db:
+        # We try to load from Domoticz Db
+        ListOfDevices_from_Domoticz, domoticz_db_saving_time = _read_DeviceList_Domoticz(self)
+        can_use_domoticz_db = is_domoticz_recent(self, domoticz_db_saving_time, device_list_txt_filename)
+        self.log.logging( "Database", "Debug", f"Database from Dz is recent: {can_use_domoticz_db} Loading from Domoticz Db" )
+        if can_use_domoticz_db:
+            self.ListOfDevices = ListOfDevices_from_Domoticz
+            res = "Success"
+            self.DeviceListSize = len(self.ListOfDevices)
+            self.log.logging("Database", "Status", "Z4D loads %s entries from Domoticz" % (self.DeviceListSize))
+        
+    if not use_domoticz_db or ListOfDevices_from_Domoticz is None or not can_use_domoticz_db:
+        # Loading from TXT file (Legacy)
         self.ListOfDevices = {}
-        return True
+        if os.path.isfile(device_list_txt_filename):
+            res = loadTxtDatabase(self, device_list_txt_filename)
+        else:
+            # Do not exist
+            return True
 
-    self.log.logging("Database", "Status", "Z4D loads %s entries from %s" % (len(self.ListOfDevices), _DeviceListFileName))
-    if ListOfDevices_from_Domoticz:
-        self.log.logging( "Database", "Log", "Plugin Database loaded - BUT NOT USE - from Dz: %s from DeviceList: %s, checking deltas " % ( len(ListOfDevices_from_Domoticz), len(self.ListOfDevices), ), )
+        self.log.logging("Database", "Status", "Z4D loads %s entries from %s" % (len(self.ListOfDevices), device_list_txt_filename))
 
-    self.log.logging("Database", "Debug", "LoadDeviceList - DeviceList filename : %s" % _DeviceListFileName)
-    Modules.tools.helper_versionFile(_DeviceListFileName, self.pluginconf.pluginConf["numDeviceListVersion"])
+        self.log.logging("Database", "Debug", "LoadDeviceList - DeviceList filename : %s" % device_list_txt_filename)
+        Modules.tools.helper_versionFile(device_list_txt_filename, self.pluginconf.pluginConf["numDeviceListVersion"])
 
-    # Keep the Size of the DeviceList in order to check changes
-    self.DeviceListSize = os.path.getsize(_DeviceListFileName)
+        # Keep the Size of the DeviceList in order to check changes
+        self.DeviceListSize = os.path.getsize(device_list_txt_filename)
 
     cleanup_table_entries( self)
 
@@ -402,10 +405,11 @@ def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
 
     _write_DeviceList_txt(self)
 
-    if (
-        Modules.tools.is_domoticz_db_available(self) 
-        and ( self.pluginconf.pluginConf["useDomoticzDatabase"] or self.pluginconf.pluginConf["storeDomoticzDatabase"]) 
-    ):
+    use_domoticz_db = self.pluginconf.pluginConf.get("useDomoticzDb")
+    store_in_domoticz_db = self.pluginconf.pluginConf.get("storeDomoticzDb")
+    self.log.logging("Database", "Debug", f"WriteDeviceList - useDomoticzDb: {use_domoticz_db} storeDomoticzDb: {store_in_domoticz_db}")
+
+    if ( Modules.tools.is_domoticz_db_available(self) and ( use_domoticz_db and store_in_domoticz_db)):
         if _write_DeviceList_Domoticz(self) is None:
             # An error occured. Probably Dz.Configuration() is not available.
             self.log.logging("Database", "Error", "WriteDeviceList - flush Plugin db to Domoticz failed, we secure it to %s file" % self.DeviceListName)
