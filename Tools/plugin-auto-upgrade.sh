@@ -2,6 +2,7 @@
 
 # export GIT_TRACE=1
 
+
 exec 2>&1
 
 echo "Starting Zigbee for Domoticz plugin Upgrade process."
@@ -27,13 +28,6 @@ print_env_details() {
 # Function to set PIP options based on the distribution
 set_pip_options() {
     PIP_OPTIONS="--no-input install -r requirements.txt --ignore-requires-python --upgrade"
-    if command -v lsb_release &> /dev/null; then
-        DISTRIB_ID=$(lsb_release -is)
-        DISTRIB_RELEASE=$(lsb_release -rs)
-        if [ "$DISTRIB_ID" = "Debian" ] && [ "$DISTRIB_RELEASE" = "12" ]; then
-            PIP_OPTIONS="$PIP_OPTIONS --break-system-packages"
-        fi
-    fi
     echo "PIP Options: $PIP_OPTIONS"
 }
 
@@ -46,14 +40,22 @@ check_pip_in_venv() {
     fi
 }
 
+# Function to check and install python3-venv if missing
+ensure_python3_venv() {
+    echo "Checking python3 env presence..."
+    if [ "$(whoami)" = "root" ]; then
+        apt-get update
+        apt-get install -y python3-venv python3-pip
+    else
+        sudo apt-get update
+        sudo apt-get install -y python3-venv python3-pip
+    fi
+}
+
 # Function to install pip
 install_pip() {
-    if command -v lsb_release &> /dev/null && [ "$(lsb_release -is)" = "Debian" ] || [ "$(lsb_release -is)" = "Ubuntu" ]; then
-        echo "We are expecting the user to properly install python3-pip package. if not yet done !!"
-    else
-        $PYTHON_VERSION -m ensurepip
-        $PYTHON_VERSION -m pip install --upgrade pip virtualenv -t $VENV_PATH
-    fi
+    $PYTHON_VERSION -m ensurepip
+    $PYTHON_VERSION -m pip install --upgrade pip virtualenv -t $VENV_PATH
 }
 
 # Function to activate virtual environment
@@ -83,21 +85,6 @@ check_and_activate_venv() {
     else
         echo "PYTHONPATH is not set"
         VENV_ACTIVATED=false
-    fi
-}
-
-# Function to install python3-pip on Debian if necessary
-install_pip_on_debian() {
-    if command -v lsb_release &> /dev/null; then
-        DISTRIB_ID=$(lsb_release -is)
-        DISTRIB_RELEASE=$(lsb_release -rs)
-        if [ "$DISTRIB_ID" = "Debian" ] && [ "$DISTRIB_RELEASE" = "12" ]; then
-            if ! command -v pip3 &> /dev/null; then
-                echo "pip3 is not installed. Installing python3-pip..."
-                sudo apt-get update
-                sudo apt-get install -y python3-pip
-            fi
-        fi
     fi
 }
 
@@ -243,7 +230,11 @@ check_and_upgrade_pip() {
 
 # Function to print current version and latest git commit
 print_version_info() {
+    if [ -f .hidden/VERSION ]; then
     echo "Current version  : $(cat .hidden/VERSION)"
+    else
+        echo "Current version  : Unknown (no .hidden/VERSION found)"
+    fi
     echo "latest git commit: $(git log --pretty=oneline -1)"
     echo ""
 }
@@ -288,7 +279,7 @@ check_python_and_branch
 set_home
 print_env_details
 set_pip_options
-#install_pip_on_debian
+ensure_python3_venv
 check_and_activate_venv
 print_version_info
 update_git_config
@@ -300,15 +291,3 @@ echo " "
 echo "Plugin Upgrade process completed without errors."
 exit 0
 
-# Documentation:
-# This script automates the upgrade process for the Zigbee for Domoticz plugin.
-# It performs the following steps:
-# 1. Sets the HOME environment variable if not already set.
-# 2. Prints environment details for debugging purposes.
-# 3. Sets PIP options based on the distribution.
-# 4. Checks if PYTHONPATH is set and activates the virtual environment if available.
-# 5. Installs python3-pip on Debian if necessary.
-# 6. Updates the git configuration to add the current directory as a safe directory.
-# 7. Updates Python modules using pip.
-# 8. Prints the current version and latest git commit of the plugin.
-# 9. Completes the upgrade process and exits.
