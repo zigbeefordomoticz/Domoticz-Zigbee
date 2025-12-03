@@ -18,6 +18,10 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
+## Dec. 2025 - Stable8.1.001 ( 2025.8)
+
+- Technical version ISO Stable7 7.1.026, to prepare DomoticzEx and other features
+
 ## Dec. 2025 - Stable7.1.026 ( 2025.7)
 
 - [Issue] - Fix OTA not working for Legrand and Philips Hue.
