@@ -1,7 +1,7 @@
 -c constraints.txt
 zigpy
 zigpy-cli
-dnspython
+dnspython3
 z4d-certified-devices
 distro
 pyserial-asyncio-fast
