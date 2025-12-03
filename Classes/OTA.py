@@ -10,34 +10,66 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
+"""
+OTAManagement class for managing Over-The-Air (OTA) firmware updates.
 
-# """
-#     References:
-#         - https://www.nxp.com/docs/en/user-guide/JN-UG-3115.pdf ( section 40 - OTA Upgrade Cluster
-#         - https://github.com/fairecasoimeme/ZiGate/issues?utf8=%E2%9C%93&q=OTA
-#
-#     Server      Zigate      Client
-#
-#     0x0500 ----->
-#     0x0505 ----------------->
-#     0x8501 <------------------
-#     0x0502 ------------------>
-#
-#     0x8503 <------------------
-#
-#     'Upgraded Device':
-#         - Notified
-#         - Block Requested
-#         - Transfer Progress
-#         - Transfer Completed
-#         - Transfer Aborted
-#         - Timeout
-#
-# """
+Args:
+    zigbee_communitation: The Zigbee communication object.
+    PluginConf: The plugin configuration object.
+    DeviceConf: The device configuration object.
+    adminWidgets: The admin widgets object.
+    ZigateComm: The Zigate communication object.
+    HomeDirectory: The home directory path.
+    hardwareID: The hardware ID.
+    Devices: The list of Domoticz devices.
+    ListOfDevices: The global list of devices.
+    IEEE2NWK: The list of IEEE to NWKID mappings.
+    log: The logging object.
+    PluginHealth: The plugin health object.
+    readZclClusters: The ZCL clusters reader object.
 
+Attributes:
+    zigbee_communication: The Zigbee communication object.
+    HB: The heartbeat value.
+    ListOfDevices: The global list of devices.
+    IEEE2NWK: The list of IEEE to NWKID mappings.
+    Devices: The list of Domoticz devices.
+    DeviceConf: The device configuration object.
+    adminWidgets: The admin widgets object.
+    ControllerLink: The Zigate communication object.
+    pluginconf: The plugin configuration object.
+    homeDirectory: The home directory path.
+    log: The logging object.
+    PluginHealth: The plugin health object.
+    readZclClusters: The ZCL clusters reader object.
+    ListOfImages: The list of available firmware loaded at plugin startup.
+    ImageLoaded: The dictionary containing information about the loaded firmware image.
+    ListInUpdate: The dictionary containing information about the firmware update in progress.
+    authorized_device_downgrade: The dictionary containing information about devices authorized for downgrade.
+    zigbee_ota_index: The Zigbee OTA index.
+    zigbee_ota_found_in_index: The list of Zigbee OTA firmware found in the index.
+    once: Flag indicating if the OTA process has started.
 
+Methods:
+    _reset_ota_state: Reset the OTA update state.
+    cancel_current_firmware_update: Cancel the current firmware update.
+    ota_image_block_request: Handle the OTA image block request.
+    ota_image_page_request: Handle the OTA image page request.
+    ota_upgrade_end_request: Handle the OTA upgrade end request.
+    heartbeat: Perform the OTA heartbeat.
+    restapi_list_of_firmware: Get the list of available firmware.
+    restapi_firmware_update: Perform the firmware update.
+    query_next_image_request: Handle the OTA query next image request.
+"""
+
+import json
+import math
+import os
+import socket
 import struct
 import time
+import urllib.error
+import urllib.request
 from datetime import datetime
 from os import listdir
 from os.path import exists, isfile, join
@@ -55,7 +87,57 @@ from Zigbee.zclRawCommands import (zcl_raw_ota_image_block_response_success,
 # This file is maintained from the community, so make sure what you do.
 
 OTA_CLUSTER_ID = "0019"
-MAX_FRAME_DATA = 64
+
+DEFAULT_OTA_PROFILE = {
+    "max_data": 48,
+    "min_delay": 0.300,
+    "retry": 3,
+}
+
+VENDOR_PROFILES = {
+    0x100B: {  # Philips Hue
+        "max_data": 64,
+        "min_delay": 0.300,
+        "retry": 3,
+        "notes": "Strict timing, small buffers, strong CRC/header validation."
+    },
+
+    0x118C: {  # IKEA (TRÅDFRI / Dirigera)
+        "max_data": 56,
+        "min_delay": 0.12,
+        "retry": 3,
+        "notes": "Generally robust; failures often mesh-related."
+    },
+
+    0x1021: {  # Legrand / Netatmo
+        "max_data": 64,
+        "min_delay": 0.10,
+        "retry": 3,
+        "notes": "Very picky image metadata; some devices require vendor-style packaging."
+    },
+
+    0x112D: {  # Develco / frient
+        "max_data": 56,
+        "min_delay": 0.16,
+        "retry": 2,
+        "notes": "Known mid-OTA stalls; allow long idle periods."
+    },
+
+    0x1224: {  # NodOn
+        "max_data": 52,
+        "min_delay": 0.12,
+        "retry": 3,
+        "notes": "Verify manufacturer/image type; some ‘No image available’ errors."
+    },
+
+    0x10A4: {  # Osram / LEDVANCE
+        "max_data": 56,
+        "min_delay": 0.12,
+        "retry": 3,
+        "notes": "Generally easier OTA; check mesh stability during upgrade."
+    },
+}
+
 
 OTA_CODES = {
     "Danfoss": {"Folder": "DANFOSS", "ManufCode": 0x1246, "ManufName": "Danfoss", "Enabled": True},
@@ -83,57 +165,6 @@ OTA_CODES = {
 
 
 class OTAManagement(object):
-    """
-    OTAManagement class for managing Over-The-Air (OTA) firmware updates.
-
-    Args:
-        zigbee_communitation: The Zigbee communication object.
-        PluginConf: The plugin configuration object.
-        DeviceConf: The device configuration object.
-        adminWidgets: The admin widgets object.
-        ZigateComm: The Zigate communication object.
-        HomeDirectory: The home directory path.
-        hardwareID: The hardware ID.
-        Devices: The list of Domoticz devices.
-        ListOfDevices: The global list of devices.
-        IEEE2NWK: The list of IEEE to NWKID mappings.
-        log: The logging object.
-        PluginHealth: The plugin health object.
-        readZclClusters: The ZCL clusters reader object.
-
-    Attributes:
-        zigbee_communication: The Zigbee communication object.
-        HB: The heartbeat value.
-        ListOfDevices: The global list of devices.
-        IEEE2NWK: The list of IEEE to NWKID mappings.
-        Devices: The list of Domoticz devices.
-        DeviceConf: The device configuration object.
-        adminWidgets: The admin widgets object.
-        ControllerLink: The Zigate communication object.
-        pluginconf: The plugin configuration object.
-        homeDirectory: The home directory path.
-        log: The logging object.
-        PluginHealth: The plugin health object.
-        readZclClusters: The ZCL clusters reader object.
-        ListOfImages: The list of available firmware loaded at plugin startup.
-        ImageLoaded: The dictionary containing information about the loaded firmware image.
-        ListInUpdate: The dictionary containing information about the firmware update in progress.
-        AuthorizedForDowngrade: The dictionary containing information about devices authorized for downgrade.
-        zigbee_ota_index: The Zigbee OTA index.
-        zigbee_ota_found_in_index: The list of Zigbee OTA firmware found in the index.
-        once: Flag indicating if the OTA process has started.
-
-    Methods:
-        _reset_ota_state: Reset the OTA update state.
-        cancel_current_firmware_update: Cancel the current firmware update.
-        ota_image_block_request: Handle the OTA image block request.
-        ota_image_page_request: Handle the OTA image page request.
-        ota_upgrade_end_request: Handle the OTA upgrade end request.
-        heartbeat: Perform the OTA heartbeat.
-        restapi_list_of_firmware: Get the list of available firmware.
-        restapi_firmware_update: Perform the firmware update.
-        query_next_image_request: Handle the OTA query next image request.
-    """
 
 
     def __init__(
@@ -171,6 +202,7 @@ class OTAManagement(object):
         self.readZclClusters = readZclClusters
         self.internet_available = internet_available
         self.pairing_in_progress = pairing_in_progress
+        self.latest_request_was_malformed = False
 
         # Properties for firmware/image management
         self.ListOfImages = {}  # List of available firmware loaded at plugin startup
@@ -199,7 +231,7 @@ class OTAManagement(object):
             "Retry": 0,
         }
         
-        self.AuthorizedForDowngrade = {}
+        self.authorized_device_downgrade = {}
         self.zigbee_ota_index = None
         self.zigbee_ota_found_in_index = []
         self.once = True
@@ -220,42 +252,56 @@ class OTAManagement(object):
         self.ListInUpdate["Process"] = None
 
 
-    def ota_image_block_request(self, MsgData):  # OK 13/10
-        # ota_image_block_request(self, Devices, MsgData, MsgLQI):  # OTA image block request
-        # BLOCK_REQUEST  0x8501  ZiGate will receive this command when device asks OTA firmware
+    def ota_image_block_request(self, MsgData):
+        """
+        Handle an OTA Image Block Request from a Zigbee device.
 
-        if len(MsgData) not in ( 60 , 62):
-            logging(self, "Debug", "ota_image_block_request - Incorrect lenght (%s) %s" % (len(MsgData), MsgData))
+        Args:
+            MsgData (bytes/hexstr): Raw message data from device.
+        """
+        if len(MsgData) not in (60, 62):
+            logging(self, "Debug", f"ota_image_block_request - Incorrect length ({len(MsgData)}): {MsgData}")
             return
-        MsgSQN = MsgData[:2]
-        MsgEP = MsgData[2:4]
-        MsgClusterId = MsgData[4:8]
-        MsgaddrMode = MsgData[8:10]
-        MsgSrcAddr = MsgData[10:14]
-        MsgIEEE = MsgData[14:30]
+
+        # Slice message fields
+        MsgSQN, MsgEP = MsgData[:2], MsgData[2:4]
+        MsgClusterId, MsgaddrMode = MsgData[4:8], MsgData[8:10]
+        MsgSrcAddr, MsgIEEE = MsgData[10:14], MsgData[14:30]
         MsgFileOffset = MsgData[30:38]
+
         intMsgImageVersion = int(MsgData[38:46], 16)
         intMsgImageType = int(MsgData[46:50], 16)
         intMsgManufCode = int(MsgData[50:54], 16)
         MsgBlockRequestDelay = int(MsgData[54:58], 16)
         MsgMaxDataSize = int(MsgData[58:60], 16)
-        intMsgFieldControl = int(MsgData[60:62], 16)
+        intMsgFieldControl = int(MsgData[60:62], 16) if len(MsgData) == 62 else 0
 
-        logging( self, "Debug", "ota_image_block_request - Request Firmware %s/%s Offset: %s Version: 0x%08x Type: 0x%04X Manuf: 0x%04X Delay: %s MaxSize: %s Control: 0x%02X" % (
-            MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, intMsgFieldControl, ),)
+        logging(
+            self,
+            "Debug",
+            f"ota_image_block_request - Request Firmware {MsgSrcAddr}/{MsgEP} "
+            f"Offset: {int(MsgFileOffset, 16)} Version: 0x{intMsgImageVersion:08X} "
+            f"Type: 0x{intMsgImageType:04X} Manuf: 0x{intMsgManufCode:04X} "
+            f"Delay: {MsgBlockRequestDelay} MaxSize: {MsgMaxDataSize} "
+            f"Control: 0x{intMsgFieldControl:02X}"
+        )
 
-        if self.ListInUpdate["NwkId"] is None:
-            logging(self, "Debug", "ota_image_block_request - Async request from device: %s." % (MsgSrcAddr))
-            if not ota_aync_request( self, MsgSrcAddr, MsgEP, MsgIEEE, MsgFileOffset, intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, intMsgFieldControl, ):
-                logging(
-                    self,
-                    "Debug",
-                    "ota_image_block_request %s/%s - Async request failed %s " % (MsgSrcAddr, MsgEP, self.ListInUpdate),
-                )
+        if self.ListInUpdate.get("NwkId") is None:
+            logging(self, "Debug", f"ota_image_block_request - Async request from device: {MsgSrcAddr}")
+            if not ota_aync_request(
+                self, MsgSrcAddr, MsgEP, MsgIEEE, MsgFileOffset, intMsgImageVersion,
+                intMsgImageType, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize,
+                intMsgFieldControl
+            ):
+                logging(self, "Debug", f"ota_image_block_request {MsgSrcAddr}/{MsgEP} - Async request failed {self.ListInUpdate}")
                 return
 
-        prepare_and_send_block(self, MsgSrcAddr, MsgEP, MsgFileOffset, intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, intMsgFieldControl, MsgSQN, )
-            
+        prepare_and_send_block(
+            self, MsgSrcAddr, MsgEP, MsgFileOffset, intMsgImageVersion,
+            intMsgImageType, intMsgManufCode, MsgBlockRequestDelay,
+            MsgMaxDataSize, intMsgFieldControl, MsgSQN
+        )
+
 
     def ota_image_page_request( self, MsgData ):
         MsgSQN = MsgData[:2]
@@ -269,14 +315,14 @@ class OTAManagement(object):
         intMsgManufCode = int(MsgData[34:38], 16)
         MsgMaxDataSize = int(MsgData[38:40],16)
         PageSize = int(MsgData[40:44],16)
-        ResponseSpacing = MsgData[44:48]
+        intResponseSpacing = int(MsgData[44:48],16)
         FieldControl = MsgData[48:50]
         intMsgFieldControl = int(FieldControl,16)
         if len(MsgData) == 64:
             RequestNodeAddress = MsgData[48:64]
 
         logging( self, "Debug", "ota_image_page_request - Request Firmware %s/%s Offset: %s Version: 0x%08x Type: 0x%04X Manuf: 0x%04X MaxSize: %s PageSize: %s ResponseSpacing: %s Control: 0x%02X" % (
-            MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgMaxDataSize, PageSize , int(ResponseSpacing,16), intMsgFieldControl, ),)
+            MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgMaxDataSize, PageSize , intResponseSpacing, intMsgFieldControl, ),)
 
         if self.ListInUpdate["NwkId"] is None:
             logging(self, "Debug", "ota_image_page_request - Async request from device: %s." % (MsgSrcAddr))
@@ -303,7 +349,7 @@ class OTAManagement(object):
                 intMsgImageVersion, 
                 intMsgImageType, 
                 intMsgManufCode, 
-                ResponseSpacing, 
+                intResponseSpacing, 
                 MsgMaxDataSize, 
                 intMsgFieldControl, 
                 "%02x" %_sqn, 
@@ -328,21 +374,21 @@ class OTAManagement(object):
         image_type = int(MsgData[22:26], 16)
         intMsgManufCode = int(MsgData[26:30], 16)
         MsgStatus = MsgData[30:32]
-        logging(self, "Debug", "OTA upgrade completed - %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s" % (
+        logging(self, "Log", "OTA upgrade completed - %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s" % (
             MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus))
 
         if self.ListInUpdate["NwkId"] is None:
-            logging(self, "Log", "ota_upgrade_end_request - Receive Firmware Completed from %s most likely a duplicated packet as there is nothing in Progress. " % MsgSrcAddr)
+            logging(self, "Log", "ota_upgrade_end_request - Receive Firmware Completed from %s with status %s most likely a duplicated packet as there is nothing in Progress. " % (MsgSrcAddr, MsgStatus))
 
             return
         if self.ListInUpdate["NwkId"] and MsgSrcAddr != self.ListInUpdate["NwkId"]:
-            logging(self, "Error", "ota_upgrade_end_request - OTA upgrade completed - %s not in Upgraded devices" % MsgSrcAddr)
+            logging(self, "Error", "ota_upgrade_end_request - OTA upgrade completed - %s with status %s not in Upgraded devices" % (MsgSrcAddr, MsgStatus))
 
             return
         if "StartTime" not in self.ListInUpdate:
             logging(self, "Error", "ota_upgrade_end_request - OTA upgrade completed - No Start Time for device: %s" % MsgSrcAddr)
-
             return
+
         if MsgStatus == "00":
             logging(self, "Status", "OTA upgrade completed with success - %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s" % (
                 MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus))
@@ -383,16 +429,16 @@ class OTAManagement(object):
     def heartbeat(self):
         
         nwk_id = self.ListInUpdate["NwkId"]
+        if nwk_id is None:
+            logging(self, "Debug", "ota_heartbeat - nothing to do")
+            return
+
         process = self.ListInUpdate["Process"]
         image_type = self.ImageLoaded["image_type"]
         loaded_time_stamp = self.ImageLoaded["LoadedTimeStamp"]
         notified_time_stamp = self.ImageLoaded["NotifiedTimeStamp"]
         retry = self.ListInUpdate["Retry"]
         authorized_for_update = self.ListInUpdate["AuthorizedForUpdate"]
-
-        if nwk_id is None:
-            logging(self, "Debug", "ota_heartbeat - nothing to do")
-            return
 
         logging(
             self,
@@ -403,13 +449,14 @@ class OTAManagement(object):
 
         if nwk_id and self.ListInUpdate["Status"] == "Transfer Progress" and self.ListInUpdate["LastBlockSent"] != 0 and (
                 time.time() > self.ListInUpdate["LastBlockSent"] + 300):
+            # TODO: retry mechanism per device
             _handle_ota_timeout(self)
             return
 
         if nwk_id and self.ListInUpdate["LastBlockSent"] == 0 and loaded_time_stamp != 0:
             _retry_notification(self)
 
-        if retry == 10:
+        if retry == 10 or self.ImageLoaded["NotifiedTimeStamp"] != 0 and (time.time() > self.ImageLoaded["NotifiedTimeStamp"] + 600):
             _handle_timeout(self)
 
 
@@ -432,20 +479,41 @@ class OTAManagement(object):
         return [brand]
 
 
-    def restapi_firmware_update(self, data):  #
+    def restapi_firmware_update(self, data):
+        """
+        Trigger a firmware update for one Zigbee device via REST API.
+
+        Args:
+            data (list[dict]): List of update requests, each with keys:
+                - "Brand": str
+                - "FileName": str
+                - "NwkId": str
+                - "Ep": int
+                - "ForceUpdate": bool
+        Note:
+            Only one device update at a time is currently supported.
+        """
+        if not data:
+            logging(self, "Warning", "No update data received.")
+            return
 
         if len(data) > 1:
-            logging(self, "Error", "For now we support only Update of 1 device at a time!")
+            logging(self, "Error", "Only one device update at a time is supported!")
             return
-        for x in data:
-            brand = x["Brand"]
-            file_name = x["FileName"]
-            target_nwkid = x["NwkId"]
-            target_ep = x["Ep"]
-            force_update = x["ForceUpdate"]
-            firmware_update(self, brand, file_name, target_nwkid, target_ep, force_update)
-            if force_update:
-                self.AuthorizedForDowngrade[ target_nwkid ] = True
+
+        # Process the single device update
+        update_request = data[0]
+        brand = update_request.get("Brand")
+        file_name = update_request.get("FileName")
+        target_nwkid = update_request.get("NwkId")
+        target_ep = update_request.get("Ep")
+        force_update = update_request.get("ForceUpdate", False)
+
+        firmware_update(self, brand, file_name, target_nwkid, target_ep, force_update)
+
+        # Allow downgrade if force update is requested
+        if force_update:
+            self.authorized_device_downgrade[target_nwkid] = True
 
 
     def query_next_image_request(self, srcnwkid, srcep, Sqn, Data):
@@ -460,49 +528,68 @@ class OTAManagement(object):
 
         # If we have already an OTA in progress, let's just respond that no image available for now
         if self.ListInUpdate["NwkId"] and self.ListInUpdate["NwkId"] != srcnwkid:
-            zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, '98')
+            zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, 0x98)
             return
 
         # Command: 0x01
 
         fieldcontrol = int(Data[:2],16)
-        manufcode = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[2:6], 16)))[0]
-        imagetype = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[6:10], 16)))[0]
-        currentVersion = "%08x" % struct.unpack("I", struct.pack(">I", int(Data[10:18], 16)))[0]
+        logging(self, "Debug", f" Manuf: {Data[2:6]} Type: {Data[6:10]} Version: {Data[10:18]}")
+        logging(self, "Debug", f" Manuf: {int(Data[2:6], 16)} Type: {int(Data[6:10], 16)} Version: {int(Data[10:18], 16)}")
+        manufcode = struct.unpack("H", bytes.fromhex(Data[2:6]))[0]
+        imagetype = struct.unpack("H", bytes.fromhex(Data[6:10]))[0]
+        currentVersion = struct.unpack("I", bytes.fromhex(Data[10:18]))[0]
+
         if fieldcontrol:
             hardwareversion = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[18:22], 16)))[0]
 
         logging(self, "Debug", "OTA Query Next Image request for %s/%s [%s] - %s %s %s %s" % (
             srcnwkid, srcep, Sqn, fieldcontrol, manufcode, imagetype, currentVersion ))
 
-        if "OTAClient" not in self.ListOfDevices[srcnwkid]:
-            self.ListOfDevices[srcnwkid]["OTAClient"] = {}
-        self.ListOfDevices[srcnwkid]["OTAClient"]["ManufacturerCode"] = manufcode
-        self.ListOfDevices[srcnwkid]["OTAClient"]["ImageType"] = imagetype
-        self.ListOfDevices[srcnwkid]["OTAClient"]["CurrentImageVersion"] = currentVersion 
+        ota_client = self.ListOfDevices.setdefault(srcnwkid, {}).setdefault("OTAClient", {})
+        ota_client["ManufacturerCode"] = manufcode
+        ota_client["ImageType"] = imagetype
+        ota_client["CurrentImageVersion"] = currentVersion
+        
+        authorized_device_downgrade = self.authorized_device_downgrade.get(srcnwkid, False)
 
-        image_found = is_image_for_query_next_image_request( self, srcnwkid, manufcode, imagetype, currentVersion )
-        if image_found:     
-            fileversion = "%08x" %image_found["originalVersion"]
-            imagesize = "%08x" %image_found["intSize"]
+        image_found = is_image_for_query_next_image_request( self, srcnwkid, manufcode, imagetype, currentVersion , authorized_device_downgrade)
+        if image_found:
+            fileversion = image_found["originalVersion"]   # integer
+            imagesize = image_found["intSize"]           # integer
+
+            if authorized_device_downgrade:
+                logging(self, "Debug", f"OTA Query Next Image request - Device {srcnwkid} is authorized for downgrade.")
+                fileversion = image_found["originalVersion"] + 0x10100000
             
+            logging(self, "Debug", f"OTA Query Next Image request - Image found fileversion: 0x{fileversion:08x} imagesize: {imagesize}")
+
             if "autoServeOTA" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoServeOTA"]:
+                logging(self, "Debug", f"OTA Query Next Image request - autoServeOTA fileversion: 0x{fileversion:08x} imagesize: {imagesize}")
+
                 self.ListInUpdate["AuthorizedForUpdate"].append( srcnwkid )
-                return zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, '00', manufcode, imagetype, fileversion, imagesize)
-            
+                return zcl_raw_ota_query_next_image_response(
+                    self, Sqn, srcnwkid, ZIGATE_EP, srcep,
+                    0x00, manufcode, imagetype, fileversion, imagesize)
+
             elif srcnwkid in self.ListInUpdate["AuthorizedForUpdate"]:
                 # We are in the case were we get a request, but do not authorised selfserving OTA
-                return zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, '00', manufcode, imagetype, fileversion, imagesize)
-            
+                logging(self, "Debug", f"OTA Query Next Image request - AuthorizedForUpdate fileversion: {fileversion} imagesize: {imagesize}")
+
+                return zcl_raw_ota_query_next_image_response(
+                    self, Sqn, srcnwkid, ZIGATE_EP, srcep,
+                    0x00, manufcode, imagetype, fileversion, imagesize)
+
         elif "checkFirmwareAgainstZigbeeOTARepository" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["checkFirmwareAgainstZigbeeOTARepository"]:
-            if (int(manufcode,16), int(imagetype,16), int(currentVersion,16)) not in self.zigbee_ota_found_in_index:
-                _ota_available = check_ota_availability_from_index( self, int(manufcode,16), int(imagetype,16), int(currentVersion,16) )
+            if (manufcode, imagetype, currentVersion) not in self.zigbee_ota_found_in_index:
+                _ota_available = check_ota_availability_from_index( self, manufcode, imagetype, currentVersion )
                 if _ota_available:
-                    self.zigbee_ota_found_in_index.append( ( int(manufcode,16), int(imagetype,16), int(currentVersion,16))  )
-                    notify_ota_firmware_available(self, srcnwkid, int(manufcode,16), int(imagetype,16), int(currentVersion,16), _ota_available )
+                    self.zigbee_ota_found_in_index.append( ( manufcode, imagetype, currentVersion)  )
+                    notify_ota_firmware_available(self, srcnwkid, manufcode, imagetype, currentVersion, _ota_available )
 
         # No Image available
-        zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, '98')
+        logging( self, "Debug", ( f"OTA Query Next Image request - No Image Available for now " f"Current device manufcode: 0x{manufcode:04x}, " f"imagetype: 0x{imagetype:04x}, " f"currentVersion: 0x{currentVersion:08x}" ) )
+        return zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, 0x98)
 
 
 # Local Routines and other helpers
@@ -575,17 +662,30 @@ def _log_debug_image_not_found(self, image_type, brand):
 
 
 def _format_image_data(self, decoded_header, force_version):
+    header_bytes = decoded_header['header_str'].encode('ascii')  # convert string back to bytes
+    header_hex = ''.join('%02X' % b for b in header_bytes)
+
     return (
         f"{ADDRESS_MODE['short']:02x}0000"
-        f"{decoded_header['file_id']} {decoded_header['header_version']} {decoded_header['header_length']} {decoded_header['header_fctl']}"
-        f"{decoded_header['manufacturer_code']} {decoded_header['image_type']} {force_version or decoded_header['image_version']}"
-        f"{decoded_header['stack_version']}{''.join('%02X' % i for i in decoded_header['header_str'])}{decoded_header['size']}"
-        f"{decoded_header['security_cred_version']} {decoded_header['upgrade_file_dest']} {decoded_header['min_hw_version']} {decoded_header['max_hw_version']}"
+        f"{decoded_header['file_id']} "
+        f"{decoded_header['header_version']} "
+        f"{decoded_header['header_length']} "
+        f"{decoded_header['header_fctl']} "
+        f"{decoded_header['manufacturer_code']} "
+        f"{decoded_header['image_type']} "
+        f"{force_version or decoded_header['image_version']} "
+        f"{decoded_header['stack_version']}"
+        f"{header_hex} "
+        f"{decoded_header['image_size']} "
+        f"{decoded_header['security_cred_version']} "
+        f"{decoded_header['payload_offset']} "
+        f"{decoded_header['min_hw_version']} "
+        f"{decoded_header['max_hw_version']}"
     )
 
 
 def _is_controller_in_raw_mode(self):
-    return "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]
+    return bool(self.pluginconf.pluginConf.get("ControllerInRawMode", False))
 
 
 def _update_image_loaded_info(self, decoded_header, force_version):
@@ -596,61 +696,179 @@ def _update_image_loaded_info(self, decoded_header, force_version):
 
 
 def build_ota_data_block(self, block_request, max_data_size):
+    """
+    Build a single OTA block segment from the full OTA image.
+
+    block_request fields must contain:
+        - "Sequence": hex string
+        - "Offset": hex string
+
+    Returns:
+        (sequence:int, offset:int, length:int, raw_ota_data:bytes)
+    """
+    ota_image = self.ListInUpdate["OtaImage"]
+
     sequence = int(block_request["Sequence"], 16)
     offset = int(block_request["Offset"], 16)
-    raw_ota_data = self.ListInUpdate["OtaImage"][offset: offset + max_data_size]
-    length = min(max_data_size, len(raw_ota_data))
+
+    if offset >= len(ota_image):
+        return sequence, offset, 0, b""
+
+    # Slice data safely
+    end = offset + max_data_size
+    raw_ota_data = ota_image[offset:end]
+
+    # Actual number of bytes available
+    length = len(raw_ota_data)
 
     return sequence, offset, length, raw_ota_data
 
 
-def build_ota_message(self, dest_addr, dest_ep, sequence, status, offset, image_version, image_type, manufacturer_code, length, raw_ota_data):
-    data = "02" + dest_addr + ZIGATE_EP + dest_ep
-    data += f"{sequence:02x}{status:02x}{offset:08x}{image_version}{image_type}{manufacturer_code}{length:02x}"
-    data += "".join(f"{i:02x}" for i in raw_ota_data)
+def build_ota_message(
+    self, dest_addr, dest_ep, sequence, status, offset,
+    image_version, image_type, manufacturer_code, length, raw_ota_data
+):
+    """
+    Build the Zigate OTA Image Block Response payload.
 
-    return data
+    All fields must already be in HEX string format except:
+    - sequence: int
+    - status: int
+    - offset: int
+    - length: int
+    - raw_ota_data: bytes or iterable of ints (0–255)
+    """
+
+    # Core header
+    header = (
+        "02"                    # Start of frame / message ID
+        f"{dest_addr}"
+        f"{ZIGATE_EP}"
+        f"{dest_ep}"
+    )
+
+    # OTA formatted block
+    ota_fields = (
+        f"{sequence:02x}"
+        f"{status:02x}"
+        f"{offset:08x}"
+        f"{image_version}"
+        f"{image_type}"
+        f"{manufacturer_code}"
+        f"{length:02x}"
+    )
+
+    # Payload data
+    ota_payload = "".join(f"{b:02x}" for b in raw_ota_data)
+
+    return header + ota_fields + ota_payload
 
 
 def update_list_in_update(self, offset, length):
-    self.ListInUpdate["TimeStamps"] = time.time()
-    self.ListInUpdate["Status"] = "Transfer Progress"
-    self.ListInUpdate["Received"] = offset
-    self.ListInUpdate["Sent"] = offset + length
+    info = self.ListInUpdate
+
+    now = time.time()
+    info["LastBlockSent"] = time.time()
+    info["TimeStamps"] = now
+    info["Status"] = "Transfer Progress"
+    info["Received"] = offset
+    info["Sent"] = offset + length
+
+    self.ImageLoaded["NotifiedTimeStamp"] = 0
+    
 
 
-def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, block_request, disable_ack=False):
+def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, block_request, disable_ack=False, block_delay=DEFAULT_OTA_PROFILE["min_delay"]):
 
-    if image_type not in self.ListOfImages["ImageType"]:
+    images = self.ListOfImages.get("ImageType", {})
+    in_update = self.ListInUpdate
+    if image_type not in images:
         logging(self, "Error", f"ota_send_block - unknown image_type {image_type}")
         return False
 
-    if image_type != int(self.ListInUpdate["ImageType"], 16):
-        logging(self, "Error", f"ota_send_block - inconsistent ImageType Received: {image_type} Expecting: {self.ListInUpdate['ImageType']}")
+    expected_image_type = int(in_update["ImageType"], 16)
+    if image_type != expected_image_type:
+        logging(
+            self, "Error",
+            f"ota_send_block - inconsistent ImageType Received: {image_type} "
+            f"Expecting: {in_update['ImageType']}"
+        )
         return False
 
-    status = 0x00
+    # Build block, and Minimum Block Request Delay
+    manufacturer_code = in_update['intManufCode']
+    ota_profile = VENDOR_PROFILES.get( manufacturer_code, DEFAULT_OTA_PROFILE )
+    max_data_size = min(block_request["MaxDataSize"], ota_profile["max_data"])
+    block_delay = max(block_delay, ota_profile["min_delay"])
 
-    max_data_size = min(block_request["MaxDataSize"], MAX_FRAME_DATA)
-    sequence, offset, length, raw_ota_data = build_ota_data_block(self, block_request, max_data_size)
+    sequence, offset, length, raw_ota_data = build_ota_data_block( self, block_request, max_data_size )
+
+    # Hex representations
     image_version_hex = f"{msg_image_version:08x}"
     image_type_hex = f"{image_type:04x}"
-    manufacturer_code_hex = f"{self.ListInUpdate['intManufCode']:04x}"
+    manufacturer_code_hex = f"{in_update['intManufCode']:04x}"
 
-    data = build_ota_message(self, dest_addr, dest_ep, sequence, status, offset, image_version_hex, image_type_hex, manufacturer_code_hex, length, raw_ota_data)
+    data = build_ota_message(
+        self, dest_addr, dest_ep, sequence, 0x00, offset,
+        image_version_hex, image_type_hex, manufacturer_code_hex,
+        length, raw_ota_data
+    )
 
-    update_list_in_update(self, offset, length)
-
-    logging(self, "Debug", f"ota_send_block - Block sent to {dest_addr}/{dest_ep} Received yet: {offset} Sent now: {length}")
-
-    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
-        raw_data_hex = "".join(f"{i:02x}" for i in raw_ota_data)
-        return zcl_raw_ota_image_block_response_success(
-            self, f"{sequence:02x}", dest_addr, ZIGATE_EP, dest_ep, f"{status:02x}",
-            manufacturer_code_hex, image_type_hex, image_version_hex, f"{offset:08x}", f"{length:02x}", raw_data_hex, ackIsDisabled=disable_ack
+    if self.pluginconf.pluginConf.get("EnableOTATracing", False):
+        trace_ota_block(
+            self,
+            dest_addr=dest_addr,
+            image_type_hex=image_type_hex,
+            offset=offset,
+            size=length,
+            sequence=sequence,
+            raw_ota_data=raw_ota_data,
         )
 
-    self.ControllerLink.sendData("0502", data, ackIsDisabled=False, NwkId=dest_addr)
+    # Update progress tracking
+    update_list_in_update(self, offset, length)
+
+    logging( self, "Debug", f"ota_send_block - Block sent to {dest_addr}/{dest_ep} " f"Received yet: {offset} Sent now: {offset} Size: {max_data_size} Delay: {block_delay}" )
+
+    # Determine OTA block status
+    if length == 0 or data is None:
+        logging( self, "Error", f"OTA {dest_addr}/{dest_ep} short of data, device request offset: {offset} expected size: {max_data_size} got only {length}" )
+        
+        if self.latest_request_was_malformed:
+            # 2nd time in a row we get a malformed request, aborting
+            status = 0x95  # ABORT
+        else:
+            # get a request for data we cannot provide
+            status = 0x80  # MALFORMED_COMMAND
+            self.latest_request_was_malformed = True
+    else:
+        status = 0x00  # Successblock_request_delay
+        self.latest_request_was_malformed = False
+
+    # --- Raw mode (controller internal testing) ---
+    raw_mode = self.pluginconf.pluginConf.get("ControllerInRawMode", False)
+    if raw_mode:
+        raw_data_hex = "".join(f"{b:02x}" for b in raw_ota_data)
+
+        return zcl_raw_ota_image_block_response_success(
+            self,
+            f"{sequence:02x}",
+            dest_addr,
+            ZIGATE_EP,
+            dest_ep,
+            f"{status:02x}",
+            manufacturer_code_hex,
+            image_type_hex,
+            image_version_hex,
+            f"{offset:08x}",
+            f"{length:02x}",
+            raw_data_hex,
+            ackIsDisabled=disable_ack,
+            min_block_delay=block_delay,
+        )
+
+    # --- Normal Zigate path ---
+    self.ControllerLink.sendData( "0502", data, ackIsDisabled=False, NwkId=dest_addr )
 
 
 def ota_image_advertize(self, dest_addr, dest_ep, image_version, image_type=0xFFFF, manufacturer_code=0xFFFF):
@@ -701,116 +919,153 @@ def ota_image_advertize(self, dest_addr, dest_ep, image_version, image_type=0xFF
     self.ControllerLink.sendData("0505", datas, ackIsDisabled=False, NwkId=dest_addr)
 
 
-def ota_upgrade_end_response(self, sqn, dest_addr, dest_ep, intMsgImageVersion, image_type, intMsgManufCode):  # OK 24/10 with Firmware Ok
+def ota_upgrade_end_response(self, sqn, dest_addr, dest_ep, file_version, image_type, manufacturer_code):  # OK 24/10 with Firmware Ok
     # This function issues an Upgrade End Response to a client to which the server has been
     # downloading an application image. The function is called after receiving an Upgrade
     # End Request from the client, indicating that the client has received the entire
     # application image and verified it
     #
     # UPGRADE_END_RESPONSE 	0x0504
-    # u32UpgradeTime is the UTC time, in seconds, at which the client should upgrade the running image with the downloaded image
-    # u32CurrentTime is the current UTC time, in seconds, on the server.
 
-    EPOCTime = datetime(2000, 1, 1)
-    UTCTime = int((datetime.now() - EPOCTime).total_seconds())
-    _UpgradeTime = UTCTime + 10  # 10 seconds delay
+    upgrade_time=0x00000000  # 0 seconds delay
 
-    _FileVersion = intMsgImageVersion
-    _ImageType = image_type
-    _ManufacturerCode = intMsgManufCode
+    if self.pluginconf.pluginConf.get("ControllerInRawMode",False):
+        current_time=0x00000000  # Now
+        zcl_raw_ota_upgrade_end_response(
+            self,
+            sqn,
+            dest_addr,
+            ZIGATE_EP,
+            dest_ep,
+            manufacturer_code,   # INT
+            image_type,          # INT
+            file_version,        # INT
+            current_time,        # INT
+            upgrade_time,        # INT
+        )
+        logging( self, "Log", f"ota_management - zcl_raw_ota_upgrade_end_response( {sqn}, {dest_addr}, {ZIGATE_EP}, {dest_ep}, {manufacturer_code}, {image_type}, {file_version}, {current_time}, {upgrade_time})", )
 
-    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
-        zcl_raw_ota_upgrade_end_response(self, sqn, dest_addr, ZIGATE_EP, dest_ep, "%04x" % _ManufacturerCode, "%04x" % _ImageType, "%08x" % _FileVersion, "%08x" %UTCTime, "%08x" % _UpgradeTime)
     else:
         datas = "%02x" % ADDRESS_MODE["short"] + dest_addr + ZIGATE_EP + dest_ep
-        datas += "%08x" % _UpgradeTime
+        datas += "%08x" % upgrade_time
         datas += "%08x" % 0x00
-        datas += "%08x" % _FileVersion
-        datas += "%04x" % _ImageType
-        datas += "%04x" % _ManufacturerCode
+        datas += "%08x" % file_version
+        datas += "%04x" % image_type
+        datas += "%04x" % manufacturer_code
 
         self.ControllerLink.sendData("0504", datas, ackIsDisabled=False, NwkId=dest_addr)
 
-    logging( self, "Log", "ota_management - sending Upgrade End Response, for %s Version: 0x%08X Type: 0x%04x, Manuf: 0x%04X" % (dest_addr, _FileVersion, _ImageType, _ManufacturerCode), )
+    logging( self, "Log", "ota_management - sending Upgrade End Response, for %s Version: 0x%08X Type: 0x%04x, Manuf: 0x%04X" % (dest_addr, file_version, image_type, manufacturer_code), )
 
-    if "OTAUpgrade" not in self.ListOfDevices[dest_addr]:
-        self.ListOfDevices[dest_addr]["OTAUpgrade"] = {}
+    ota_upgrade = self.ListOfDevices[dest_addr].setdefault("OTAUpgrade", {})
 
-    if not isinstance(self.ListOfDevices[dest_addr]["OTAUpgrade"], dict):
-        del self.ListOfDevices[dest_addr]["OTAUpgrade"]
+    # Ensure the structure is a dict
+    if not isinstance(ota_upgrade, dict):
         self.ListOfDevices[dest_addr]["OTAUpgrade"] = {}
+        ota_upgrade = self.ListOfDevices[dest_addr]["OTAUpgrade"]
 
     now = int(time.time())
-    self.ListOfDevices[dest_addr]["OTAUpgrade"][now] = {"Time": datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S")}
- 
-    self.ListOfDevices[dest_addr]["OTAUpgrade"][now]["Version"] = "%08X" % _FileVersion
-    self.ListOfDevices[dest_addr]["OTAUpgrade"][now]["Type"] = "%04X" % _ImageType
+
+    ota_upgrade[now] = {
+        "Time": datetime.fromtimestamp(now).strftime("%Y-%m-%d %H:%M:%S"),
+        "Version": f"{file_version:08X}",
+        "Type": f"{image_type:04X}",
+    }
 
 
 def ota_management(self, MsgSrcAddr, MsgEP, delay=500):
-    # 'SEND_WAIT_FOR_DATA_PARAMS  0x0506  Can be used to delay/pause OTA update'
+    """
+    Manage OTA update flow by instructing the client to wait before re-requesting
+    an image block. Sends the 'SEND_WAIT_FOR_DATA_PARAMS' command (0x0506).
 
-    # OTA_STATUS_WAIT_FOR_DATA: No data block is included - client should re-request
-    #                           a data block after a waiting time
-    _status = 0x97
+    Args:
+        MsgSrcAddr (str): Short network address of the client (hex string).
+        MsgEP (int): Endpoint of the client.
+        delay (int, optional): Minimum block request delay in milliseconds. Default is 500 ms.
+    """
+    # OTA_STATUS_WAIT_FOR_DATA: instruct client to wait before next request
+    OTA_STATUS_WAIT_FOR_DATA = 0x97
 
-    # CurrentTime is the current UTC time, in seconds, on the server.
-    # If UTC time is not supported by the server, this value should be set to zero
-    _CurrentTime = 0x00
+    # CurrentTime: UTC seconds on server (0 if not supported)
+    CurrentTime = 0x00
 
-    # RequestTime is the UTC time, in seconds, at which the client should re-issue
-    # an Image Block Request
-    _RequestTime = 0x00
+    # RequestTime: UTC seconds at which client should re-issue a request
+    RequestTime = 0x00
 
-    # BlockRequestDelayMs is used in ‘rate limiting’ to specify the value of the ‘block
-    # request delay’ attribute for the client - this is the minimum time, in milliseconds,
-    # that the client must wait between consecutive block requests (the client will
-    # update the local attribute with this value)
-    _BlockRequestDelayMs = delay
+    # BlockRequestDelayMs: minimum delay in ms between consecutive block requests
+    BlockRequestDelayMs = delay
 
+    # Build payload
     datas = (
         f"{ADDRESS_MODE['short']:02x}"
-        f"{MsgSrcAddr}{ZIGATE_EP}{MsgEP}"
-        f"{_status:02X}"
-        f"{_CurrentTime:08X}"
-        f"{_RequestTime:08X}"
-        f"{_BlockRequestDelayMs:04X}"
+        f"{MsgSrcAddr}"
+        f"{ZIGATE_EP}"
+        f"{MsgEP}"
+        f"{OTA_STATUS_WAIT_FOR_DATA:02X}"
+        f"{CurrentTime:08X}"
+        f"{RequestTime:08X}"
+        f"{BlockRequestDelayMs:04X}"
     )
 
-    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
+    # Skip sending if controller is in raw mode
+    if self.pluginconf.pluginConf.get("ControllerInRawMode", False):
         return
 
-    logging(self, "Debug", f"ota_management - Reduce Block request to a rate of {_BlockRequestDelayMs} ms")
-    self.ControllerLink.sendData("0506", datas, ackIsDisabled=False, NwkId=MsgSrcAddr)
+    # Zigate behaviour
+    logging(
+        self, "Debug",
+        f"ota_management - Reduce Block request rate to {BlockRequestDelayMs} ms"
+    )
+
+    self.ControllerLink.sendData(
+        "0506",
+        datas,
+        ackIsDisabled=False,
+        NwkId=MsgSrcAddr
+    )
 
 
 def cleanup_after_completed_upgrade(self, NwkId, Status):
-    # Cleanup
-    logging(self, "Debug", "cleanup_after_completed_upgrade - Cleanup and house keeping %s %s" % (NwkId, Status))
+    """
+    Cleanup and housekeeping after an OTA upgrade completes.
+
+    Args:
+        NwkId (str): Network ID of the device.
+        Status (str): Upgrade status code ("00" indicates success).
+    """
+    logging(self, "Debug", f"cleanup_after_completed_upgrade - Cleanup and housekeeping {NwkId} {Status}")
+
+    # Reset update tracking
     self.ListInUpdate["NwkId"] = None
     self.ListInUpdate["Status"] = None
-    if NwkId in self.ListInUpdate["AuthorizedForUpdate"] and Status == "00":
-        self.ListInUpdate["AuthorizedForUpdate"].remove(NwkId)
+    self.ListInUpdate["Process"] = None
+
+    # Remove device from authorized update list if update was successful
+    if Status == "00":
+        authorized_list = self.ListInUpdate.get("AuthorizedForUpdate", [])
+        if NwkId in authorized_list:
+            authorized_list.remove(NwkId)
+
     logging(
         self,
         "Debug",
-        "cleanup_after_completed_upgrade - After cleanup self.ListInUpdate['Nwkid']: %s self.ListInUpdate['AuthorizedForUpdate']: %s"
-        % (self.ListInUpdate["NwkId"], self.ListInUpdate["AuthorizedForUpdate"]),
+        f"cleanup_after_completed_upgrade - After cleanup "
+        f"NwkId: {self.ListInUpdate['NwkId']}, "
+        f"AuthorizedForUpdate: {self.ListInUpdate.get('AuthorizedForUpdate')}"
     )
 
-    if NwkId in self.AuthorizedForDowngrade and self.AuthorizedForDowngrade[ NwkId ]:
-        del self.AuthorizedForDowngrade[ NwkId ]
+    # Remove downgrade authorization if present
+    if self.authorized_device_downgrade.get(NwkId):
+        del self.authorized_device_downgrade[NwkId]
 
-    self.ListInUpdate["Process"] = None
-
-    # Read Attribute in order to refresh the Attributs
+    # Refresh device attributes after upgrade
     delay_checking_version(self, NwkId)
 
-
-    # Reset the controller (ziagte in native mode only for now)
+    # Reset controller (Zigate in native mode only)
     if self.zigbee_communication == "native":
         sendZigateCmd(self, "0002", "00")  # Force Zigate to Normal mode
-        sendZigateCmd(self, "0011", "")  # Software Reset
+        sendZigateCmd(self, "0011", "")    # Software Reset
+
 
 def delay_checking_version(self, NwkId):
     delay_attributes_key = 'DelayReadAttributes'
@@ -825,6 +1080,7 @@ def delay_checking_version(self, NwkId):
     for cluster in ["0000", "0019"]:
         if cluster not in clusters:
             clusters.append(cluster)
+
 
 def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_update=False):
 
@@ -878,45 +1134,56 @@ def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_updat
     ota_image_advertize(self, target_nwkid, target_ep, image_version=image_version, image_type=image_type, manufacturer_code=manuf_code)
     return True
 
+
 def logging(self, logType, message, nwkid=None):  # OK 13/10
     self.log.logging("OTA", logType, message, nwkid)
 
-def is_image_for_query_next_image_request( self, nwkid, manuf_code, image_type, file_version):
 
-    logging(self, "Debug", "is_image_for_query_next_image_request - %s %s %s" % (manuf_code, image_type, file_version), nwkid)
+def is_image_for_query_next_image_request( self, nwkid, manuf_code, image_type, file_version, authorized_device_downgrade):
+
+    logging(self, "Debug", "is_image_for_query_next_image_request - %s %s %s Downgrade: %s" % (
+        manuf_code, image_type, file_version, authorized_device_downgrade), nwkid)
+
     for brand_name in self.ListOfImages["Brands"]:
         logging(self, "Debug", "is_image_for_query_next_image_request - checking %s" %brand_name, nwkid)
         for file_name in self.ListOfImages["Brands"][brand_name]:
-            logging(self, "Debug", "    - filename %s %s %s" %(
+            logging(self, "Debug", "    - filename %s Manuf: %s Image: %s Version: %s" %(
                 file_name,
                 self.ListOfImages["Brands"][brand_name][file_name]["intManufCode"], 
-                self.ListOfImages["Brands"][brand_name][file_name]["ImageType"]
+                self.ListOfImages["Brands"][brand_name][file_name]["ImageType"],
+                self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]
                 ),
                 nwkid
             )
-            if int(manuf_code,16) != self.ListOfImages["Brands"][brand_name][file_name]["intManufCode"]:
+            # Compliance with Brand
+            if manuf_code != self.ListOfImages["Brands"][brand_name][file_name]["intManufCode"]:
                 continue
+
             logging(self, "Debug", "is_image_for_query_next_image_request - potential brand name found:%s ..." % brand_name, nwkid)
 
-            if int(image_type,16) != self.ListOfImages["Brands"][brand_name][file_name]["ImageType"]:
+            # Compliance with Image Type
+            if image_type != self.ListOfImages["Brands"][brand_name][file_name]["ImageType"]:
                 continue
+
+            if authorized_device_downgrade:
+                return self.ListOfImages["Brands"][brand_name][file_name]
 
             logging(self, "Debug", "is_image_for_query_next_image_request - potential image type found:%s with version %s..." % (
                 brand_name, self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]), nwkid)
 
-            if int(file_version,16) < self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]:
+            # Compliance with Image Type
+            if file_version < self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]:
                 logging(self, "Debug", "is_image_for_query_next_image_request - We have newest firmware available for this device")
-                return self.ListOfImages["Brands"][brand_name][file_name]
-            
-            if nwkid in self.AuthorizedForDowngrade and self.AuthorizedForDowngrade[ nwkid ]:
                 return self.ListOfImages["Brands"][brand_name][file_name]
 
     return None
+
 
 def retrieve_image_in_a_brand(self, image_type, brand):
     brand_images = self.ListOfImages.get("Brands", {}).get(brand, {})
     
     return next((image for image, info in brand_images.items() if info.get("ImageType") == image_type), None)
+
 
 def retrieve_image(self, image_type):
     for brand, images in self.ListOfImages.get("Brands", {}).items():
@@ -924,6 +1191,7 @@ def retrieve_image(self, image_type):
             if image_type == info.get("ImageType"):
                 return brand, image
     return None
+
 
 def ota_scan_folder(self):  # OK 13/10
     # Scanning the Firmware folder
@@ -978,7 +1246,7 @@ def ota_scan_folder(self):  # OK 13/10
                 "intManufCode": headers["manufacturer_code"],
                 "originalVersion": headers["image_version"],
                 "intImageVersion": headers["image_version"],
-                "intSize": headers["size"],
+                "intSize": headers["image_size"],
             }
     # Check if there are any firmware images loaded
     if self.ListOfImages:
@@ -1015,26 +1283,29 @@ def check_image_valid_version(self, brand, image_type, ota_image_file, headers):
     return True
 
 
-def ota_extract_image_headers(self, subfolder, image):  # OK 13/10
-    # Load headers from the image
+def ota_extract_image_headers(self, subfolder, image):
     ota_image = _open_image_file(self, Path(self.pluginconf.pluginConf["pluginOTAFirmware"]) / subfolder / image)
-    if ota_image is None:
+
+    if not ota_image:
         return None
 
     offset = offset_start_firmware(self, ota_image)
     if offset is None:
         return None
 
-    logging(self, "Debug", "ota_extract_image_headers - offset:%s ..." % offset)
-    ota_image = ota_image[offset:]
+    ota_image = ota_image[offset:]  # trim before reading header
     headers = unpack_headers(self, ota_image)
-    _logging_headers(self, headers)
 
-    logging(
-        self,
-        "Status",
-        "Available Firmware - ManufCode: 0x%04x ImageType: 0x%04x FileVersion: 0x%08x Size: %8s Bytes Filename: %s"
-        % (headers["manufacturer_code"], headers["image_type"], headers["image_version"], headers["size"], image),
+    if headers is None:
+        return None
+
+    logging_OTA_headers(self, headers)
+    logging(self, "Status", "Available Firmware - ManufCode: 0x%04x ImageType: 0x%04x FileVersion: 0x%08x Size: %s Bytes Filename: %s" % (
+        headers["manufacturer_code"],
+        headers["image_type"],
+        headers["image_version"],
+        headers["image_size"],
+        image)
     )
 
     return headers["image_type"], headers, ota_image
@@ -1044,95 +1315,300 @@ def _open_image_file(self, filename):  # OK 13/10
     try:
         with open(filename, "rb") as file:
             ota_image = file.read()
+
     except OSError as err:
-        logging(self, "Error", f"ota_extract_image_headers - error when opening {filename} - {err}")
+        logging(self, "Error", f"_open_image_file - error when opening {filename} - {err}")
         return None
+
     if len(ota_image) < 69:
-        logging(self, "Error", f"ota_extract_image_headers - invalid file size read {filename} - {len(ota_image)}")
+        logging(self, "Error", f"_open_image_file - invalid file size read {filename} - {len(ota_image)}")
         return None
+
     return ota_image
 
 
-def offset_start_firmware(self, ota_image):  # OK 13/10
-    # Search for the OTA Upgrade File Identifier ( “0x0BEEF11E” )
-    offset = None
-    return next(
-        (
-            i
-            for i in range(len(ota_image) - 4)
-            if hex(struct.unpack("<I", ota_image[i : i + 4])[0]) == "0xbeef11e"
-        ),
-        None,
-    )
+def offset_start_firmware(self, ota_image):
+    """Locate the OTA file identifier 0x0BEEF11E inside the firmware."""
+    
+    MAGIC = 0x0BEEF11E
+
+    for i in range(len(ota_image) - 4):
+        val = struct.unpack_from("<I", ota_image, i)[0]
+        if val == MAGIC:
+            logging(self, "Debug", f"Found OTA magic at offset {i}")
+            return i
+
+    logging(self, "Error", "Zigbee OTA magic not found in firmware image")
+    return None
 
 
-def unpack_headers(self, ota_image):  # OK 13/10
-    try:
-        header_data = list(struct.unpack("<LHHHHHLH32BLBQHH", ota_image[:69]))
-    except struct.error:
-        logging(self, "Error", f"ota_extract_image_headers - Error when unpacking: {ota_image[:69]}")
-        return None
+def debug_header_bytes(self, ota_image):
+    logging(self, "Debug", "---- OTA HEADER DEBUG ----")
+    logging(self, "Debug", f"Total file size: {len(ota_image)} bytes")
 
-    for i in range(8, 40):
-        if header_data[i] == 0x00:
-            header_data[i] = 0x20
+    # print first 80 bytes in hex, grouped for clarity
+    raw = ota_image[:80]
+    logging(self, "Debug", "Raw first 80 bytes:")
 
-    header_data_compact = header_data[:8] + [header_data[8:40]] + header_data[40:]
-    header_headers = [
-        "file_id",
-        "header_version",
-        "header_length",
-        "header_fctl",
-        "manufacturer_code",
-        "image_type",
-        "image_version",
-        "stack_version",
-        "header_str",
-        "size",
-        "security_cred_version",
-        "upgrade_file_dest",
-        "min_hw_version",
-        "max_hw_version",
-    ]
+    for i in range(0, 80, 16):
+        line = ota_image[i:i + 16]
+        logging(self, "Debug", f"  {i:04x}: {line.hex(' ')}")
 
-    return dict(zip(header_headers, header_data_compact))
+    logging(self, "Debug", "--------------------------")
 
 
-def prepare_and_send_block(self, MsgSrcAddr, MsgEP, MsgFileOffset, intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, intMsgFieldControl, MsgSQN, disableACK=False):
+def unpack_headers(self, ota_image: bytes):
+    """
+    Parse a Zigbee OTA image header according to the Zigbee Cluster Library (ZCL)
+    OTA Upgrade specification (Cluster 0x0019).
+
+    This function works with **all vendors** (standard, Legrand, Tuya, Ikea, OSRAM,
+    Sonoff, Schneider, etc.) because it only parses the mandatory header fields,
+    checks the Field Control flags, and treats all other data as vendor-specific.
+
+    ---------------------------------------------------------------------------
+    Zigbee OTA Header Structure (Mandatory Section – Always Present)
+    ---------------------------------------------------------------------------
+    Offset | Size | Field Name          | Format | Description
+    -------+------+----------------------+--------+-------------------------------
+      0    |  4   | File Identifier      |  L     | Magic: 0x0BEEF11E (little-endian)
+      4    |  2   | Header Version       |  H     | Usually 0x0001
+      6    |  2   | Header Length        |  H     | Total header size in bytes
+      8    |  2   | Field Control        |  H     | Bitmask defining optional fields
+     10    |  2   | Manufacturer Code    |  H     | ZCL manufacturer ID
+     12    |  2   | Image Type           |  H     | Device-specific firmware type
+     14    |  4   | File Version         |  L     | Firmware version
+     18    |  2   | Stack Version        |  H     | Zigbee stack version
+     20    | 32   | Header String        | 32s    | ASCII name padded with 0x00
+     52    |  4   | Image Size           |  L     | Total firmware size
+
+    Total mandatory length = 56 bytes
+
+    ---------------------------------------------------------------------------
+    Optional Fields (based on Field Control bits)
+    ---------------------------------------------------------------------------
+    Bit 0 (0x01): Hardware version fields included:
+      - Minimum Hardware Version (uint16)
+      - Maximum Hardware Version (uint16)
+
+    Additional metadata may follow but is **vendor-specific** and not standardized.
+
+    ---------------------------------------------------------------------------
+    Vendor-Specific Fields
+    ---------------------------------------------------------------------------
+    Everything between:
+       offset + header_length
+       and
+       offset + parsed_optional_fields_end
+    is considered vendor-specific metadata.
+
+    Examples:
+      - Legrand firmwares add proprietary metadata directly after the header.
+      - Tuya OTAs embed custom TLV metadata.
+      - OSRAM and IKEA sometimes append signature blocks.
+
+    This function preserves vendor data in raw form under "vendor_data" without
+    attempting to parse it.
+
+    ---------------------------------------------------------------------------
+    Searching for the OTA Magic
+    ---------------------------------------------------------------------------
+    The function automatically finds the OTA header by scanning for:
+        0x1E F1 EE 0B   (little-endian 0x0BEEF11E)
+
+    This allows working with:
+      - Encapsulated OTAs
+      - Bootloader images prepended
+      - Vendor-wrapped images
+
+    ---------------------------------------------------------------------------
+    Returns:
+        dict with the following keys:
+
+        file_id: int
+        header_version: int
+        header_length: int
+        field_control: int
+        manufacturer_code: int
+        image_type: int
+        file_version: int
+        stack_version: int
+        header_string: str
+        image_size: int
+        min_hw_version: Optional[int]
+        max_hw_version: Optional[int]
+        sec_cred_version: Optional[int]
+        vendor_data: bytes  # raw vendor metadata block
+        payload_offset: int # absolute offset of firmware payload inside file
+
+    Raises:
+        ValueError: If the OTA magic cannot be found or the header is malformed.
+
+    ---------------------------------------------------------------------------
+    Example:
+        headers = unpack_headers(ota_data)
+        print(headers["manufacturer_code"])
+        print(headers["image_size"])
+    ---------------------------------------------------------------------------
+    """
+    debug_header_bytes(self, ota_image)
+    
+    # --- 1. Magic search ---
+    MAGIC = b"\x1e\xf1\xee\x0b"
+    offset = ota_image.find(MAGIC)
+    if offset < 0:
+        raise ValueError("OTA Magic not found in image (0x0BEEF11E).")
+
+    # --- 2. Base header (56 bytes) ---
+    fmt_base = "<L H H H H H L H 32s L"
+    BASE_HEADER_SIZE = struct.calcsize(fmt_base)
+
+    base_slice = ota_image[offset : offset + BASE_HEADER_SIZE]
+
+    (
+        file_id,
+        header_version,
+        header_length,
+        field_ctrl,
+        manufacturer_code,
+        image_type,
+        file_version,
+        stack_version,
+        header_str_raw,
+        image_size,
+    ) = struct.unpack(fmt_base, base_slice)
+
+
+    # --- 3. Optional hardware version fields ---
+    # After unpacking base header
+    extra_offset = offset + BASE_HEADER_SIZE
+
+    # Bit 0 → Hardware Version
+    min_hw_version, max_hw_version = None, None
+    if field_ctrl & 0x01:
+        fmt_hw = "<H H"
+        hw_size = struct.calcsize(fmt_hw)
+        hw_slice = ota_image[extra_offset : extra_offset + hw_size]
+        min_hw_version, max_hw_version = struct.unpack(fmt_hw, hw_slice)
+        extra_offset += hw_size
+
+    # Bit 2 → Security Credential Version
+    sec_cred_version = None
+    if field_ctrl & 0x04:
+        sec_cred_version = ota_image[extra_offset]
+        extra_offset += 1
+
+    # Vendor-specific data
+    vendor_data = ota_image[extra_offset : offset + header_length]
+
+    # --- 5. Construct result dictionary ---
+    header_string = header_str_raw.rstrip(b"\x00").decode( "ascii", errors="ignore" )
+    
+    return {
+        "file_id": file_id,
+        "header_version": header_version,
+        "header_length": header_length,
+        "header_fctl": field_ctrl,
+        "manufacturer_code": manufacturer_code,
+        "image_type": image_type,
+        "image_version": file_version,
+        "stack_version": stack_version,
+        "header_str": header_string,
+        "image_size": image_size,
+        "min_hw_version": min_hw_version,
+        "max_hw_version": max_hw_version,
+        "security_cred_version": sec_cred_version,
+        "vendor_data": vendor_data,
+        "payload_offset": offset + header_length,
+    }
+
+
+def prepare_and_send_block(
+    self,
+    MsgSrcAddr,
+    MsgEP,
+    MsgFileOffset,
+    intMsgImageVersion,
+    intMsgImageType,
+    intMsgManufCode,
+    MsgBlockRequestDelay,
+    MsgMaxDataSize,
+    intMsgFieldControl,
+    MsgSQN,
+    disableACK=False
+):
+    """
+    Prepare OTA image block request and send it to the device.
+
+    Args:
+        MsgSrcAddr: Source network address of device
+        MsgEP: Endpoint
+        MsgFileOffset: File offset for block
+        intMsgImageVersion: Image version
+        intMsgImageType: Image type
+        intMsgManufCode: Manufacturer code
+        MsgBlockRequestDelay: Requested delay between blocks
+        MsgMaxDataSize: Maximum data size per block
+        intMsgFieldControl: Field control flags
+        MsgSQN: Message sequence
+        disableACK: If True, disable ACK for this block
+    """
     self.ListInUpdate["Retry"] = 0
 
-    # Get all block information, and patch if needed ( Legrand )
-    block_request = initialize_block_request( self, MsgSrcAddr, MsgEP, MsgFileOffset, intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, intMsgFieldControl, MsgSQN, )
-    if intMsgImageType != block_request["ImageType"]:
-        intMsgImageType = block_request["ImageType"]
+    # Initialize block request and patch ImageType if needed
+    block_request = initialize_block_request(
+        self, MsgSrcAddr, MsgEP, MsgFileOffset, intMsgImageVersion,
+        intMsgImageType, intMsgManufCode, MsgBlockRequestDelay,
+        MsgMaxDataSize, intMsgFieldControl, MsgSQN
+    )
+    intMsgImageType = block_request["ImageType"]
 
     if intMsgImageType not in self.ListOfImages["ImageType"]:
-        # Image Type unknown or not loaded
-        logging( self, "Error", "prepare_and_send_block %s/%s - 0x%04x image not found" % (MsgSrcAddr, MsgEP, intMsgImageType), MsgSrcAddr)
+        logging(self, "Error", f"prepare_and_send_block {MsgSrcAddr}/{MsgEP} - 0x{intMsgImageType:04X} image not found", MsgSrcAddr)
         return
 
-    if self.ListInUpdate["NwkId"] and intMsgImageType != self.ListInUpdate["intImageType"] and MsgSrcAddr != self.ListInUpdate["NwkId"]:
-        # Request which do not belongs to the current upgrade
-        logging( self, "Error", "prepare_and_send_block %s/%s - request update while an other is in progress %s " % (MsgSrcAddr, MsgEP, self.ListInUpdate["NwkId"]), )
+    nwk_id = self.ListInUpdate.get("NwkId")
+    if nwk_id and intMsgImageType != self.ListInUpdate.get("intImageType") and MsgSrcAddr != nwk_id:
+        logging(self, "Error", f"prepare_and_send_block {MsgSrcAddr}/{MsgEP} - request update while another is in progress {nwk_id}")
         return
 
-    logging( self, "Debug", "prepare_and_send_block - [%3s] request - %s/%s Offset: %s version: 0x%08X Type: 0%04X Code: 0x%04X Delay: %s MaxSize: %s Control: 0x%02X" % ( 
-        int(MsgSQN, 16), MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, intMsgFieldControl, ), MsgSrcAddr)
+    logging(
+        self,
+        "Debug",
+        f"prepare_and_send_block - [{int(MsgSQN, 16):3}] request - {MsgSrcAddr}/{MsgEP} "
+        f"Offset: {int(MsgFileOffset, 16)} Version: 0x{intMsgImageVersion:08X} "
+        f"Type: 0x{intMsgImageType:04X} Code: 0x{intMsgManufCode:04X} "
+        f"Delay: {MsgBlockRequestDelay} MaxSize: {MsgMaxDataSize} "
+        f"Control: 0x{intMsgFieldControl:02X}",
+        MsgSrcAddr
+    )
 
-    if self.ListInUpdate["Process"] is None:
+    # Update upgrade process status
+    if self.ListInUpdate.get("Process") is None:
         start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgFileOffset, MsgMaxDataSize)
         self.ListInUpdate["Process"] = "Started"
     else:
         self.ListInUpdate["Process"] = "OnGoing"
 
-    self.ListInUpdate["Status"] = "Block requested"
-    self.ListInUpdate["intFileOffset"] = int(MsgFileOffset, 16)
-    self.ListInUpdate["LastBlockSent"] = time.time()
+    self.ListInUpdate.update({
+        "Status": "Block requested",
+        "intFileOffset": int(MsgFileOffset, 16),
+        "LastBlockSent": time.time()
+    })
 
-    logging( self, "Debug", "prepare_and_send_block - Block Request for %s/%s Image Type: 0x%04X Image Version: %08X Seq: %s Offset: %s Size: %s FieldCtrl: 0x%02X" % ( 
-        MsgSrcAddr, block_request["ReqEp"], block_request["ImageType"], block_request["ImageVersion"], MsgSQN, block_request["Offset"], block_request["MaxDataSize"], block_request["FieldControl"], ),MsgSrcAddr)
+    logging(
+        self,
+        "Debug",
+        f"prepare_and_send_block - Block Request for {MsgSrcAddr}/{block_request['ReqEp']} "
+        f"Image Type: 0x{block_request['ImageType']:04X} Image Version: {block_request['ImageVersion']:08X} "
+        f"Seq: {MsgSQN} Offset: {block_request['Offset']} Size: {block_request['MaxDataSize']} "
+        f"FieldCtrl: 0x{block_request['FieldControl']:02X}",
+        MsgSrcAddr
+    )
 
-    ota_send_block(self, MsgSrcAddr, MsgEP, intMsgImageType, intMsgImageVersion, block_request, disable_ack=disableACK)
+    block_request_delay = MsgBlockRequestDelay / 1000.0  # Convert ms to seconds
+
+    ota_send_block(self, MsgSrcAddr, MsgEP, intMsgImageType, intMsgImageVersion, block_request, disable_ack=disableACK, block_delay=block_request_delay)
     display_percentage_progress(self, MsgSrcAddr, MsgEP, intMsgImageType, MsgFileOffset)
 
 
@@ -1291,27 +1767,33 @@ def convert_time(seconds):
     return hours, minutes, seconds
 
 
-def _logging_headers(self, headers):  # OK 13/10
+def logging_OTA_headers(self, headers):
+    """
+    Print OTA header fields for debugging.
+
+    - Skips vendor_data and stack_version by default.
+    - Decodes file_version into Application Release/Build and Stack Release/Build.
+    - Decodes stack version and security credential version into human-readable names.
+    """
 
     if not self.pluginconf.pluginConf.get("debugOTA", False):
         return
 
-    excluded_attributs = {"stack_version", "security_cred_version", "image_version"}
-    
-    for attribut, value in headers.items():
-        if attribut not in excluded_attributs:
+    EXCLUDED_ATTRIBUTES = {"stack_version", "vendor_data", "image_version"}
+    for attr, value in headers.items():
+        if attr not in EXCLUDED_ATTRIBUTES:
             if isinstance(value, int):
-                logging(self, "Debug", f"==> {attribut}: 0x{value:X}")
+                logging( self, "Debug", f"==>    {attr}: 0x{value:X}")
             else:
-                logging(self, "Debug", f"==> {attribut}: {value}")
+                logging( self, "Debug", f"==>    {attr}: {value}")
 
     # Decoding File Version
-    image_version = headers["image_version"]
-    logging(self, "Debug", f"==> File Version: 0x{image_version:08X}")
-    logging(self, "Debug", f"==>    Application Release: 0x{(image_version & 0xFF000000) >> 24:02X}")
-    logging(self, "Debug", f"==>    Application Build: {(image_version & 0x00FF0000) >> 16}")
-    logging(self, "Debug", f"==>    Stack Release: {(image_version & 0x0000FF00) >> 8}")
-    logging(self, "Debug", f"==>    Stack Build: {image_version & 0x000000FF}")
+    file_version = headers["file_version"]
+    logging( self, "Debug", f"==>    File Version:        0x{file_version:08X}")
+    logging( self, "Debug", f"==>    Application Release: 0x{(file_version & 0xFF000000) >> 24:02X}", )
+    logging( self, "Debug", f"==>    Application Build:   {(file_version & 0x00FF0000) >> 16}", )
+    logging( self, "Debug", f"==>    Stack Release:       {(file_version & 0x0000FF00) >> 8}", )
+    logging( self, "Debug", f"==>    Stack Build:         {file_version & 0x000000FF}" )
 
     # Stack version
     stack_version = headers["stack_version"]
@@ -1321,93 +1803,105 @@ def _logging_headers(self, headers):  # OK 13/10
         0x0002: "ZigBee Pro",
         0x0003: "ZigBee IP",
     }
-    logging(self, "Debug", f"==> Stack Name: {stack_names.get(stack_version, 'Reserved')}")
+    logging( self, "Debug", f"==>    Stack Name:          {stack_names.get(stack_version, 'Reserved')}")
 
-    # Security Credential
-    security_cred_version = headers["security_cred_version"]
-    credential_names = {
-        0x00: "SE 1.0",
-        0x01: "SE 1.1",
-        0x02: "SE 2.0",
-    }
-    logging(self, "Debug", f"==> Security Credential: {credential_names.get(security_cred_version, 'Reserved')}")
+    # Security Credential Version (optional)
+    security_cred_version = headers.get("security_cred_version")
+    if security_cred_version is not None:
+        credential_names = {
+            0x00: "SE 1.0",
+            0x01: "SE 1.1",
+            0x02: "SE 2.0",
+        }
+        logging( self, "Debug", f"==>    Security Credential: {credential_names.get(security_cred_version, 'Reserved')}", )
+    else:
+        logging( self, "Debug", "==>     Security Credential: None")
+        
+    vendor_data = headers.get("vendor_data", b"")
+    if vendor_data:
+        max_len = 64  # print only first 64 bytes
+        data_to_log = vendor_data[:max_len]
+        hex_data = ' '.join(f'{b:02X}' for b in data_to_log)
+        logging( self, "Debug", f"==>    Vendor Data:         ({len(vendor_data)} bytes, first {len(data_to_log)} shown): {hex_data}")
 
 
 def display_percentage_progress(self, MsgSrcAddr, MsgEP, intMsgImageType, MsgFileOffset):
+    """
+    Display firmware transfer progress and update device health.
+    """
+    # Ensure file offset is an integer
+    offset = int(MsgFileOffset, 16) if isinstance(MsgFileOffset, str) else MsgFileOffset
+    total_size = self.ListInUpdate.get("intSize", 1)  # Avoid division by zero
 
-    _size = self.ListInUpdate.get("intSize", 1)  # Default to 1 to avoid division by zero
-    _completion = round((int(MsgFileOffset, 16) / _size) * 100, 1)
+    completion_pct = round((offset / total_size) * 100, 1)
 
-    if _completion % 5 == 0:
-        logging(self, "Status", f"Firmware transfer for {MsgSrcAddr}/{MsgEP} - Progress: {_completion:4.1f} %", MsgSrcAddr)
-        update_firmware_health(self, MsgSrcAddr, _completion)
+    # Log progress every 5%
+    if completion_pct % 5 == 0:
+        logging(self, "Status", f"Firmware transfer for {MsgSrcAddr}/{MsgEP} - Progress: {completion_pct:4.1f}%", MsgSrcAddr)
+        update_firmware_health(self, MsgSrcAddr, completion_pct)
 
 
 def update_firmware_health(self, MsgSrcAddr, completion):
+    """
+    Update firmware transfer progress in PluginHealth.
+    """
     firmware_update_health = self.PluginHealth.setdefault("Firmware Update", {})
-
-    if "Progress" not in firmware_update_health:
-        firmware_update_health["Progress"] = {}
-
     firmware_update_health["Progress"] = f"{round(completion)}%"
     firmware_update_health["Device"] = MsgSrcAddr
 
 
-def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgFileOffset, MsgMaxDataSize):  # OK 24/10/2020
+def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgFileOffset, MsgMaxDataSize):
     """Start the firmware upgrade process for a device."""
-
+    
     # Retrieve the image entry for the requested image type
     entry = retrieve_image(self, intMsgImageType)
     if entry is None:
-        logging(self, "Error", "start_upgrade_infos: No Firmware available to satify this request by %s !!!" % MsgSrcAddr, MsgSrcAddr)
+        logging(self, "Error", f"start_upgrade_infos: No firmware available for request by {MsgSrcAddr}", MsgSrcAddr)
         return
     brand, ota_image_file = entry
-
     available_image = self.ListOfImages["Brands"][brand][ota_image_file]
 
-    # Populate `ListInUpdate` with image details
-    self.ListInUpdate["intSize"] = available_image["intSize"]
-    self.ListInUpdate["ImageVersion"] = available_image["intImageVersion"]
-    self.ListInUpdate["Process"] = available_image["Process"]
-    self.ListInUpdate["Decoded Header"] = available_image["Decoded Header"]
-    self.ListInUpdate["OtaImage"] = available_image["OtaImage"]
-    self.ListInUpdate["ImageType"] = "%04x" % intMsgImageType
-    self.ListInUpdate["intImageType"] = intMsgImageType
-    self.ListInUpdate["NwkId"] = MsgSrcAddr
-    self.ListInUpdate["intManufCode"] = intMsgManufCode
-    self.ListInUpdate["intFileOffset"] = int(MsgFileOffset, 16)
-    self.ListInUpdate["Brand"] = brand
-    self.ListInUpdate["FileName"] = ota_image_file
-    self.ListInUpdate["LastBlockSent"] = 0
-    self.ListInUpdate["StartTime"] = time.time()
+    # Populate ListInUpdate with image details
+    self.ListInUpdate.update({
+        "intSize": available_image["intSize"],
+        "ImageVersion": available_image["intImageVersion"],
+        "Process": available_image["Process"],
+        "Decoded Header": available_image["Decoded Header"],
+        "OtaImage": available_image["OtaImage"],
+        "ImageType": f"{intMsgImageType:04x}",
+        "intImageType": intMsgImageType,
+        "NwkId": MsgSrcAddr,
+        "intManufCode": intMsgManufCode,
+        "intFileOffset": int(MsgFileOffset, 16),
+        "Brand": brand,
+        "FileName": ota_image_file,
+        "LastBlockSent": 0,
+        "StartTime": time.time(),
+    })
 
     # Initialize or reset the "Firmware Update" section in PluginHealth
-    if "Firmware Update" not in self.PluginHealth:
-        self.PluginHealth["Firmware Update"] = {}
-    if "Firmware Update" in self.PluginHealth:
-        self.PluginHealth["Firmware Update"] = {}
-    if self.PluginHealth["Firmware Update"] is None:
-        self.PluginHealth["Firmware Update"] = {}
+    self.PluginHealth["Firmware Update"] = {
+        "Progress": "0%",
+        "Device": MsgSrcAddr
+    }
 
-    # Initialize or reset the "Firmware Update" section in PluginHealth
-    self.PluginHealth["Firmware Update"]["Progress"] = "0%"
-    self.PluginHealth["Firmware Update"]["Device"] = MsgSrcAddr
-
-    # Retrieve device name from the IEEE address
+    # Retrieve device name from IEEE address
     _ieee = self.ListOfDevices[MsgSrcAddr]["IEEE"]
-    _name = next((self.Devices[x].Name for x in self.Devices if self.Devices[x].DeviceID == _ieee), None)
+    _name = next((dev.Name for dev in self.Devices.values() if dev.DeviceID == _ieee), None)
 
-    # Estimate upload time
-    estimated_time_for_upload = ( self.ListInUpdate["intSize"] // MsgMaxDataSize )
-    if self.zigbee_communication == "zigpy":
-        estimated_time_for_upload //= 4.5
+    # Estimate upload time. We expect to send 5 blocks in 1 second
+    ota_profile = VENDOR_PROFILES.get( intMsgManufCode, DEFAULT_OTA_PROFILE )
+    block_size = min(MsgMaxDataSize, ota_profile["max_data"])
+
+    estimated_blocks = math.ceil(self.ListInUpdate["intSize"] / block_size)
+    estimated_time_sec = estimated_blocks / 5
 
     # Convert estimated time into hours, minutes, and seconds
-    _durhh, _durmm, _durss = convert_time(estimated_time_for_upload)
+    _durhh, _durmm, _durss = convert_time(estimated_time_sec)
 
     # Generate notification text
-    _textmsg = "Firmware update started for Device: %s with %s - Estimated Time: %s H %s min %s sec " % (
-        _name, self.ListInUpdate["FileName"], _durhh, _durmm, _durss, )
+    _textmsg = (f"Firmware update started for Device: {_name} with {self.ListInUpdate['FileName']} - "
+                f"Estimated Time: {_durhh} H {_durmm} min {_durss} sec")
     self.adminWidgets.updateNotificationWidget(self.Devices, _textmsg)
 
 
@@ -1452,7 +1946,7 @@ def check_ota_availability_from_index( self, manufcode, imagetype, fileversion )
     if self.zigbee_ota_index is None:
         return None
     logging(self, "Debug", "check_ota_availability_from_index: Index Size: %s Searching ImageType: 0x%04x (%s) Version: 0x%08x (%s) ManufCode: 0x%04x (%s)" %(
-        len(self.zigbee_ota_index), manufcode, manufcode, imagetype, imagetype, fileversion, fileversion))
+        len(self.zigbee_ota_index), imagetype, imagetype, fileversion, fileversion, manufcode, manufcode,))
 
     return next((_image for _image in self.zigbee_ota_index if (_image["manufacturerCode"] == manufcode and _image["imageType"] == imagetype and _image["fileVersion"] > fileversion)), {})
 
@@ -1487,36 +1981,66 @@ def notify_ota_firmware_available(self, srcnwkid, manufcode, imagetype, filevers
         logging(self, "Status", "   open an Issue on GitHub here: https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/new?assignees=&labels=&template=feature_request.md&title=")
 
 
-def _load_json_from_url( self, url ):
 
-    import json
-    import socket
-    import urllib.request
+def _load_json_from_url(self, url):
 
-    retry = 3
-    while retry:
+    retries = 3
+    last_reason = "unknown error"
+
+    for _ in range(retries):
         try:
-            with urllib.request.urlopen( url ) as response:
-                return json.loads( response.read() )
+            with urllib.request.urlopen(url, timeout=5) as response:
+                return json.load(response)
 
         except urllib.error.HTTPError as e:
-            if e.code in [429,504]:  # 429=too many requests, 504=gateway timeout
-                reason = f'{e.code} {str(e.reason)}'
+            # HTTPError may wrap a timeout
+            if e.code in (429, 504):
+                last_reason = f"HTTP {e.code}: {e.reason}"
             elif isinstance(e.reason, socket.timeout):
-                reason = f'HTTPError socket.timeout {e.reason} - {e}'
+                last_reason = f"HTTPError timeout: {e.reason}"
             else:
-                reason = f'unknown {e.reason} - {e}'
+                last_reason = f"HTTPError: {e.reason}"
+
         except urllib.error.URLError as e:
             if isinstance(e.reason, socket.timeout):
-                reason = f'URLError socket.timeout {e.reason} - {e}'
+                last_reason = f"URLError timeout: {e.reason}"
             else:
-                reason = f'unknown {e.reason} - {e}'
+                last_reason = f"URLError: {e.reason}"
+
         except socket.timeout as e:
-            reason = f'socket.timeout {e}'
+            last_reason = f"socket.timeout: {e}"
 
         time.sleep(1)
-        retry -= 1
 
-    logging(self, "Error", "loading_zigbee_ota_index: Unable to access %s Reason: %s" %(
-        url, reason))
+    logging(self, "Error",
+            f"loading_zigbee_ota_index: Unable to access {url} Reason: {last_reason}")
     return []
+
+
+def trace_ota_block(self, dest_addr, image_type_hex, offset, size, sequence, raw_ota_data):
+    """
+    Trace OTA block data into a dedicated file.
+
+    Filename:
+        ota_blocks_<dest_addr>_<image_type>.log
+
+    Logged fields:
+        timestamp | seq | offset | size | data_hex
+    """
+    filename = f"ota_blocks_{dest_addr}_{image_type_hex}.log"
+    log_path = self.pluginconf.pluginConf.get("pluginLogs", "/tmp")
+    full_path = os.path.join(log_path, filename)
+
+    # Convert bytes → hex string
+    data_hex = raw_ota_data.hex()
+
+    try:
+        with open(full_path, "a", encoding="utf-8") as f:
+            ts = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            f.write(
+                f"{ts} | Seq:{sequence} | Offset:{offset} | "
+                f"Size:{size} | Data:{data_hex}\n"
+            )
+
+    except Exception as e:
+        logging(self, "Error", f"OTA trace logging {full_path} failed: {e}")

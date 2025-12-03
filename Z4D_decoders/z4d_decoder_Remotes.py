@@ -44,6 +44,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
     updLQI(self, MsgSrcAddr, MsgLQI)
     self.log.logging('Input', 'Debug', 'Decode8085 - MsgData: %s' % MsgData, MsgSrcAddr)
     self.log.logging('Input', 'Debug', 'Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s ' % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
+
     if MsgSrcAddr not in self.ListOfDevices:
         if not zigpy_plugin_sanity_check(self, MsgSrcAddr):
             handle_unknow_device(self, MsgSrcAddr)
@@ -61,26 +62,27 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
     updLQI(self, MsgSrcAddr, MsgLQI)
     timeStamped(self, MsgSrcAddr, 32901)
     lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
-    if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
+
+    model_name = self.ListOfDevices[MsgSrcAddr].get('Model')
+    if model_name in ( None, '', {}):
         self.log.logging('Input', 'Log', 'Decode8085 - No Model Name !')
         return
-    _ModelName = self.ListOfDevices[MsgSrcAddr]['Model']
 
-    remote_scene_mapping_data = get_deviceconf_parameter_value(self, _ModelName, 'REMOTE_SCENE_MAPPING')
+    remote_scene_mapping_data = get_deviceconf_parameter_value(self, model_name, 'REMOTE_SCENE_MAPPING')
     if remote_scene_mapping_data:
-        return scene_mapping(self, Devices, remote_scene_mapping_data, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_ )
+        return scene_mapping(self, Devices, model_name, remote_scene_mapping_data, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_ )
 
-    if _ModelName in ('TRADFRI remote control', 'Remote Control N2'):
+    if model_name in ('TRADFRI remote control', 'Remote Control N2'):
         ikea_remote_control_8085(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_)
       
-    elif _ModelName in ('ROM001',):
+    elif model_name in ('ROM001',):
         self.log.logging('Input', 'Debug', 'Decode8085 - Philips Hue ROM001  MsgCmd: %s' % MsgCmd, MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, '0008', 'move')
       
-    elif _ModelName in ('TRADFRI onoff switch', 'TRADFRI on/off switch', 'TRADFRI SHORTCUT Button', 'TRADFRI openclose remote', 'TRADFRI open/close remote'):
+    elif model_name in ('TRADFRI onoff switch', 'TRADFRI on/off switch', 'TRADFRI SHORTCUT Button', 'TRADFRI openclose remote', 'TRADFRI open/close remote'):
         ikea_remote_switch_8085(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_)
       
-    elif _ModelName == 'RC 110':
+    elif model_name == 'RC 110':
         if MsgClusterId != '0008':
             self.log.logging('Input', 'Log', 'Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s' % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' % (MsgCmd, unknown_)
@@ -103,18 +105,18 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = selector
       
-    elif _ModelName == 'TRADFRI wireless dimmer':
+    elif model_name == 'TRADFRI wireless dimmer':
         ikea_wireless_dimer_8085(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_, MsgData)
       
-    elif _ModelName in LEGRAND_REMOTE_SWITCHS:
+    elif model_name in LEGRAND_REMOTE_SWITCHS:
         legrand_remote_switch_8085(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_, MsgData)
       
-    elif _ModelName in LEGRAND_REMOTE_MOTION:
+    elif model_name in LEGRAND_REMOTE_MOTION:
         legrand_motion_8085(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_, MsgData)
         (step_mod, up_down, step_size, transition) = extract_info_from_8085(MsgData)
         self.log.logging('Input', 'Log', 'Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s step_mode: %s up_down: %s step_size: %s transition: %s' % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_, step_mod, up_down, step_size, transition), MsgSrcAddr)
       
-    elif _ModelName == 'Lightify Switch Mini':
+    elif model_name == 'Lightify Switch Mini':
         (step_mod, up_down, step_size, transition) = extract_info_from_8085(MsgData)
         self.log.logging('Input', 'Log', 'Decode8085 - OSRAM Lightify Switch Mini %s/%s: Mod %s, UpDown %s Size %s Transition %s' % (MsgSrcAddr, MsgEP, step_mod, up_down, step_size, transition))
       
@@ -134,10 +136,10 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
             self.log.logging('Input', 'Log', 'Decode8085 - OSRAM Lightify Switch Mini %s/%s release' % (MsgSrcAddr, MsgEP))
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' % (MsgCmd, unknown_)
   
-    elif _ModelName in ('lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):
-        AqaraOppleDecoding(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, _ModelName, MsgData)
+    elif model_name in ('lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):
+        AqaraOppleDecoding(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, model_name, MsgData)
 
-    elif _ModelName == 'tint-Remote-white':
+    elif model_name == 'tint-Remote-white':
         if MsgCmd == '02':
             MsgMode = MsgData[16:18]
             if MsgMode == '01':
@@ -155,12 +157,12 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
         if MsgCmd == '03':
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, '08')
           
-    elif _ModelName == 'TS1001':
+    elif model_name == 'TS1001':
         (step_mod, up_down, step_size, transition) = extract_info_from_8085(MsgData)
         self.log.logging('Input', 'Debug', 'Decode8085 - Lidl Remote SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s step_mod: %s step_size: %s up_down: %s' % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_, step_mod, step_size, up_down))
       
     elif get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]['Model'], 'HUE_RWL'):
-        self.log.logging('Input', 'Debug', 'Decode8085 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s ' % (_ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
+        self.log.logging('Input', 'Debug', 'Decode8085 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s ' % (model_name, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
       
     elif 'Manufacturer' in self.ListOfDevices[MsgSrcAddr]:
         if self.ListOfDevices[MsgSrcAddr]['Manufacturer'] == '1110':
@@ -187,7 +189,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
 
     else:
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' % (MsgCmd, unknown_)
-        missing_scene_mapping(self, MsgSrcAddr, MsgEP, MsgClusterId, _ModelName, MsgData, MsgCmd, unknown_, None)
+        missing_scene_mapping(self, MsgSrcAddr, MsgEP, MsgClusterId, model_name, MsgData, MsgCmd, unknown_, None)
         
         
 def Decode8095(self, Devices, MsgData, MsgLQI):
@@ -217,32 +219,32 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
     timeStamped(self, MsgSrcAddr, 32917)
     lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
 
-    _ModelName = self.ListOfDevices[MsgSrcAddr].get('Model')
-    if _ModelName is None:
+    model_name = self.ListOfDevices[MsgSrcAddr].get('Model')
+    if model_name is None:
         return
 
-    remote_scene_mapping_data = get_deviceconf_parameter_value(self, _ModelName, 'REMOTE_SCENE_MAPPING')
+    remote_scene_mapping_data = get_deviceconf_parameter_value(self, model_name, 'REMOTE_SCENE_MAPPING')
     if remote_scene_mapping_data:
-        return scene_mapping(self, Devices, remote_scene_mapping_data, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_ )
+        return scene_mapping(self, Devices, model_name, remote_scene_mapping_data, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_ )
 
-    self.log.logging('Input', 'Debug', 'Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Payload: %s Unknown: %s Model: %s' % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgPayload, unknown_, _ModelName), MsgSrcAddr)
-    if _ModelName in ('TRADFRI remote control', 'Remote Control N2'):
+    self.log.logging('Input', 'Debug', 'Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Payload: %s Unknown: %s Model: %s' % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgPayload, unknown_, model_name), MsgSrcAddr)
+    if model_name in ('TRADFRI remote control', 'Remote Control N2'):
         ikea_remote_control_8095(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_)
 
-    elif _ModelName in ('ROM001',):
+    elif model_name in ('ROM001',):
         self.log.logging('Input', 'Debug', 'Decode8095 - Philips Hue ROM001  MsgCmd: %s' % MsgCmd, MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, '0008', 'toggle')
 
-    elif _ModelName == 'TRADFRI motion sensor':
+    elif model_name == 'TRADFRI motion sensor':
         ikea_motion_sensor_8095(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_)
 
-    elif get_deviceconf_parameter_value(self, _ModelName, 'IKEA_REMOTE_SWITCH'):
+    elif get_deviceconf_parameter_value(self, model_name, 'IKEA_REMOTE_SWITCH'):
         ikea_remote_switch_8095(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_)
 
-    elif _ModelName in ('TRADFRI onoff switch', 'TRADFRI on/off switch', 'TRADFRI SHORTCUT Button', 'TRADFRI openclose remote', 'TRADFRI open/close remote'):
+    elif model_name in ('TRADFRI onoff switch', 'TRADFRI on/off switch', 'TRADFRI SHORTCUT Button', 'TRADFRI openclose remote', 'TRADFRI open/close remote'):
         ikea_remote_switch_8095(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_)
 
-    elif _ModelName == 'RC 110':
+    elif model_name == 'RC 110':
         ONOFF_TYPE = {'40': 'onoff_with_effect', '00': 'off', '01': 'on'}
         delayed_all_off = effect_variant = None
         if len(MsgData) >= 16:
@@ -260,15 +262,15 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' % (MsgCmd, unknown_)
             self.log.logging('Input', 'Log', 'Decode8095 - RC 110 Unknown Command: %s for %s/%s, Cmd: %s, Unknown: %s ' % (MsgCmd, MsgSrcAddr, MsgEP, MsgCmd, unknown_), MsgSrcAddr)
 
-    elif _ModelName in LEGRAND_REMOTE_SWITCHS:
+    elif model_name in LEGRAND_REMOTE_SWITCHS:
         legrand_remote_switch_8095(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_)
 
-    elif _ModelName in LEGRAND_REMOTE_MOTION:
+    elif model_name in LEGRAND_REMOTE_MOTION:
         legrand_motion_8095(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_)
         self.log.logging('Input', 'Log', 'Decode8095 - Legrand: %s/%s, Cmd: %s, Unknown: %s ' % (MsgSrcAddr, MsgEP, MsgCmd, unknown_), MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, '0406', unknown_)
 
-    elif _ModelName == 'Lightify Switch Mini':
+    elif model_name == 'Lightify Switch Mini':
         if MsgCmd in ('00', '01'):
             self.log.logging('Input', 'Log', 'Decode8095 - OSRAM Lightify Switch Mini: %s/%s, Cmd: %s, Unknown: %s ' % (MsgSrcAddr, MsgEP, MsgCmd, unknown_), MsgSrcAddr)
             MajDomoDevice(self, Devices, MsgSrcAddr, '03', MsgClusterId, MsgCmd)
@@ -278,10 +280,10 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' % (MsgCmd, unknown_)
             self.log.logging('Input', 'Log', 'Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s ' % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
 
-    elif _ModelName in ('lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):
-        AqaraOppleDecoding(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, _ModelName, MsgData)
+    elif model_name in ('lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):
+        AqaraOppleDecoding(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, model_name, MsgData)
 
-    elif _ModelName == 'WB01':
+    elif model_name == 'WB01':
         if MsgCmd == '00':
             WidgetSelector = '03'
         elif MsgCmd == '01':
@@ -292,15 +294,15 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             return
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, '0006', WidgetSelector)
 
-    elif _ModelName == 'KF204':
+    elif model_name == 'KF204':
         if MsgCmd == '00':
             MajDomoDevice(self, Devices, MsgSrcAddr, '01', '0006', '02')
           
         elif MsgCmd == '01':
             MajDomoDevice(self, Devices, MsgSrcAddr, '01', '0006', '01')
 
-    elif get_deviceconf_parameter_value(self, _ModelName, 'TUYA_REMOTE', return_default=None) or _ModelName in ('TS0041', 'TS0043', 'TS0044', 'TS0042', 'TS004F', 'TS004F-_TZ3000_xabckq1v'):
-        self.log.logging('Input', 'Debug', 'Decode8095 - Tuya %s  Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, MsgPayload: %s ' % (_ModelName, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgPayload), MsgSrcAddr)
+    elif get_deviceconf_parameter_value(self, model_name, 'TUYA_REMOTE', return_default=None) or model_name in ('TS0041', 'TS0043', 'TS0044', 'TS0042', 'TS004F', 'TS004F-_TZ3000_xabckq1v'):
+        self.log.logging('Input', 'Debug', 'Decode8095 - Tuya %s  Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, MsgPayload: %s ' % (model_name, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgPayload), MsgSrcAddr)
         if MsgCmd[:2] == 'fd' and MsgPayload:
             if MsgPayload == '00':
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, '0006', '01')
@@ -318,14 +320,14 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, '0006', '04')
                 checkAndStoreAttributeValue(self, MsgSrcAddr, MsgEP, MsgClusterId, '0000', MsgPayload)
 
-    elif _ModelName == 'TS1001':
+    elif model_name == 'TS1001':
         self.log.logging('Input', 'Debug', 'Decode8095 - Lidl Remote SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s' % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
 
-    elif _ModelName in ('lumi.remote.b28ac1',):
+    elif model_name in ('lumi.remote.b28ac1',):
         self.log.logging('Input', 'Debug', 'Decode8095 - Lumi Remote SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s' % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
 
     elif get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]['Model'], 'HUE_RWL'):
-        self.log.logging('Input', 'Debug', 'Decode8095 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s ' % (_ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
+        self.log.logging('Input', 'Debug', 'Decode8095 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s ' % (model_name, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
         if MsgCmd == '40':
             MajDomoDevice(self, Devices, MsgSrcAddr, '02', '0006', '00')
         elif MsgCmd == '01':
@@ -336,7 +338,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         ep_dict = self.ListOfDevices.setdefault(MsgSrcAddr, {}).setdefault('Ep', {})
         cluster_dict = ep_dict.setdefault(MsgEP, {}).setdefault(MsgClusterId, {})
         cluster_dict['0000'] = f'Cmd: {MsgCmd}, {unknown_}'   # Store the command in the cluster 0x0006 / 0x0000
-        missing_scene_mapping(self, MsgSrcAddr, MsgEP, MsgClusterId, _ModelName, MsgData, MsgCmd, unknown_, None)
+        missing_scene_mapping(self, MsgSrcAddr, MsgEP, MsgClusterId, model_name, MsgData, MsgCmd, unknown_, None)
         
 def Decode80A7(self, Devices, MsgData, MsgLQI):
     """Remote button pressed (LEFT/RIGHT)"""
@@ -347,7 +349,7 @@ def Decode80A7(self, Devices, MsgData, MsgLQI):
     MsgDirection = MsgData[10:12]
     unkown_ = MsgData[12:18]
     MsgSrcAddr = MsgData[18:22]
-    _ModelName = self.ListOfDevices[MsgSrcAddr]['Model']
+    model_name = self.ListOfDevices[MsgSrcAddr]['Model']
     if MsgSrcAddr not in self.ListOfDevices:
         if not zigpy_plugin_sanity_check(self, MsgSrcAddr):
             handle_unknow_device(self, MsgSrcAddr)
@@ -361,33 +363,61 @@ def Decode80A7(self, Devices, MsgData, MsgLQI):
     timeStamped(self, MsgSrcAddr, 32935)
     lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
 
-    remote_scene_mapping_data = get_deviceconf_parameter_value(self, _ModelName, 'REMOTE_SCENE_MAPPING')
+    remote_scene_mapping_data = get_deviceconf_parameter_value(self, model_name, 'REMOTE_SCENE_MAPPING')
     if remote_scene_mapping_data:
-        return scene_mapping(self, Devices, remote_scene_mapping_data, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unkown_, MsgDirection )
+        return scene_mapping(self, Devices, model_name, remote_scene_mapping_data, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unkown_, MsgDirection )
 
-    if _ModelName in ('TRADFRI remote control',):
+    if model_name in ('TRADFRI remote control',):
         ikea_remote_control_80A7(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_)
-    elif _ModelName in ('Remote Control N2',):
+    elif model_name in ('Remote Control N2',):
         ikea_remoteN2_control_80A7(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_)
     else:
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, Direction: %s, %s' % (MsgCmd, MsgDirection, unkown_)
-        missing_scene_mapping(self, MsgSrcAddr, MsgEP, MsgClusterId, _ModelName, MsgData, MsgCmd, unkown_, MsgDirection)
+        missing_scene_mapping(self, MsgSrcAddr, MsgEP, MsgClusterId, model_name, MsgData, MsgCmd, unkown_, MsgDirection)
 
 
-def scene_mapping(self, Devices, remote_scene_mapping_data, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd=None, unknown_=None, MsgDirection=None):
-    """Implementation based on Device JSON configuration."""
+def scene_mapping(
+    self,
+    Devices,
+    model_name,
+    remote_scene_mapping_data,
+    MsgSrcAddr,
+    MsgEP,
+    MsgClusterId,
+    MsgCmd=None,
+    unknown_=None,
+    MsgDirection=None,
+):
+    """Map a remote scene command to a device action based on configuration."""
+    
+    self.log.logging(
+        'Input', 'Debug',
+        f"scene_mapping {MsgSrcAddr} {MsgEP} {MsgClusterId} {MsgCmd} {unknown_} {MsgDirection} {remote_scene_mapping_data}"
+    )
 
-    self.log.logging('Input', 'Debug', f"scene_mapping {MsgSrcAddr} {MsgEP} {MsgClusterId} {MsgCmd} {unknown_} {MsgDirection} {remote_scene_mapping_data}")
+    # Build matching criteria
+    matching_criteria = f"{MsgCmd}_{unknown_}"
+    if MsgDirection is not None:
+        matching_criteria += f"_{MsgDirection}"
 
-    matching_criteria = f"{MsgCmd}_{unknown_}_{MsgDirection}" if MsgDirection is not None else f"{MsgCmd}_{unknown_}"
+    # Retrieve mapping from configuration
+    device_mapping = remote_scene_mapping_data.get(MsgClusterId, {}).get(matching_criteria)
 
-    cluster_mapping = remote_scene_mapping_data.get(MsgClusterId, {})
-    device_mapping = cluster_mapping.get(matching_criteria, None)
-
-    self.log.logging('Input', 'Debug', f"   mapping found ( {MsgCmd} {unknown_} {MsgDirection}) -> {device_mapping}")
+    self.log.logging(
+        'Input', 'Debug',
+        f"   mapping found ({matching_criteria}) -> {device_mapping}"
+    )
 
     if device_mapping:
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, device_mapping)
+        # Check if a forced cluster ID is configured
+        force_cluster_id = get_deviceconf_parameter_value(self, model_name, 'REMOTE_SCENE_MAPPING_FORCE_CLUSTER_ID')
+        cluster_id = force_cluster_id if force_cluster_id is not None else MsgClusterId
+        self.log.logging(
+            'Input', 'Debug',
+            f"   Use Cluster Id ({cluster_id}) -> {force_cluster_id} or {MsgClusterId}"
+        )
+
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, cluster_id, device_mapping)
 
 
 def missing_scene_mapping(self, NwkId, Ep, ClusterId, model, Data, Cmd, Unknow, Direction):

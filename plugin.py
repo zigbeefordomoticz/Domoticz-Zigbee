@@ -11,7 +11,7 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 """
-<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="7.1">
+<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="8.1">
     <description>
         <h1> Plugin Zigbee for domoticz</h1><br/>
             <br/><h2> Informations</h2><br/>
@@ -130,7 +130,6 @@ import re
 import sys
 import threading
 import time
-#import tracemalloc
 
 import z4d_certified_devices
 
@@ -197,6 +196,10 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
+
+#import tracemalloc
+
+
 
 VERSION_FILENAME = ".hidden/VERSION"
 
@@ -350,10 +353,10 @@ class BasePlugin:
         _current_python_version_major = sys.version_info.major
         _current_python_version_minor = sys.version_info.minor
 
-        Domoticz.Status( "Z4D requires python3.9 or above and you are running %s.%s" %(
+        Domoticz.Status( "Z4D requires python3.11 or above and you are running %s.%s" %(
             _current_python_version_major, _current_python_version_minor))
     
-        assert sys.version_info >= (3, 9)  # nosec
+        assert sys.version_info >= (3, 11)  # nosec
 
         if Parameters["Mode1"] == "V1" and Parameters["Mode2"] in ( "USB", "DIN", "PI", "Wifi", ):
             self.transport = Parameters["Mode2"]
@@ -533,7 +536,7 @@ class BasePlugin:
         self.WebUsername, self.WebPassword = self.domoticzdb_Preferences.retreiveWebUserNamePassword()
 
         self.adminWidgets = AdminWidgets( self.log , self.pluginconf, self.pluginParameters, self.ListOfDomoticzWidget, Devices, self.ListOfDevices, self.HardwareID, self.IEEE2NWK)
-        self.adminWidgets.updateStatusWidget(Devices, "Z4D Starting up")
+        self.adminWidgets.updateStatusWidget(Devices, "Z4D Starting up") 
 
         self.DeviceListName = "DeviceList-" + str(Parameters["HardwareID"]) + ".txt"
         self.log.logging("Plugin", "Log", "Z4D Database found: %s" % self.DeviceListName)
@@ -595,12 +598,15 @@ class BasePlugin:
         # Create Statistics object
         self.statistics = TransportStatistics(self.pluginconf, self.log, self.zigbee_communication)
 
-
         if len(self.ListOfDevices) > 10:
             # Don't do Energy Scan if too many objects, as Energy scan don't make the difference between real traffic and noise
             self.pluginconf.pluginConf["EnergyScanAtStatup"] = 0
 
-        start_zigbee_transport(self )
+        try:
+            start_zigbee_transport(self )
+
+        except Exception as e:
+            self.log.logging("Plugin", "Error", "Error while starting zigbee Transport %s" %e)
 
         if self.transport not in ("ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP", "ZigpyZiGate", "ZigpyBLZ", "None" ):
             self.log.logging("Plugin", "Debug", "Establish Zigate connection")
@@ -631,6 +637,12 @@ class BasePlugin:
 
         self.busy = False
 
+        # Log running threads. We should have only the main thread (MainThread)
+        self.log.logging("Plugin", "Log", "Active threads after onStart():")
+        for t in threading.enumerate():
+            self.log.logging("Plugin", "Log", f"    - Thread {t.name}: alive={t.is_alive()}, ident={t.ident}, daemon={t.daemon}")
+
+
 
     def onStop(self):
         """
@@ -641,7 +653,17 @@ class BasePlugin:
         Returns:
             None
         """
-        Domoticz.Log("onStop()")
+        # Log onStop event
+        if self.pluginconf and self.log:
+            self.log.logging("Plugin", "Log", "onStop called")
+        else:
+            Domoticz.Log("onStop()")
+
+        # Log running threads. We should have only the main thread (MainThread)
+        if self.pluginconf and self.log:
+            self.log.logging(["Plugin", "StopProcess"], "Log", "Active threads starting onstop():")
+            for t in threading.enumerate():
+                self.log.logging(["Transport", "StopProcess"], "Log", f"    - Thread {t.name}: alive={t.is_alive()}, ident={t.ident}, daemon={t.daemon}")
 
         if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
             matomo_plugin_shutdown(self)
@@ -649,7 +671,7 @@ class BasePlugin:
 
         # Flush ListOfDevices
         if self.log:
-            self.log.logging("Plugin", "Log", "Flushing plugin database onto disk")
+            self.log.logging(["Transport", "StopProcess"], "Log", "Flushing plugin database onto disk")
         if self.pluginconf:
             WriteDeviceList(self, 0)  # write immediatly
 
@@ -660,22 +682,22 @@ class BasePlugin:
         if self.pluginconf and self.pluginconf.pluginConf["ListImportedModules"]:
             list_all_modules_loaded(self)
 
-        # Log onStop event
-        if self.pluginconf and self.log:
-            self.log.logging("Plugin", "Log", "onStop called")
 
         # Close CIE connection and shutdown transport thread
         if self.pluginconf and self.ControllerLink:
-            self.log.logging("Plugin", "Log", "onStop called shutding down CIE connection and transport thread")
+            self.log.logging(["Transport", "StopProcess"], "Log", "onStop called, shuting down CIE connection, transport and forwarder threads")
             self.ControllerLink.thread_transport_shutdown()
             self.ControllerLink.close_cie_connection()
 
         # Stop WebServer
         if self.pluginconf and self.webserver:
+            self.log.logging(["Transport", "StopProcess"], "Log", "onStop called, shuting down WebUI thread")
             self.webserver.onStop()
 
         # Save plugin database
         if self.PDMready and self.pluginconf:
+            if self.log:
+                self.log.logging(["Transport", "StopProcess"], "Log", "Flushing plugin database onto disk")
             WriteDeviceList(self, 0)
 
         # Print and save statistics if configured
@@ -685,13 +707,13 @@ class BasePlugin:
 
         # Close logging management
         if self.pluginconf and self.log:
-            self.log.logging("Plugin", "Log", "Closing Logging Management")
+            self.log.logging(["Transport", "StopProcess"], "Log", "onStop called, shuting down LoggingManagement thread")
             self.log.closeLogFile()
 
         # Log running threads. We should have only the main thread (MainThread)
-        active_threads = threading.enumerate()
-        thread_info = [(t.name, t.ident, t.is_alive()) for t in active_threads]
-        Domoticz.Log("Remaining active threads: %s" % thread_info)
+        Domoticz.Log("Remaining active threads:")
+        for t in threading.enumerate():
+            Domoticz.Log(f"    - Thread {t.name}: alive={t.is_alive()}, ident={t.ident}, daemon={t.daemon}")
 
         # Update plugin health status
         self.PluginHealth["Flag"] = 3
@@ -1284,8 +1306,8 @@ def _start_zigpy_EZSP(self):
     self.pluginconf.pluginConf["ControllerInRawMode"] = True
     
 def _start_zigpy_BLZ(self):
-    import zigpy_blz
     import zigpy
+    import zigpy_blz
     from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                               SCHEMA_DEVICE)
 
@@ -1517,6 +1539,8 @@ def zigateInit_Phase3(self):
         message = "Z4D with Zigpy, coordinator %s, firmware %s communication confirmed." % (
             self.pluginParameters["CoordinatorModel"], self.pluginParameters["CoordinatorFirmwareVersion"])
         self.log.logging("Plugin", "Status", message)
+        
+        self.adminWidgets.updateNotificationWidget(Devices, message)
 
     # If firmware above 3.0d, Get Network State
     if (self.HeartbeatCount % (3600 // HEARTBEAT)) == 0 and self.transport != "None":

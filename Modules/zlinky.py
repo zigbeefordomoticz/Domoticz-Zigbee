@@ -105,9 +105,16 @@ OP_TARIFAIRE_MAP = {
     "HC..": (1, "Off-peak Hours"),
     "HP..": (2, "Peak Hours"),
     "HEURES CREUSES": (1, "Off-peak Hours"),
+    "HEURE  CREUSE": (1, "Off-peak Hours"),
     "HEURE CREUSE": (1, "Off-peak Hours"),
     "HEURES PLEINES": (2, "Peak Hours"),
+    "HEURE  PLEINE": (2, "Peak Hours"),
     "HEURE PLEINE": (2, "Peak Hours"),
+
+    "HC SEMAINE": (1, "Heures Creuses Semaine"),
+    "HP SEMAINE": (4, "Heures Pleines Semaine"),
+    "HC WEEK END": (1, "Heures Creuses Weekend"),
+    "HP WEEK END": (2, "Heures Pleines Weekend"),
 
     "HN..": (1, "Normal Hours"),
     "EJPHN": (1, "Normal Hours"),
@@ -203,6 +210,8 @@ def get_OPTARIF(self, nwkid):
             base_tarifaire = "TEMPO"  # Treat any BBRx as TEMPO
         elif op_tarifaire.startswith("EJP"):
             base_tarifaire = "EJP"  # Treat any EJPx as EJP
+        elif op_tarifaire.startswith("HC ") or op_tarifaire.startswith("HP "):
+            base_tarifaire = "HC SEM ET HC WE"
         else:
             base_tarifaire = op_tarifaire
         return base_tarifaire

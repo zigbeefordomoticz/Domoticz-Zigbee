@@ -422,35 +422,36 @@ def _write_DeviceList_txt(self):
     """
     _pluginData = Path( self.pluginconf.pluginConf["pluginData"] )
     _DeviceListFileName = _pluginData / self.DeviceListName
+    _count = 0
     try:
         self.log.logging("Database", "Debug", "Write %s = %s" % (_DeviceListFileName, str(self.ListOfDevices)))
         with open(_DeviceListFileName, "wt", encoding='utf-8') as file:
             for key in self.ListOfDevices:
                 try:
                     file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
-                    
+                    _count += 1
                 except UnicodeEncodeError:
                     self.log.logging( "Database", "Error", "UnicodeEncodeError while while saving %s : %s on file" %( 
                         key, self.ListOfDevices[key]))
                     continue
-
                 except ValueError:
                     self.log.logging( "Database", "Error", "ValueError while saving %s : %s on file" %( 
                         key, self.ListOfDevices[key]))
                     continue
-                
                 except IOError:
                     self.log.logging( "Database", "Error", "IOError while writing to plugin Database %s" % _DeviceListFileName)
                     continue
-
         self.log.logging("Database", "Debug", "WriteDeviceList - flush Plugin db to %s" % _DeviceListFileName)
-        
     except FileNotFoundError:
         self.log.logging( "Database", "Error", "WriteDeviceList - File not found >%s<" %_DeviceListFileName)
-        
     except IOError:
         self.log.logging( "Database", "Error", "Error while Writing plugin Database %s" % _DeviceListFileName)
-
+    
+    if _count != len(self.ListOfDevices):
+        self.log.logging("Database", "Error", f"Plugin Database flushed on disk {_DeviceListFileName} {_count}/{len(self.ListOfDevices)} records")
+    else:
+        self.log.logging("Database", "Log", f"Plugin Database flushed on disk {_DeviceListFileName} {_count}/{len(self.ListOfDevices)} records")
+        
 
 def _write_DeviceList_json(self):
     """Write device list as JSON file.
@@ -475,7 +476,7 @@ def _write_DeviceList_Domoticz(self):
     the setConfigItem call.
     """
     ListOfDevices_for_save = self.ListOfDevices.copy()
-    self.log.logging("Database", "Log", "WriteDeviceList - flush Plugin db to %s" % "Domoticz")
+    self.log.logging("Database", "Log", f"Plugin Database flushed on Domoticz {len(self.ListOfDevices)} records")
     return setConfigItem( Key="ListOfDevices", Attribute="Devices", Value={"TimeStamp": time.time(), "Devices": ListOfDevices_for_save} )
 
 
@@ -1187,27 +1188,40 @@ def cleanup_ota(self, nwkid):
     Args:
         nwkid: Network ID of the device to clean up
     """
-    if "OTAUpgrade" not in self.ListOfDevices[ nwkid ]:
+    device = self.ListOfDevices.get(nwkid)
+    if not device:
         return
 
-    existing_upgrade = []
-    clean_ota = {}
+    ota_upgrades = device.get("OTAUpgrade")
+    if not ota_upgrades:
+        return
 
-    for stamp in sorted(self.ListOfDevices[ nwkid ]["OTAUpgrade"].keys(), reverse=True ):
-        version = self.ListOfDevices[ nwkid ]["OTAUpgrade"][ stamp ]["Version"]
-        image_type = self.ListOfDevices[ nwkid ]["OTAUpgrade"][ stamp ]["Type"]
-        if ( version, image_type) not in existing_upgrade:
-            time_stamp = self.ListOfDevices[ nwkid ]["OTAUpgrade"][ stamp ]["Time"]
-            clean_ota[ stamp ] = {
+    clean_ota = {}
+    seen_versions = set()
+
+    # Sort timestamps descending to keep latest versions first
+    for stamp in sorted(ota_upgrades.keys(), key=lambda x: int(x), reverse=True):
+        entry = ota_upgrades.get(stamp, {})
+        version = entry.get("Version")
+        image_type = entry.get("Type")
+        time_stamp = entry.get("Time")
+
+        if version is None or image_type is None or time_stamp is None:
+            # Skip malformed entries
+            continue
+
+        key = (version, image_type)
+        if key not in seen_versions:
+            clean_ota[stamp] = {
                 "Time": time_stamp,
                 "Version": version,
                 "Type": image_type,
             }
-            existing_upgrade.append( ( version, image_type) )
-            continue
+            seen_versions.add(key)
+
     if clean_ota:
-        del self.ListOfDevices[ nwkid ]["OTAUpgrade"]
-        self.ListOfDevices[ nwkid ]["OTAUpgrade"] = dict(clean_ota)
+        # Replace OTAUpgrade dict with the cleaned one
+        self.ListOfDevices[nwkid]["OTAUpgrade"] = clean_ota
 
 
 def update_gamma_troniques_attributes_at_startup(self, nwkid):

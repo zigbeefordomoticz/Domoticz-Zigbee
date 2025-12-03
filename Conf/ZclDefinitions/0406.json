@@ -45,6 +45,7 @@
             "Acc": "RW",
             "Default": "00",
             "Mandatory": false,
+            "Description": "Delay in seconds before switching Occupied→Unoccupied for PIR",
             "ActionList": [ "check_store_value"]
         },
         "0011": { 
@@ -55,6 +56,7 @@
             "Acc": "RW",
             "Default": "00",
             "Mandatory": false,
+            "Description": "Delay in seconds before switching Unoccupied→Occupied for PIR",
             "ActionList": [ "check_store_value"]
         },
         "0012": { 
@@ -65,6 +67,7 @@
             "Acc": "RW",
             "Default": "01",
             "Mandatory": false,
+            "Description": "Number of PIR events required to become Occupied",
             "ActionList": [ "check_store_value"]
         },
         "0020": { 
@@ -100,22 +103,36 @@
 
         "0030": { 
             "Enabled": true,
-            "Name": "" ,
+            "Name": "PhysicalContactOccupiedToUnoccupiedDelay" ,
             "DataType": "21",
             "Range": [ "0000", "fffe" ],
             "Acc": "R",
             "Default": "0000",
             "Mandatory": false,
+            "Description": "Delay before Physical Contact Occupied→Unoccupied",
             "ActionList": [ "check_store_value"]
         },
+        "0031": { 
+            "Enabled": true,
+            "Name": "PhysicalContactUnoccupiedToOccupiedDelay" ,
+            "DataType": "20",
+            "Range": [ "0000", "fffe" ],
+            "Acc": "R",
+            "Default": "0000",
+            "Mandatory": false,
+            "Description": "Delay before Physical Contact Unoccupied→Occupied",
+            "ActionList": [ "check_store_value"]
+        },
+
         "0032": { 
             "Enabled": true,
-            "Name": "" ,
+            "Name": "PhysicalContactUnoccupiedToOccupiedThreshold" ,
             "DataType": "21",
             "Range": [ "0000", "fffe" ],
             "Acc": "R",
             "Default": "0000",
             "Mandatory": false,
+            "Description": "Number of contact events required to switch to Occupied",
             "ActionList": [ "check_store_value"]
         },
         "0033": { 

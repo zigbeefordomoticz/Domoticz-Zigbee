@@ -88,6 +88,7 @@ SETTINGS = {
         "Order": 5,
         "param": {   
             "autoServeOTA": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
+            "EnableOTATracing": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "checkFirmwareAgainstZigbeeOTARepository": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
             "ZigbeeOTA_Repository":{ "type": "path", "default": "https://raw.githubusercontent.com/Koenkk/zigbee-OTA/master/index.json", "current": None, "restart": 1, "hidden": False, "Advanced": True, },
             "IkeaTradfri_Repository":{ "type": "path", "default": "http://fw.ota.homesmart.ikea.net/feed/version_info.json", "current": None, "restart": 1, "hidden": False, "Advanced": True, },
@@ -305,6 +306,7 @@ SETTINGS = {
             "Python/Classes-ZigpyTransport-AppGeneric": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
 
             "ReadAttributes": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "StopProcess": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Schneider": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Sonoff": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Sunricher": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },

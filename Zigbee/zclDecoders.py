@@ -1,12 +1,21 @@
-# !/usr/bin/env python3
-# coding: utf-8 -*-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 #
-# Author: pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
 
 
 import struct
 from os import stat
+from typing import Dict, Set
+
+from Zigbee.helperDefautResponse import must_send_default_response
 
 from Modules.tools import (get_deviceconf_parameter_value,
                            is_direction_to_client, is_direction_to_server,
@@ -62,11 +71,14 @@ def is_duplicate_zcl_frame(self, nwkid, cluster_id, sqn, default_response_disabl
 
     return False
 
-
 def send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufcode, status="00"):
     if self.zigbee_communication != "zigpy":
         # No check for zigate
         return False
+    
+    if not must_send_default_response( int(fcf, 16), int(command, 16), int(cluster_id, 16), int(status, 16) ):
+        self.log.logging("zclDecoder", "Debug", f"must_send_default_response returned False for command {command}", src_nwk_id)
+        return
 
     self.log.logging(
         "zclDecoder",

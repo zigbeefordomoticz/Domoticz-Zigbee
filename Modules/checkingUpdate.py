@@ -14,6 +14,70 @@
 # - stable
 # - beta
 
+"""
+Zigbee for Domoticz Plugin - Version Checking via DNS TXT Records
+=================================================================
+
+This module provides functionality to check and validate the versions of the Zigbee
+for Domoticz plugin and Zigate firmware against the latest versions published via
+DNS TXT records.
+
+It supports multiple Zigate hardware models (V1, V1 OPTIPDM, V2) and can handle
+both native and Zigpy-based Zigbee communication.
+
+Key Features:
+-------------
+- Retrieve the expected plugin version for a given branch (stable, beta) via DNS TXT.
+- Retrieve the expected firmware version for native Zigate devices via DNS TXT.
+- Parse semicolon-separated key=value DNS TXT records into Python dictionaries.
+- Compare current plugin or firmware versions against available versions.
+- Detect whether a plugin or firmware update is available.
+- Check Internet availability to ensure version checks can be performed.
+
+Constants:
+----------
+PLUGIN_TXT_RECORD: str
+    DNS TXT record for the Zigbee for Domoticz plugin version.
+ZIGATEV1_FIRMWARE_TXT_RECORD: str
+    DNS TXT record for Zigate V1 firmware.
+ZIGATEV1OPTIPDM_TXT_RECORD: str
+    DNS TXT record for Zigate V1 OPTIPDM firmware.
+ZIGATEV2_FIRMWARE_TXT_RECORD: str
+    DNS TXT record for Zigate V2 firmware.
+DNS_REQ_TIMEOUT: int
+    Default timeout in seconds for DNS TXT queries.
+ZIGATE_DNS_RECORDS: dict
+    Mapping of Zigate hardware model codes to their respective DNS TXT records.
+
+Functions:
+----------
+check_plugin_version_against_dns(self, zigbee_communication, branch, zigate_model)
+    Checks plugin and firmware versions against DNS TXT records and returns the latest versions.
+
+_get_dns_txt_record(self, record, timeout=DNS_REQ_TIMEOUT)
+    Retrieves the TXT record for a given DNS record, handling UDP/TCP fallback and errors.
+
+_parse_dns_txt_record(txt_record: str) -> dict
+    Parses a semicolon-separated key=value string from a DNS TXT record into a dictionary.
+
+is_plugin_update_available(self, currentVersion, availVersion)
+    Determines if a newer plugin version is available compared to the current version.
+
+is_zigate_firmware_available(self, currentMajorVersion, currentFirmwareVersion, availfirmMajor, availfirmMinor)
+    Determines if a newer firmware version is available for a Zigate device.
+
+is_internet_available()
+    Performs a basic check to verify whether Internet access is available.
+
+Usage Example:
+--------------
+# Check plugin version for stable branch and native Zigate V2
+plugin_version, firm_major, firm_minor = check_plugin_version_against_dns(self, "native", "stable", "05")
+if is_plugin_update_available(self, current_version, plugin_version):
+    print("Plugin update available:", plugin_version)
+if is_zigate_firmware_available(self, current_major, current_firmware, firm_major, firm_minor):
+    print("Zigate firmware update available:", f"{firm_major}.{firm_minor}")
+"""
 
 import dns.resolver
 import requests
@@ -133,11 +197,33 @@ def _get_dns_txt_record(self, record, timeout=DNS_REQ_TIMEOUT):
     return None
 
 
-def _parse_dns_txt_record(txt_record):
+def _parse_dns_txt_record(txt_record: str) -> dict:
+    """
+    Parse a DNS TXT record containing semicolon-separated key=value pairs.
+
+    Args:
+        txt_record (str): Raw TXT record string.
+
+    Returns:
+        dict: Parsed key-value pairs.
+    """
     version_dict = {}
-    if txt_record and txt_record != "":
-        for branch_version in txt_record.split(";"):
-            version_dict.update({k.strip(): v.strip('"') for k, v in (item.split("=") for item in branch_version.split(";"))})
+
+    if not txt_record:
+        return version_dict
+
+    for item in txt_record.split(";"):
+        item = item.strip()
+        if not item:
+            continue
+
+        if "=" not in item:
+            # Skip invalid items or log a warning if needed
+            continue
+
+        key, value = item.split("=", 1)  # only split at the first =
+        version_dict[key.strip()] = value.strip('"').strip()
+
     return version_dict
 
 
