@@ -26,7 +26,7 @@ def ts_to_human(ts):
         return f"<invalid: {ts}>"
 
 
-def retrieve_configuration(db_path, decode_devices, timestamps_only, hw_id):
+def retrieve_configuration(db_path, b64_decoding, timestamps_only, hw_id):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
@@ -63,10 +63,12 @@ def retrieve_configuration(db_path, decode_devices, timestamps_only, hw_id):
         if timestamps_only:
             lod_ts = config.get("ListOfDevices", {}).get("TimeStamp")
             pc_ts  = config.get("PluginConf", {}).get("TimeStamp")
+            log_ts = config.get("ListOfGroups", {}).get("TimeStamp")
 
             print("\nTimestamps:")
             print(f"  ListOfDevices TimeStamp : {ts_to_human(lod_ts) if lod_ts else '<missing>'}")
             print(f"  PluginConf    TimeStamp : {ts_to_human(pc_ts) if pc_ts else '<missing>'}")
+            print(f"  ListOfGroups  TimeStamp : {ts_to_human(log_ts) if log_ts else '<missing>'}")
             print("--------------------------------------------")
             continue
 
@@ -75,26 +77,48 @@ def retrieve_configuration(db_path, decode_devices, timestamps_only, hw_id):
         # -----------------------------------------------------
         config_copy = dict(config)
 
-        # Handle base64 devices
+        # Handle ListOfDevices
         lod = config_copy.get("ListOfDevices", {})
         encoded_devices = lod.get("Devices")
 
         if encoded_devices is not None:
-            if decode_devices:
+            if b64_decoding:
                 decoded_devices = decode_devices_field(encoded_devices)
                 lod["Devices"] = "<decoded>"
                 lod["Devices_decoded"] = decoded_devices
             else:
-                # Keep base64 untouched
                 lod["Devices_decoded"] = "<not decoded>"
+
+        # Handle ListOfGroups
+        log = config_copy.get("ListOfGroups", {})
+        b64_groups = log.get("b64Groups")
+        if b64_groups is not None:
+            if b64_decoding:
+                # In most cases, Devices inside groups are already decoded lists
+                for gid, group in b64_groups.items():
+                    devices = group.get("Devices")
+                    if isinstance(devices, str):
+                        # decode if actually base64
+                        group["Devices_decoded"] = decode_devices_field(devices)
+                        group["Devices"] = "<decoded>"
+                    else:
+                        group["Devices_decoded"] = devices
+                log["b64Groups"] = b64_groups
+            else:
+                for gid, group in b64_groups.items():
+                    group["Devices_decoded"] = "<not decoded>"
 
         print("\nConfiguration:")
         pprint(config_copy, width=120)
 
         # Show decoded Devices clearly
-        if decode_devices and encoded_devices:
-            print("\nDecoded ListOfDevices['Devices']:")
-            pprint(decoded_devices, width=120)
+        if b64_decoding:
+            if encoded_devices:
+                print("\nDecoded ListOfDevices['Devices']:")
+                pprint(decoded_devices, width=120)
+            if b64_groups:
+                print("\nDecoded ListOfGroups['b64Groups'] Devices:")
+                pprint(b64_groups, width=120)
 
         print("--------------------------------------------")
 
@@ -109,9 +133,9 @@ def main():
         default="domoticz.db"
     )
     parser.add_argument(
-        "--decode-devices",
+        "--b64-decoding",
         action="store_true",
-        help="Enable base64 decoding of ListOfDevices.Devices"
+        help="Enable base64 decoding of ListOfDevices.Devices and ListOfGroups"
     )
     parser.add_argument(
         "--timestamps-only",
@@ -126,7 +150,7 @@ def main():
 
     args = parser.parse_args()
 
-    retrieve_configuration(args.db, args.decode_devices, args.timestamps_only, args.hw_id)
+    retrieve_configuration(args.db, args.b64_decoding, args.timestamps_only, args.hw_id)
 
 
 if __name__ == "__main__":
