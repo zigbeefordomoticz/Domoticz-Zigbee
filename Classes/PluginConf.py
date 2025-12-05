@@ -555,10 +555,13 @@ class PluginConf:
 
 
 def loading_settings_from_domoticz(self):
+    dz_timestamp = 0
+    settings = {}
+
     try:
-        _domoticz_pluginConf = getConfigItem(Key="PluginConf", Attribute="b64-settings",)
-        dz_timestamp = _domoticz_pluginConf.get("TimeStamp",0)
-        settings = _domoticz_pluginConf.get("b64-settings",{})
+        domoticz_settings = getConfigItem(Key="PluginConf", Attribute="b64-settings",)
+        dz_timestamp = domoticz_settings.get("TimeStamp",0)
+        settings = domoticz_settings.get("b64-settings",{})
 
     except Exception as e:
         Domoticz.Error("Cannot load PluginConf from Domoticz DB: %s" % e)
@@ -568,7 +571,7 @@ def loading_settings_from_domoticz(self):
             "Plugin data loaded where saved on %s"
             % (time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp)))
         )
-    if not isinstance(_domoticz_pluginConf, dict):
+    if not isinstance(domoticz_settings, dict):
         settings = {}
         
     return dz_timestamp, settings
