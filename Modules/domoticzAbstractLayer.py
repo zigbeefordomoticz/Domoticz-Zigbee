@@ -15,7 +15,13 @@
     Description: Set of functions which abstract Domoticz Legacy and Extended framework API
 """
 
+
+import base64
+import contextlib
+import json
 import time
+import ast
+
 #import DomoticzEx as Domoticz
 #DOMOTICZ_EXTENDED_API = True#
 import Domoticz as Domoticz
@@ -113,17 +119,57 @@ def prepare_dict_for_storage(dict_items, Attribute):
 
 
 def repair_dict_after_load(b64_dict, Attribute):
-    if b64_dict in ("", {}):
+    if not b64_dict or b64_dict == "":
         return {}
-    if "Version" not in b64_dict:
+
+    # Ensure format is supported
+    if not isinstance(b64_dict, dict) or "Version" not in b64_dict:
         domoticz_log_api("repair_dict_after_load - Not supported storage")
         return {}
-    if Attribute in b64_dict:
-        from base64 import b64decode
 
-        b64_dict[Attribute] = eval(b64decode(b64_dict[Attribute]))
+    if Attribute not in b64_dict:
+        return b64_dict
+
+    value = b64_dict[Attribute]
+
+    # Already decoded → nothing to do
+    if isinstance(value, dict):
+        return b64_dict
+
+    # Only strings or bytes can be base64 decoded
+    if not isinstance(value, (str, bytes, bytearray)):
+        domoticz_log_api(
+            f"repair_dict_after_load - Unexpected type for {Attribute}: {type(value)}"
+        )
+        return b64_dict
+
+    # Try decode safely
+    try:
+        b64_dict[Attribute] = decode_b64_payload(value, attribute_name=Attribute)
+
+    except Exception as e:
+        domoticz_log_api(f"repair_dict_after_load - Failed to decode {Attribute}: {value} - {e}")
+        return {}
+
     return b64_dict
 
+
+def decode_b64_payload(value, attribute_name=""):
+    try:
+        decoded = base64.b64decode(value).decode("utf-8")
+    except Exception as e:
+        raise ValueError(f"{attribute_name}: base64 decode failed: {e}") from e
+
+    # Try JSON first
+    with contextlib.suppress(json.JSONDecodeError):
+        return json.loads(decoded)
+
+    # Try Python literal
+    try:
+        return ast.literal_eval(decoded)
+    except Exception as e:
+        raise ValueError(
+            f"{attribute_name}: neither JSON nor Python literal: {e}\nDecoded content was:\n{decoded}") from e
 
 # Devices helpers
 
