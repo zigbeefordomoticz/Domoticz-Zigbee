@@ -327,11 +327,11 @@ def _read_DeviceList_Domoticz(self):
         tuple: (devices_dict, timestamp) where devices_dict contains device
         entries filtered to only include known attributes used by the plugin
     """
-    ListOfDevices_from_Domoticz = getConfigItem(Key="ListOfDevices", Attribute="Devices")
+    ListOfDevices_from_Domoticz = getConfigItem(Key="ListOfDevices", Attribute="b64-devicelist")
     time_stamp = 0
     if "TimeStamp" in ListOfDevices_from_Domoticz:
         time_stamp = ListOfDevices_from_Domoticz.get("TimeStamp",0)
-        ListOfDevices_from_Domoticz = ListOfDevices_from_Domoticz.get("Devices",{})
+        ListOfDevices_from_Domoticz = ListOfDevices_from_Domoticz.get("b64-devicelist",{})
         self.log.logging(
             "Database",
             "Log",
@@ -481,7 +481,7 @@ def _write_DeviceList_Domoticz(self):
     """
     ListOfDevices_for_save = self.ListOfDevices.copy()
     self.log.logging("Database", "Log", f"Plugin Database flushed on Domoticz {len(self.ListOfDevices)} records")
-    return setConfigItem( Key="ListOfDevices", Attribute="Devices", Value={"TimeStamp": time.time(), "Devices": ListOfDevices_for_save} )
+    return setConfigItem( Key="ListOfDevices", Attribute="b64-devicelist", Value={"TimeStamp": time.time(), "b64-devicelist": ListOfDevices_for_save} )
 
 
 def importDeviceConf(self):
@@ -595,7 +595,7 @@ def checkDevices2LOD(self, Devices):
     """
     for nwkid in self.ListOfDevices:
         self.ListOfDevices[nwkid]["ConsistencyCheck"] = ""
-        if self.ListOfDevices[nwkid]["Status"] == "inDB":
+        if self.ListOfDevices[nwkid].get("Status") == "inDB":
             self.ListOfDevices[nwkid]["ConsistencyCheck"] = next(("ok" for dev in Devices if Devices[dev].DeviceID == self.ListOfDevices[nwkid]["IEEE"]), "not in DZ")
 
 def checkListOfDevice2Devices(self, Devices):

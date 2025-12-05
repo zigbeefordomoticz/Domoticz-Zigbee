@@ -41,7 +41,7 @@ def write_groups_list(self):
 
     if self.pluginconf.pluginConf.get("useDomoticzDb"):
         self.log.logging("Database", "Debug", "Save Plugin Group Db to Domoticz")
-        setConfigItem(Key="ListOfGroups", Value={"TimeStamp": time.time(), "b64Groups": self.ListOfGroups})
+        setConfigItem(Key="ListOfGroups", Attribute="b64-grouplist", Value={"TimeStamp": time.time(), "b64-grouplist": self.ListOfGroups})
 
 
 def load_groups_list_from_json(self):
@@ -52,12 +52,12 @@ def load_groups_list_from_json(self):
         return
 
     if self.pluginconf.pluginConf.get("useDomoticzDb"):
-        _domoticz_grouplist = getConfigItem(Key="ListOfGroups")
+        _domoticz_grouplist = getConfigItem(Key="ListOfGroups", Attribute="b64-grouplist")
 
         dz_timestamp = 0
         if "TimeStamp" in _domoticz_grouplist:
             dz_timestamp = _domoticz_grouplist["TimeStamp"]
-            _domoticz_grouplist = _domoticz_grouplist["b64Groups"]
+            _domoticz_grouplist = _domoticz_grouplist["b64-grouplist"]
             self.logging(
                 "Debug",
                 "Groups data loaded where saved on %s"
