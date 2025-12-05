@@ -175,7 +175,7 @@ def LoadDeviceList(self):
     
     if use_domoticz_db:
         # We try to load from Domoticz Db
-        ListOfDevices_from_Domoticz, domoticz_db_saving_time = _read_DeviceList_Domoticz(self)
+        ListOfDevices_from_Domoticz, domoticz_db_saving_time = retreive_device_list_from_domoticz(self)
         can_use_domoticz_db = is_domoticz_recent(self, domoticz_db_saving_time, device_list_txt_filename)
         self.log.logging( "Database", "Debug", f"Database from Dz is recent: {can_use_domoticz_db} Loading from Domoticz Db" )
         if can_use_domoticz_db:
@@ -320,40 +320,39 @@ def loadTxtDatabase(self, dbName):
     return res
 
 
-def _read_DeviceList_Domoticz(self):
+def retreive_device_list_from_domoticz(self):
     """Read device list from Domoticz plugin configuration.
 
     Returns:
         tuple: (devices_dict, timestamp) where devices_dict contains device
         entries filtered to only include known attributes used by the plugin
     """
-    ListOfDevices_from_Domoticz = getConfigItem(Key="ListOfDevices", Attribute="b64-devicelist")
-    time_stamp = 0
-    if "TimeStamp" in ListOfDevices_from_Domoticz:
-        time_stamp = ListOfDevices_from_Domoticz.get("TimeStamp",0)
-        ListOfDevices_from_Domoticz = ListOfDevices_from_Domoticz.get("b64-devicelist",{})
-        self.log.logging(
-            "Database",
-            "Log",
-            "Plugin data found on DZ with date %s"
-            % (time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(time_stamp))),
-        )
+    list_devices_from_domoticz = getConfigItem(Key="ListOfDevices", Attribute="b64-devicelist")
+    list_devices_from_domoticz = list_devices_from_domoticz.get("b64-devicelist",{})
+    if not isinstance(list_devices_from_domoticz, dict):
+        list_devices_from_domoticz = {}
+
+    dz_timestamp = list_devices_from_domoticz.get("TimeStamp",0) if list_devices_from_domoticz else 0
+    human_date = time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp))
 
     self.log.logging(
-        "Database", "Debug", "Load from Dz: %s %s" % (len(ListOfDevices_from_Domoticz), ListOfDevices_from_Domoticz)
+        "Database",
+        "Debug",
+        f"Plugin data found on DZ with date {human_date} — "
+        f"Load from Dz: {len(list_devices_from_domoticz)} {list_devices_from_domoticz}"
     )
-    if not isinstance(ListOfDevices_from_Domoticz, dict):
-        ListOfDevices_from_Domoticz = {}
-    else:
-        for x in list(ListOfDevices_from_Domoticz):
-            self.log.logging("Database", "Debug", "--- Loading %s" % (x))
-            
-            for attribute in list(ListOfDevices_from_Domoticz[x]):
-                if attribute not in (MANDATORY_ATTRIBUTES + MANUFACTURER_ATTRIBUTES + BUILD_ATTRIBUTES):
-                    self.log.logging("Database", "Debug", "xxx Removing attribute: %s for %s" % (attribute, x))
-                    del ListOfDevices_from_Domoticz[x][attribute]
+    allowed = set(MANDATORY_ATTRIBUTES) | set(MANUFACTURER_ATTRIBUTES) | set(BUILD_ATTRIBUTES)
 
-    return (ListOfDevices_from_Domoticz, time_stamp)
+    for device_id, attrs in list_devices_from_domoticz.items():
+        self.log.logging("Database", "Debug", f"--- Loading {device_id}")
+
+        for key in list(attrs):
+            if key not in allowed:
+                self.log.logging("Database", "Debug",
+                                 f"xxx Removing attribute: {key} for {device_id}")
+                attrs.pop(key)
+
+    return (list_devices_from_domoticz, dz_timestamp)
 
 
 def is_domoticz_recent(self, dz_timestamp, device_list_txt_filename):

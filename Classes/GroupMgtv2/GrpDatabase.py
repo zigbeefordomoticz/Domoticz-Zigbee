@@ -66,9 +66,9 @@ def load_groups_list_from_json(self):
 
 
     if self.pluginconf.pluginConf.get("useDomoticzDb"):
-        domoticz_grouplist = getConfigItem(Key="ListOfGroups", Attribute="b64-grouplist")
-        dz_timestamp = domoticz_grouplist.get("TimeStamp", 0)
+        domoticz_grouplist = getConfigItem(Key="ListOfGroups", Attribute="b64-grouplist")        
         domoticz_grouplist = domoticz_grouplist.get("b64-grouplist", {})
+        dz_timestamp = domoticz_grouplist.get("TimeStamp", 0) if domoticz_grouplist else 0
 
         self.ListOfGroups = domoticz_grouplist if dz_timestamp >= txt_timestamp else json_grouplist
         
