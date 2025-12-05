@@ -70,7 +70,7 @@ def load_groups_list_from_json(self):
         dz_timestamp = domoticz_grouplist.get("TimeStamp", 0)
         domoticz_grouplist = domoticz_grouplist.get("b64-grouplist", {})
 
-        self.ListOgfGroups = domoticz_grouplist if dz_timestamp >= txt_timestamp else json_grouplist
+        self.ListOfGroups = domoticz_grouplist if dz_timestamp >= txt_timestamp else json_grouplist
         
         self.logging( "Debug", "load_groups_list_from_json %s timestamp is %s" % ("Domoticz Db", dz_timestamp))
         self.logging( "Debug", "load_groups_list_from_json %s timestamp is %s" % (self.GroupListFileName, txt_timestamp))
