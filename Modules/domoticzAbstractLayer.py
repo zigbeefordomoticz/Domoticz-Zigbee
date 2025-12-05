@@ -145,17 +145,31 @@ def repair_dict_after_load(b64_dict, Attribute):
 
     # Try decode safely
     try:
-        decoded_bytes = base64.b64decode(value)
-        decoded_str = decoded_bytes.decode("utf-8")
-        #b64_dict[Attribute] = json.loads(decoded_str)
-        b64_dict[Attribute] = ast.literal_eval(decoded_str)
+        b64_dict[Attribute] = decode_b64_payload(value, attribute_name=Attribute)
 
     except Exception as e:
-        domoticz_log_api(f"repair_dict_after_load - Failed to decode {Attribute}: {e}")
+        domoticz_log_api(f"repair_dict_after_load - Failed to decode {Attribute}: {value} - {e}")
         return {}
 
     return b64_dict
 
+
+def decode_b64_payload(value, attribute_name=""):
+    try:
+        decoded = base64.b64decode(value).decode("utf-8")
+    except Exception as e:
+        raise ValueError(f"{attribute_name}: base64 decode failed: {e}") from e
+
+    # Try JSON first
+    with contextlib.suppress(json.JSONDecodeError):
+        return json.loads(decoded)
+
+    # Try Python literal
+    try:
+        return ast.literal_eval(decoded)
+    except Exception as e:
+        raise ValueError(
+            f"{attribute_name}: neither JSON nor Python literal: {e}\nDecoded content was:\n{decoded}") from e
 
 # Devices helpers
 
