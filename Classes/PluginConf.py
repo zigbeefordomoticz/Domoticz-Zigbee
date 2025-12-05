@@ -605,10 +605,6 @@ def load_settings(self):
 
     txt_timestamp, txt_pluginconf = loading_settings_from_json(self)
 
-    Domoticz.Log("load_settings - Domoticz DB timestamp: %s, PluginConf.txt timestamp: %s" % (dz_timestamp, txt_timestamp))
-    Domoticz.Log("load_settings - Domoticz DB settings: %s" % len(domoticz_pluginConf))
-    Domoticz.Log("load_settings - PluginConf.txt settings: %s" % len(txt_pluginconf))
-
     conf_settings = domoticz_pluginConf if dz_timestamp >= txt_timestamp else txt_pluginconf
 
     for param in conf_settings:
@@ -619,7 +615,10 @@ def load_settings(self):
         # Force to 0 as this parameter is only relevant to Zigpy
         self.pluginConf["ZigpyTopologyReport"] = False
     
-    Domoticz.Log("load_settings - exiting with %s" % self.pluginConf)
+    if dz_timestamp >= txt_timestamp:
+        Domoticz.Status( "Z4D Loaded pluginconf from Domoticz Db: %s" % len(self.pluginConf))
+    else:
+        Domoticz.Status( "Z4D Loaded pluginconf from Json File: %s" % len(self.pluginConf))
 
 
 def _load_oldfashon(self, homedir, hardwareid):

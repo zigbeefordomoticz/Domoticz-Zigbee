@@ -48,42 +48,39 @@ def load_groups_list_from_json(self):
     """
     Load GroupsList into memory
     """
+    self.ListOfGroups = {}
+    
     if self.GroupListFileName is None:
         return
 
-    if self.pluginconf.pluginConf.get("useDomoticzDb"):
-        _domoticz_grouplist = getConfigItem(Key="ListOfGroups", Attribute="b64-grouplist")
-
-        dz_timestamp = 0
-        if "TimeStamp" in _domoticz_grouplist:
-            dz_timestamp = _domoticz_grouplist["TimeStamp"]
-            _domoticz_grouplist = _domoticz_grouplist["b64-grouplist"]
-            self.logging(
-                "Debug",
-                "Groups data loaded where saved on %s"
-                % (time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp))),
-            )
-
-        txt_timestamp = 0
-        if os.path.isfile(self.GroupListFileName):
-            txt_timestamp = os.path.getmtime(self.GroupListFileName)
-        domoticz_log_api("%s timestamp is %s" % (self.GroupListFileName, txt_timestamp))
-        if dz_timestamp < txt_timestamp:
-            domoticz_log_api("Dz Group is older than Json Dz: %s Json: %s" % (dz_timestamp, txt_timestamp))
-            # We should load the json file
-
-        if not isinstance(_domoticz_grouplist, dict):
-            _domoticz_grouplist = {}
+    txt_timestamp = dz_timestamp = 0
+    if os.path.isfile(self.GroupListFileName):
+        txt_timestamp = os.path.getmtime(self.GroupListFileName)
 
     if not os.path.isfile(self.GroupListFileName):
         self.logging("Debug", "GroupMgt - Nothing to import from %s" % self.GroupListFileName)
         return
 
     with open(self.GroupListFileName, "rt") as handle:
-        self.ListOfGroups = json.load(handle)
+        json_grouplist = json.load(handle)
+
 
     if self.pluginconf.pluginConf.get("useDomoticzDb"):
-        domoticz_log_api("GroupList Loaded from Dz: %s from Json: %s" % (len(_domoticz_grouplist), len(self.ListOfGroups)))
+        domoticz_grouplist = getConfigItem(Key="ListOfGroups", Attribute="b64-grouplist")
+        dz_timestamp = domoticz_grouplist.get("TimeStamp", 0)
+        domoticz_grouplist = domoticz_grouplist.get("b64-grouplist", {})
+
+        self.ListOgfGroups = domoticz_grouplist if dz_timestamp >= txt_timestamp else json_grouplist
+        
+        self.logging( "Debug", "load_groups_list_from_json %s timestamp is %s" % ("Domoticz Db", dz_timestamp))
+        self.logging( "Debug", "load_groups_list_from_json %s timestamp is %s" % (self.GroupListFileName, txt_timestamp))
+        
+        self.logging( "Debug", "Groups data loaded where saved on %s" % time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp)), )
+
+    if dz_timestamp >= txt_timestamp:
+        self.logging( "Status", "Z4D Loaded groups from Domoticz Db: %s" % len(self.ListOfGroups))
+    else:
+        self.logging( "Status", "Z4D Loaded groups from Json File: %s" % len(self.ListOfGroups))
 
 
 def build_group_list_from_list_of_devices(self):
