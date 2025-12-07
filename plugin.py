@@ -338,8 +338,9 @@ class BasePlugin:
     def onStart(self):
         #tracemalloc.start()
 
-        if Parameters["Mode6"] != "0":
-            Domoticz.Debugging(int(Parameters["Mode6"]))
+        mode6 = Parameters.get("Mode6", "0")
+        if mode6.lstrip("-").isdigit():
+            Domoticz.Debugging(int(mode6))
 
         Domoticz.Status( "Welcome to Zigbee for Domoticz (Z4D) plugin. (c)pipiche38 - 2018 - 2025")
 
@@ -1096,12 +1097,12 @@ def start_zigbee_transport(self ):
 
 
 def _start_fake_coordinator(self):
-        from Classes.ZigateTransport.Transport import ZigateTransport
-        self.pluginconf.pluginConf["ControllerInRawMode"] = False
-        self.pluginParameters["Zigpy"] = False
-        self.log.logging("Plugin", "Status", "Transport mode set to None, no communication.")
-        self.FirmwareVersion = "031c"
-        self.PluginHealth["Firmware Update"] = {"Progress": "75 %", "Device": "1234"}
+    from Classes.ZigateTransport.Transport import ZigateTransport
+    self.pluginconf.pluginConf["ControllerInRawMode"] = False
+    self.pluginParameters["Zigpy"] = False
+    self.log.logging("Plugin", "Status", "Transport mode set to None, no communication.")
+    self.FirmwareVersion = "031c"
+    self.PluginHealth["Firmware Update"] = {"Progress": "75 %", "Device": "1234"}
     
 
 def _start_native_usb_zigate(self):
