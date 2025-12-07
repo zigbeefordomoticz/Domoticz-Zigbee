@@ -35,6 +35,7 @@ from pathlib import Path
 from typing import Dict
 
 import Modules.tools
+from Classes.AdminWidgets import ADMIN_WIDGET_PREFIXES
 from Modules.domoticzAbstractLayer import getConfigItem, setConfigItem
 from Modules.manufacturer_code import check_and_update_manufcode
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
@@ -43,6 +44,8 @@ from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
 from Modules.pluginModels import check_found_plugin_model
 from Modules.tuyaConst import TUYA_MANUFACTURER_NAME
 from Modules.zlinky import update_zlinky_device_model_if_needed
+
+
 
 CIE_ATTRIBUTES = {
     "Version", 
@@ -615,7 +618,7 @@ def checkListOfDevice2Devices(self, Devices):
 
         self.log.logging("Database", "Debug", f"checkListOfDevice2Devices - {widget_idx} {device_id} {widget_name}")
 
-        if len(device_id) == 4 or device_id.startswith(("Zigate-01-", "Zigate-02-", "Zigate-03-")):
+        if len(device_id) == 4 or any(device_id.startswith(p) for p in ADMIN_WIDGET_PREFIXES):
             continue
 
         if device_id not in self.IEEE2NWK:
