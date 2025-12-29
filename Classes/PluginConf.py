@@ -529,8 +529,6 @@ class PluginConf:
 
     def write_Settings(self):
         """ Serialize json format the pluginConf """
-        Domoticz.Log("write_Settings %s" % self.pluginConf)
-
         pluginconf_filename = Path(self.pluginConf["pluginConfig"] ) / ("PluginConf-%02d.json" % self.hardwareid)
         
         self.pluginConf["filename"] = str(pluginconf_filename)
