@@ -106,21 +106,88 @@ def check_plugin_version_against_dns(self, zigbee_communication, branch, zigate_
 
 def _get_dns_txt_record(self, record, timeout=DNS_REQ_TIMEOUT):
     """
-    Retrieve the content of a DNS TXT record using dnspython3.
+    Retrieve the content of a DNS TXT record.
 
-    Tries UDP first, then falls back to TCP if needed. Handles timeouts and common DNS errors.
+    This function detects the dnspython major version and dispatches
+    the DNS query to the appropriate implementation.
 
     Args:
-        self: Plugin instance with `log` and `internet_available`.
-        record (str): The DNS TXT record to query.
-        timeout (int): Timeout in seconds for the DNS query.
+        record (str): Fully-qualified DNS TXT record to query.
+        timeout (int): DNS query timeout in seconds.
 
     Returns:
-        str or None: Concatenated TXT record content, or None on failure.
+        str or None: TXT record content or None on failure.
     """
     if not self.internet_available:
         return None
 
+    try:
+        import dns
+        version = getattr(dns, "__version__", "1.0")
+        major = int(version.split(".", 1)[0])
+    except Exception:
+        major = 1  # Safe default for very old environments
+
+    self.log.logging( "DNS", "Debug", f"_get_dns_txt_record: dnspython major version {major}" )
+
+    if major >= 2:
+        return _get_dns_txt_record_v2(self, record, timeout)
+
+    return _get_dns_txt_record_v1(self, record, timeout)
+
+
+def _get_dns_txt_record_v1(self, record, timeout):
+    """
+    Retrieve a DNS TXT record using dnspython 1.x API (resolver.query).
+
+    Args:
+        record (str): DNS TXT record name.
+        timeout (int): DNS timeout in seconds.
+
+    Returns:
+        str or None: TXT record content or None on failure.
+    """
+    resolver = dns.resolver.Resolver()
+    resolver.timeout = timeout
+    resolver.lifetime = timeout
+
+    try:
+        try:
+            answers = resolver.query(record, "TXT", tcp=False)
+            self.log.logging("DNS", "Debug", f"{record} resolved via UDP (v1)")
+        except dns.exception.DNSException:
+            answers = resolver.query(record, "TXT", tcp=True)
+            self.log.logging("DNS", "Debug", f"{record} resolved via TCP (v1)")
+
+        txt_records = []
+        for rdata in answers:
+            # rdata.strings: list of byte chunks
+            parts = [s.decode("utf-8", "ignore") for s in rdata.strings]
+            txt_records.append("".join(parts))
+
+        return ";".join(txt_records) if txt_records else None
+
+    except dns.resolver.Timeout:
+        self.internet_available = False
+        self.log.logging( "DNS", "Error", f"DNS timeout while resolving {record} (v1)" )
+
+    except Exception as e:
+        self.log.logging( "DNS", "Error", f"Unexpected DNS error (v1) for {record}: {e}" )
+
+    return None
+
+
+def _get_dns_txt_record_v2(self, record, timeout):
+    """
+    Retrieve a DNS TXT record using dnspython 2.x API (resolver.resolve).
+
+    Args:
+        record (str): DNS TXT record name.
+        timeout (int): DNS timeout in seconds.
+
+    Returns:
+        str or None: TXT record content or None on failure.
+    """
     resolver = dns.resolver.Resolver()
     resolver.timeout = timeout
     resolver.lifetime = timeout
@@ -128,29 +195,29 @@ def _get_dns_txt_record(self, record, timeout=DNS_REQ_TIMEOUT):
     try:
         try:
             answers = resolver.resolve(record, "TXT", tcp=False)
-            self.log.logging("DNS", "Debug", f"_get_dns_txt_record: {record} via UDP: {answers}")
+            self.log.logging("DNS", "Debug", f"{record} resolved via UDP (v2)")
+
         except dns.exception.DNSException:
             answers = resolver.resolve(record, "TXT", tcp=True)
-            self.log.logging("DNS", "Debug", f"_get_dns_txt_record: {record} via TCP: {answers}")
+            self.log.logging("DNS", "Debug", f"{record} resolved via TCP (v2)")
 
         txt_records = []
         for rdata in answers:
-            # rdata.strings is a list of bytes in dnspython3
-            parts = [s.decode("utf-8") if isinstance(s, bytes) else str(s) for s in getattr(rdata, "strings", [rdata.to_text()])]
-            txt_records.append("".join(parts))
+            strings = getattr(rdata, "strings", None)
+            if strings:
+                parts = [s.decode("utf-8", "ignore") for s in strings]
+                txt_records.append("".join(parts))
+            else:
+                txt_records.append(rdata.to_text().strip('"'))
 
         return ";".join(txt_records) if txt_records else None
 
     except dns.resolver.Timeout:
         self.internet_available = False
-        self.log.logging("DNS", "Error", f"DNS resolution timed out for {record} after {timeout} seconds")
-    except dns.resolver.NoAnswer:
-        self.log.logging("DNS", "Error", f"No DNS TXT answer found for {record}")
-    except dns.resolver.NoNameservers:
-        self.internet_available = False
-        self.log.logging("DNS", "Error", f"No nameservers found while resolving {record}")
+        self.log.logging( "DNS", "Error", f"DNS timeout while resolving {record} (v2)" )
+
     except Exception as e:
-        self.log.logging("DNS", "Error", f"Unexpected error while resolving {record}: {e}")
+        self.log.logging( "DNS", "Error", f"Unexpected DNS error (v2) for {record}: {e}" )
 
     return None
 
