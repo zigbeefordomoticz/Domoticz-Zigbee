@@ -148,6 +148,14 @@ def zcl_decoders(self, src_nwk_id, src_endpoint, target_ep, cluster_id, payload,
         send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
         return buildframe_for_cluster_0005(self, command, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, data )
 
+    if cluster_id == "0005" and command == "08":  # Enhanced View Scene
+        send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
+        return buildframe_for_cluster_0005(self, command, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, data )
+
+    if cluster_id == "0005" and command == "09" and manufacturer_code == "117c":  # IKEA specific - KEA Scene Step / Cycle command
+        send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
+        return buildframe_for_cluster_0005(self, command, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, data )
+
     if cluster_id == "0006":
         send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
         return buildframe_80x5_message(self, "8095", frame, sqn, src_nwk_id, src_endpoint,target_ep, cluster_id, manufacturer_code, command, data)
