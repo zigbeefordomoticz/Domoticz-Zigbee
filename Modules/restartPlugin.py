@@ -70,53 +70,101 @@ def restartPluginViaDomoticzJsonApi(self, stop=False, erasePDM=False, url_base_a
 
     # Get hardware list
     get_url = f"{url_base_api}/json.htm?type=command&param=gethardware"
-    result = subprocess.check_output([curl_command, "-s"] + auth_opts + [get_url])  # nosec, B603
-    hw_list = json.loads(result)
 
-    plugin = next((h for h in hw_list["result"] if h["Extra"] == ZIGBEE_PLUGIN_KEY), None)
-    if not plugin:
-        domoticz_error_api(f"Plugin '{ZIGBEE_PLUGIN_KEY}' not found. in {hw_list}")
+    # --- Call Domoticz -------------------------------------------------------
+    try:
+        result = subprocess.check_output( [curl_command, "-s"] + auth_opts + [get_url], stderr=subprocess.STDOUT, )  # nosec B603
+    except subprocess.CalledProcessError as e:
+        domoticz_error_api( f"Domoticz gethardware call failed (rc={e.returncode}): {e.output!r}" )
         return False
 
-    def build_update_cmd(plugin, erasePDM, stop):
-        base_url = f"{url_base_api}/json.htm?type=command&param=updatehardware"
+    if not result:
+        domoticz_error_api("Domoticz returned an empty response to gethardware.")
+        return False
 
-        params = {
-            "idx": self.pluginParameters["HardwareID"],
-            "htype": "94",
-            "name": self.pluginParameters["Name"],
-            "extra": self.pluginParameters["Key"],
-            "loglevel": plugin.get("LogLevel", 0),
-            "datatimeout": "0",
-            "Mode1": self.pluginParameters["Mode1"],
-            "Mode2": self.pluginParameters["Mode2"],
-            "Mode3": "True" if erasePDM else "False",
-            "Mode4": self.pluginParameters["Mode4"],
-            "Mode5": self.pluginParameters["Mode5"],
-            "Mode6": self.pluginParameters["Mode6"],
-            "enabled": "false" if stop else "true"
-        }
+    # --- Decode JSON ---------------------------------------------------------
+    # hw_list = json.loads(result)
+    try:
+        hw_list = json.loads(result)
+    except (json.JSONDecodeError, TypeError) as e:
+        domoticz_error_api( f"Invalid JSON received from Domoticz gethardware: {e}, raw={result!r}" )
+        return False
 
-        optional_fields_map = {
-            "Address": "address",
-            "Port": "port",
-            "SerialPort": "serialport",
-            "Username": "username",
-            "Password": "password",
-        }
+    if not isinstance(hw_list, dict):
+        domoticz_error_api(f"Unexpected JSON structure: {hw_list!r}")
+        return False
 
-        for domoticz_key, api_key in optional_fields_map.items():
-            params[api_key] = self.pluginParameters.get(domoticz_key, "")
+    if hw_list.get("status") != "OK":
+        domoticz_error_api(f"Domoticz API returned error: {hw_list}")
+        return False
 
-        # Properly encode all query parameters
-        full_url = base_url + "&" + urlencode(params)
+    hardware = hw_list.get("result")
+    if not isinstance(hardware, list):
+        domoticz_error_api(f"Missing or invalid 'result' field: {hw_list}")
+        return False
 
-        # domoticz_log_api(f"Constructed update URL: {full_url}")
-        return [curl_command, ] + auth_opts + [full_url]
+    # --- Locate plugin -------------------------------------------------------
+    plugin = next( (h for h in hardware if h.get("Extra") == ZIGBEE_PLUGIN_KEY), None, )
 
-    domoticz_log_api(f"Restarting plugin '{ZIGBEE_PLUGIN_KEY}'... {build_update_cmd(plugin, erasePDM, stop)}")
-   
-    subprocess.Popen(build_update_cmd(plugin, erasePDM, stop), start_new_session=True, shell=False, text=True)  # nosec, B603
+    if not plugin:
+        domoticz_error_api( f"Plugin '{ZIGBEE_PLUGIN_KEY}' not found in hardware list." )
+        return False
 
-    domoticz_log_api("Plugin restart complete.")
+    # --- Build update command -----------------------------------------------
+    cmd = _build_update_cmd(self, curl_command, auth_opts, url_base_api,plugin, erasePDM, stop)
+
+    domoticz_log_api( f"Restarting plugin '{ZIGBEE_PLUGIN_KEY}' (stop={stop}, erasePDM={erasePDM})" )
+    domoticz_log_api( f"Domoticz update command: {cmd}")
+
+    # --- Fire and forget -----------------------------------------------------
+    try:
+        subprocess.Popen(
+            cmd,
+            start_new_session=True,
+            shell=False,
+            text=True,
+        )  # nosec B603
+
+    except OSError as e:
+        domoticz_error_api(f"Failed to execute Domoticz update command: {e}")
+        return False
+
+    domoticz_log_api("Plugin restart command sent successfully.")
     return True
+
+
+def _build_update_cmd(self, curl_command, auth_opts, url_base_api, plugin, erasePDM, stop):
+    base_url = f"{url_base_api}/json.htm?type=command&param=updatehardware"
+
+    params = {
+        "idx": self.pluginParameters["HardwareID"],
+        "htype": "94",
+        "name": self.pluginParameters["Name"],
+        "extra": self.pluginParameters["Key"],
+        "loglevel": plugin.get("LogLevel", 0),
+        "datatimeout": "0",
+        "Mode1": self.pluginParameters["Mode1"],
+        "Mode2": self.pluginParameters["Mode2"],
+        "Mode3": "True" if erasePDM else "False",
+        "Mode4": self.pluginParameters["Mode4"],
+        "Mode5": self.pluginParameters["Mode5"],
+        "Mode6": self.pluginParameters["Mode6"],
+        "enabled": "false" if stop else "true"
+    }
+
+    optional_fields_map = {
+        "Address": "address",
+        "Port": "port",
+        "SerialPort": "serialport",
+        "Username": "username",
+        "Password": "password",
+    }
+
+    for domoticz_key, api_key in optional_fields_map.items():
+        params[api_key] = self.pluginParameters.get(domoticz_key, "")
+
+    # Properly encode all query parameters
+    full_url = base_url + "&" + urlencode(params)
+
+    # domoticz_log_api(f"Constructed update URL: {full_url}")
+    return [curl_command, ] + auth_opts + [full_url]
