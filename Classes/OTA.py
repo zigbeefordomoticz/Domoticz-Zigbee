@@ -102,9 +102,9 @@ VENDOR_PROFILES = {
         "notes": "Strict timing, small buffers, strong CRC/header validation."
     },
 
-    0x118C: {  # IKEA (TRÅDFRI / Dirigera)
-        "max_data": 56,
-        "min_delay": 0.12,
+    0x117C: {  # IKEA (TRÅDFRI / Dirigera)
+        "max_data": 64,
+        "min_delay": 0,
         "retry": 3,
         "notes": "Generally robust; failures often mesh-related."
     },
@@ -116,21 +116,33 @@ VENDOR_PROFILES = {
         "notes": "Very picky image metadata; some devices require vendor-style packaging."
     },
 
-    0x112D: {  # Develco / frient
+    0x1015: {  # Develco / frient
         "max_data": 56,
         "min_delay": 0.16,
         "retry": 2,
         "notes": "Known mid-OTA stalls; allow long idle periods."
     },
 
-    0x1224: {  # NodOn
+    0x128B: {  # NodOn
         "max_data": 52,
         "min_delay": 0.12,
         "retry": 3,
         "notes": "Verify manufacturer/image type; some ‘No image available’ errors."
     },
 
-    0x10A4: {  # Osram / LEDVANCE
+    0x1189: {  # Osram / LEDVANCE
+        "max_data": 56,
+        "min_delay": 0.12,
+        "retry": 3,
+        "notes": "Generally easier OTA; check mesh stability during upgrade."
+    },
+    0xBBAA: {  # Osram / LEDVANCE
+        "max_data": 56,
+        "min_delay": 0.12,
+        "retry": 3,
+        "notes": "Generally easier OTA; check mesh stability during upgrade."
+    },
+    0x110C: {  # Osram / LEDVANCE
         "max_data": 56,
         "min_delay": 0.12,
         "retry": 3,
