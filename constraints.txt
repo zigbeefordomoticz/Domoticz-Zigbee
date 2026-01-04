@@ -3,6 +3,5 @@ zigpy_znp==0.14.1
 zigpy_deconz==0.25.2
 bellows==0.46.2
 pyserial>=3.5
-charset-normalizer==2.0.11
 jsonschema==4.17.3
 cryptography<=40.0.2
