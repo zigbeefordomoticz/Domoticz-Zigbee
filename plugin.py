@@ -338,8 +338,9 @@ class BasePlugin:
     def onStart(self):
         #tracemalloc.start()
 
-        if Parameters["Mode6"] != "0":
-            Domoticz.Debugging(int(Parameters["Mode6"]))
+        mode6 = Parameters.get("Mode6", "0")
+        if mode6.lstrip("-").isdigit():
+            Domoticz.Debugging(int(mode6))
 
         Domoticz.Status( "Welcome to Zigbee for Domoticz (Z4D) plugin. (c)pipiche38 - 2018 - 2025")
 
@@ -353,10 +354,10 @@ class BasePlugin:
         _current_python_version_major = sys.version_info.major
         _current_python_version_minor = sys.version_info.minor
 
-        Domoticz.Status( "Z4D requires python3.9 or above and you are running %s.%s" %(
+        Domoticz.Status( "Z4D requires python3.11 or above and you are running %s.%s" %(
             _current_python_version_major, _current_python_version_minor))
     
-        assert sys.version_info >= (3, 9)  # nosec
+        assert sys.version_info >= (3, 11)  # nosec
 
         if Parameters["Mode1"] == "V1" and Parameters["Mode2"] in ( "USB", "DIN", "PI", "Wifi", ):
             self.transport = Parameters["Mode2"]
@@ -536,7 +537,7 @@ class BasePlugin:
         self.WebUsername, self.WebPassword = self.domoticzdb_Preferences.retreiveWebUserNamePassword()
 
         self.adminWidgets = AdminWidgets( self.log , self.pluginconf, self.pluginParameters, self.ListOfDomoticzWidget, Devices, self.ListOfDevices, self.HardwareID, self.IEEE2NWK)
-        self.adminWidgets.updateStatusWidget(Devices, "Z4D Starting up")
+        self.adminWidgets.updateStatusWidget(Devices, "Z4D Starting up") 
 
         self.DeviceListName = "DeviceList-" + str(Parameters["HardwareID"]) + ".txt"
         self.log.logging("Plugin", "Log", "Z4D Database found: %s" % self.DeviceListName)
@@ -696,6 +697,8 @@ class BasePlugin:
 
         # Save plugin database
         if self.PDMready and self.pluginconf:
+            if self.log:
+                self.log.logging(["Transport", "StopProcess"], "Log", "Flushing plugin database onto disk")
             WriteDeviceList(self, 0)
 
         # Print and save statistics if configured
@@ -1094,12 +1097,12 @@ def start_zigbee_transport(self ):
 
 
 def _start_fake_coordinator(self):
-        from Classes.ZigateTransport.Transport import ZigateTransport
-        self.pluginconf.pluginConf["ControllerInRawMode"] = False
-        self.pluginParameters["Zigpy"] = False
-        self.log.logging("Plugin", "Status", "Transport mode set to None, no communication.")
-        self.FirmwareVersion = "031c"
-        self.PluginHealth["Firmware Update"] = {"Progress": "75 %", "Device": "1234"}
+    from Classes.ZigateTransport.Transport import ZigateTransport
+    self.pluginconf.pluginConf["ControllerInRawMode"] = False
+    self.pluginParameters["Zigpy"] = False
+    self.log.logging("Plugin", "Status", "Transport mode set to None, no communication.")
+    self.FirmwareVersion = "031c"
+    self.PluginHealth["Firmware Update"] = {"Progress": "75 %", "Device": "1234"}
     
 
 def _start_native_usb_zigate(self):
@@ -1537,6 +1540,8 @@ def zigateInit_Phase3(self):
         message = "Z4D with Zigpy, coordinator %s, firmware %s communication confirmed." % (
             self.pluginParameters["CoordinatorModel"], self.pluginParameters["CoordinatorFirmwareVersion"])
         self.log.logging("Plugin", "Status", message)
+        
+        self.adminWidgets.updateNotificationWidget(Devices, message)
 
     # If firmware above 3.0d, Get Network State
     if (self.HeartbeatCount % (3600 // HEARTBEAT)) == 0 and self.transport != "None":
