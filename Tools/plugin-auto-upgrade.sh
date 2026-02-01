@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 # Function to cleanup a Python virtual environment completely
