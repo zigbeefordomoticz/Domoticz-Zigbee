@@ -18,7 +18,19 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
-## Dec. 2025 - Stable8.1.001 ( 2025.8)
+## Fev. 2026 - stable8.1.002 ( 2026.1)
+
+- Better handling of python3 venv, and relying on VIRUAL_ENV
+- Improving support udner docker
+- Backup script provided in Tools. Backing up ( Data, Conf as well as domoticz.db )
+- Adding ZCL Cluster 0x0005
+- Enabling use of latest dnspython.
+- Upgrading zigpy libs
+- Enabling storage/retreival plugin database to/from Domoticz
+- Minimum python3 version is now 3.11 or above
+- refactoring of the Plugin Admin and Status widgets
+
+## Dec. 2025 - Stable8.1.001 
 
 - Technical version ISO Stable7 7.1.026, to prepare DomoticzEx and other features
 
