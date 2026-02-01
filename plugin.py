@@ -351,6 +351,13 @@ class BasePlugin:
         else:
             Domoticz.Log("PYTHONPATH is not set")
         
+        # Print VIRTUAL_ENV if set
+        virualenv= os.getenv('VIRTUAL_ENV')
+        if virualenv:
+            Domoticz.Log(f"VIRTUAL_ENV is set to: {virualenv}")
+        else:
+            Domoticz.Log("VIRTUAL_ENV is not set")
+
         _current_python_version_major = sys.version_info.major
         _current_python_version_minor = sys.version_info.minor
 
