@@ -55,10 +55,10 @@ install_packages() {
                 apt-get install -y python3 python3-venv python3-pip
                 ;;
             dnf)
-                dnf install -y python3 python3-venv python3-pip
+                dnf install -y python3 python3-pip
                 ;;
             yum)
-                yum install -y python3 python3-venv python3-pip
+                yum install -y python3 python3-pip
                 ;;
         esac
     else
@@ -68,10 +68,10 @@ install_packages() {
                 sudo apt-get install -y python3 python3-venv python3-pip
                 ;;
             dnf)
-                sudo dnf install -y python3 python3-venv python3-pip
+                sudo dnf install -y python3 python3-pip
                 ;;
             yum)
-                sudo yum install -y python3 python3-venv python3-pip
+                sudo yum install -y python3 python3-pip
                 ;;
         esac
     fi
@@ -99,8 +99,15 @@ check_and_activate_venv() {
     echo "Checking virtual environment..."
 
     # 1) Prefer VIRTUAL_ENV if set
-    if [ -n "${VIRTUAL_ENV:-}" ] && [ -f "$VIRTUAL_ENV/bin/activate" ]; then
+    if [ -n "${VIRTUAL_ENV:-}" ]; then
         VENV_PATH="$VIRTUAL_ENV"
+
+        if [ ! -f "$VENV_PATH/bin/activate" ]; then
+            echo "VIRTUAL_ENV is set but no bin/activate found."
+            echo "Creating virtual environment at $VENV_PATH..."
+            "$PYTHON_VERSION" -m venv "$VENV_PATH"
+        fi
+
         activate_venv
         return
     fi
