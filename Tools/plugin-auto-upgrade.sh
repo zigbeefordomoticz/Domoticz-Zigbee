@@ -124,7 +124,7 @@ if [ "$VENV" = true ]; then
         V2)
             echo "[main] Running Tools/plugin-auto-upgrade-v2.sh with PYTHONPATH='$VENV_ROOT'"
             cleanup_venv_full "$VENV_ROOT"
-            PYTHONPATH="$VENV_ROOT" bash Tools/plugin-auto-upgrade-v2.
+            bash Tools/plugin-auto-upgrade-v2.sh
             ret=$?   # capture exit code
             ;;
         *)
