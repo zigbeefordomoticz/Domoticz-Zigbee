@@ -39,6 +39,23 @@ check_venv() {
     VENV_ROOT=""
     echo "[check_venv] Starting check for PYTHONPATH='$PYTHONPATH'"
 
+    #
+    # 1) Authoritative check: VIRTUAL_ENV
+    #
+    if [ -n "$VIRTUAL_ENV" ] && [ -f "$VIRTUAL_ENV/bin/activate" ]; then
+        VENV=true
+        VENV_VERSION="V2"
+        VENV_ROOT="${VIRTUAL_ENV%/}"
+
+        echo "[check_venv] Detected virtualenv via VIRTUAL_ENV (V2)"
+        echo "[check_venv] Venv root set to '$VENV_ROOT'"
+        return
+    fi
+
+    #
+    # 2) Fallback: PYTHONPATH inspection
+    #
+
     # Return if PYTHONPATH is empty
     if [ -z "$PYTHONPATH" ]; then
         echo "[check_venv] PYTHONPATH is empty or not set."
