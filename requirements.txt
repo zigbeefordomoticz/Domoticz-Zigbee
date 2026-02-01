@@ -11,3 +11,7 @@ zigpy_deconz
 bellows
 requests
 distro
+pyserial
+charset-normalizer
+jsonschema
+cryptography
