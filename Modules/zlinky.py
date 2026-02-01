@@ -375,7 +375,8 @@ def update_zlinky_device_model_if_needed(self, nwkid):
     zlinky_conf = linky_device_conf(self, nwkid)
 
     if not linky_upgrade_authorized(model_name, zlinky_conf):
-        self.log.logging("ZLinky", "Log", f"Not authorized to adjust ZLinky model from {model_name} to {zlinky_conf}")
+        if zlinky_conf != model_name:
+            self.log.logging("ZLinky", "Log", f"Not authorized to adjust ZLinky model from {model_name} to {zlinky_conf}")
         return
 
     self.log.logging("ZLinky", "Status", f"Adjusting ZLinky model from {model_name} to {zlinky_conf}")
