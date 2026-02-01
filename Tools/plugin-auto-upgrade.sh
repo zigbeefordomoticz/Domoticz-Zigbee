@@ -119,19 +119,25 @@ if [ "$VENV" = true ]; then
         V1)
             echo "[main] Running Tools/plugin-auto-upgrade-v1.sh with PYTHONPATH='$VENV_ROOT'"
             PYTHONPATH="$VENV_ROOT" bash Tools/plugin-auto-upgrade-v1.sh
+            ret=$?   # capture exit code
             ;;
         V2)
             echo "[main] Running Tools/plugin-auto-upgrade-v2.sh with PYTHONPATH='$VENV_ROOT'"
             cleanup_venv_full "$VENV_ROOT"
-            PYTHONPATH="$VENV_ROOT" bash Tools/plugin-auto-upgrade-v2.sh
+            PYTHONPATH="$VENV_ROOT" bash Tools/plugin-auto-upgrade-v2.
+            ret=$?   # capture exit code
             ;;
         *)
             echo "[main] Unknown VENV_VERSION='$VENV_VERSION', default to V1."
             bash Tools/plugin-auto-upgrade-v1.sh
+            ret=$?   # capture exit code
             ;;
     esac
 else
     echo "[main] No venv detected, default to V1."
     bash Tools/plugin-auto-upgrade-v1.sh
+    ret=$?   # capture exit code
 
 fi
+echo "[main] Upgrade script exited with code $ret"
+exit $ret   # propagate the exit code from the upgrade script
