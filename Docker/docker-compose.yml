@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: dockerfile
-    image: domoticz-custom:latest
+    image: domoticz-custom:stable
     container_name: domoticz
     restart: unless-stopped
 
@@ -15,6 +15,9 @@ services:
       - "443:443"
       - "8080:8080"
       - "9440:9440"
+
+    logging:
+      driver: "journald"
 
     volumes:
       - ./userdata:/opt/domoticz/userdata

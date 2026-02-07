@@ -37,7 +37,7 @@
 ###############################################################################
 
 # Base image
-FROM domoticz/domoticz:latest
+FROM domoticz/domoticz:stable
 
 # Set timezone
 ENV TZ=Europe/Paris
