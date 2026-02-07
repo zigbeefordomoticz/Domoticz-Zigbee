@@ -152,7 +152,7 @@ rebuild_image() {
         echo "[DRY-RUN] Would rebuild image ${IMAGE_NAME} using $DOCKER_COMPOSE_FILE"
     else
         echo "Rebuilding image ${IMAGE_NAME}..."
-        $DOCKER_COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" build --no-cachecp dock    --progress=plain
+        $DOCKER_COMPOSE_CMD -f "$DOCKER_COMPOSE_FILE" build --no-cache  --progress=plain
     fi
 }
 
