@@ -1,0 +1,80 @@
+###############################################################################
+# Dockerfile for Domoticz Zigbee4Domoticz Plugin
+#
+# Purpose:
+#   This Dockerfile builds a custom Domoticz image with pre-installed Python
+#   dependencies required by the Zigbee4Domoticz plugin. It is designed to work
+#   with a persistent plugin folder mounted from the host, so plugin updates
+#   survive container restarts and system reboots.
+#
+# Features:
+#   - Based on the official domoticz/domoticz:latest image
+#   - Sets timezone to Europe/Paris
+#   - Installs essential system packages for plugin operation and management
+#   - Pre-installs Python dependencies from the plugin's requirements.txt
+#     to speed up first container start
+#   - Ensures persistent plugin folder exists under /opt/domoticz/userdata/plugins
+#   - Copies the plugin-auto-upgrade.sh script for optional first-start updates
+#   - Keeps container image clean by removing temporary files after build
+#
+# Usage Notes:
+#   - The actual plugin files should live in a Docker volume, typically mapped
+#     from the host: ./userdata/plugins/Domoticz-Zigbee:/opt/domoticz/userdata/plugins/Domoticz-Zigbee
+#   - Plugin auto-upgrades can be executed inside the container without rebuilding
+#   - Rebuild the image only when Python dependencies change
+#
+# Volumes:
+#   - /opt/domoticz/userdata/plugins/Domoticz-Zigbee  (plugin directory, persistent)
+#   - ./userdata                                      (host directory mapped to userdata)
+#
+# Build Command:
+#   docker build -t domoticz-custom:latest .
+#
+# Notes:
+#   - pip notices about upgrades are suppressed by installing dependencies
+#     during image build
+#   - SSH known hosts are pre-populated to allow git access from the container
+###############################################################################
+
+# Base image
+FROM domoticz/domoticz:latest
+
+# Set timezone
+ENV TZ=Europe/Paris
+
+# Install required system packages
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        iputils-ping \
+        vim \
+        openssh-client \
+        python3-venv \
+        python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Ensure plugin folder exists in the userdata volume
+RUN mkdir -p /opt/domoticz/userdata/plugins/Domoticz-Zigbee \
+    && mkdir -p /root/.ssh \
+    && ssh-keyscan github.com >> /root/.ssh/known_hosts
+
+# Copy only requirements.txt and plugin-auto-upgrade script to install dependencies
+# This will speed up first start
+COPY userdata/plugins/Domoticz-Zigbee/requirements.txt /tmp/plugin-requirements.txt
+COPY userdata/plugins/Domoticz-Zigbee/constraints.txt /tmp/constraints.txt
+COPY userdata/plugins/Domoticz-Zigbee/Tools/plugin-auto-upgrade.sh /tmp/plugin-auto-upgrade.sh
+
+# Check pip version and update
+RUN pip3 install pip --upgrade
+
+# Install Python dependencies during image build
+RUN if [ -f /tmp/plugin-requirements.txt ]; then \
+        pip3 install --no-cache-dir -r /tmp/plugin-requirements.txt; \
+    fi
+
+# Make the auto-upgrade script executable (optional, can be run inside container)
+RUN chmod +x /tmp/plugin-auto-upgrade.sh
+
+# Cleanup temporary files
+RUN rm -f /tmp/plugin-requirements.txt
+# Keep plugin-auto-upgrade.sh in /tmp for first-start usage if needed
+
