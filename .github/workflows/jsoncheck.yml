@@ -1,31 +1,38 @@
 name: JSON Syntax Check
 
 on:
-  push:
+  pull_request:
     paths:
       - '**/*.json'
-  pull_request:
+  push:
     paths:
       - '**/*.json'
 
 jobs:
   json_check:
-    name: Validate JSON files
+    name: Validate changed JSON files
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout repository with full history and all branches
+      # 1️⃣ Checkout repository (no need for full main branch)
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0
-          fetch-all: true
+          fetch-depth: 2   # enough for PR diffs
 
-      # Run Super-Linter
-      - name: Lint JSON files
+      # 2️⃣ Get list of changed JSON files
+      - name: List changed JSON files
+        id: changed_files
+        run: |
+          echo "CHANGED_JSON=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- '*.json' | paste -sd ',' -)" >> $GITHUB_ENV
+          echo "Changed JSON files: $CHANGED_JSON"
+
+      # 3️⃣ Run Super-Linter only on changed JSON files
+      - name: Lint changed JSON files
+        if: env.CHANGED_JSON != ''
         uses: github/super-linter@v6
         env:
           VALIDATE_JSON: true
-          DEFAULT_BRANCH: main        # ensure linter knows the default branch
+          FILES: ${{ env.CHANGED_JSON }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
