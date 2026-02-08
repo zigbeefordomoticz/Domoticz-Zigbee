@@ -18,6 +18,15 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
+## Feb. 2026 - Stable7.1.027 ( 2026.1)
+
+- End of stable7 support. Kindly move to stable8 branche.
+  This plugin version is not anymore supported, please upgrade to stable8 branch if you want to benefit from the plugin evolutions
+  The 'stable8' branch requires Python 3.11 or above.
+  You may run the following command (while Domoticz and plugin still run)  to switch to the supported branch: 
+         - from command line line under the Domoticz-Zigbee folder, run Tools/plugin-switch-stable8.sh
+         - When performed, go back to Zigbee4Domoticz WebUI and perform and plugin upgrade from the Admin menu
+         
 ## Dec. 2025 - Stable7.1.026 ( 2025.7)
 
 - [Issue] - Fix OTA not working for Legrand and Philips Hue.
