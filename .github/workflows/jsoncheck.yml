@@ -14,17 +14,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the repository with full history
+      # Checkout repository with full history and all branches
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          fetch-all: true
 
       # Run Super-Linter
       - name: Lint JSON files
         uses: github/super-linter@v6
         env:
           VALIDATE_JSON: true
-          DEFAULT_BRANCH: main
+          DEFAULT_BRANCH: main        # ensure linter knows the default branch
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
