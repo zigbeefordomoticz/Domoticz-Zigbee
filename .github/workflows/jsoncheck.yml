@@ -1,19 +1,26 @@
-name: JSON check
+name: JSON Syntax Check
 
 on:
   push:
     paths:
-      - '**.json'
+      - '**/*.json'
   pull_request:
-      paths:
-      - '**.json'
+    paths:
+      - '**/*.json'
 
 jobs:
-  test:
+  json_check:
+    name: Validate JSON files
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v2
-      - name: json-syntax-check
+      # Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # JSON syntax validation
+      - name: Check JSON syntax
         uses: limitusus/json-syntax-check@v1
         with:
-          pattern: "\\.json$"
+          pattern: "**/*.json"
+

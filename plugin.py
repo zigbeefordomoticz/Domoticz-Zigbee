@@ -16,7 +16,7 @@
         <h1> Plugin Zigbee for domoticz</h1><br/>
             <br/><h2> Informations</h2><br/>
                 <ul style="list-style-type:square">
-                    <li>&Documentations : &<a href="https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Home.md">English wiki</a>|<a href="https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/fr-fr/Home.md">Wiki Français</a></li>
+                    <li>&Documentations : &<a href="https://zigbeefordomoticz.github.io/wiki/en-eng/">English wiki</a>|<a href="https://zigbeefordomoticz.github.io/wiki/fr-fr/">Wiki Français</a></li>
                     <li>&Forums : &<a href="https://www.domoticz.com/forum/viewforum.php?f=68">English (www.domoticz.com)</a>|<a href="https://easydomoticz.com/forum/viewforum.php?f=28">Français (www.easydomoticz.com)</a></li>
                     <li>&List of supported devices : &<a href="https://zigbee.blakadder.com/z4d.html">www.zigbee.blakadder.com</a></li>
                 </ul>
@@ -126,7 +126,6 @@ import json
 import os
 import os.path
 import pathlib
-import re
 import sys
 import threading
 import time
@@ -198,8 +197,6 @@ from Modules.zigpyBackup import handle_zigpy_backup
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
 
 #import tracemalloc
-
-
 
 VERSION_FILENAME = ".hidden/VERSION"
 
