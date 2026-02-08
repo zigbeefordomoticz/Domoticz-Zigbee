@@ -1,6 +1,8 @@
 name: Stale
 
-# yamllint disable-line rule:truthy
+# Workflow triggers:
+# - Scheduled: every hour
+# - Manual trigger
 on:
   schedule:
     - cron: "0 * * * *"
@@ -10,12 +12,13 @@ jobs:
   stale:
     runs-on: ubuntu-latest
     steps:
-      # The 60 day stale policy
-      # Used for:
-      # - Issues & PRs
-      # - No PRs marked as no-stale
-      # - No issues marked as no-stale or help-wanted
-      - name: 180 days stale issues & PRs policy
+      # -----------------------------
+      # General stale policy for issues & PRs
+      # - Issues/PRs inactive for 60 days
+      # - Exempts: pinned, security, no-stale, help-wanted
+      # - Closes after 7 days of being stale
+      # -----------------------------
+      - name: 60-day stale policy for issues & PRs
         uses: actions/stale@v4
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
@@ -41,19 +44,23 @@ jobs:
             There hasn't been any activity on this pull request recently. This
             pull request has been automatically marked as stale because of that
             and will be closed if no further activity occurs within 7 days.
-            Thank you for your contributions
-      # The 30 day stale policy for issues
-      # Used for:
-      # - Issues that are pending more information (incomplete issues)
-      # - No Issues marked as no-stale or help-wanted
-      # - No PRs (-1)
-      - name: Needs more information stale issues policy
+            Thank you for your contributions.
+
+      # -----------------------------
+      # Special stale policy for "needs-more-information" issues
+      # - Only affects issues with label "needs-more-information"
+      # - Stale after 30 days
+      # - Closes after 7 days
+      # - Does not affect PRs
+      # -----------------------------
+      - name: 30-day stale policy for "needs-more-information" issues
         uses: actions/stale@v4
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           only-labels: "needs-more-information"
           days-before-stale: 30
           days-before-close: 7
+          # -1 disables closing PRs in this step
           days-before-pr-close: -1
           operations-per-run: 50
           remove-stale-when-updated: true
@@ -69,3 +76,4 @@ jobs:
             comment 👍
             This issue has now been marked as stale and will be closed if no
             further activity occurs. Thank you for your contributions.
+
