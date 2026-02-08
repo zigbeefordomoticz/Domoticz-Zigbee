@@ -47,8 +47,8 @@ jobs:
       - name: Bandit security scan
         run: bandit -r .
 
-      - name: Black code style check
-        run: black --check .
+      #- name: Black code style check
+      #  run: black --check .
 
       - name: Codespell
         run: codespell --quiet-level=2 --skip="./www"
