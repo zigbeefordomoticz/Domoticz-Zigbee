@@ -18,9 +18,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # JSON syntax validation
-      - name: Check JSON syntax
-        uses: limitusus/json-syntax-check@v1
-        with:
-          pattern: "**/*.json"
+      # Run Super-Linter
+      - name: Lint JSON files
+        uses: github/super-linter@v6
+        env:
+          VALIDATE_JSON: true
+          DEFAULT_BRANCH: main
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
