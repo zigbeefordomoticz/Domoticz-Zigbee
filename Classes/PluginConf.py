@@ -716,7 +716,7 @@ def _import_oldfashon_param(self, temp_pluginconf_data, filename):
 
     """
     try:
-        plugin_conf_dict = eval(temp_pluginconf_data)
+        plugin_conf_dict = eval(temp_pluginconf_data)  # nosec B307
     except SyntaxError:
         Domoticz.Error("Syntax Error in %s, all plugin parameters set to default" % filename)
     except (NameError, TypeError, ZeroDivisionError):

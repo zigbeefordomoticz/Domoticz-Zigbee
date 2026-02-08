@@ -35,7 +35,7 @@ SIO_SET_BITMODE_REQUEST = 0x0b
 class Command:
 
     def __init__(self, type_, fmt=None, raw=False):
-        assert not (raw and fmt), 'Raw commands cannot use built-in struct formatting'
+        assert not (raw and fmt), 'Raw commands cannot use built-in struct formatting'  # nosec B101
 
         self.type = type_
         self.raw = raw

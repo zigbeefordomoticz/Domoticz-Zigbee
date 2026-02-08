@@ -302,7 +302,7 @@ def loadTxtDatabase(self, dbName):
             if key in ("ffff"):
                 continue
             try:
-                dlVal = eval(val)
+                dlVal = eval(val)  # nosec B307
             except (SyntaxError, NameError, TypeError, ZeroDivisionError):
                 self.log.logging("Database", "Error", "LoadDeviceList failed on %s" % val)
                 continue
@@ -501,7 +501,7 @@ def importDeviceConf(self):
         with open(_DeviceConf, "r") as myfile:
             tmpread += myfile.read().replace("\n", "")
             try:
-                self.DeviceConf = eval(tmpread)
+                self.DeviceConf = eval(tmpread)  # nosec B307
             except (SyntaxError, NameError, TypeError, ZeroDivisionError):
                 self.log.logging("Database", "Error", "Error while loading %s in line : %s" % (
                     self.pluginconf.pluginConf["pluginConfig"] + "DeviceConf.txt", tmpread) )

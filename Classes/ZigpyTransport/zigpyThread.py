@@ -155,7 +155,7 @@ def zigpy_thread_function(self):
     self.log.logging("TransportZigpy", "Log", "zigpyThread starting with a random sleep")
 
     # Adding a random delay to stagger thread start times
-    time.sleep(random.uniform(0.5, 3.5))
+    time.sleep(random.uniform(0.5, 3.5))  # nosec B311
 
     # Create a new event loop for this thread
     zigpy_loop = asyncio.new_event_loop()

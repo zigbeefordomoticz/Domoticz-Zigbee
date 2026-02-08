@@ -67,6 +67,7 @@ import math
 import os
 import socket
 import struct
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -2040,8 +2041,12 @@ def trace_ota_block(self, dest_addr, image_type_hex, offset, size, sequence, raw
         timestamp | seq | offset | size | data_hex
     """
     filename = f"ota_blocks_{dest_addr}_{image_type_hex}.log"
-    log_path = self.pluginconf.pluginConf.get("pluginLogs", "/tmp")
-    full_path = os.path.join(log_path, filename)
+    # Use the plugin config if set, else a secure temp directory
+    log_dir = self.pluginconf.pluginConf.get("pluginLogs")
+    if log_dir is None:
+        log_dir = tempfile.mkdtemp(prefix="ota_logs_")  # creates a unique temp dir
+
+    full_path = os.path.join(log_dir, filename)
 
     # Convert bytes → hex string
     data_hex = raw_ota_data.hex()

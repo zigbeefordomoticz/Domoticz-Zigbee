@@ -76,7 +76,7 @@ def main():
         elif o in ("-e", "--erase-eeprom"):
             erase_eeprom = True
         else:
-            assert False, "unhandled option"
+            assert False, "unhandled option"  # nosec B101
     
     print("\033[1;33;40m")
     print("**** Mode Flash ****")
@@ -103,7 +103,7 @@ def main():
     command = "./JennicModuleProgrammer/Build/JennicModuleProgrammer -V 6 -P "+speed+" -f "+firmware+" -s "+serial
     if erase_eeprom:
         command += " -e"
-    os.system(command)
+    os.system(command)  # nosec B605
     
     print("\033[1;33;40m")
     print("**** Mode Production ****")

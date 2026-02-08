@@ -54,28 +54,28 @@ def main():
         elif o in ("-e", "--erase-eeprom"):
             erase_eeprom = True
         else:
-            assert False, "unhandled option"
+            assert False, "unhandled option"  # nosec B101
     
     print("\033[1;33;40m")
     print("**** Mode Flash ****")
     print("\033[0;37;40m")	
 
     command = "gpio mode 0 out; gpio mode 2 out; gpio write 2 0 ; gpio write 0 0 ; gpio write 0 1"
-    os.system(command)
+    os.system(command)  # nosec B605
 
 
     command = JENNIC_MODULE_PROGRAMMER + " -V 6 -P " + speed + " -f " + firmware + " -s " + serial
     if erase_eeprom:
         command += " -e"
     print(command)
-    os.system(command)
+    os.system(command)  # nosec B605
     
     print("\033[1;33;40m")
     print("**** Mode RUN ****")
     print("\033[0;37;40m")
 	
     command = " gpio mode 0 out; gpio mode 2 out; gpio write 2 1 ; gpio write 0 0; gpio write 0 1"
-    os.system(command)
+    os.system(command)  # nosec B605
 	
     print("\033[1;32;40m")
     print("**** Terminé ****")

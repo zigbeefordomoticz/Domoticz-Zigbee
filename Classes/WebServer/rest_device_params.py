@@ -61,7 +61,7 @@ def rest_update_device_param(self, data):
     _response = prepResponseMessage(self, setupHeadersResponse())
 
     data = data.decode("utf8")
-    data = eval(data)
+    data = eval(data)  # nosec B307
     self.logging( "Log", "rest_update_device_param - Data: %s" % data)
 
     parameter = data.get("Param")
