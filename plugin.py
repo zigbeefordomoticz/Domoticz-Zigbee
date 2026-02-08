@@ -1773,51 +1773,51 @@ def debuging_information(self, mode):
         self.log.logging("Plugin", mode, "%s: %s" % (info_name, info_value))
 
  
-global _plugin  # pylint: disable=global-variable-not-assigned
+global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
 _plugin = BasePlugin()
 
 
 def onStart():
-    global _plugin  # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     _plugin.onStart()
 
 
 def onStop():
-    global _plugin  # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     _plugin.onStop()
 
 
 #def onDeviceRemoved(DeviceID, Unit):
 def onDeviceRemoved( Unit):
-    global _plugin  # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     #_plugin.onDeviceRemoved(DeviceID, Unit)
     _plugin.onDeviceRemoved( Unit)
 
 
 def onConnect(Connection, Status, Description):
-    global _plugin  # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     _plugin.onConnect(Connection, Status, Description)
 
 
 def onMessage(Connection, Data):
-    global _plugin  # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     _plugin.onMessage(Connection, Data)
 
 
 #def onCommand(DeviceID, Unit, Command, Level, Color):
 def onCommand(Unit, Command, Level, Color):
-    global _plugin
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     #_plugin.onCommand(DeviceID, Unit, Command, Level, Color)
     _plugin.onCommand( Unit, Command, Level, Color)
 
 
 def onDisconnect(Connection):
-    global _plugin  # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     _plugin.onDisconnect(Connection)
 
 
 def onHeartbeat():
-    global _plugin  # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     _plugin.onHeartbeat()
 
 
