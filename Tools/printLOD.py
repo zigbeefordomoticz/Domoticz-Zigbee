@@ -39,13 +39,13 @@ def process_file(filename):
             key, val = line.split(":", 1)
             key = key.replace(" ", "").replace("'", "")
 
-            dlVal = eval(val)
+            dlVal = eval(val)  # B307
             print("%-10s %s" % ('NwkID', key))
             for i, j in dlVal.items():
                 if i == 'Ep':
                     # Ep {'01': {'0000': {}, 'ClusterType': {'576': 'ColorControl'}, '0003': {}, '0004': {}, '0005': {}, '0006': '00', '0008': {}, '0300': {}, '0b05': {}, '1000': {}}}
                     print("Ep")
-                    j = eval(str(j))
+                    j = eval(str(j))  # B307
                     for k, l in j.items():
                         print("           %-10s %s" % (k, l))
                 else:

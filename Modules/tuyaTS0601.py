@@ -194,7 +194,7 @@ def read_uint8(data, offset):
 
 def evaluate_expression_with_data(self, expression, value):
     try:
-        return eval( expression )
+        return eval( expression )  # B307
         
     except NameError as e:
         self.log.logging("ZclClusters", "Error", "Undefined variable, please check the formula %s or value %s" %(

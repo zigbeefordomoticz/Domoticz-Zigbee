@@ -156,8 +156,8 @@ def _build_update_cmd(self, curl_command, auth_opts, url_base_api, plugin, erase
         "Address": "address",
         "Port": "port",
         "SerialPort": "serialport",
-        "Username": "username",
-        "Password": "password",
+        "Username": "username",  # nosec B105
+        "Password": "password",  # nosec B105
     }
 
     for domoticz_key, api_key in optional_fields_map.items():

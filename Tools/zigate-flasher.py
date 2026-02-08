@@ -77,13 +77,12 @@ class Response:
         return self.status == 0
 
     def __str__(self):
-        return 'Response(type=0x%02x, data=0x%s, checksum=0x%02x)' % (
-                self.type, self.data.hex(), self.chksum)
+        return 'Response(type=0x%02x, data=0x%s, checksum=0x%02x)' % ( self.type, self.data.hex(), self.chksum)
 
 
 
 def register(type_):
-    assert type_ not in _responses, 'Duplicate response type 0x%02x' % type_
+    assert type_ not in _responses, 'Duplicate response type 0x%02x' % type_    # B101
 
     def decorator(func):
         _responses[type_] = func
