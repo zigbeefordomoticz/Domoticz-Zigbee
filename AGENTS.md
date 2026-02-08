@@ -1,5 +1,20 @@
 # AGENTS.md — Zigbee4Domoticz (Domoticz-Zigbee)
 
+## 🎯 Purpose of this File
+
+This file provides **mandatory guidance for AI coding agents** working on the
+**Zigbee4Domoticz / Domoticz-Zigbee** repository.
+
+Its goals:
+- Provide architecture and runtime context
+- Prevent unsafe or incompatible changes
+- Align agents with Domoticz + Zigbee + zigpy constraints
+- Preserve long-term stability and backward compatibility
+
+Agents **must read and follow this file before proposing changes**.
+
+---
+
 ## ✅ Agent Quick Checklist (Read First)
 
 Before writing or proposing any code change, verify ALL of the following:
@@ -7,12 +22,12 @@ Before writing or proposing any code change, verify ALL of the following:
 ### Environment
 - [ ] Python ≥ 3.11
 - [ ] Domoticz ≥ 2025.2
-- [ ] Target branch is correct (`stable8` for production)
+- [ ] Target branch is `stable8` for production
 
 ### Architecture
-- [ ] `plugin.py` remains thin (no business logic added)
-- [ ] Core logic lives in `Modules/`
-- [ ] No UI code added (UI lives in separate repo)
+- [ ] `plugin.py` remains thin (orchestration only)
+- [ ] Core logic lives in `Modules/` and `Zigbee/`
+- [ ] No UI code added here (UI lives in separate repo)
 
 ### Zigbee / zigpy Safety
 - [ ] No blocking calls (`sleep`, blocking I/O)
@@ -22,13 +37,13 @@ Before writing or proposing any code change, verify ALL of the following:
 
 ### Devices
 - [ ] Device behavior comes from z4d-certified-devices JSON
-- [ ] No hardcoded device logic unless absolutely unavoidable
+- [ ] No hardcoded device logic unless unavoidable
 - [ ] Existing certified devices are not broken
 
 ### Stability
 - [ ] No breaking changes
 - [ ] No persistent data format changes
-- [ ] Upgrades from previous versions remain safe
+- [ ] Upgrades remain safe
 
 ### Logging & Errors
 - [ ] Logs are useful, not noisy
@@ -36,302 +51,130 @@ Before writing or proposing any code change, verify ALL of the following:
 
 If **any box cannot be checked**, stop and reassess.
 
-
-## 🎯 Purpose of this File
-
-This file defines **mandatory guidance for AI coding agents** working on the
-**Zigbee4Domoticz / Domoticz-Zigbee** project.
-
-Its goals are to:
-- Provide architectural and runtime context
-- Prevent unsafe or incompatible changes
-- Align agents with Domoticz, Zigbee, and zigpy constraints
-- Preserve long-term stability and backward compatibility
-
-Agents **must read and follow this file before proposing changes**.
-
 ---
 
 ## 📌 Project Overview
 
 **Project:** Zigbee4Domoticz (Domoticz-Zigbee)  
-**Repository:** https://github.com/zigbeefordomoticz/Domoticz-Zigbee  
+**Repo:** https://github.com/zigbeefordomoticz/Domoticz-Zigbee  
 **Type:** Domoticz Python plugin  
-**Purpose:** Full-featured Zigbee integration for Domoticz using `zigpy`
-and multiple radio backends.
+**Purpose:** Full-featured Zigbee integration for Domoticz using `zigpy` + multiple radio backends.
 
-This project is:
-- Production-grade
-- Long-running and stateful
-- Used in real homes and critical automation setups
-- Strongly focused on **stability over novelty**
+- Production-grade, long-running, and stateful
+- Supports multiple coordinators: ZiGate, ZNP, EZSP, deCONZ
+- Handles hundreds of certified devices via JSON configs
 
 ---
 
-## ⚙️ Supported Runtime Environment (Strict)
+## 🧠 High-Level Architecture (Actual Layout)
 
-### Python
+Domoticz (host)
+├── plugin.py # entry point — Domoticz calls
+├── Classes/ # core controllers & utilities
+├── Modules/ # plugin helpers, parameter management
+├── Zigbee/ # zigpy stack & radio adapters
+├── DevicesModules/ # per-device logic based on certified JSON
+├── Z4D_decoders/ # device decoder definitions
+├── Tools/ # CLI, scripts, and maintenance
+├── www/z4d/ # minimal web assets (UI lives in separate repo)
+└── Config / Data / Logs # persistent user data, network states
 
-- **Python 3.11 or above**
-- Runs inside **Domoticz embedded Python**
-- No assumptions about:
-  - virtualenv availability
-  - pip version
-  - internet access
-  - system-wide packages
-
-### Domoticz
-
-- **Domoticz 2025.2 or above**
-- Plugin lifecycle, threading, and logging are controlled by Domoticz
-
-🚫 **Blocking Domoticz callbacks will freeze Domoticz**
-
----
-
-## 🌿 Branching & Release Model
-
-- **Production branch:** `stable8`
-- Other branches may exist for development or testing
-- Agents must assume `stable8` is:
-  - Backward compatible
-  - Upgrade-safe
-  - User-facing
-
-🚫 Do not introduce breaking changes on `stable8`
-
----
-
-## 🧠 High-Level Architecture
-
-Domoticz-Zigbee
-└── plugin.py (entry point, Domoticz callbacks)
-├── Classes/ (core logic: radios, zigpy )
-├── Modules/ (core logic: clusters, devices)
-├── Tools/ (utilities, scripts, helpers)
-└── www/ (minimal static assets, if any)
-
-
-### Key Structural Rules
-
-- `plugin.py` is the **only entry point**
-- `Modules/` contains most of the logic:
-  - zigpy integration
-  - radio handling
-  - clusters
-  - device support
-  - network management
-- Keep `plugin.py` thin — orchestration only
 
 ---
 
 ## 🔌 Zigbee Stack & Dependencies
 
-This plugin uses:
-
-- `zigpy`
-- Radio libraries:
-  - `zigpy-znp`
-  - `bellows`
-  - `deconz`
-  - `zigpy-zigate`
-
-### Important Notes
-
-- zigpy is **asyncio-based**
-- Radio behavior differs per backend
-- Timing, retries, and state handling are critical
+- `zigpy` core
+- Radio libraries: `zigpy-znp`, `bellows`, `deconz`, `zigpy-zigate`
+- Async-first event model (critical for stability)
 
 🚫 DO NOT:
 - Block the event loop
-- Mix blocking I/O with zigpy calls
-- Start new event loops inside running ones
-- Add async logic without understanding existing flow
+- Mix synchronous calls in async paths
+- Start independent event loops
 
 ✅ DO:
-- Follow existing async patterns
-- Reuse established schedulers and helpers
-- Respect radio-specific abstractions
+- Use existing async patterns
+- Reuse schedulers
+- Respect radio backend differences
 
 ---
 
-## 🧵 Threading & Concurrency Rules (Critical)
+## 📦 Device Handling
 
-Concurrency in this project is **carefully controlled**.
+- Device behavior is **driven by JSON configs** from:
+  https://github.com/zigbeefordomoticz/z4d-certified-devices
 
 🚫 DO NOT:
-- Add new threads casually
-- Use `time.sleep()`
-- Use `asyncio.run()` in plugin context
-- Spawn background threads without coordination
+- Hardcode devices
+- Duplicate certified behavior
+
+✅ DO:
+- Extend behavior generically
+- Preserve certified device support
+
+---
+
+## 🌐 Web UI
+
+- Web UI is maintained separately:  
+  https://github.com/zigbeefordomoticz/Domoticz-Zigbee-UI
+
+🚫 DO NOT add UI logic here or modify assets.
+
+---
+
+## 📚 Documentation
+
+- Wiki and user documentation live here:  
+  https://github.com/zigbeefordomoticz/wiki
+
+---
+
+## 🧵 Threading & Concurrency
+
+🚫 DO NOT:
+- Add threads casually
+- Use `time.sleep()` or blocking I/O
+- Spawn event loops
 
 ✅ DO:
 - Use existing threading / async helpers
 - Keep concurrency explicit and minimal
 - Preserve Domoticz responsiveness
 
-If unsure → **do not add concurrency**
-
 ---
 
-## 🧩 Device Handling & Certification
+## 🌿 stable8 Branch Discipline
 
-- Devices are **not hardcoded**
-- Device definitions are driven by JSON files from:
-
-👉 https://github.com/zigbeefordomoticz/z4d-certified-devices
-
-### Implications
+`stable8` is the **production branch**. It must be:
+- Upgrade-safe
+- Backward compatible
+- Stable for critical automations
 
 🚫 DO NOT:
-- Embed device-specific logic where JSON config exists
-- Duplicate certified device behavior
-- Break compatibility with existing device definitions
+- Introduce breaking changes
+- Modify persistent data formats
+- Refactor core behaviors for elegance
 
 ✅ DO:
-- Extend or fix behavior in a generic way
-- Respect the certification mechanism
-
----
-
-## 🌐 Web UI (Important Separation)
-
-- The Web UI is **NOT in this repository**
-- It lives in a separate project:
-
-👉 https://github.com/zigbeefordomoticz/Domoticz-Zigbee-UI
-
-🚫 DO NOT:
-- Add UI logic here
-- Modify UI assets in this repo
-- Introduce frontend dependencies
-
-This repository focuses on **backend/plugin logic only**.
-
----
-
-## 📚 Documentation & Wiki
-
-- Documentation and user guides live here:
-
-👉 https://github.com/zigbeefordomoticz/wiki
-
-🚫 Do not embed long documentation in code
-✅ Prefer clear comments + external documentation updates
-
----
-
-## 📝 Coding Style & Practices
-
-### Python Style
-
-- Match existing code style
-- 4 spaces indentation
-- Explicit and readable logic preferred
-
-### Error Handling
-
-- Avoid blanket `try/except`
-- Errors should be:
-  - Logged
-  - Actionable
-  - Non-fatal when possible
-
-### Logging
-
-- Use Domoticz logging mechanisms
-- Avoid noisy logs in hot paths
-- Logs must help diagnose Zigbee issues
-
----
-
-## 🧪 Stability, Compatibility & Persistence
-
-This plugin manages:
-- Persistent Zigbee networks
-- Device databases
-- User configurations
-
-🚫 DO NOT:
-- Change data formats lightly
-- Reset networks implicitly
-- Break upgrades from older versions
-
-Backward compatibility is **mandatory** unless explicitly coordinated.
+- Bug fixes
+- Targeted stability improvements
+- Backward-compatible enhancements
 
 ---
 
 ## 🚨 What NOT To Do (Summary)
 
 ❌ Do NOT:
-- Rewrite large architectural components
-- Introduce blocking calls
-- Add uncontrolled threads
-- Assume latest OS or hardware
-- Hardcode device behavior
-- Modify UI or documentation repos from here
+- Rewrite large architecture
+- Introduce blocking calls or uncontrolled threads
+- Hardcode device logic
+- Modify UI or docs here
 
 ✅ DO:
-- Make small, focused changes
-- Respect existing patterns
-- Think like a long-term maintainer
-- Prioritize reliability and predictability
+- Make small, targeted changes
+- Respect existing async patterns
+- Preserve long-term stability
 
----
-
-## 🤝 Final Guidance for Agents
-
-If a proposed change:
-- Touches zigpy or radio logic
-- Impacts devices or clusters
-- Alters async or threading behavior
-- Affects persistent data
-
-➡️ Proceed conservatively and **explain the reasoning clearly**
-
-**Stability > Performance**  
-**Compatibility > Elegance**  
-**Predictability > Cleverness**
-
-## 🌿 stable8 Branch Discipline (Strict)
-
-`stable8` is the **production branch**.
-
-It is assumed to be:
-- Running in real homes
-- Controlling critical automations
-- Upgraded in-place by users
-
-### Rules for stable8
-
-🚫 DO NOT:
-- Introduce breaking changes
-- Change persistent data formats
-- Refactor for “cleanliness”
-- Modify zigpy behavior broadly
-- Change device semantics
-
-✅ ALLOWED:
-- Bug fixes
-- Targeted stability improvements
-- Radio-specific fixes
-- Backward-compatible enhancements
-
-### Change Evaluation Test
-
-Before modifying `stable8`, ask:
-
-1. Will existing installations behave the same?
-2. Will upgrades be safe without user action?
-3. Will Zigbee networks remain untouched?
-4. Would I deploy this to my own home?
-
-If **any answer is “no”**, the change does not belong in `stable8`.
-
----
-
-stable8 favors:
-**Predictability > Innovation**  
-**Safety > Performance**  
-**Continuity > Refactoring**
 
