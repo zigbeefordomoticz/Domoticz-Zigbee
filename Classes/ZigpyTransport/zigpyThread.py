@@ -94,6 +94,10 @@ def stop_zigpy_thread(self):
         self.writer_queue.put_nowait("STOP")
     self.zigpy_running = False
 
+    # Stop the Event Loop Monitoring if enabled
+    #if self.loop_latency_monitor:
+    #    self.loop_latency_monitor.cancel()
+
     # Make sure top the manualy started task
     if self.manual_topology_scan_task:
         self.manual_topology_scan_task.cancel()
@@ -125,7 +129,6 @@ def start_zigpy_thread(self):
     self.log.logging(["Transport", "StopProcess"], "Debug", f"Thread object: ZigpyCommunication_{self.hardwareid} {self.zigpy_thread}, alive={self.zigpy_thread.is_alive() if self.zigpy_thread else 'N/A'}")
     self.log.logging(["Transport", "StopProcess"], "Debug", f"Thread ident : ZigpyCommunication_{self.hardwareid} {self.zigpy_thread.ident if self.zigpy_thread else 'N/A'}")
     self.log.logging(["Transport", "StopProcess"], "Debug", f"Thread daemon: ZigpyCommunication_{self.hardwareid} {self.zigpy_thread.daemon if self.zigpy_thread else 'N/A'}")
-
 
 
 def setup_zigpy_thread(self):
@@ -166,6 +169,29 @@ def zigpy_thread_function(self):
         zigpy_loop.set_debug(True)
 
     self.log.logging("TransportZigpy", "Debug", f"zigpyThread EventLoop: {zigpy_loop}")
+
+    # ==========================
+    # Start loop latency monitor
+    # ==========================
+    if self.pluginconf.pluginConf.get("MonitorLoopLatency", False):
+        async def monitor_loop_latency(interval=1.0, threshold=0.2):
+            import time
+            try:
+                while True:
+                    start = time.monotonic()
+                    await asyncio.sleep(interval)
+                    delay = time.monotonic() - start - interval
+                    if delay > threshold:
+                        self.log.logging(
+                            "TransportZigpy",
+                            "Log",
+                            f"Event loop blocked for {delay:.3f}s"
+                        )
+            except asyncio.CancelledError:
+                return
+
+        # Schedule monitor as a background task
+        self.loop_latency_monitor = zigpy_loop.create_task(monitor_loop_latency())
 
     try:
         # Run the Zigpy task asynchronously
@@ -585,17 +611,20 @@ def optional_configuration_setup(self, config, radio_conf, set_extendedPanId, se
 
     # Enable Zigpy Watchdog by default
     config[zigpy.config.CONF_WATCHDOG_ENABLED] = True
-    
+
+    # Reduce the number of simultaneous APS transactions    
+    config[zigpy.config.CONF_MAX_CONCURRENT_REQUESTS] = 4
+
     # Config Zigpy db. if not defined, there is no persistent Db.
     if self.pluginconf.pluginConf.get("enableZigpyPersistentInFile"):
         data_folder = Path( self.pluginconf.pluginConf["pluginData"] )
         config[zigpy.config.CONF_DATABASE] = str(data_folder / ("zigpy_persistent_%02d.db"% self.hardwareid) )
-        config[zigpy.config.CONF_TOPO_SCAN_ENABLED] = True
+        config[zigpy.config.CONF_TOPO_SCAN_ENABLED] = bool( self.pluginconf.pluginConf["ZigpyAutoTopology"])
         config[zigpy.config.CONF_TOPO_SCAN_PERIOD] = 12 * 60  # 12 Hours
 
     elif self.pluginconf.pluginConf.get("enableZigpyPersistentInMemory"):
         config[zigpy.config.CONF_DATABASE] = ":memory:"
-        config[zigpy.config.CONF_TOPO_SCAN_ENABLED] = True
+        config[zigpy.config.CONF_TOPO_SCAN_ENABLED] = bool( self.pluginconf.pluginConf["ZigpyAutoTopology"])
         config[zigpy.config.CONF_TOPO_SCAN_PERIOD] = 12 * 60  # 12 Hours
 
     # Manage coordinator auto backup
@@ -608,6 +637,21 @@ def optional_configuration_setup(self, config, radio_conf, set_extendedPanId, se
     # Do we do energy scan at startup. By default it is set to False. Plugin might override it in the case of low number of devices.
     if "EnergyScanAtStatup" in self.pluginconf.pluginConf and not self.pluginconf.pluginConf["EnergyScanAtStatup"]:
         config[zigpy.config.CONF_STARTUP_ENERGY_SCAN] = False
+
+
+async def monitor_loop_latency(self, interval=1.0, threshold=0.2):
+    """
+    Monitors event loop starvation.
+    
+    interval: seconds between checks
+    threshold: delay in seconds considered significant
+    """
+    while True:
+        start = time.monotonic()
+        await asyncio.sleep(interval)
+        delay = time.monotonic() - start - interval
+        if delay > threshold:
+            self.log.logging( "TransportZigpy", f"⚠ Event loop blocked for {delay:.3f}s")
 
 
 async def _radio_startup(self, statistics, pluginconf, use_of_zigpy_persistent_db, new_network, radiomodule):

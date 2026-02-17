@@ -90,6 +90,7 @@ class ZigpyTransport(object):
         self.manual_topology_scan_task = None   # Store topology task when manual started
         self.manual_interference_scan_task = None   # Store topology task when manual started
 
+        self.loop_latency_monitor = None   # Manage the Event loop latency monitoring if enabled
         self.use_of_zigpy_persistent_db = self.pluginconf.pluginConf["enableZigpyPersistentInFile"] or self.pluginconf.pluginConf["enableZigpyPersistentInMemory"]
 
    
