@@ -179,6 +179,8 @@ def zigpy_thread_function(self):
                     delay = time.monotonic() - start - interval
                     if delay > threshold:
                         self.log.logging( "TransportZigpy", "Log", f"Event loop blocked for {delay:.3f}s")
+                    elif delay > 5:
+                        self.log.logging( "TransportZigpy", "Error", f"Event loop blocked for {delay:.3f}s")
 
             except asyncio.CancelledError:
                 self.log.logging( "TransportZigpy", "Log", f"Event loop monitoring stopped" )
