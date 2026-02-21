@@ -2,3 +2,6 @@ zigpy==0.91.5
 zigpy_znp==0.14.3
 zigpy_deconz==0.25.5
 bellows==0.49.0
+charset-normalizer==2.0.11
+jsonschema==4.17.3
+cryptography<=40.0.2
