@@ -38,7 +38,10 @@ Dependencies:
 """
 
 import dns.resolver
-import requests
+import urllib.request
+import urllib.error
+import socket
+#import requests
 
 PLUGIN_TXT_RECORD = "zigate_plugin.pipiche.net"
 ZIGATEV1_FIRMWARE_TXT_RECORD = "zigatev1.pipiche.net"
@@ -300,15 +303,27 @@ def is_zigate_firmware_available(self, currentMajorVersion, currentFirmwareVersi
     return False
 
 
-def is_internet_available():
-    """
-    Simple check to verify if Internet access is available.
+#def is_internet_available():
+#    """
+#    Simple check to verify if Internet access is available.
+#
+#    Returns:
+#        bool: True if Internet is reachable, False otherwise.
+#    """
+#    try:
+#        response = requests.get("https://www.google.com", timeout=3)
+#        return response.status_code == 200
+#    except requests.ConnectionError:
+#        return False
 
-    Returns:
-        bool: True if Internet is reachable, False otherwise.
-    """
+
+
+def is_internet_available():
     try:
-        response = requests.get("https://www.google.com", timeout=3)
-        return response.status_code == 200
-    except requests.ConnectionError:
+        with urllib.request.urlopen(
+            "https://www.google.com",
+            timeout=3
+        ) as response:
+            return response.status == 200
+    except (urllib.error.URLError, socket.timeout):
         return False
