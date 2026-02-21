@@ -94,10 +94,6 @@ def stop_zigpy_thread(self):
         self.writer_queue.put_nowait("STOP")
     self.zigpy_running = False
 
-    # Stop the Event Loop Monitoring if enabled
-    #if self.loop_latency_monitor:
-    #    self.loop_latency_monitor.cancel()
-
     # Make sure top the manualy started task
     if self.manual_topology_scan_task:
         self.manual_topology_scan_task.cancel()
@@ -174,7 +170,7 @@ def zigpy_thread_function(self):
     # Start loop latency monitor
     # ==========================
     if self.pluginconf.pluginConf.get("MonitorLoopLatency", False):
-        async def monitor_loop_latency(interval=1.0, threshold=0.2):
+        async def monitor_loop_latency(interval=1.0, threshold=3.5):
             import time
             try:
                 while True:
@@ -182,12 +178,10 @@ def zigpy_thread_function(self):
                     await asyncio.sleep(interval)
                     delay = time.monotonic() - start - interval
                     if delay > threshold:
-                        self.log.logging(
-                            "TransportZigpy",
-                            "Log",
-                            f"Event loop blocked for {delay:.3f}s"
-                        )
+                        self.log.logging( "TransportZigpy", "Log", f"Event loop blocked for {delay:.3f}s")
+
             except asyncio.CancelledError:
+                self.log.logging( "TransportZigpy", "Log", f"Event loop monitoring stopped" )
                 return
 
         # Schedule monitor as a background task
@@ -211,6 +205,10 @@ def zigpy_thread_function(self):
 
     finally:
         # Ensure the event loop is closed
+        # Stop the Event Loop Monitoring if enabled
+        #if self.loop_latency_monitor:
+        #    self.loop_latency_monitor.cancel()
+
         if not zigpy_loop.is_closed():
             zigpy_loop.close()
             self.log.logging("TransportZigpy", "Log", "Event loop closed successfully in zigpy_thread.")
@@ -637,21 +635,6 @@ def optional_configuration_setup(self, config, radio_conf, set_extendedPanId, se
     # Do we do energy scan at startup. By default it is set to False. Plugin might override it in the case of low number of devices.
     if "EnergyScanAtStatup" in self.pluginconf.pluginConf and not self.pluginconf.pluginConf["EnergyScanAtStatup"]:
         config[zigpy.config.CONF_STARTUP_ENERGY_SCAN] = False
-
-
-async def monitor_loop_latency(self, interval=1.0, threshold=0.2):
-    """
-    Monitors event loop starvation.
-    
-    interval: seconds between checks
-    threshold: delay in seconds considered significant
-    """
-    while True:
-        start = time.monotonic()
-        await asyncio.sleep(interval)
-        delay = time.monotonic() - start - interval
-        if delay > threshold:
-            self.log.logging( "TransportZigpy", f"⚠ Event loop blocked for {delay:.3f}s")
 
 
 async def _radio_startup(self, statistics, pluginconf, use_of_zigpy_persistent_db, new_network, radiomodule):
