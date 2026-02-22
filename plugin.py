@@ -98,15 +98,17 @@
             <description><br/><h3>Plugin debug</h3>This debugging option has been moved to the WebUI > Tools > Debug<br/></description>
                 <options>
                     <option label="None" value="0"  default="true" />
+                    <option label="Verbose" value="1"  default="true" />
                     <option label="Python Only" value="2"/>
                     <option label="Basic Debugging" value="62"/>
                     <option label="Basic+Messages" value="126"/>
-                    <option label="Connections Only" value="16"/>
-                    <option label="Connections+Queue" value="144"/>
+                    <option label="Shows high level framework messages only about major the plugin" value="4"/>
+                    <option label="Shows plugin framework debug messages related to Devices objects" value="8"/>
+                    <option label="Shows plugin framework debug messages related to Connections objects" value="16"/>
+                    <option label="Shows plugin framework debug messages related to the message queue" value="128"/>
                     <option label="All" value="-1"/>
                 </options>
         </param>
-            
     </params>
 </plugin>
 """
@@ -337,6 +339,7 @@ class BasePlugin:
 
         mode6 = Parameters.get("Mode6", "0")
         if mode6.lstrip("-").isdigit():
+            Domoticz.Status( f"Enabling Debug Log Level: {mode6}")
             Domoticz.Debugging(int(mode6))
 
         Domoticz.Status( "Welcome to Zigbee for Domoticz (Z4D) plugin. (c)pipiche38 - 2018 - 2025")
