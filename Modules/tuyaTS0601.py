@@ -194,6 +194,33 @@ def read_uint8(data, offset):
 
 
 def evaluate_expression_with_data(self, nwkid, expression, value):
+    """
+    Evaluate a mathematical or type-casting expression safely with a given value.
+
+    This function evaluates the provided `expression` using only a controlled
+    set of Python built-ins and the variable `value`. Expressions that attempt
+    to access hidden attributes (containing '__') are blocked. Errors in
+    evaluation are logged, and the original `value` is returned on failure.
+
+    Args:
+        nwkid (str): The network ID or identifier of the device/cluster
+                     associated with this evaluation, used for logging.
+        expression (str): The formula or expression to evaluate. Can include
+                          operations using `value` and whitelisted functions
+                          (`int`, `float`, `round`, `str`, `bool`, `abs`, 
+                          `min`, `max`).
+        value (any): The input value that will be used in the expression as
+                     the variable `value`.
+
+    Returns:
+        any: The result of the evaluated expression if successful; otherwise,
+             returns the original `value`.
+    """
+
+    if "__" in expression:
+        self.log.logging("ZclClusters", "Error", "evaluate_expression_with_data - NwkId: %s Forbidden expression %s" % (nwkid, expression))
+        return value
+
     try:
         safe_globals = {"__builtins__": {}}
         safe_locals = {
