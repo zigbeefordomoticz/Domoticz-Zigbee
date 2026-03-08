@@ -208,19 +208,15 @@ def evaluate_expression_with_data(self, nwkid, expression, value):
             "max": max,
         }
 
-        return eval(expression, safe_globals, safe_locals)
+        return eval(expression, safe_globals, safe_locals)   # nosec B307
 
-    except NameError as e:
-        self.log.logging("ZclClusters", "Error", "%s Undefined variable, please check the formula %s or value %s" %(
-            nwkid, expression, value))
-    
-    except SyntaxError as e:
-        self.log.logging("ZclClusters", "Error", "%s Syntax error, please check the formula %s or value %s" %(
-            nwkid, expression, value))
-
-    except ValueError as e:
-        self.log.logging("ZclClusters", "Error", "%s Value Error, please check the formula %s or value %s. Error: %s" %(
-            nwkid, expression, value, e))
+    except (NameError, SyntaxError, ValueError) as e:
+        self.log.logging(
+            "ZclClusters",
+            "Error",
+            "evaluate_expression_with_data - NwkId: %s Invalid formula '%s' with value %s (%s)"
+            % (nwkid, expression, value, e),
+        )
         
     return value
 
