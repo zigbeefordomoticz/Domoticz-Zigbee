@@ -1553,23 +1553,22 @@ async def zigpy_request( self, device: zigpy.device.Device, profile: t.uint16_t,
         tx_options |= t.TransmitOptions.ACK
 
     try:
-        if self.app and self.app._running:
-            await self.app.send_packet(
-                t.ZigbeePacket(
-                    src=src,
-                    src_ep=src_ep,
-                    dst=dst,
-                    dst_ep=dst_ep,
-                    tsn=sequence,
-                    profile_id=profile,
-                    cluster_id=cluster,
-                    data=t.SerializableBytes(data),
-                    extended_timeout=extended_timeout,
-                    source_route=source_route,
-                    tx_options=tx_options,
-                    priority=priority,
-                )
+        await self.app.send_packet(
+            t.ZigbeePacket(
+                src=src,
+                src_ep=src_ep,
+                dst=dst,
+                dst_ep=dst_ep,
+                tsn=sequence,
+                profile_id=profile,
+                cluster_id=cluster,
+                data=t.SerializableBytes(data),
+                extended_timeout=extended_timeout,
+                source_route=source_route,
+                tx_options=tx_options,
+                priority=priority,
             )
+        )
     except (AttributeError, asyncio.CancelledError):
         # Transport already closed or shutdown in progress
         return -1, None
