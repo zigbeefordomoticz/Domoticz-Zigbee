@@ -183,7 +183,7 @@ def zigpy_thread_function(self):
                         self.log.logging( "TransportZigpy", "Error", f"Event loop blocked for {delay:.3f}s")
 
             except asyncio.CancelledError:
-                self.log.logging( "TransportZigpy", "Log", f"Event loop monitoring stopped" )
+                self.log.logging( "TransportZigpy", "Log", "Event loop monitoring stopped" )
                 return
 
         # Schedule monitor as a background task
@@ -1572,7 +1572,7 @@ async def zigpy_request( self, device: zigpy.device.Device, profile: t.uint16_t,
             )
     except (AttributeError, asyncio.CancelledError):
         # Transport already closed or shutdown in progress
-        return -1
+        return -1, None
 
     except asyncio.TimeoutError as e:
         self.log.logging(
