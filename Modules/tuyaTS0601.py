@@ -67,7 +67,7 @@ def ts0601_response(self, Devices, model_name, NwkId, Ep, dp, datatype, data):
 
 def process_dp_item( self, Devices, model_name, NwkId, Ep, dp, datatype, data, dps_mapping_item, value):
     if "EvalExp" in dps_mapping_item:
-        value = evaluate_expression_with_data(self, dps_mapping_item[ "EvalExp"], value)
+        value = evaluate_expression_with_data(self, NwkId, dps_mapping_item[ "EvalExp"], value)
     self.log.logging("Tuya0601", "Debug", "                - after evaluate_expression_with_data() value: %s" % (value), NwkId)
 
     if "store_tuya_value" in dps_mapping_item:
@@ -130,7 +130,7 @@ def ts0601_actuator( self, NwkId, command, value=None):
 
     if "action_Exp" in dps_mapping[ str_dp ]:
         # Correct Value to proper format
-        value = evaluate_expression_with_data(self, dps_mapping[ str_dp ]["action_Exp"], value)
+        value = evaluate_expression_with_data(self, NwkId, dps_mapping[ str_dp ]["action_Exp"], value)
         self.log.logging("Tuya0601", "Debug", "      corrected value: %s" % ( value ))
 
     dp = int(str_dp, 16)
@@ -193,21 +193,34 @@ def read_uint8(data, offset):
     return ord(data[offset])
 
 
-def evaluate_expression_with_data(self, expression, value):
+def evaluate_expression_with_data(self, nwkid, expression, value):
     try:
-        return ast.literal_eval( expression )  # B307
-        
+        safe_globals = {"__builtins__": {}}
+        safe_locals = {
+            "value": value,
+            "int": int,
+            "float": float,
+            "round": round,
+            "str": str,
+            "bool": bool,
+            "abs": abs,
+            "min": min,
+            "max": max,
+        }
+
+        return eval(expression, safe_globals, safe_locals)
+
     except NameError as e:
-        self.log.logging("ZclClusters", "Error", "Undefined variable, please check the formula %s or value %s" %(
-            expression, value))
+        self.log.logging("ZclClusters", "Error", "%s Undefined variable, please check the formula %s or value %s" %(
+            nwkid, expression, value))
     
     except SyntaxError as e:
-        self.log.logging("ZclClusters", "Error", "Syntax error, please check the formula %s or value %s" %(
-            expression, value))
+        self.log.logging("ZclClusters", "Error", "%s Syntax error, please check the formula %s or value %s" %(
+            nwkid, expression, value))
 
     except ValueError as e:
-        self.log.logging("ZclClusters", "Error", "Value Error, please check the formula %s or value %s. Error: %s" %(
-            expression, value, e))
+        self.log.logging("ZclClusters", "Error", "%s Value Error, please check the formula %s or value %s. Error: %s" %(
+            nwkid, expression, value, e))
         
     return value
 
