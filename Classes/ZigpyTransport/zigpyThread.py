@@ -1690,7 +1690,7 @@ async def _send_and_retry(
         f"ieee/nwkid: {ieee}/0x{nwkid} "
         f"profile: 0x{profile:X} cluster: 0x{cluster:X} "
         f"payload: {payload_str} "
-        f"AckIsDsble: {ack_is_disable} seq: {sequence} "
+        f"AckIsDsble: {ack_is_disable} seq: {sequence:03d} "
         f"extnded_to: {extended_timeout}"
     )
 
