@@ -82,7 +82,7 @@ def send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpo
 
     if cluster_id.lower() == "ef00":
         # handle under tuya.tuyaReadRawAPS
-        pass
+        return
 
     self.log.logging(
         "zclDecoder",
