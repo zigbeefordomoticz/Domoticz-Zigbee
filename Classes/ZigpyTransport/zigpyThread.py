@@ -1414,7 +1414,7 @@ async def zigpy_request( self, device: zigpy.device.Device, profile: t.uint16_t,
 
     if self.app is None:
         self.log.logging( "TransportZigpy", "Log", "zigpy_request: app is None, cannot send packet" )
-        return (zigpy.zcl.foundation.Status.DeliveryError, "ZCL FAILURE: app is None")
+        return (zigpy.exceptions.DeliveryError, "ZCL FAILURE: app is None")
 
     if use_ieee:
         src = t.AddrModeAddress( addr_mode=t.AddrMode.IEEE, address=self.app.state.node_info.ieee )
@@ -1458,10 +1458,10 @@ async def zigpy_request( self, device: zigpy.device.Device, profile: t.uint16_t,
         return (-1, "cancelled")
 
     except asyncio.TimeoutError as e:
-        return (zigpy.zcl.foundation.Status.DeliveryError, str(e))
+        return (zigpy.exceptions.DeliveryError, str(e))
 
     except zigpy.exceptions.DeliveryError as e:
-        return (zigpy.zcl.foundation.Status.DeliveryError, str(e))
+        return (zigpy.exceptions.DeliveryError, str(e))
 
     except Exception as e:
         self.log.logging(
