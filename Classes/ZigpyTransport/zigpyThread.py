@@ -1692,6 +1692,13 @@ async def _send_and_retry(
         f"AckIsDsble: {ack_is_disable:<1} seq: {sequence:03d} "
         f"extnded_to: {extended_timeout:<1}"
     )
+    common_log_info = (
+        f"ieee/nwkid: {ieee}/0x{nwkid} "
+        f"profile: 0x{profile:04X} cluster: 0x{cluster:04X} "
+        f"payload: 0x{payload_hex[:10]}{etc} "  # take first 8 chars
+        f"AckIsDsble: {ack_is_disable:<1} seq: {sequence:03d} "
+        f"extnded_to: {extended_timeout:<1}"
+    )
 
     packet_priority = t.PacketPriority.NORMAL
 
