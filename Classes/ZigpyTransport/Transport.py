@@ -66,7 +66,9 @@ class ZigpyTransport(object):
 
         # Semaphore per devices
         self._concurrent_requests_semaphores_list = {}
-        self._currently_waiting_requests_list = {}  
+        self._currently_waiting_requests_list = {}
+        self._max_concurrency_wait_per_device = {}
+        self._device_ack_latency = {}
         self._currently_not_reachable = []
         self._periodic_reset = None
         

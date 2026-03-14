@@ -129,7 +129,16 @@ def must_send_default_response(
         return False
 
     # ------------------------------------------------------
-    # 2) Special handling for OTA cluster (0x0019)
+    # 3) Special handling for EF00 cluster (0xef00) from Tuya
+    # ------------------------------------------------------
+
+    if cluster_id == 0xef00:
+        if status != 0x00:      # On error → Respond with DR
+            return True
+        return False            # Otherwise Tuya uses dedicated responses
+
+    # ------------------------------------------------------
+    # 4) Special handling for OTA cluster (0x0019)
     # ------------------------------------------------------
     if cluster_id == 0x0019:
         if status != 0x00:      # On error → Respond with DR
@@ -137,7 +146,7 @@ def must_send_default_response(
         return False            # Otherwise OTA uses dedicated responses
 
     # ------------------------------------------------------
-    # 3) Command expects a dedicated response?
+    # 5) Command expects a dedicated response?
     # ------------------------------------------------------
     commands_for_cluster = response_required_commands.get(cluster_id)
 
@@ -148,6 +157,6 @@ def must_send_default_response(
             return False         # Success → dedicated response will be sent
 
     # ------------------------------------------------------
-    # 4) No dedicated response → Must send Default Response
+    # 6) No dedicated response → Must send Default Response
     # ------------------------------------------------------
     return True
