@@ -80,6 +80,10 @@ def send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpo
         self.log.logging("zclDecoder", "Debug", f"must_send_default_response returned False for command {command}", src_nwk_id)
         return
 
+    if cluster_id == "ef00":
+        # handle under tuya.tuyaReadRawAPS
+        pass
+
     self.log.logging(
         "zclDecoder",
         "Debug",
