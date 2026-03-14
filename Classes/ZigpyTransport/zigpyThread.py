@@ -1695,7 +1695,7 @@ async def _send_and_retry(
     common_log_info = (
         f"ieee/nwkid: {ieee}/0x{nwkid} "
         f"profile: 0x{profile:04X} cluster: 0x{cluster:04X} "
-        f"payload: 0x{payload_hex[:10]}{etc} "  # take first 8 chars
+        f"payload: 0x{payload_hex[:10]:<10}{etc} "  # take first 8 chars
         f"AckIsDsble: {ack_is_disable:<1} seq: {sequence:03d} "
         f"extnded_to: {extended_timeout:<1}"
     )
@@ -1805,7 +1805,7 @@ async def _send_and_retry(
             handle_transport_result( self, function, cluster, sequence, result, ack_is_disable, extended_timeout, ieee, nwkid, getattr(destination, "lqi", None), )
 
             if self.pluginconf.pluginConf.get("ZigpyLatency"):
-                self.log.logging( "TransportZigpy", "Log", f"{function:<.24} {common_log_info} result: {result}, latency={latency:.3f}s" )
+                self.log.logging( "TransportZigpy", "Log", f"{function[:24]:<24} {common_log_info} result: {result}, latency={latency:.3f}s" )
             return result
 
     # --- Use per-device concurrency limiter ---
