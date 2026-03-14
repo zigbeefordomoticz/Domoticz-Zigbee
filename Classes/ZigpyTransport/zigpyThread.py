@@ -1650,7 +1650,7 @@ async def _send_and_retry(
         destination (zigpy.device.Device): Target Zigbee device.
         profile (int): Zigbee profile ID.
         cluster (int): Zigbee cluster ID.
-        nwkid (int): Network address of the destination.
+        nwkid (str): Network address of the destination.
         source_ep (int): Source endpoint.
         dest_ep (int): Destination endpoint.
         sequence (int): TSN/sequence number for the request.
@@ -1684,21 +1684,17 @@ async def _send_and_retry(
     if len(payload_hex) > 8:
         etc=".."
 
-    try:
-        # Build compact log string
-        display_len = 8
-        payload_display = payload_hex[:display_len]
-        etc = ".." if len(payload_hex) > display_len else "  "
-        common_log_info = (
-            f"ieee/nwkid: {ieee}/0x{nwkid} "
-            f"profile: 0x{profile:04X} cluster: 0x{cluster:04X} "
-            f"payload: 0x{payload_display:<{display_len}}{etc} "
-            f"AckIsDsble: {ack_is_disable:<1} seq: {sequence:03d} "
-            f"extnded_to: {extended_timeout:<1}"
-        )  
-    except Exception as e:
-        common_log_info = ""        
-        self.log.logging("TransportZigpy", "Log" ,f"Stack trace: \n{traceback.format_exc()}")
+    # Build compact log string
+    display_len = 8
+    payload_display = payload_hex[:display_len]
+    etc = ".." if len(payload_hex) > display_len else "  "
+    common_log_info = (
+        f"ieee/nwkid: {ieee}/0x{nwkid} "
+        f"profile: 0x{profile:04X} cluster: 0x{cluster:04X} "
+        f"payload: 0x{payload_display:<{display_len}}{etc} "
+        f"AckIsDsble: {ack_is_disable:<1} seq: {sequence:03d} "
+        f"extnded_to: {extended_timeout:<1}"
+    )  
 
     packet_priority = t.PacketPriority.NORMAL
 
