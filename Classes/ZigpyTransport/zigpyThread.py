@@ -1677,9 +1677,20 @@ async def _send_and_retry(
           requests per device.
     """
 
+    MAX_LOG_BYTES = 8  # show first 8 bytes of payload
+
+    # Convert payload to hex string and truncate if needed
+    if len(payload) > MAX_LOG_BYTES:
+        payload_str = payload[:MAX_LOG_BYTES].hex() + f"…({len(payload)} bytes)"
+    else:
+        payload_str = payload.hex()
+
+    # Build compact log string
     common_log_info = (
-        f"ieee/nwkid: {ieee}/0x{nwkid} profile: 0x{profile:X} cluster: 0x{cluster:X} "
-        f"payload: {payload} AckIsDsble: {ack_is_disable} "
+        f"ieee/nwkid: {ieee}/0x{nwkid} "
+        f"profile: 0x{profile:X} cluster: 0x{cluster:X} "
+        f"payload: {payload_str} "
+        f"AckIsDsble: {ack_is_disable} seq: {sequence} "
         f"extnded_to: {extended_timeout}"
     )
 
@@ -1788,7 +1799,7 @@ async def _send_and_retry(
             handle_transport_result( self, function, cluster, sequence, result, ack_is_disable, extended_timeout, ieee, nwkid, getattr(destination, "lqi", None), )
 
             if self.pluginconf.pluginConf.get("ZigpyLatency"):
-                self.log.logging( "TransportZigpy", "Log", f"Command: {function} {common_log_info} result: {result}, latency={latency:.3f}s" )
+                self.log.logging( "TransportZigpy", "Log", f"{function} {common_log_info} result: {result}, latency={latency:.3f}s" )
             return result
 
     # --- Use per-device concurrency limiter ---
