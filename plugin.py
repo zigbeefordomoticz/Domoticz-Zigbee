@@ -872,6 +872,12 @@ class BasePlugin:
         if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
             matomo_plugin_restart(self)
 
+        # Log running threads. We should have only the main thread (MainThread)
+        if self.pluginconf and self.log:
+            self.log.logging(["Plugin", "StopProcess"], "Log", "Active threads starting onstop():")
+            for t in threading.enumerate():
+                self.log.logging(["Transport", "StopProcess"], "Log", f"    - Thread {t.name}: alive={t.is_alive()}, ident={t.ident}, daemon={t.daemon}")
+
         restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=Parameters["Mode5"])
 
     #def onCommand(self, DeviceID, Unit, Command, Level, Color):
