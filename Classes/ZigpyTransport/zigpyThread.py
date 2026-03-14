@@ -1679,19 +1679,29 @@ async def _send_and_retry(
 
     MAX_LOG_BYTES = 8  # show first 8 bytes of payload
 
-    # Convert payload to hex string and truncate if needed
+    # Take first 8 bytes
+    first_bytes = payload[:MAX_LOG_BYTES]
+
+    # Convert to hex string
+    payload_hex = first_bytes.hex().upper()  # uppercase for readability
+
+    # Pad if shorter than 8 bytes
+    payload_hex = payload_hex.ljust(MAX_LOG_BYTES * 2)  # 2 chars per byte
+
+    # Append "…" if original payload is longer
     if len(payload) > MAX_LOG_BYTES:
-        payload_str = payload[:MAX_LOG_BYTES].hex() + f"…({len(payload)} bytes)"
+        payload_str = f"{payload_hex}…"
     else:
-        payload_str = payload.hex()
+        payload_str = f"{payload_hex}   "
+
 
     # Build compact log string
     common_log_info = (
         f"ieee/nwkid: {ieee}/0x{nwkid} "
-        f"profile: 0x{profile:X} cluster: 0x{cluster:X} "
+        f"profile: 0x{profile:04X} cluster: 0x{cluster:04X} "
         f"payload: {payload_str} "
-        f"AckIsDsble: {ack_is_disable} seq: {sequence:03d} "
-        f"extnded_to: {extended_timeout}"
+        f"AckIsDsble: {ack_is_disable:<5} seq: {sequence:03d} "
+        f"extnded_to: {extended_timeout:<5}"
     )
 
     packet_priority = t.PacketPriority.NORMAL
