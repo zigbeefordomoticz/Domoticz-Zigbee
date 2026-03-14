@@ -1684,17 +1684,22 @@ async def _send_and_retry(
     if len(payload_hex) > 8:
         etc=".."
 
-    # Build compact log string
-    display_len = 8
-    payload_display = payload_hex[:display_len]
-    etc = ".." if len(payload_hex) > display_len else "  "
-    common_log_info = (
-        f"ieee/nwkid: {ieee}/0x{nwkid:04X} "
-        f"profile: 0x{profile:04X} cluster: 0x{cluster:04X} "
-        f"payload: 0x{payload_display:<{display_len}}{etc} "
-        f"AckIsDsble: {ack_is_disable:<1} seq: {sequence:03d} "
-        f"extnded_to: {extended_timeout:<1}"
-    )    
+    try:
+        # Build compact log string
+        display_len = 8
+        payload_display = payload_hex[:display_len]
+        etc = ".." if len(payload_hex) > display_len else "  "
+        common_log_info = (
+            f"ieee/nwkid: {ieee}/0x{nwkid:04X} "
+            f"profile: 0x{profile:04X} cluster: 0x{cluster:04X} "
+            f"payload: 0x{payload_display:<{display_len}}{etc} "
+            f"AckIsDsble: {ack_is_disable:<1} seq: {sequence:03d} "
+            f"extnded_to: {extended_timeout:<1}"
+        )  
+    except Exception as e:
+        common_log_info = ""        
+        self.log.logging("TransportZigpy", "Log" ,f"Stack trace: \n{traceback.format_exc()}")
+
     packet_priority = t.PacketPriority.NORMAL
 
     # Initialize per-device latency tracking if missing
