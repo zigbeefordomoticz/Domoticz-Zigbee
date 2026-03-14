@@ -1799,7 +1799,7 @@ async def _send_and_retry(
             handle_transport_result( self, function, cluster, sequence, result, ack_is_disable, extended_timeout, ieee, nwkid, getattr(destination, "lqi", None), )
 
             if self.pluginconf.pluginConf.get("ZigpyLatency"):
-                self.log.logging( "TransportZigpy", "Log", f"{function} {common_log_info} result: {result}, latency={latency:.3f}s" )
+                self.log.logging( "TransportZigpy", "Log", f"{function:<24} {common_log_info} result: {result}, latency={latency:.3f}s" )
             return result
 
     # --- Use per-device concurrency limiter ---
