@@ -1414,7 +1414,7 @@ async def zigpy_request( self, device: zigpy.device.Device, profile: t.uint16_t,
 
     if self.app is None:
         self.log.logging( "TransportZigpy", "Log", "zigpy_request: app is None, cannot send packet" )
-        return (zigpy.zcl.foundation.Status.DELIVERY_ERROR, "ZCL FAILURE: app is None")
+        return (zigpy.zcl.foundation.Status.DeliveryError, "ZCL FAILURE: app is None")
 
     if use_ieee:
         src = t.AddrModeAddress( addr_mode=t.AddrMode.IEEE, address=self.app.state.node_info.ieee )
@@ -1679,8 +1679,8 @@ async def _send_and_retry(
 
     common_log_info = (
         f"ieee/nwkid: {ieee}/0x{nwkid} profile: 0x{profile:X} cluster: 0x{cluster:X} "
-        f"payload: {payload} AckIsDisable: {ack_is_disable} "
-        f"extended_timeout: {extended_timeout}"
+        f"payload: {payload} AckIsDsble: {ack_is_disable} "
+        f"extnded_to: {extended_timeout}"
     )
 
     packet_priority = t.PacketPriority.NORMAL
