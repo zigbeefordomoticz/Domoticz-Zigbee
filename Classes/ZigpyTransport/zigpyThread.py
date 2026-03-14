@@ -1685,21 +1685,16 @@ async def _send_and_retry(
         etc=".."
 
     # Build compact log string
+    display_len = 8
+    payload_display = payload_hex[:display_len]
+    etc = ".." if len(payload_hex) > display_len else "  "
     common_log_info = (
-        f"ieee/nwkid: {ieee}/0x{nwkid} "
+        f"ieee/nwkid: {ieee}/0x{nwkid:04X} "
         f"profile: 0x{profile:04X} cluster: 0x{cluster:04X} "
-        f"payload: 0x{payload_hex<.8}{etc} "
+        f"payload: 0x{payload_display:<{display_len}}{etc} "
         f"AckIsDsble: {ack_is_disable:<1} seq: {sequence:03d} "
         f"extnded_to: {extended_timeout:<1}"
-    )
-    common_log_info = (
-        f"ieee/nwkid: {ieee}/0x{nwkid} "
-        f"profile: 0x{profile:04X} cluster: 0x{cluster:04X} "
-        f"payload: 0x{payload_hex[:10]:<10}{etc} "  # take first 8 chars
-        f"AckIsDsble: {ack_is_disable:<1} seq: {sequence:03d} "
-        f"extnded_to: {extended_timeout:<1}"
-    )
-
+    )    
     packet_priority = t.PacketPriority.NORMAL
 
     # Initialize per-device latency tracking if missing
