@@ -1690,7 +1690,7 @@ async def _send_and_retry(
         payload_display = payload_hex[:display_len]
         etc = ".." if len(payload_hex) > display_len else "  "
         common_log_info = (
-            f"ieee/nwkid: {ieee}/0x{nwkid:04X} "
+            f"ieee/nwkid: {ieee}/0x{nwkid} "
             f"profile: 0x{profile:04X} cluster: 0x{cluster:04X} "
             f"payload: 0x{payload_display:<{display_len}}{etc} "
             f"AckIsDsble: {ack_is_disable:<1} seq: {sequence:03d} "
@@ -1854,6 +1854,7 @@ async def _send_and_retry(
                     f"attempt {attempt}, adaptive backoff: {backoff:.3f}s",
                     nwkid,
                 )
+
 
 @contextlib.asynccontextmanager
 async def _limit_concurrency(self, destination, sequence):
