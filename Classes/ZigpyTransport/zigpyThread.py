@@ -1152,8 +1152,11 @@ def push_APS_ACK_NACKto_plugin(self, nwkid, Cluster, sequence, result, lqi):
         # No Ack/Nack for Controller
         return
     
-    if not isinstance(result, int):
-        result = int(result.serialize().hex(), 16)
+    try:
+        if not isinstance(result, int):
+            result = int(result.serialize().hex(), 16)
+    except Exception as e:
+        result = -1
 
     # Update statistics
     if result != 0x00:
