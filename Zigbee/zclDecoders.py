@@ -274,6 +274,7 @@ def buildframe_foundation_cluster(self, fcf, disable_default_response, command, 
         send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
         return foundation_cluster_discover_attribute_response(self, frame, sqn, src_nwk_id, src_endpoint, TargetEp, cluster_id, data)
 
+    return frame
 
 def foundation_cluster_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     # 01 0000f0010023020023030021040023050021060030070021080021090021fdff21
@@ -485,7 +486,7 @@ def foundation_cluster_read_configure_reporting_response(self, frame, Sqn, SrcNw
             if direction == "01":
                 timeout = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
                 buildPayload += timeout
-                idx += 1
+                idx += 4
                                       
             self.log.logging("zclDecoder", "Debug", "buildframe_read_configure_reporting_response - NwkId: %s Ep: %s Cluster: %s Attribute: %s Status: %s DataType: %s Min: %s Max: %s Change: %s" % (
                 SrcNwkId, SrcEndPoint, ClusterId, attribute, status, DataType, MinInterval, MaxInterval, Change), SrcNwkId)
@@ -604,7 +605,7 @@ def buildframe8063_remove_group_member_ship_response(self, frame, Sqn, SrcNwkId,
 
 def buildframe_for_cluster_0005(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     if Command == "05":  # Recall Scene
-        GroupID = decode_endian_data(Data[:4], "09")
+        GroupID = decode_endian_data(Data[:4], "21")  
         SceneID = Data[4:6]
         TransitionTime = 'ffff'
 
@@ -692,7 +693,7 @@ def buildframe_for_cluster_8501(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint
 
 
 def buildframe_for_cluster_8502(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
-    self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8503 Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" % (
+    self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8502 Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" % (
         '8502', ClusterId, Command, Data, frame), SrcNwkId)
 
     FieldControl = decode_endian_data(Data[:2], "20")
