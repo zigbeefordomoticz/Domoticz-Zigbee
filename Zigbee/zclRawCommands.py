@@ -555,9 +555,9 @@ def zcl_raw_level_move_to_level(self, nwkid, EPIn, EPout, command, level="00", m
     payload = "%02x" % cluster_frame + sqn + "%02x" % LEVEL_COMMANDS[command]
     if command in ("MovetoLevel", "MovetoLevelWithOnOff"):
         payload += level + "%04x" % (struct.unpack(">H", struct.pack("H", int(transition, 16)))[0])
-    elif command == ("Move", "MoveWithOnOff"):
+    elif command in ("Move", "MoveWithOnOff"):
         payload += move_mode + rate
-    elif command == ("Step", "StepWithOnOff"):
+    elif command in ("Step", "StepWithOnOff"):
         payload += step_mode + step_size + "%04x" % (struct.unpack(">H", struct.pack("H", int(transition, 16)))[0])
 
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
