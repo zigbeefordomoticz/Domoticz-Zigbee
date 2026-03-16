@@ -196,10 +196,10 @@ def zdp_raw_match_desc_req_0500(self, nwkid):
     NumOutClusters = "00"
     payload = sqn + nwkid_of_interest + profileid + numInClusters + InClusterList + NumOutClusters
     if self.pluginconf.pluginConf["coordinatorCmd"]:
-        self.log.logging( "zdpCommand", "Log", "zdp_raw_match_desc_req  - [%s] %s Queue Length: %s" % (
+        self.log.logging( "zdpCommand", "Log", "zdp_raw_match_desc_req_0500  - [%s] %s Queue Length: %s" % (
             sqn, nwkid, self.ControllerLink.loadTransmit()),)
     else:
-        self.log.logging( "zdpCommand", "Debug", "zdp_raw_NWK_address_request  - [%s] %s Queue Length: %s" % (
+        self.log.logging( "zdpCommand", "Debug", "zdp_raw_match_desc_req_0500  - [%s] %s Queue Length: %s" % (
             sqn, nwkid, self.ControllerLink.loadTransmit()),)
  
     raw_APS_request(
@@ -221,7 +221,7 @@ def zdp_raw_complex_descriptor_request(
     self,
     nwkid,
 ):
-    self.log.logging("zdpCommand", "Debug", "zdp_raw_active_endpoint_request %s" % (nwkid,))
+    self.log.logging("zdpCommand", "Debug", "zdp_raw_complex_descriptor_request %s" % (nwkid,))
     Cluster = "0010"
     zdp_command_formated_logging( self, "Active_Endpoint_req (raw)", nwkid, Cluster)
     
@@ -268,7 +268,7 @@ def zdp_raw_user_descriptor_request(
         "0000",
         payload,
         zigpyzqn=sqn,
-        zigate_ep=ZIGATE_EP,
+        zigate_ep="00",
         groupaddrmode=False,
         ackIsDisabled=False,
     )
@@ -277,8 +277,6 @@ def zdp_raw_user_descriptor_request(
 
 def zdp_raw_discovery_cache_req(self, nwkid):
     self.log.logging("zdpCommand", "Debug", "zdp_raw_discovery_cache_req %s" % ("NOT IMPLEMENTED",))
-    cluster = "0012"
-    sqn = get_and_inc_ZDP_SQN(self, nwkid)
 
 
 # Bindings primitive
@@ -481,8 +479,11 @@ def zdp_raw_leave_request(self, nwkid, ieee, rejoin="01", remove_children="00"):
         flag = "01"
     elif rejoin == "01" and remove_children == "00":
         flag = "02"
-    if rejoin == "01" and remove_children == "01":
+    elif rejoin == "01" and remove_children == "01":
         flag = "03"
+    else:
+        self.log.logging("zdpCommand", "Error", "zdp_raw_leave_request: unexpected flag combo")
+        return
     payload = sqn + "%016x" % struct.unpack("Q", struct.pack(">Q", int(ieee, 16)))[0] + flag
     if self.pluginconf.pluginConf["coordinatorCmd"]:
         self.log.logging( "zdpCommand", "Log", "zdp_raw_leave_request  - [%s] %s Queue Length: %s" % (
@@ -513,7 +514,7 @@ def zdp_raw_nwk_update_request(self, nwkid, scanchannel, scanduration, scancount
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     payload = sqn + scanchannel + scanduration 
     
-    if 0x01 < int(scanduration,16) < 0x05:
+    if 0x00 <= int(scanduration,16) <= 0x05:
         payload += scancount
         
     if scanduration in ( "fe", "ff"):
