@@ -212,6 +212,12 @@ STARTUP_TIMEOUT_DELAY_FOR_STOP = 120
 ZNP_STARTUP_TIMEOUT_DELAY_FOR_WARNING = 110
 ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP = 160
 
+ZIGPY_BACKENDS = {
+    "ZigpyZNP":     ("znp",    "zigpy_znp",    "ZNP"),
+    "ZigpydeCONZ":  ("deCONZ", "zigpy_deconz", "deConz"),
+    "ZigpyEZSP":    ("ezsp",   "bellows",      "EZSP"),
+    "ZigpyBLZ":     ("blz",    "zigpy_blz",    "Bouffalo Lab Zigbee"),
+}
 
 class BasePlugin:
     enabled = False
@@ -364,7 +370,11 @@ class BasePlugin:
         Domoticz.Status( "Z4D requires python3.11 or above and you are running %s.%s" %(
             _current_python_version_major, _current_python_version_minor))
     
-        assert sys.version_info >= (3, 11)  # nosec
+        if sys.version_info < (3, 11):
+            Domoticz.Error("Z4D requires Python 3.11+, found %d.%d" % (
+                sys.version_info.major, sys.version_info.minor))
+            self.onStop()
+            return
 
         if Parameters["Mode1"] == "V1" and Parameters["Mode2"] in ( "USB", "DIN", "PI", "Wifi", ):
             self.transport = Parameters["Mode2"]
@@ -1091,24 +1101,60 @@ def start_zigbee_transport(self ):
     elif self.transport == "None":
         _start_fake_coordinator(self)
 
-    elif self.transport == "ZigpyZNP":
-        _start_zigpy_ZNP(self)
-        
-    elif self.transport == "ZigpydeCONZ":
-        _start_zigpy_deConz(self)
-                
-    elif self.transport == "ZigpyEZSP":
-        _start_zigpy_EZSP(self)
-
-    elif self.transport == "ZigpyBLZ":
-        _start_zigpy_BLZ(self)
+    elif self.transport in  ZIGPY_BACKENDS:
+        _start_zigpy_backend(self, self.transport)
         
     else:
         self.log.logging("Plugin", "Error", "Unknown Transport comunication protocol : %s" % str(self.transport))
         self.onStop()
         return
 
+def _start_zigpy_backend(self, backend_key):
 
+    radio_lib, zigpy_module, label = ZIGPY_BACKENDS[backend_key]
+    import zigpy
+    __import__(zigpy_module)
+
+    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
+                              SCHEMA_DEVICE)
+
+    from Classes.ZigpyTransport.Transport import ZigpyTransport
+
+    check_python_modules_version( self )
+    self.zigbee_communication = "zigpy"
+    self.pluginParameters["Zigpy"] = True
+    self.log.logging("Plugin", "Status", f"Z4D starting {label}")
+
+    if Parameters["Mode2"] == "Socket":
+        SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
+        self.transport += "Socket"
+        communication_specifics = None
+    else:
+        # Serial mode via USB
+        communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
+        SerialPort = Parameters["SerialPort"]
+
+    self.ControllerLink= ZigpyTransport(
+        self.ControllerData,
+        self.pluginParameters,
+        self.pluginconf,
+        self.processFrame,
+        self.zigpy_chk_upd_device,
+        self.zigpy_get_device,
+        self.zigpy_backup_available,
+        self.restart_plugin,
+        self.log,
+        self.statistics,
+        self.HardwareID,
+        radio_lib,
+        SerialPort,
+        communication_specifics
+        )
+
+    self.ControllerLink.open_cie_connection()
+    self.pluginconf.pluginConf["ControllerInRawMode"] = True
+    
+    
 def _start_fake_coordinator(self):
     from Classes.ZigateTransport.Transport import ZigateTransport
     self.pluginconf.pluginConf["ControllerInRawMode"] = False
@@ -1193,172 +1239,6 @@ def parse_mode2_serial_com_specifics(mode2):
         result["FlowControl"] = parts[2]
 
     return result
-
-
-def _start_zigpy_ZNP(self):
-    import zigpy
-    import zigpy_znp
-    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
-                              SCHEMA_DEVICE)
-
-    from Classes.ZigpyTransport.Transport import ZigpyTransport
-
-    check_python_modules_version( self )
-    self.zigbee_communication = "zigpy"
-    self.pluginParameters["Zigpy"] = True
-    self.log.logging("Plugin", "Status", "Z4D starting ZNP")
-
-    if Parameters["Mode2"] == "Socket":
-        SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
-        self.transport += "Socket"
-        communication_specifics = None
-    else:
-        # Serial mode via USB
-        communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
-        SerialPort = Parameters["SerialPort"]
-
-    self.ControllerLink= ZigpyTransport(
-        self.ControllerData,
-        self.pluginParameters,
-        self.pluginconf,
-        self.processFrame,
-        self.zigpy_chk_upd_device,
-        self.zigpy_get_device,
-        self.zigpy_backup_available,
-        self.restart_plugin,
-        self.log,
-        self.statistics,
-        self.HardwareID,
-        "znp",
-        SerialPort,
-        communication_specifics
-        )
-    self.ControllerLink.open_cie_connection()
-    self.pluginconf.pluginConf["ControllerInRawMode"] = True
-    
-
-def _start_zigpy_deConz(self):
-    import zigpy
-    import zigpy_deconz
-    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
-                              SCHEMA_DEVICE)
-
-    from Classes.ZigpyTransport.Transport import ZigpyTransport
-
-    check_python_modules_version( self )
-    self.pluginParameters["Zigpy"] = True
-    self.log.logging("Plugin", "Status","Z4D starting deConz")
-
-    if Parameters["Mode2"] == "Socket":
-        SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
-        self.transport += "Socket"
-        communication_specifics = None
-    else:
-        # Serial mode via USB
-        communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
-        SerialPort = Parameters["SerialPort"]
-
-    self.ControllerLink= ZigpyTransport(
-        self.ControllerData,
-        self.pluginParameters,
-        self.pluginconf,
-        self.processFrame,
-        self.zigpy_chk_upd_device,
-        self.zigpy_get_device,
-        self.zigpy_backup_available,
-        self.restart_plugin,
-        self.log,
-        self.statistics,
-        self.HardwareID,
-        "deCONZ",
-        SerialPort,
-        communication_specifics
-        )
-    self.ControllerLink.open_cie_connection()
-    self.pluginconf.pluginConf["ControllerInRawMode"] = True
-    
-
-def _start_zigpy_EZSP(self):
-    import bellows
-    import zigpy
-    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
-                              SCHEMA_DEVICE)
-
-    from Classes.ZigpyTransport.Transport import ZigpyTransport
-
-    check_python_modules_version( self )
-    self.zigbee_communication = "zigpy"
-    self.pluginParameters["Zigpy"] = True
-    self.log.logging("Plugin", "Status","Z4D starting EZSP")
-
-    if Parameters["Mode2"] == "Socket":
-        SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
-        self.transport += "Socket"
-        communication_specifics = None
-    else:
-        communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
-        SerialPort = Parameters["SerialPort"]
-
-    self.ControllerLink= ZigpyTransport(
-        self.ControllerData,
-        self.pluginParameters,
-        self.pluginconf,
-        self.processFrame,
-        self.zigpy_chk_upd_device,
-        self.zigpy_get_device,
-        self.zigpy_backup_available,
-        self.restart_plugin,
-        self.log,
-        self.statistics,
-        self.HardwareID,
-        "ezsp",
-        SerialPort,
-        communication_specifics
-        )
-
-    self.ControllerLink.open_cie_connection()
-    self.pluginconf.pluginConf["ControllerInRawMode"] = True
-    
-def _start_zigpy_BLZ(self):
-    import zigpy
-    import zigpy_blz
-    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
-                              SCHEMA_DEVICE)
-
-    from Classes.ZigpyTransport.Transport import ZigpyTransport
-
-    check_python_modules_version( self )
-    self.zigbee_communication = "zigpy"
-    self.pluginParameters["Zigpy"] = True
-    self.log.logging("Plugin", "Status","Z4D starting Bouffalo Lab Zigbee (BLZ) ")
-
-    if Parameters["Mode2"] == "Socket":
-        SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
-        self.transport += "Socket"
-        communication_specifics = None
-    else:
-        communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
-        SerialPort = Parameters["SerialPort"]
-
-    self.ControllerLink= ZigpyTransport(
-        self.ControllerData,
-        self.pluginParameters,
-        self.pluginconf,
-        self.processFrame,
-        self.zigpy_chk_upd_device,
-        self.zigpy_get_device,
-        self.zigpy_backup_available,
-        self.restart_plugin,
-        self.log,
-        self.statistics,
-        self.HardwareID,
-        "blz",
-        SerialPort,
-        communication_specifics
-        )
-
-    self.ControllerLink.open_cie_connection()
-    self.pluginconf.pluginConf["ControllerInRawMode"] = True
 
 
 def zigateInit_Phase1(self):
