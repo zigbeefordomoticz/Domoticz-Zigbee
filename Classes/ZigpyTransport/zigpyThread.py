@@ -178,7 +178,7 @@ def zigpy_thread_function(self):
     if self.pluginconf.pluginConf.get("MonitorLoopLatency", False):
         async def monitor_loop_latency(interval=1.0, threshold=3.5):
             try:
-                while True:
+                while self.zigpy_running:
                     start = time.monotonic()
                     await asyncio.sleep(interval)
                     delay = time.monotonic() - start - interval
@@ -220,7 +220,8 @@ def zigpy_thread_function(self):
                 zigpy_loop.run_until_complete(
                     asyncio.gather(self.loop_latency_monitor, return_exceptions=True)
                 )
-            except Exception:
+            except Exception as e:
+                self.log.logging("TransportZigpy", "Debug", f"zigpy_thread error when runing_until_complet(loop_latency_monitor): {e}")
                 pass
 
         if not zigpy_loop.is_closed():
