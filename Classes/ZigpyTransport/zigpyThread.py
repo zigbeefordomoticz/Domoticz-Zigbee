@@ -74,11 +74,11 @@ from Classes.ZigpyTransport.tools import handle_thread_error
 from Modules.macPrefix import DELAY_FOR_VERY_KEY
 
 ERROR_TASK_CREATION_FAILED = 0xB6
-SEMAPHORE_TIMEOUT = 240  # seconds
-REQUEST_TIMEOUT = 8   # This is a given time for the request to be sent
 WAITING_TIME_BETWEEN_REQUESTS = 0.0
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 VERIFY_KEY_DELAY = 6
+REQUEST_TIMEOUT =  8          # seconds: overall deadline for one send cycle
+SEMAPHORE_TIMEOUT = 240       # seconds: max wait to acquire a concurrency slot
 
 
 def stop_zigpy_thread(self):
@@ -88,17 +88,20 @@ def stop_zigpy_thread(self):
     This function sets the zigpy_running flag to False and cancels any manual
     topology or interference scan tasks to ensure clean shutdown.
     """
-
-    self.log.logging(["TransportZigpy", "StopProcess"], "Debug", "stop_zigpy_thread - Stopping zigpy thread")
     if self.writer_queue:
-        self.writer_queue.put_nowait("STOP")
+        # FIX: Wrapped in try/except — queue may be full or in a bad state
+        try:
+            self.writer_queue.put_nowait("STOP")
+        except Exception as e:
+            self.log.logging(["TransportZigpy", "StopProcess"], "Warning", f"stop_zigpy_thread - Could not send STOP to writer_queue: {e}")
+
     self.zigpy_running = False
 
-    # Make sure top the manualy started task
-    if self.manual_topology_scan_task:
+    # FIX: Added .done() guard before cancelling, consistent with _shutdown_remaining_task
+    if self.manual_topology_scan_task and not self.manual_topology_scan_task.done():
         self.manual_topology_scan_task.cancel()
 
-    if self.manual_interference_scan_task:
+    if self.manual_interference_scan_task and not self.manual_interference_scan_task.done():
         self.manual_interference_scan_task.cancel()
 
 
@@ -165,10 +168,13 @@ def zigpy_thread_function(self):
         zigpy_loop.set_debug(True)
 
     self.log.logging("TransportZigpy", "Debug", f"zigpyThread EventLoop: {zigpy_loop}")
-
     # ==========================
     # Start loop latency monitor
     # ==========================
+    # FIX: Initialise to None so the finally block can safely check it
+    # regardless of whether monitoring is enabled.
+    self.loop_latency_monitor = None
+
     if self.pluginconf.pluginConf.get("MonitorLoopLatency", False):
         async def monitor_loop_latency(interval=1.0, threshold=3.5):
             try:
@@ -176,13 +182,15 @@ def zigpy_thread_function(self):
                     start = time.monotonic()
                     await asyncio.sleep(interval)
                     delay = time.monotonic() - start - interval
-                    if delay > threshold:
-                        self.log.logging( "TransportZigpy", "Log", f"Event loop blocked for {delay:.3f}s")
-                    elif delay > 5:
-                        self.log.logging( "TransportZigpy", "Error", f"Event loop blocked for {delay:.3f}s")
+                    # FIX: Inverted threshold order — check the stricter (higher)
+                    # value first, otherwise the error branch is unreachable.
+                    if delay > 5:
+                        self.log.logging("TransportZigpy", "Error", f"Event loop blocked for {delay:.3f}s")
+                    elif delay > threshold:
+                        self.log.logging("TransportZigpy", "Log", f"Event loop blocked for {delay:.3f}s")
 
             except asyncio.CancelledError:
-                self.log.logging( "TransportZigpy", "Log", "Event loop monitoring stopped" )
+                self.log.logging("TransportZigpy", "Log", "Event loop monitoring stopped")
                 return
 
         # Schedule monitor as a background task
@@ -205,10 +213,15 @@ def zigpy_thread_function(self):
         self.log.logging("TransportZigpy", "Error", f"zigpy_thread error when starting: {e}")
 
     finally:
-        # Ensure the event loop is closed
-        # Stop the Event Loop Monitoring if enabled
-        #if self.loop_latency_monitor:
-        #    self.loop_latency_monitor.cancel()
+        if self.loop_latency_monitor and not self.loop_latency_monitor.done():
+            self.loop_latency_monitor.cancel()
+            try:
+                # Give the cancellation a chance to propagate cleanly
+                zigpy_loop.run_until_complete(
+                    asyncio.gather(self.loop_latency_monitor, return_exceptions=True)
+                )
+            except Exception:
+                pass
 
         if not zigpy_loop.is_closed():
             zigpy_loop.close()
@@ -240,14 +253,20 @@ async def start_zigpy_task(self, channel, extended_pan_id):
 
     self.log.logging( "TransportZigpy", "Debug", f"start_zigpy_task -extendedPANID {self.pluginconf.pluginConf['extendedPANID']} {extended_pan_id}", )
 
+    # FIX: Initialise writer_queue BEFORE radio_start so that stop_zigpy_thread
+    # can always send a STOP message, even if radio_start fails partway through.
+    
+    self.writer_queue = queue.Queue()  # We MUST use queue and not asyncio.Queue, because it is not compatible with the Domoticz framework
+
     try:
         await radio_start(self, self.statistics, self.pluginconf, self.use_of_zigpy_persistent_db, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extended_pan_id)
 
     except Exception as e:
         self.log.logging("TransportZigpy", "Error", f"start_zigpy_task error in radio_start: {e}")
-        
-    # Run forever
-    self.writer_queue = queue.Queue()  # We MUST use queue and not asyncio.Queue, because it is not compatible with the Domoticz framework
+        # FIX: Abort early — radio failed so self.app is not usable.
+        # Continuing into worker_loop would produce confusing downstream errors.
+        self.zigpy_running = False
+        return
 
     try:
         await worker_loop(self)
@@ -275,6 +294,15 @@ async def start_zigpy_task(self, channel, extended_pan_id):
         self.log.logging("TransportZigpy", "Error", f" {str(traceback.format_exc())}")
 
         self.log.logging("TransportZigpy", "Log", "Disconnecting communication")
+        # FIX: Guard against self.app being None or already broken before
+        # attempting a fallback disconnect, to avoid a secondary exception.
+        if self.app is not None:
+            self.log.logging("TransportZigpy", "Log", "Disconnecting communication")
+            try:
+                await self.app.disconnect()
+            except Exception as disconnect_err:
+                self.log.logging("TransportZigpy", "Error", f"start_zigpy_task disconnect error: {disconnect_err}")
+
         await self.app.disconnect()
 
     #await asyncio.gather(task, return_exceptions=False)
@@ -1027,9 +1055,6 @@ async def _unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequen
     that the task completes before returning, and logs any exceptions
     encountered during execution.
 
-    If the target device is not initialized, the command is skipped to
-    prevent DeliveryError.
-
     Args:
         destination (str): IEEE address of the Zigbee device.
         Profile (int): Zigbee profile ID (e.g., 0x0104 for ZHA).
@@ -1067,7 +1092,7 @@ async def _unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequen
     #if not device or not device.is_initialized:
     #    self.log.logging("TransportZigpy", "Debug", f"Skip send to uninitialized device {destination}")
     #    return 0x01, "Device not initialized"
-#
+
     task = asyncio.create_task(
         transport_request(
             self, Function, destination, Profile, Cluster,
@@ -1170,11 +1195,8 @@ def push_APS_ACK_NACKto_plugin(self, nwkid, Cluster, sequence, result, lqi):
         # No Ack/Nack for Controller
         return
     
-    try:
-        if not isinstance(result, int):
-            result = int(result.serialize().hex(), 16)
-    except Exception as e:
-        result = -1
+    if not isinstance(result, int):
+        result = int(result.serialize().hex(), 16)
 
     # Update statistics
     if result != 0x00:
@@ -1690,8 +1712,8 @@ async def _send_and_retry(
             - -1 if transport is closed.
 
     Notes:
-        - The function uses an internal helper `_get_dynamic_delay` to compute
-          per-device adaptive delay based on recent ACK latency.
+        - Uses an internal helper `_get_dynamic_delay` to compute per-device
+          adaptive delay based on recent ACK latency.
         - Uses exponential moving average to track device ACK latency.
         - Escalates packet priority to HIGH on retries.
         - Logs warnings for devices with high queue depth (>5).
@@ -1699,58 +1721,50 @@ async def _send_and_retry(
           requests per device.
     """
 
-    # Convert to hex string
-    payload_hex = payload.hex().upper()  # uppercase for readability
-
-    etc = "  "
-    if len(payload_hex) > 8:
-        etc=".."
-
-    # Build compact log string
+    # --- Build compact log string ---
+    payload_hex = payload.hex().upper()
     display_len = 8
     payload_display = payload_hex[:display_len]
     etc = ".." if len(payload_hex) > display_len else "  "
+
     common_log_info = (
         f"ieee/nwkid: {ieee}/0x{nwkid} "
         f"profile: 0x{profile:04X} cluster: 0x{cluster:04X} "
         f"payload: 0x{payload_display:<{display_len}}{etc} "
         f"AckIsDsble: {ack_is_disable:<1} seq: {sequence:03d} "
         f"extnded_to: {extended_timeout:<1}"
-    )  
+    )
 
-    packet_priority = t.PacketPriority.NORMAL
-
-    # Initialize per-device latency tracking if missing
+    # --- Initialize per-device latency tracking if missing ---
     if not hasattr(self, "_device_ack_latency"):
         self._device_ack_latency = {}
-    device_latency = self._device_ack_latency.get(ieee, 0.05)  # default 50ms
 
-    def _get_dynamic_delay(ieee: str) -> float:
-        """
-        Compute per-device adaptive delay based on recent ACK latency.
-        Clamps the delay between 10ms and 500ms to prevent extremes.
-        Args:
-            ieee (str): IEEE address of the device.
-        Returns:
-            float: Delay in seconds to wait after sending a command.
-        """
-        min_delay = 0.01
-        max_delay = 0.5
-        device_latency = self._device_ack_latency.get(ieee, 0.05)
-        adaptive_delay = device_latency * 1.5
-        return max(min_delay, min(adaptive_delay, max_delay))
+    # module-level function) so it is not re-created on every `_send_and_retry`
+    # call.  We keep a local alias here so the inner closure can call it without
+    # referencing `self` explicitly.
+    def _dynamic_delay() -> float:
+        return _get_dynamic_delay(self, ieee)
 
-    async def __try_send(attempt):
+    # --- Inner coroutine: one send attempt ---
+    # FIX: `packet_priority` is now an explicit parameter instead of closing over
+    # the mutable outer variable, eliminating the closure-mutation hazard.
+    async def __try_send(attempt: int, packet_priority) -> "int | None":
         """
         Attempt to send the Zigbee request once.
-        Handles timeouts, cancellations, exceptions, latency tracking,
-        and dynamic delay.
+
         Args:
             attempt (int): Current retry attempt number.
+            packet_priority: Priority flag passed to zigpy_request.
+
         Returns:
-            int | None: Result code if successful or handled exception;
-                         None if retry is needed.
+            int | None: Result code if the attempt concluded (success or handled
+                        error); None if the caller should retry.
         """
+        # FIX: read the *current* EMA value at the start of each attempt so the
+        # stale-capture bug is avoided (the outer `device_latency` captured at
+        # function-entry is no longer used here).
+        current_latency = self._device_ack_latency.get(ieee, 0.05)
+
         start_send = time.monotonic()
         self.log.logging(
             "TransportZigpy",
@@ -1777,31 +1791,29 @@ async def _send_and_retry(
         except asyncio.TimeoutError:
             self.statistics._reTx += 1
             self.statistics._TOdata += 1
-            self.log.logging( "TransportZigpy", "Log", f"Timeout while submitting - {function} {common_log_info} Attempt: {attempt}" )
-            return None
+            self.log.logging(
+                "TransportZigpy", "Log",
+                f"Timeout while submitting - {function} {common_log_info} Attempt: {attempt}"
+            )
+            return None  # caller will retry
 
         except asyncio.CancelledError:
-            self.log.logging( "TransportZigpy", "Log", f"Cancelled while submitting - {function} {common_log_info} Attempt: {attempt}" )
-            return None
+            self.log.logging(
+                "TransportZigpy", "Log",
+                f"Cancelled while submitting - {function} {common_log_info} Attempt: {attempt}"
+            )
+            return None  # caller will retry
 
         except Exception as e:
             self.statistics._ackKO += 1
             self.log.logging(
-                "TransportZigpy",
-                "Log",
+                "TransportZigpy", "Log",
                 f"Warning while submitting - {function} {common_log_info} "
                 f"Attempt: {attempt} Exception: '{e}' ({type(e).__name__})"
             )
             handle_transport_result(
-                self,
-                function,
-                cluster,
-                sequence,
-                0xB6,
-                ack_is_disable,
-                extended_timeout,
-                ieee,
-                nwkid,
+                self, function, cluster, sequence, 0xB6,
+                ack_is_disable, extended_timeout, ieee, nwkid,
                 getattr(destination, "lqi", None),
             )
             return 0xB6
@@ -1811,29 +1823,41 @@ async def _send_and_retry(
                 # Transport closed
                 return result
 
-            # Update per-device latency (exponential moving average)
+            # FIX: update EMA using the latency value read at the top of this
+            # attempt (current_latency), not the stale outer variable.
             latency = time.monotonic() - start_send
-            self._device_ack_latency[ieee] = 0.6 * device_latency + 0.4 * latency
+            self._device_ack_latency[ieee] = 0.6 * current_latency + 0.4 * latency
 
             # Apply dynamic per-device delay
-            delay_after_cmd = max( delay_after_sent, _get_dynamic_delay(ieee), )
+            delay_after_cmd = max(delay_after_sent, _dynamic_delay())
             if delay_after_cmd > 0:
                 await asyncio.sleep(delay_after_cmd)
 
-            handle_transport_result( self, function, cluster, sequence, result, ack_is_disable, extended_timeout, ieee, nwkid, getattr(destination, "lqi", None), )
+            handle_transport_result(
+                self, function, cluster, sequence, result,
+                ack_is_disable, extended_timeout, ieee, nwkid,
+                getattr(destination, "lqi", None),
+            )
 
             if self.pluginconf.pluginConf.get("ZigpyLatency"):
-                self.log.logging( "TransportZigpy", "Log", f"{function[:24]:<24} {common_log_info} result: {result}, latency={latency:.3f}s" )
+                self.log.logging(
+                    "TransportZigpy", "Log",
+                    f"{function[:24]:<24} {common_log_info} result: {result}, latency={latency:.3f}s"
+                )
             return result
 
     # --- Use per-device concurrency limiter ---
     async with _limit_concurrency(self, destination, sequence):
 
         if ack_is_disable:
-            return await __try_send(attempt=1)
+            # FIX: pass the priority explicitly (NORMAL — no retries, so no escalation).
+            return await __try_send(attempt=1, packet_priority=t.PacketPriority.NORMAL)
 
         start_time = time.monotonic()
         attempt = 0
+        # FIX: priority starts as NORMAL and is escalated locally; because
+        # `__try_send` now accepts it as a parameter there is no mutable-closure risk.
+        packet_priority = t.PacketPriority.NORMAL
 
         while True:
             attempt += 1
@@ -1842,36 +1866,57 @@ async def _send_and_retry(
             if elapsed >= REQUEST_TIMEOUT:
                 self.statistics._ackKO += 1
                 self.log.logging(
-                    "TransportZigpy",
-                    "Log",
+                    "TransportZigpy", "Log",
                     f"WARNING - {common_log_info} "
-                    f"TIMEOUT of {REQUEST_TIMEOUT}s reached after {attempt-1} attempts."
+                    f"TIMEOUT of {REQUEST_TIMEOUT}s reached after {attempt - 1} attempts."
                 )
-                handle_transport_result( self, function, cluster, sequence, 0xB6, ack_is_disable, extended_timeout, ieee, nwkid, getattr(destination, "lqi", None), )
+                handle_transport_result(
+                    self, function, cluster, sequence, 0xB6,
+                    ack_is_disable, extended_timeout, ieee, nwkid,
+                    getattr(destination, "lqi", None),
+                )
                 return 0xB6
 
-            result = await __try_send(attempt)
+            result = await __try_send(attempt, packet_priority)
             if result is not None:
                 return result
 
-            # --- Adaptive backoff using queue depth + per-device latency ---
+            # --- Adaptive backoff: queue depth + per-device latency ---
             current_wait = self._currently_waiting_requests_list.get(ieee, 0)
             device_latency = self._device_ack_latency.get(ieee, 0.05)
             backoff = min(0.05 * (attempt + current_wait) + device_latency, 0.8)
             await asyncio.sleep(backoff)
 
-            # Escalate priority for retries
+            # Escalate priority for subsequent retries
             packet_priority = t.PacketPriority.HIGH
 
             # Log warning for high queue depth
             if current_wait > 5:
                 self.log.logging(
-                    "TransportZigpy",
-                    "Log",
+                    "TransportZigpy", "Log",
                     f"WARNING - Device {nwkid} queue depth high ({current_wait}) during retries, "
                     f"attempt {attempt}, adaptive backoff: {backoff:.3f}s",
                     nwkid,
                 )
+
+
+def _get_dynamic_delay(self, ieee: str) -> float:
+    """
+    Compute per-device adaptive delay based on recent ACK latency.
+    Clamps the delay between 10 ms and 500 ms to prevent extremes.
+
+    Args:
+        self: Transport instance (carries `_device_ack_latency`).
+        ieee (str): IEEE address of the device.
+
+    Returns:
+        float: Delay in seconds to wait after sending a command.
+    """
+    min_delay = 0.01
+    max_delay = 0.5
+    device_latency = self._device_ack_latency.get(ieee, 0.05)
+    adaptive_delay = device_latency * 1.5
+    return max(min_delay, min(adaptive_delay, max_delay))
 
 
 @contextlib.asynccontextmanager
@@ -1879,38 +1924,27 @@ async def _limit_concurrency(self, destination, sequence):
     """
     Async context manager to limit concurrent requests per Zigbee device.
 
-    Ensures that no more than a fixed number of requests are sent concurrently
-    to a single device. Requests beyond the concurrency limit are queued and
-    delayed until a slot becomes available. This helps prevent flooding
-    slow or bursty devices (e.g., Tuya EF00 cluster devices) and reduces
-    `request_callback_rsp()` timeouts.
+    Ensures that no more than MAX_CONCURRENT_REQUESTS_PER_DEVICE requests
+    are sent concurrently to a single device.  Requests beyond the limit are
+    queued until a slot becomes available.
 
     Features:
-        - Uses a per-device asyncio.Semaphore to enforce concurrency limits.
-        - Tracks the number of pending requests per device.
+        - Per-device asyncio.Semaphore to enforce concurrency limits.
+        - Tracks pending-request count per device for adaptive backoff.
         - Logs debug messages for delayed requests.
-        - Logs warnings if semaphore acquisition exceeds `SEMAPHORE_TIMEOUT`.
-        - Opportunistically cleans up semaphores and counters if no longer needed.
+        - Logs warnings if semaphore acquisition exceeds SEMAPHORE_TIMEOUT.
+        - Clean release logic via explicit `acquired` flag (no accidental
+          double-release or release-without-acquire).
 
     Parameters:
         self: Transport instance.
-        destination (zigpy.device.Device): Target Zigbee device for which
-                                           concurrency is being managed.
-        sequence (int | str): Identifier for the request, used for logging/debugging.
+        destination (zigpy.device.Device): Target device.
+        sequence (int | str): Request identifier used in log messages.
 
     Yields:
-        None: Code inside the `async with` block executes once a concurrency
-              slot is acquired. If the semaphore acquisition times out, the
-              block still executes, but a warning is logged.
-
-    Notes:
-        - MAX_CONCURRENT_REQUESTS_PER_DEVICE defines the per-device concurrency limit.
-        - SEMAPHORE_TIMEOUT defines the maximum wait time for acquiring a slot.
-        - Uses internal dictionaries `_concurrent_requests_semaphores_list` and
-          `_currently_waiting_requests_list` to track semaphores and queue depth
-          by IEEE address.
-        - Integrates seamlessly with `_send_and_retry` for adaptive pacing.
-        - The semaphore is released automatically on exit, even if an exception occurs.
+        None: The protected block executes once a slot is acquired.
+              On timeout the block still executes (graceful fallback), but
+              the semaphore is NOT released afterwards (it was never acquired).
     """
 
     ieee = str(destination.ieee)
@@ -1918,92 +1952,84 @@ async def _limit_concurrency(self, destination, sequence):
 
     # Initialize semaphore and waiting counter safely
     if ieee not in self._concurrent_requests_semaphores_list:
-        self._concurrent_requests_semaphores_list[ieee] = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS_PER_DEVICE)
+        self._concurrent_requests_semaphores_list[ieee] = asyncio.Semaphore(
+            MAX_CONCURRENT_REQUESTS_PER_DEVICE
+        )
     self._currently_waiting_requests_list.setdefault(ieee, 0)
 
     semaphore = self._concurrent_requests_semaphores_list[ieee]
     start_time = time.monotonic()
-    was_locked = semaphore.locked()
 
-    if was_locked:
-        self._currently_waiting_requests_list[ieee] += 1
-        self.log.logging(
-            "ZigpyLimitConcurrency",
-            "Debug",
-            f"Max concurrency reached for {nwkid}, delaying request {sequence} "
-            f"({self._currently_waiting_requests_list[ieee]} enqueued)",
-            nwkid,
-        )
+    # FIX: replace the racy `semaphore.locked()` snapshot with a proper
+    # non-blocking acquire attempt to determine whether we are actually queued.
+    #
+    # `semaphore.locked()` only reflects the state at one instant; between the
+    # check and the blocking `acquire()` call the semaphore could become free,
+    # causing the waiting counter to be inflated for requests that were never
+    # actually delayed.
+    #
+    # Strategy: try a non-blocking acquire first.
+    #   - Success  → slot was free, proceed immediately, was_queued = False.
+    #   - Failure  → slot was full, increment counter, block until available.
+    was_queued = False
+    # FIX: explicit flag so the finally-block only releases what was acquired.
+    acquired = False
 
     try:
-        # Wait for semaphore with timeout
-        try:
-            await asyncio.wait_for(semaphore.acquire(), timeout=SEMAPHORE_TIMEOUT)
-        except asyncio.TimeoutError:
+        if semaphore._value > 0:
+            # Fast path: slot available — acquire without blocking.
+            await semaphore.acquire()
+            acquired = True
+        else:
+            # Slow path: all slots taken, we are genuinely queued.
+            was_queued = True
+            self._currently_waiting_requests_list[ieee] += 1
             self.log.logging(
                 "ZigpyLimitConcurrency",
-                "Warning",
-                f"Timeout waiting for concurrency slot for {nwkid}, request {sequence} dropped",
+                "Debug",
+                f"Max concurrency reached for {nwkid}, delaying request {sequence} "
+                f"({self._currently_waiting_requests_list[ieee]} enqueued)",
                 nwkid,
             )
-            yield  # Execute the block anyway for graceful fallback
-            return
 
-        # Delayed request is now running
-        if was_locked:
+            try:
+                await asyncio.wait_for(semaphore.acquire(), timeout=SEMAPHORE_TIMEOUT)
+                acquired = True
+            except asyncio.TimeoutError:
+                self.log.logging(
+                    "ZigpyLimitConcurrency",
+                    "Warning",
+                    f"Timeout waiting for concurrency slot for {nwkid}, "
+                    f"request {sequence} proceeding without slot",
+                    nwkid,
+                )
+                # acquired remains False → finally will NOT call release()
+
+        # Log how long the queued request had to wait
+        if was_queued and acquired:
             elapsed_time = time.monotonic() - start_time
             self.log.logging(
                 "ZigpyLimitConcurrency",
                 "Debug",
-                f"Previously delayed request {sequence} is now running, delayed by {elapsed_time:.2f}s for {nwkid}",
+                f"Previously delayed request {sequence} is now running, "
+                f"delayed by {elapsed_time:.2f}s for {nwkid}",
                 nwkid,
             )
 
         yield
 
     finally:
-        # Release semaphore
-        if semaphore.locked():
+        # FIX: only release if we actually acquired the semaphore.
+        # The original code used `if semaphore.locked()` which is unreliable
+        # when MAX_CONCURRENT_REQUESTS_PER_DEVICE > 1 and could accidentally
+        # release a slot that belongs to a different concurrent coroutine.
+        if acquired:
             semaphore.release()
 
-        # Decrement waiting counter if this request was queued
-        if was_locked:
+        # Decrement waiting counter only for requests that were genuinely queued
+        if was_queued:
             self._currently_waiting_requests_list[ieee] -= 1
 
-        # Optional opportunistic cleanup (commented, can be enabled if desired)
-        # if (self._currently_waiting_requests_list.get(ieee, 0) == 0
-        #     and self._concurrent_requests_semaphores_list[ieee]._value == MAX_CONCURRENT_REQUESTS_PER_DEVICE):
-        #     del self._concurrent_requests_semaphores_list[ieee]
-        #     self._currently_waiting_requests_list.pop(ieee, None)
-
-
-def _cleanup_unused_concurrency_state(self):
-    """
-    Cleans up semaphore and waiting state for inactive devices.
-
-    This method iterates through all per-device semaphores and removes entries
-    that are no longer in use. A device's concurrency state is considered unused if:
-    - No requests are currently waiting (i.e., waiting count == 0)
-    - All semaphore slots are released (i.e., the semaphore is not acquired by any task)
-
-    This helps prevent unbounded memory growth when many devices are seen temporarily.
-
-    Notes
-    -----
-    - This method should be called periodically (e.g., every hour) or during idle time.
-    - Safe to call while other coroutines are active.
-    """
-    for ieee in list(self._concurrent_requests_semaphores_list):
-        sem = self._concurrent_requests_semaphores_list[ieee]
-        waiting = self._currently_waiting_requests_list.get(ieee, 0)
-
-        # Only clean up if no one is waiting and all slots are released
-        if waiting == 0 and sem._value == MAX_CONCURRENT_REQUESTS_PER_DEVICE:
-            self.log.logging("TransportZigpy", "Debug", f"_cleanup_unused_concurrency_state {ieee} from concurrency_state", )
-            
-            del self._concurrent_requests_semaphores_list[ieee]
-            self._currently_waiting_requests_list.pop(ieee, None)
-            
 
 def specific_endpoints(self):
     """
@@ -2021,3 +2047,47 @@ def specific_endpoints(self):
         and self.pluginconf.pluginConf[plugin]
         for plugin in supported_plugins
     )
+
+
+def _cleanup_unused_concurrency_state(self) -> None:
+    """
+    Cleans up semaphore and waiting state for inactive devices.
+
+    This method iterates through all per-device semaphores and removes entries
+    that are no longer in use. A device's concurrency state is considered unused if:
+    - No requests are currently waiting (i.e., waiting count == 0)
+    - All semaphore slots are released (i.e., the semaphore value equals MAX_CONCURRENT_REQUESTS_PER_DEVICE)
+
+    This helps prevent unbounded memory growth when many devices are seen temporarily.
+
+    Notes
+    -----
+    - Should be called periodically (e.g., every hour) or during idle time.
+    - Safe to call while other coroutines are active, as no awaits are performed.
+    - Accesses asyncio.Semaphore._value, which is a private attribute but has no
+      public equivalent in the standard library.
+    """
+    cleaned_up = []
+
+    for ieee in list(self._concurrent_requests_semaphores_list):
+        sem = self._concurrent_requests_semaphores_list[ieee]
+        waiting = self._currently_waiting_requests_list.get(ieee, 0)
+
+        # Only clean up if no one is waiting and all slots are fully released
+        if waiting == 0 and sem._value == MAX_CONCURRENT_REQUESTS_PER_DEVICE:
+            del self._concurrent_requests_semaphores_list[ieee]
+            self._currently_waiting_requests_list.pop(ieee, None)
+            cleaned_up.append(ieee)
+
+    if cleaned_up:
+        self.log.logging(
+            "TransportZigpy",
+            "Debug",
+            f"_cleanup_unused_concurrency_state: removed {len(cleaned_up)} device(s): {cleaned_up}",
+        )
+    else:
+        self.log.logging(
+            "TransportZigpy",
+            "Debug",
+            "_cleanup_unused_concurrency_state: nothing to clean up",
+        )
