@@ -345,7 +345,6 @@ def leaveMgtReJoin(self, saddr, ieee, rejoin=True):
     """
     E_SL_MSG_MANAGEMENT_LEAVE_REQUEST / 0x47
 
-
     This function requests a remote node to leave the network. The request also
     indicates whether the children of the leaving node should also be requested to leave
     and whether the leaving node(s) should subsequently attempt to rejoin the network.
@@ -469,7 +468,7 @@ def leaveRequest(self, ShortAddr=None, IEEE=None, RemoveChild=0x00, Rejoin=0x00)
         "BasicOutput",
         "Debug",
         "---------> Sending a leaveRequest - NwkId: %s, IEEE: %s, RemoveChild: %s, Rejoin: %s"
-        % (ShortAddr, IEEE, RemoveChild, Rejoin),
+        % (ShortAddr, IEEE, _rmv_children, _rejoin),
         ShortAddr,
     )
     return zdp_management_leave_request(self, ShortAddr, _ieee, _rejoin, _rmv_children)
