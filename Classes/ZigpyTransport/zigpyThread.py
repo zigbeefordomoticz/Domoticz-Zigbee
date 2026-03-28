@@ -1646,9 +1646,9 @@ async def zigpy_mrequest( self, group_id: t.uint16_t, profile: t.uint8_t, cluste
 
     await self.app.send_packet(
         t.ZigbeePacket(
-            src=t.AddrModeAddress( addr_mode=t.AddrMode.NWK, address=self.state.node_info.nwk ),
+            src=t.AddrModeAddress( addr_mode=t.AddrMode.NWK, address=self.app.state.node_info.nwk ),
             src_ep=src_ep,
-            dst=t.AddrModeAddress(addr_mode=t.AddrMode.Group, address=group_id),
+            dst=t.AddrModeAddress( addr_mode=t.AddrMode.Group, address=group_id),
             tsn=sequence,
             profile_id=profile,
             cluster_id=cluster,
@@ -1685,7 +1685,7 @@ async def zigpy_broadcast( self, profile: t.uint16_t, cluster: t.uint16_t, src_e
     """
     await self.app.send_packet(
         t.ZigbeePacket(
-            src=t.AddrModeAddress( addr_mode=t.AddrMode.NWK, address=self.state.node_info.nwk ),
+            src=t.AddrModeAddress( addr_mode=t.AddrMode.NWK, address=self.app.state.node_info.nwk ),
             src_ep=src_ep,
             dst=t.AddrModeAddress( addr_mode=t.AddrMode.Broadcast, address=broadcast_address ),
             dst_ep=dst_ep,
