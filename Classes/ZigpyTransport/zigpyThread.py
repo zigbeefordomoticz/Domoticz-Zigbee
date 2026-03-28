@@ -276,7 +276,8 @@ async def start_zigpy_task(self, channel, extended_pan_id):
         self.log.logging("TransportZigpy", "Error", f" {str(traceback.format_exc())}")
 
         self.log.logging("TransportZigpy", "Log", "Disconnecting communication")
-        await self.app.disconnect()
+        if self.app:
+            await self.app.disconnect()
 
     #await asyncio.gather(task, return_exceptions=False)
     await asyncio.sleep(1)
@@ -388,6 +389,7 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
     except Exception as e:
         self.log.logging( "TransportZigpy", "Error", "Error while applying optional configuration to Radio: %s on port %s with %s" %( radiomodule, serialPort, e) )
         self.log.logging("TransportZigpy", "Error", "%s" %traceback.format_exc())
+        return
 
     try:
         if radiomodule in ["znp", "deCONZ", "ezsp", "blz"]:
@@ -653,6 +655,10 @@ async def _radio_startup(self, statistics, pluginconf, use_of_zigpy_persistent_d
         new_network (bool): Whether to form a new network.
         radiomodule (str): Radio module type.
     """
+    if not self.app:
+        self.log.logging( "TransportZigpy", "Error", "Error at startup - self.app not initialized")
+        return
+    
     try:
         await self.app.startup(
             self.statistics,
@@ -672,7 +678,8 @@ async def _radio_startup(self, statistics, pluginconf, use_of_zigpy_persistent_d
         )
     except Exception as e:
         self.log.logging( "TransportZigpy", "Error", "Error at startup %s" %e)
-        
+        return
+
     if new_network:
         # Assume that the new network has been created
         self.log.logging( "TransportZigpy", "Status", "++ Assuming new network formed")
@@ -728,11 +735,16 @@ def display_network_infos(self):
     self.log.logging( "TransportZigpy", "Status", f"  NWK update ID:         {self.app.state.network_info.nwk_update_id}")
     self.log.logging( "TransportZigpy", "Status", f"  Device IEEE:           {self.app.state.node_info.ieee}")
     self.log.logging( "TransportZigpy", "Status", f"  Device NWK:            0x{self.app.state.node_info.nwk:04X}")
+
     self.log.logging( "TransportZigpy", "Status", "  Network key:           " + ":".join( f"{c:02x}" for c in self.app.state.network_information.network_key.key ))
     self.log.logging( "TransportZigpy", "Status", f"  Network key sequence:  {self.app.state.network_info.network_key.seq}")
     self.log.logging( "TransportZigpy", "Status", f"  Network key counter:   {self.app.state.network_info.network_key.tx_counter}")
 
-
+    self.log.logging( "TransportZigpy", "Status", f"  TX Power:             {self.app.state.network_information.tx_power}")
+    self.log.logging( "TransportZigpy", "Status", f"  Security Level:       {self.app.state.network_information.security_level}")
+    self.log.logging( "TransportZigpy", "Status", f"  Children:             {self.app.state.network_information.children}")
+    self.log.logging( "TransportZigpy", "Status", f"  Routers:              {self.app.state.network_information.route_table}")
+                     
 async def worker_loop(self):
     """
     Main worker loop for processing commands from the writer_queue.
@@ -1151,13 +1163,14 @@ def push_APS_ACK_NACKto_plugin(self, nwkid, Cluster, sequence, result, lqi):
     try:
         if not isinstance(result, int):
             result = int(result.serialize().hex(), 16)
+        # Update statistics
+        if result != 0x00:
+            self.statistics._APSNck += 1
+        else:
+            self.statistics._APSAck += 1
+
     except Exception as e:
         result = -1
-
-    # Update statistics
-    if result != 0x00:
-        self.statistics._APSNck += 1
-    else:
         self.statistics._APSAck += 1
 
     # Send Ack/Nack to Plugin
