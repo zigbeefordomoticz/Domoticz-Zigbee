@@ -960,18 +960,18 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None, delayAft
 
     if transport_needs == "Broadcast":
         self.log.logging("TransportZigpy", "Debug", f"process_raw_command Broadcast: {NwkId}")
-        result, msg = await _broadcast_command(self, Profile, Cluster, sEp, dEp, sequence, payload)
+        result, msg = await send_broadcast_command(self, Profile, Cluster, sEp, dEp, sequence, payload)
 
     elif addressmode == 0x01:
-        result, msg = await _multicast_command(self, NwkId, Profile, Cluster, sEp, sequence, payload)
+        result, msg = await send_multicast_command(self, NwkId, Profile, Cluster, sEp, sequence, payload)
 
     elif transport_needs == "Unicast":
-        result, msg = await _unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, AckIsDisable, delay, extended_timeout, Function, Sqn, delayAfterSent)
+        result, msg = await send_unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, AckIsDisable, delay, extended_timeout, Function, Sqn, delayAfterSent)
 
     self.log.logging("TransportZigpy", "Debug", f"ZigyTransport: process_raw_command completed NwkId: {destination} result: {result} msg: {msg}")
 
 
-async def _broadcast_command(self, Profile, Cluster, sEp, dEp, sequence, payload):
+async def send_broadcast_command(self, Profile, Cluster, sEp, dEp, sequence, payload):
     """
     Sends a broadcast Zigbee command.
 
@@ -994,7 +994,7 @@ async def _broadcast_command(self, Profile, Cluster, sEp, dEp, sequence, payload
     return result, msg
 
 
-async def _multicast_command(self, NwkId, Profile, Cluster, sEp, sequence, payload):
+async def send_multicast_command(self, NwkId, Profile, Cluster, sEp, sequence, payload):
     """
     Sends a multicast Zigbee command to a group.
 
@@ -1013,13 +1013,13 @@ async def _multicast_command(self, NwkId, Profile, Cluster, sEp, sequence, paylo
         tuple: (result, message) from the multicast operation.
     """
     destination = int(NwkId, 16)
-    self.log.logging("TransportZigpy", "Debug", f"process_raw_command Multicast: {destination}")
+    self.log.logging("TransportZigpy", "Debug", f"send_multicast_command Multicast: {destination}")
     result, msg = await self.app.mrequest(destination, Profile, Cluster, sEp, sequence, payload)
     await asyncio.sleep(2 * WAITING_TIME_BETWEEN_REQUESTS)
     return result, msg
 
 
-async def _unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, AckIsDisable, delay, extended_timeout, Function, Sqn, delayAfterSent):
+async def send_unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, AckIsDisable, delay, extended_timeout, Function, Sqn, delayAfterSent):
     """
     Sends a unicast command to a Zigbee device.
 
@@ -1045,14 +1045,14 @@ async def _unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequen
     """
 
     payload_hex = payload.hex()[:100] + "..." if len(payload.hex()) > 100 else payload.hex()
-    self.log.logging("TransportZigpy", "Debug", f"process_raw_command Unicast destination: {destination} Profile: {Profile} Cluster: {Cluster} sEp: {sEp} dEp: {dEp} Seq: {sequence} Payload: {payload_hex}")
+    self.log.logging("TransportZigpy", "Debug", f"send_unicast_command Unicast destination: {destination} Profile: {Profile} Cluster: {Cluster} sEp: {sEp} dEp: {dEp} Seq: {sequence} Payload: {payload_hex}")
 
     AckIsDisable = False if self.pluginconf.pluginConf["ForceAPSAck"] else AckIsDisable
 
     try:
         task = asyncio.create_task(
             transport_request(self, Function, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=AckIsDisable, use_ieee=False, delay=delay, extended_timeout=extended_timeout, delayAfterSent=delayAfterSent),
-            name=f"_unicast_command-{Function}-{destination}-{Cluster}-{Sqn}"
+            name=f"send_unicast_command-{Function}-{destination}-{Cluster}-{Sqn}"
         )
 
         # Add callback to log task completion
@@ -1067,7 +1067,7 @@ async def _unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequen
         task.add_done_callback(task_done_callback)
 
     except (TypeError, ValueError, RuntimeError) as e:
-        self.log.logging("TransportZigpy", "Error", f"process_raw_command: Error creating task: {e}\n{traceback.format_exc()}")
+        self.log.logging("TransportZigpy", "Error", f"send_unicast_command: Error creating task: {e}\n{traceback.format_exc()}")
         async with asyncio.Lock():
             self.statistics._ackKO += 1
         return ERROR_TASK_CREATION_FAILED, str(e)
