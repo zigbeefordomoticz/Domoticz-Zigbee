@@ -47,6 +47,7 @@ Usage:
 import asyncio
 import contextlib
 import functools
+import importlib
 import json
 import queue
 import random
@@ -76,7 +77,7 @@ from Modules.macPrefix import DELAY_FOR_VERY_KEY
 ERROR_TASK_CREATION_FAILED = 0xB6
 SEMAPHORE_TIMEOUT = 240  # seconds
 REQUEST_TIMEOUT = 8   # This is a given time for the request to be sent
-WAITING_TIME_BETWEEN_REQUESTS = 0.0
+WAITING_TIME_BETWEEN_REQUESTS = .100
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 VERIFY_KEY_DELAY = 6
 
@@ -177,11 +178,10 @@ def zigpy_thread_function(self):
                     start = time.monotonic()
                     await asyncio.sleep(interval)
                     delay = time.monotonic() - start - interval
-                    if delay > threshold:
-                        self.log.logging( "TransportZigpy", "Log", f"Event loop blocked for {delay:.3f}s")
-                    elif delay > 5:
-                        self.log.logging( "TransportZigpy", "Error", f"Event loop blocked for {delay:.3f}s")
-
+                    if delay > 5:
+                        self.log.logging("TransportZigpy", "Error", f"Event loop blocked for {delay:.3f}s")
+                    elif delay > threshold:
+                        self.log.logging("TransportZigpy", "Log", f"Event loop blocked for {delay:.3f}s")
             except asyncio.CancelledError:
                 self.log.logging( "TransportZigpy", "Log", "Event loop monitoring stopped" )
                 return
@@ -276,7 +276,8 @@ async def start_zigpy_task(self, channel, extended_pan_id):
         self.log.logging("TransportZigpy", "Error", f" {str(traceback.format_exc())}")
 
         self.log.logging("TransportZigpy", "Log", "Disconnecting communication")
-        await self.app.disconnect()
+        if self.app:
+            await self.app.disconnect()
 
     #await asyncio.gather(task, return_exceptions=False)
     await asyncio.sleep(1)
@@ -348,39 +349,24 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
 
     serial_specifics = self._serialPort_communication_specifics or {}
 
-    try:
-        if radiomodule == "ezsp":
-            import bellows.config as radio_specific_conf
+    _RADIO_REGISTRY = {
+        "ezsp": ("bellows.config", "Classes.ZigpyTransport.AppBellows.App_bellows", ezsp_configuration_setup),
+        "znp": ("zigpy_znp.config", "Classes.ZigpyTransport.AppZnp.App_znp", znp_configuration_setup),
+        "deCONZ":("zigpy_deconz.config", "Classes.ZigpyTransport.AppDeconz.App_deconz", deconz_configuration_setup),
+        "blz": (None, "Classes.ZigpyTransport.AppBlz.App_blz", blz_configuration_setup),
+    }
 
-            from Classes.ZigpyTransport.AppBellows import App_bellows as App
-            config = ezsp_configuration_setup(self, radio_specific_conf, serialPort, serial_specifics)
+    entry = _RADIO_REGISTRY.get(radiomodule)
+    if entry is None:
+        self.log.logging("TransportZigpy", "Error", f"Wrong radiomodule: {radiomodule}")
+        return
 
-        elif radiomodule =="znp":
-            import zigpy_znp.config as radio_specific_conf
+    conf_module_path, app_class_path, setup_fn = entry
+    radio_specific_conf = importlib.import_module(conf_module_path) if conf_module_path else {}
+    App = _import_class(app_class_path)
+    config = setup_fn(self, radio_specific_conf, serialPort, serial_specifics)
 
-            from Classes.ZigpyTransport.AppZnp import App_znp as App
-            config = znp_configuration_setup(self, radio_specific_conf, serialPort, serial_specifics)
-
-        elif radiomodule =="deCONZ":
-            import zigpy_deconz.config as radio_specific_conf
-
-            from Classes.ZigpyTransport.AppDeconz import App_deconz as App
-            config = deconz_configuration_setup(self, radio_specific_conf, serialPort, serial_specifics)
-
-        elif radiomodule == "blz":
-            radio_specific_conf = {}
-            from Classes.ZigpyTransport.AppBlz import App_blz as App
-            config = blz_configuration_setup(self, radio_specific_conf, serialPort, serial_specifics)
-
-        else:
-            self.log.logging( "TransportZigpy", "Error", "Wrong radiomode: %s" % (radiomodule), )
-            return
-
-        self.log.logging("TransportZigpy", "Status", "++ Started radio %s port: %s config %s" %( radiomodule, serialPort, config))
-
-    except Exception as e:
-        self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
-        self.log.logging("TransportZigpy", "Error", "%s" %traceback.format_exc())       
+    self.log.logging("TransportZigpy", "Status", "++ Started radio %s port: %s config %s" %( radiomodule, serialPort, config))
 
     try:
         optional_configuration_setup(self, config, radio_specific_conf, set_extendedPanId, set_channel)
@@ -388,11 +374,11 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
     except Exception as e:
         self.log.logging( "TransportZigpy", "Error", "Error while applying optional configuration to Radio: %s on port %s with %s" %( radiomodule, serialPort, e) )
         self.log.logging("TransportZigpy", "Error", "%s" %traceback.format_exc())
+        return
 
     try:
         if radiomodule in ["znp", "deCONZ", "ezsp", "blz"]:
             self.app = App(config)
-
         else:
             self.log.logging( "TransportZigpy", "Error", "Wrong radiomode: %s" % (radiomodule), )
             return
@@ -409,7 +395,7 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
     else:
         new_network = False
 
-    if self.use_of_zigpy_persistent_db and self.app:
+    if self.app and self.use_of_zigpy_persistent_db:
         self.log.logging( "TransportZigpy", "Status", "++ Use of Zigpy Persistent Db")
         try:
             await self.app._load_db()
@@ -421,6 +407,7 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
 
     except Exception as e:
         self.log.logging( "TransportZigpy", "Error", "Error during radio startup: %s" %e)
+
     self.log.logging( "TransportZigpy", "Debug", "Exiting co-rounting radio_start")
 
 
@@ -653,6 +640,10 @@ async def _radio_startup(self, statistics, pluginconf, use_of_zigpy_persistent_d
         new_network (bool): Whether to form a new network.
         radiomodule (str): Radio module type.
     """
+    if not self.app:
+        self.log.logging( "TransportZigpy", "Error", "Error at startup - self.app not initialized")
+        return
+    
     try:
         await self.app.startup(
             self.statistics,
@@ -672,7 +663,8 @@ async def _radio_startup(self, statistics, pluginconf, use_of_zigpy_persistent_d
         )
     except Exception as e:
         self.log.logging( "TransportZigpy", "Error", "Error at startup %s" %e)
-        
+        return
+
     if new_network:
         # Assume that the new network has been created
         self.log.logging( "TransportZigpy", "Status", "++ Assuming new network formed")
@@ -728,11 +720,16 @@ def display_network_infos(self):
     self.log.logging( "TransportZigpy", "Status", f"  NWK update ID:         {self.app.state.network_info.nwk_update_id}")
     self.log.logging( "TransportZigpy", "Status", f"  Device IEEE:           {self.app.state.node_info.ieee}")
     self.log.logging( "TransportZigpy", "Status", f"  Device NWK:            0x{self.app.state.node_info.nwk:04X}")
+
     self.log.logging( "TransportZigpy", "Status", "  Network key:           " + ":".join( f"{c:02x}" for c in self.app.state.network_information.network_key.key ))
     self.log.logging( "TransportZigpy", "Status", f"  Network key sequence:  {self.app.state.network_info.network_key.seq}")
     self.log.logging( "TransportZigpy", "Status", f"  Network key counter:   {self.app.state.network_info.network_key.tx_counter}")
 
-
+    self.log.logging( "TransportZigpy", "Status", f"  TX Power:             {self.app.state.network_information.tx_power}")
+    self.log.logging( "TransportZigpy", "Status", f"  Security Level:       {self.app.state.network_information.security_level}")
+    self.log.logging( "TransportZigpy", "Status", f"  Children:             {self.app.state.network_information.children}")
+    self.log.logging( "TransportZigpy", "Status", f"  Routers:              {self.app.state.network_information.route_table}")
+                     
 async def worker_loop(self):
     """
     Main worker loop for processing commands from the writer_queue.
@@ -950,28 +947,30 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None, delayAft
     extended_timeout = False if AckIsDisable else data.get("RxOnIdle", False)
     delay = data.get("Delay", None)
 
-    self.log.logging("TransportZigpy", "Debug", f"process_raw_command: process_raw_command ready to request Function: {Function} NwkId: {NwkId}/{dEp} Cluster: {Cluster} Seq: {sequence} Payload: {payload.hex()} AddrMode: {addressmode} AckIsDisable: {AckIsDisable} Sqn: {Sqn}, Delay: {delay}, delayAfterSent {delayAfterSent}, Extended_TO: {extended_timeout}")
+    self.log.logging("TransportZigpy", "Debug", f"process_raw_command: ready to request Function: {Function} NwkId: {NwkId}/{dEp} Cluster: {Cluster} Seq: {sequence} Payload: {payload.hex()} AddrMode: {addressmode} AckIsDisable: {AckIsDisable} Sqn: {Sqn}, Delay: {delay}, delayAfterSent {delayAfterSent}, Extended_TO: {extended_timeout}")
 
     destination, transport_needs = _get_destination(self, NwkId, addressmode, Profile, Cluster, sEp, dEp, sequence, payload)
-
     if destination is None:
-        self.log.logging("TransportZigpy", "Log", f"process_raw_command: unable to find destination/transport for request {properyly_display_data(data)} - aborting")
+        self.log.logging("TransportZigpy", "Error", f"process_raw_command: unknown destination: {destination}")
         return
 
-    if transport_needs == "Broadcast":
-        self.log.logging("TransportZigpy", "Debug", f"process_raw_command Broadcast: {NwkId}")
-        result, msg = await _broadcast_command(self, Profile, Cluster, sEp, dEp, sequence, payload)
+    handlers = {
+        "Broadcast": lambda: send_broadcast_command(self, Profile, Cluster, sEp, dEp, sequence, payload),
+        "Multicast": lambda: send_multicast_command(self, NwkId, Profile, Cluster, sEp, sequence, payload),
+        "Unicast": lambda: send_unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, AckIsDisable, delay, extended_timeout, Function, Sqn, delayAfterSent),
+    }
 
-    elif addressmode == 0x01:
-        result, msg = await _multicast_command(self, NwkId, Profile, Cluster, sEp, sequence, payload)
+    key = "Multicast" if addressmode == 0x01 else transport_needs
+    handler = handlers.get(key)
+    if handler is None:
+        self.log.logging("TransportZigpy", "Error", f"process_raw_command: unhandled transport '{transport_needs}' addrmode {addressmode}")
+        return
 
-    elif transport_needs == "Unicast":
-        result, msg = await _unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, AckIsDisable, delay, extended_timeout, Function, Sqn, delayAfterSent)
-
-    self.log.logging("TransportZigpy", "Debug", f"ZigyTransport: process_raw_command completed NwkId: {destination} result: {result} msg: {msg}")
+    result, msg = await handler()
+    self.log.logging("TransportZigpy", "Debug", f"process_raw_command completed: {destination} result={result} msg={msg}")
 
 
-async def _broadcast_command(self, Profile, Cluster, sEp, dEp, sequence, payload):
+async def send_broadcast_command(self, Profile, Cluster, sEp, dEp, sequence, payload):
     """
     Sends a broadcast Zigbee command.
 
@@ -994,7 +993,7 @@ async def _broadcast_command(self, Profile, Cluster, sEp, dEp, sequence, payload
     return result, msg
 
 
-async def _multicast_command(self, NwkId, Profile, Cluster, sEp, sequence, payload):
+async def send_multicast_command(self, NwkId, Profile, Cluster, sEp, sequence, payload):
     """
     Sends a multicast Zigbee command to a group.
 
@@ -1013,13 +1012,13 @@ async def _multicast_command(self, NwkId, Profile, Cluster, sEp, sequence, paylo
         tuple: (result, message) from the multicast operation.
     """
     destination = int(NwkId, 16)
-    self.log.logging("TransportZigpy", "Debug", f"process_raw_command Multicast: {destination}")
+    self.log.logging("TransportZigpy", "Debug", f"send_multicast_command Multicast: {destination}")
     result, msg = await self.app.mrequest(destination, Profile, Cluster, sEp, sequence, payload)
     await asyncio.sleep(2 * WAITING_TIME_BETWEEN_REQUESTS)
     return result, msg
 
 
-async def _unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, AckIsDisable, delay, extended_timeout, Function, Sqn, delayAfterSent):
+async def send_unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, AckIsDisable, delay, extended_timeout, Function, Sqn, delayAfterSent):
     """
     Sends a unicast command to a Zigbee device.
 
@@ -1045,41 +1044,38 @@ async def _unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequen
     """
 
     payload_hex = payload.hex()[:100] + "..." if len(payload.hex()) > 100 else payload.hex()
-    self.log.logging("TransportZigpy", "Debug", f"process_raw_command Unicast destination: {destination} Profile: {Profile} Cluster: {Cluster} sEp: {sEp} dEp: {dEp} Seq: {sequence} Payload: {payload_hex}")
-
     AckIsDisable = False if self.pluginconf.pluginConf["ForceAPSAck"] else AckIsDisable
+
+    self.log.logging("TransportZigpy", "Debug", f"send_unicast_command Unicast destination: {destination} Profile: {Profile} Cluster: {Cluster} sEp: {sEp} dEp: {dEp} Seq: {sequence} Payload: {payload_hex}")
 
     try:
         task = asyncio.create_task(
             transport_request(self, Function, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=AckIsDisable, use_ieee=False, delay=delay, extended_timeout=extended_timeout, delayAfterSent=delayAfterSent),
-            name=f"_unicast_command-{Function}-{destination}-{Cluster}-{Sqn}"
+            name=f"send_unicast_command-{Function}-{destination}-{Cluster}-{Sqn}"
         )
 
-        # Add callback to log task completion
-        def task_done_callback(task):
-            async def async_callback():
-                async with asyncio.Lock():  # Now valid in async context
-                    if task.exception():
-                        self.log.logging("TransportZigpy", "Debug", f"_unicast_command - Task {task.get_name()} failed with exception: {task.exception()}")
-                        self.statistics._ackKO += 1
-                    else:
-                        self.log.logging("TransportZigpy", "Debug", f"_unicast_command - Task {task.get_name()} completed successfully")
-
-            # Schedule the async callback in the event loop
-            asyncio.create_task(async_callback())
-
-        task.add_done_callback(task_done_callback)
-
     except (TypeError, ValueError, RuntimeError) as e:
-        self.log.logging("TransportZigpy", "Error", f"process_raw_command: Error creating task: {e}\n{traceback.format_exc()}")
-        async with asyncio.Lock():
-            self.statistics._ackKO += 1
+        self.log.logging("TransportZigpy", "Error", f"Failed to create task: {e}")
+        self.statistics._ackKO += 1
         return ERROR_TASK_CREATION_FAILED, str(e)
 
-    async with asyncio.Lock():
-        self.statistics._sent += 1
-
+    task.add_done_callback(_make_unicast_callback(self))
+    self.statistics._sent += 1
     return 0x00, ""
+
+def _make_unicast_callback(self):
+    """Returns a task-done callback that logs and updates statistics."""
+
+    def callback(task):
+        if task.cancelled():
+            return
+        exc = task.exception()
+        if exc:
+            self.statistics._ackKO += 1
+            self.log.logging("TransportZigpy", "Debug", f"Task {task.get_name()} failed: {exc}")
+        else:
+            self.log.logging("TransportZigpy", "Debug", f"Task {task.get_name()} completed")
+    return callback
 
 
 def _get_destination(self, NwkId, addressmode, Profile, Cluster, sEp, dEp, sequence, payload):
@@ -1152,14 +1148,18 @@ def push_APS_ACK_NACKto_plugin(self, nwkid, Cluster, sequence, result, lqi):
         # No Ack/Nack for Controller
         return
     
-    if not isinstance(result, int):
-        result = int(result.serialize().hex(), 16)
+    try:
+        if not isinstance(result, int):
+            result = int(result.serialize().hex(), 16)
+        # Update statistics
+        if result != 0x00:
+            self.statistics._APSNck += 1
+        else:
+            self.statistics._APSAck += 1
 
-    # Update statistics
-    if result != 0x00:
+    except Exception as e:
+        result = -1
         self.statistics._APSNck += 1
-    else:
-        self.statistics._APSAck += 1
 
     # Send Ack/Nack to Plugin
     self.forwarder_queue.put(build_plugin_8011_frame_content(self, nwkid, Cluster, sequence, result, lqi))
@@ -1647,9 +1647,9 @@ async def zigpy_mrequest( self, group_id: t.uint16_t, profile: t.uint8_t, cluste
 
     await self.app.send_packet(
         t.ZigbeePacket(
-            src=t.AddrModeAddress( addr_mode=t.AddrMode.NWK, address=self.state.node_info.nwk ),
+            src=t.AddrModeAddress( addr_mode=t.AddrMode.NWK, address=self.app.state.node_info.nwk ),
             src_ep=src_ep,
-            dst=t.AddrModeAddress(addr_mode=t.AddrMode.Group, address=group_id),
+            dst=t.AddrModeAddress( addr_mode=t.AddrMode.Group, address=group_id),
             tsn=sequence,
             profile_id=profile,
             cluster_id=cluster,
@@ -1686,7 +1686,7 @@ async def zigpy_broadcast( self, profile: t.uint16_t, cluster: t.uint16_t, src_e
     """
     await self.app.send_packet(
         t.ZigbeePacket(
-            src=t.AddrModeAddress( addr_mode=t.AddrMode.NWK, address=self.state.node_info.nwk ),
+            src=t.AddrModeAddress( addr_mode=t.AddrMode.NWK, address=self.app.state.node_info.nwk ),
             src_ep=src_ep,
             dst=t.AddrModeAddress( addr_mode=t.AddrMode.Broadcast, address=broadcast_address ),
             dst_ep=dst_ep,
@@ -1739,82 +1739,99 @@ async def _limit_concurrency(self, destination, sequence):
     """
     Async context manager to limit concurrent requests to a specific Zigbee device.
 
-    This method uses a per-device asyncio.Semaphore to ensure that no more than a fixed number
-    of concurrent operations are issued to a single device at once. If the semaphore is locked,
-    the request is queued and logged. A timeout is enforced to prevent indefinite blocking.
+    This manager ensures that no more than a fixed number of concurrent requests
+    are issued to a single device at once, using a per-device asyncio.Semaphore.
+    If the semaphore is unavailable, the request waits up to a timeout before
+    optionally being skipped. Waiting and execution are logged for debugging.
 
     Parameters
     ----------
     destination : zigpy.device.Device
         The target Zigbee device for which concurrency is being managed.
-    sequence : int or str
-        An identifier for the request, used for logging/debugging.
+    sequence : int | str
+        An identifier for the request, used for logging/debugging purposes.
 
     Yields
     ------
     None
-        Code inside the `async with` block executes once a concurrency slot is available.
-        If the semaphore acquisition times out, the block still runs, but with a warning logged.
+        Control is yielded once a concurrency slot is available. Code inside the
+        `async with` block executes only if the semaphore is successfully acquired.
+        If the timeout is reached before acquiring, the block is skipped and a warning
+        is logged.
 
     Raises
     ------
     asyncio.TimeoutError
-        Logged (but not raised) if semaphore acquisition exceeds the configured timeout.
-        The caller must handle timeout behavior after the `yield` if needed.
+        Not raised to the caller; handled internally. Timeout events are logged
+        and the block may be skipped (depending on the policy).
 
     Notes
     -----
     - MAX_CONCURRENT_REQUESTS_PER_DEVICE defines the per-device concurrency limit.
-    - SEMAPHORE_TIMEOUT defines the maximum wait time before logging a timeout warning.
-    - Uses self._concurrent_requests_semaphores_list and self._currently_waiting_requests_list
-      to track semaphores and pending requests by IEEE address.
+    - SEMAPHORE_TIMEOUT defines the maximum wait time to acquire a semaphore.
+    - Uses `self._concurrent_requests_semaphores_list` to track per-device semaphores.
+    - Uses `self._currently_waiting_requests_list` to track pending requests per device.
+    - Correctly handles semaphore acquisition and release to avoid race conditions.
+    - Logs the queuing, delay, and execution times for each request.
     """
+
     ieee = str(destination.ieee)
     nwkid = destination.nwk.serialize()[::-1].hex()
 
-    # Safely initialize semaphore and waiting counter
-    if ieee not in self._concurrent_requests_semaphores_list:
-        self._concurrent_requests_semaphores_list[ieee] = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS_PER_DEVICE)
+    semaphore = self._concurrent_requests_semaphores_list.setdefault(
+        ieee,
+        asyncio.Semaphore(MAX_CONCURRENT_REQUESTS_PER_DEVICE)
+    )
+
     self._currently_waiting_requests_list.setdefault(ieee, 0)
 
-    semaphore = self._concurrent_requests_semaphores_list[ieee]
+    acquired = False
+    queued = False
     start_time = time.monotonic()
-    was_locked = semaphore.locked()
 
-    if was_locked:
+    if semaphore.locked():
+        queued = True
         self._currently_waiting_requests_list[ieee] += 1
-        self.log.logging("TransportZigpy", "Debug", f"Max concurrency reached for {nwkid}, delaying request {sequence} ({self._currently_waiting_requests_list[ieee]} enqueued)", nwkid)
+        self.log.logging(
+            "TransportZigpy", "Debug",
+            f"Max concurrency reached for {nwkid}, delaying request {sequence} "
+            f"({self._currently_waiting_requests_list[ieee]} enqueued)",
+            nwkid
+        )
 
     try:
-        # Wait for semaphore with timeout
         try:
             await asyncio.wait_for(semaphore.acquire(), timeout=SEMAPHORE_TIMEOUT)
+            acquired = True
         except asyncio.TimeoutError:
-            self.log.logging("TransportZigpy", "Warning", f"Timeout waiting for concurrency slot for {nwkid}, request {sequence} dropped", nwkid)
-            yield  # Allow graceful fallback or logging outside
-            return
+            self.log.logging(
+                "TransportZigpy", "Log",
+                f"Timeout waiting for concurrency slot for {nwkid}, request {sequence} skipped",
+                nwkid
+            )
+            return  # strict mode
 
-        # Delayed request is now running
-        if was_locked:
+        if queued:
             elapsed_time = time.monotonic() - start_time
-            self.log.logging("TransportZigpy", "Debug", f"Previously delayed request {sequence} is now running, delayed by {elapsed_time:.2f} seconds for {nwkid}", nwkid)
+            self.log.logging(
+                "TransportZigpy", "Debug",
+                f"Delayed request {sequence} now running after {elapsed_time:.2f}s for {nwkid}",
+                nwkid
+            )
 
         yield
 
     finally:
-        if semaphore.locked():
+        if acquired:
             semaphore.release()
 
-        if was_locked:
-            self._currently_waiting_requests_list[ieee] -= 1
-            
-        # Opportunistic cleanup
-        #if ( self._currently_waiting_requests_list.get(ieee, 0) == 0 and self._concurrent_requests_semaphores_list[ieee]._value == MAX_CONCURRENT_REQUESTS_PER_DEVICE ):
-        #    del self._concurrent_requests_semaphores_list[ieee]
-        #    self._currently_waiting_requests_list.pop(ieee, None)
+        if queued:
+            self._currently_waiting_requests_list[ieee] = max(
+                0,
+                self._currently_waiting_requests_list[ieee] - 1
+            )
 
-
-def _cleanup_unused_concurrency_state(self):
+def cleanup_unused_concurrency_state(self):
     """
     Cleans up semaphore and waiting state for inactive devices.
 
@@ -1858,3 +1875,15 @@ def specific_endpoints(self):
         and self.pluginconf.pluginConf[plugin]
         for plugin in supported_plugins
     )
+
+
+def _import_class(dotted_path: str):
+    """
+    Imports a class from a dotted module path string.
+
+    Example: 'Classes.ZigpyTransport.AppBellows.App_bellows'
+    → imports Classes.ZigpyTransport.AppBellows, returns App_bellows
+    """
+    module_path, class_name = dotted_path.rsplit(".", 1)
+    module = importlib.import_module(module_path)
+    return getattr(module, class_name)

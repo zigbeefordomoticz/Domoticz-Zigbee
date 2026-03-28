@@ -126,7 +126,7 @@ class App_blz(zigpy_blz.zigbee.application.ControllerApplication):
 
 
     def handle_join(self, nwk: zigpy_t.NWK, ieee: zigpy_t.EUI64, parent_nwk: zigpy_t.NWK, *, handle_rejoin: bool = True,) -> None:
-        return Classes.ZigpyTransport.AppGeneric.handle_join(self, nwk, ieee, parent_nwk)
+        return Classes.ZigpyTransport.AppGeneric.handle_join(self, nwk, ieee, parent_nwk, handle_rejoin=handle_rejoin)
 
 
     def get_device_ieee(self, nwk):
