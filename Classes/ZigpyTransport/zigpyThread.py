@@ -1742,81 +1742,99 @@ async def _limit_concurrency(self, destination, sequence):
     """
     Async context manager to limit concurrent requests to a specific Zigbee device.
 
-    This method uses a per-device asyncio.Semaphore to ensure that no more than a fixed number
-    of concurrent operations are issued to a single device at once. If the semaphore is locked,
-    the request is queued and logged. A timeout is enforced to prevent indefinite blocking.
+    This manager ensures that no more than a fixed number of concurrent requests
+    are issued to a single device at once, using a per-device asyncio.Semaphore.
+    If the semaphore is unavailable, the request waits up to a timeout before
+    optionally being skipped. Waiting and execution are logged for debugging.
 
     Parameters
     ----------
     destination : zigpy.device.Device
         The target Zigbee device for which concurrency is being managed.
-    sequence : int or str
-        An identifier for the request, used for logging/debugging.
+    sequence : int | str
+        An identifier for the request, used for logging/debugging purposes.
 
     Yields
     ------
     None
-        Code inside the `async with` block executes once a concurrency slot is available.
-        If the semaphore acquisition times out, the block still runs, but with a warning logged.
+        Control is yielded once a concurrency slot is available. Code inside the
+        `async with` block executes only if the semaphore is successfully acquired.
+        If the timeout is reached before acquiring, the block is skipped and a warning
+        is logged.
 
     Raises
     ------
     asyncio.TimeoutError
-        Logged (but not raised) if semaphore acquisition exceeds the configured timeout.
-        The caller must handle timeout behavior after the `yield` if needed.
+        Not raised to the caller; handled internally. Timeout events are logged
+        and the block may be skipped (depending on the policy).
 
     Notes
     -----
     - MAX_CONCURRENT_REQUESTS_PER_DEVICE defines the per-device concurrency limit.
-    - SEMAPHORE_TIMEOUT defines the maximum wait time before logging a timeout warning.
-    - Uses self._concurrent_requests_semaphores_list and self._currently_waiting_requests_list
-      to track semaphores and pending requests by IEEE address.
+    - SEMAPHORE_TIMEOUT defines the maximum wait time to acquire a semaphore.
+    - Uses `self._concurrent_requests_semaphores_list` to track per-device semaphores.
+    - Uses `self._currently_waiting_requests_list` to track pending requests per device.
+    - Correctly handles semaphore acquisition and release to avoid race conditions.
+    - Logs the queuing, delay, and execution times for each request.
     """
+
     ieee = str(destination.ieee)
     nwkid = destination.nwk.serialize()[::-1].hex()
 
-    # Safely initialize semaphore and waiting counter
-    if ieee not in self._concurrent_requests_semaphores_list:
-        self._concurrent_requests_semaphores_list[ieee] = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS_PER_DEVICE)
+    semaphore = self._concurrent_requests_semaphores_list.setdefault(
+        ieee,
+        asyncio.Semaphore(MAX_CONCURRENT_REQUESTS_PER_DEVICE)
+    )
+
     self._currently_waiting_requests_list.setdefault(ieee, 0)
 
-    semaphore = self._concurrent_requests_semaphores_list[ieee]
+    acquired = False
+    queued = False
     start_time = time.monotonic()
-    was_locked = semaphore.locked()
 
-    if was_locked:
+    if semaphore.locked():
+        queued = True
         self._currently_waiting_requests_list[ieee] += 1
-        self.log.logging("TransportZigpy", "Debug", f"Max concurrency reached for {nwkid}, delaying request {sequence} ({self._currently_waiting_requests_list[ieee]} enqueued)", nwkid)
+        self.log.logging(
+            "TransportZigpy", "Debug",
+            f"Max concurrency reached for {nwkid}, delaying request {sequence} "
+            f"({self._currently_waiting_requests_list[ieee]} enqueued)",
+            nwkid
+        )
 
     try:
-        # Wait for semaphore with timeout
         try:
             await asyncio.wait_for(semaphore.acquire(), timeout=SEMAPHORE_TIMEOUT)
+            acquired = True
         except asyncio.TimeoutError:
-            self.log.logging("TransportZigpy", "Warning", f"Timeout waiting for concurrency slot for {nwkid}, request {sequence} dropped", nwkid)
-            yield  # Allow graceful fallback or logging outside
-            return
+            self.log.logging(
+                "TransportZigpy", "Log",
+                f"Timeout waiting for concurrency slot for {nwkid}, request {sequence} skipped",
+                nwkid
+            )
+            return  # strict mode
 
-        # Delayed request is now running
-        if was_locked:
+        if queued:
             elapsed_time = time.monotonic() - start_time
-            self.log.logging("TransportZigpy", "Debug", f"Previously delayed request {sequence} is now running, delayed by {elapsed_time:.2f} seconds for {nwkid}", nwkid)
+            self.log.logging(
+                "TransportZigpy", "Debug",
+                f"Delayed request {sequence} now running after {elapsed_time:.2f}s for {nwkid}",
+                nwkid
+            )
 
         yield
 
     finally:
-        if semaphore.locked():
+        if acquired:
             semaphore.release()
 
-        if was_locked:
-            self._currently_waiting_requests_list[ieee] -= 1
+        if queued:
+            self._currently_waiting_requests_list[ieee] = max(
+                0,
+                self._currently_waiting_requests_list[ieee] - 1
+            )
+
             
-        # Opportunistic cleanup
-        #if ( self._currently_waiting_requests_list.get(ieee, 0) == 0 and self._concurrent_requests_semaphores_list[ieee]._value == MAX_CONCURRENT_REQUESTS_PER_DEVICE ):
-        #    del self._concurrent_requests_semaphores_list[ieee]
-        #    self._currently_waiting_requests_list.pop(ieee, None)
-
-
 def _cleanup_unused_concurrency_state(self):
     """
     Cleans up semaphore and waiting state for inactive devices.
