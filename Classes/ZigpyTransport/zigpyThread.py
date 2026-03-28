@@ -1057,16 +1057,12 @@ async def _unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequen
 
         # Add callback to log task completion
         def task_done_callback(task):
-            async def async_callback():
-                async with asyncio.Lock():  # Now valid in async context
-                    if task.exception():
-                        self.log.logging("TransportZigpy", "Debug", f"_unicast_command - Task {task.get_name()} failed with exception: {task.exception()}")
-                        self.statistics._ackKO += 1
-                    else:
-                        self.log.logging("TransportZigpy", "Debug", f"_unicast_command - Task {task.get_name()} completed successfully")
+            if not task.cancelled() and task.exception():
+                self.statistics._ackKO += 1
+                self.log.logging( "TransportZigpy", "Debug", f"Task {task.get_name()} failed with exception: {task.exception()}" )
 
-            # Schedule the async callback in the event loop
-            asyncio.create_task(async_callback())
+            elif not task.cancelled():
+                self.log.logging( "TransportZigpy", "Debug", f"Task {task.get_name()} completed successfully" )
 
         task.add_done_callback(task_done_callback)
 
