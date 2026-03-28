@@ -47,6 +47,7 @@ Usage:
 import asyncio
 import contextlib
 import functools
+import importlib
 import json
 import queue
 import random
@@ -177,11 +178,10 @@ def zigpy_thread_function(self):
                     start = time.monotonic()
                     await asyncio.sleep(interval)
                     delay = time.monotonic() - start - interval
-                    if delay > threshold:
-                        self.log.logging( "TransportZigpy", "Log", f"Event loop blocked for {delay:.3f}s")
-                    elif delay > 5:
-                        self.log.logging( "TransportZigpy", "Error", f"Event loop blocked for {delay:.3f}s")
-
+                    if delay > 5:
+                        self.log.logging("TransportZigpy", "Error", f"Event loop blocked for {delay:.3f}s")
+                    elif delay > threshold:
+                        self.log.logging("TransportZigpy", "Log", f"Event loop blocked for {delay:.3f}s")
             except asyncio.CancelledError:
                 self.log.logging( "TransportZigpy", "Log", "Event loop monitoring stopped" )
                 return
@@ -349,39 +349,24 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
 
     serial_specifics = self._serialPort_communication_specifics or {}
 
-    try:
-        if radiomodule == "ezsp":
-            import bellows.config as radio_specific_conf
+    _RADIO_REGISTRY = {
+        "ezsp": ("bellows.config", "Classes.ZigpyTransport.AppBellows.App_bellows", ezsp_configuration_setup),
+        "znp": ("zigpy_znp.config", "Classes.ZigpyTransport.AppZnp.App_znp", znp_configuration_setup),
+        "deCONZ":("zigpy_deconz.config", "Classes.ZigpyTransport.AppDeconz.App_deconz", deconz_configuration_setup),
+        "blz": (None, "Classes.ZigpyTransport.AppBlz.App_blz", blz_configuration_setup),
+    }
 
-            from Classes.ZigpyTransport.AppBellows import App_bellows as App
-            config = ezsp_configuration_setup(self, radio_specific_conf, serialPort, serial_specifics)
+    entry = _RADIO_REGISTRY.get(radiomodule)
+    if entry is None:
+        self.log.logging("TransportZigpy", "Error", f"Wrong radiomodule: {radiomodule}")
+        return
 
-        elif radiomodule =="znp":
-            import zigpy_znp.config as radio_specific_conf
+    conf_module_path, app_class_path, setup_fn = entry
+    radio_specific_conf = importlib.import_module(conf_module_path) if conf_module_path else {}
+    App = _import_class(app_class_path)
+    config = setup_fn(self, radio_specific_conf, serialPort, serial_specifics)
 
-            from Classes.ZigpyTransport.AppZnp import App_znp as App
-            config = znp_configuration_setup(self, radio_specific_conf, serialPort, serial_specifics)
-
-        elif radiomodule =="deCONZ":
-            import zigpy_deconz.config as radio_specific_conf
-
-            from Classes.ZigpyTransport.AppDeconz import App_deconz as App
-            config = deconz_configuration_setup(self, radio_specific_conf, serialPort, serial_specifics)
-
-        elif radiomodule == "blz":
-            radio_specific_conf = {}
-            from Classes.ZigpyTransport.AppBlz import App_blz as App
-            config = blz_configuration_setup(self, radio_specific_conf, serialPort, serial_specifics)
-
-        else:
-            self.log.logging( "TransportZigpy", "Error", "Wrong radiomode: %s" % (radiomodule), )
-            return
-
-        self.log.logging("TransportZigpy", "Status", "++ Started radio %s port: %s config %s" %( radiomodule, serialPort, config))
-
-    except Exception as e:
-        self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
-        self.log.logging("TransportZigpy", "Error", "%s" %traceback.format_exc())       
+    self.log.logging("TransportZigpy", "Status", "++ Started radio %s port: %s config %s" %( radiomodule, serialPort, config))
 
     try:
         optional_configuration_setup(self, config, radio_specific_conf, set_extendedPanId, set_channel)
@@ -394,7 +379,6 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
     try:
         if radiomodule in ["znp", "deCONZ", "ezsp", "blz"]:
             self.app = App(config)
-
         else:
             self.log.logging( "TransportZigpy", "Error", "Wrong radiomode: %s" % (radiomodule), )
             return
@@ -411,7 +395,7 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
     else:
         new_network = False
 
-    if self.use_of_zigpy_persistent_db and self.app:
+    if self.app and self.use_of_zigpy_persistent_db:
         self.log.logging( "TransportZigpy", "Status", "++ Use of Zigpy Persistent Db")
         try:
             await self.app._load_db()
@@ -423,6 +407,7 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
 
     except Exception as e:
         self.log.logging( "TransportZigpy", "Error", "Error during radio startup: %s" %e)
+
     self.log.logging( "TransportZigpy", "Debug", "Exiting co-rounting radio_start")
 
 
@@ -962,25 +947,27 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None, delayAft
     extended_timeout = False if AckIsDisable else data.get("RxOnIdle", False)
     delay = data.get("Delay", None)
 
-    self.log.logging("TransportZigpy", "Debug", f"process_raw_command: process_raw_command ready to request Function: {Function} NwkId: {NwkId}/{dEp} Cluster: {Cluster} Seq: {sequence} Payload: {payload.hex()} AddrMode: {addressmode} AckIsDisable: {AckIsDisable} Sqn: {Sqn}, Delay: {delay}, delayAfterSent {delayAfterSent}, Extended_TO: {extended_timeout}")
+    self.log.logging("TransportZigpy", "Debug", f"process_raw_command: ready to request Function: {Function} NwkId: {NwkId}/{dEp} Cluster: {Cluster} Seq: {sequence} Payload: {payload.hex()} AddrMode: {addressmode} AckIsDisable: {AckIsDisable} Sqn: {Sqn}, Delay: {delay}, delayAfterSent {delayAfterSent}, Extended_TO: {extended_timeout}")
 
     destination, transport_needs = _get_destination(self, NwkId, addressmode, Profile, Cluster, sEp, dEp, sequence, payload)
-
     if destination is None:
-        self.log.logging("TransportZigpy", "Log", f"process_raw_command: unable to find destination/transport for request {properyly_display_data(data)} - aborting")
+        self.log.logging("TransportZigpy", "Error", f"process_raw_command: unknown destination: {destination}")
         return
 
-    if transport_needs == "Broadcast":
-        self.log.logging("TransportZigpy", "Debug", f"process_raw_command Broadcast: {NwkId}")
-        result, msg = await send_broadcast_command(self, Profile, Cluster, sEp, dEp, sequence, payload)
+    handlers = {
+        "Broadcast": lambda: send_broadcast_command(self, Profile, Cluster, sEp, dEp, sequence, payload),
+        "Multicast": lambda: send_multicast_command(self, NwkId, Profile, Cluster, sEp, sequence, payload),
+        "Unicast": lambda: send_unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, AckIsDisable, delay, extended_timeout, Function, Sqn, delayAfterSent),
+    }
 
-    elif addressmode == 0x01:
-        result, msg = await send_multicast_command(self, NwkId, Profile, Cluster, sEp, sequence, payload)
+    key = "Multicast" if addressmode == 0x01 else transport_needs
+    handler = handlers.get(key)
+    if handler is None:
+        self.log.logging("TransportZigpy", "Error", f"process_raw_command: unhandled transport '{transport_needs}' addrmode {addressmode}")
+        return
 
-    elif transport_needs == "Unicast":
-        result, msg = await send_unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, AckIsDisable, delay, extended_timeout, Function, Sqn, delayAfterSent)
-
-    self.log.logging("TransportZigpy", "Debug", f"ZigyTransport: process_raw_command completed NwkId: {destination} result: {result} msg: {msg}")
+    result, msg = await handler()
+    self.log.logging("TransportZigpy", "Debug", f"process_raw_command completed: {destination} result={result} msg={msg}")
 
 
 async def send_broadcast_command(self, Profile, Cluster, sEp, dEp, sequence, payload):
@@ -1057,9 +1044,9 @@ async def send_unicast_command(self, destination, Profile, Cluster, sEp, dEp, se
     """
 
     payload_hex = payload.hex()[:100] + "..." if len(payload.hex()) > 100 else payload.hex()
-    self.log.logging("TransportZigpy", "Debug", f"send_unicast_command Unicast destination: {destination} Profile: {Profile} Cluster: {Cluster} sEp: {sEp} dEp: {dEp} Seq: {sequence} Payload: {payload_hex}")
-
     AckIsDisable = False if self.pluginconf.pluginConf["ForceAPSAck"] else AckIsDisable
+
+    self.log.logging("TransportZigpy", "Debug", f"send_unicast_command Unicast destination: {destination} Profile: {Profile} Cluster: {Cluster} sEp: {sEp} dEp: {dEp} Seq: {sequence} Payload: {payload_hex}")
 
     try:
         task = asyncio.create_task(
@@ -1067,27 +1054,28 @@ async def send_unicast_command(self, destination, Profile, Cluster, sEp, dEp, se
             name=f"send_unicast_command-{Function}-{destination}-{Cluster}-{Sqn}"
         )
 
-        # Add callback to log task completion
-        def task_done_callback(task):
-            if not task.cancelled() and task.exception():
-                self.statistics._ackKO += 1
-                self.log.logging( "TransportZigpy", "Debug", f"Task {task.get_name()} failed with exception: {task.exception()}" )
-
-            elif not task.cancelled():
-                self.log.logging( "TransportZigpy", "Debug", f"Task {task.get_name()} completed successfully" )
-
-        task.add_done_callback(task_done_callback)
-
     except (TypeError, ValueError, RuntimeError) as e:
-        self.log.logging("TransportZigpy", "Error", f"send_unicast_command: Error creating task: {e}\n{traceback.format_exc()}")
-        async with asyncio.Lock():
-            self.statistics._ackKO += 1
+        self.log.logging("TransportZigpy", "Error", f"Failed to create task: {e}")
+        self.statistics._ackKO += 1
         return ERROR_TASK_CREATION_FAILED, str(e)
 
-    async with asyncio.Lock():
-        self.statistics._sent += 1
-
+    task.add_done_callback(_make_unicast_callback(self))
+    self.statistics._sent += 1
     return 0x00, ""
+
+def _make_unicast_callback(self):
+    """Returns a task-done callback that logs and updates statistics."""
+
+    def callback(task):
+        if task.cancelled():
+            return
+        exc = task.exception()
+        if exc:
+            self.statistics._ackKO += 1
+            self.log.logging("TransportZigpy", "Debug", f"Task {task.get_name()} failed: {exc}")
+        else:
+            self.log.logging("TransportZigpy", "Debug", f"Task {task.get_name()} completed")
+    return callback
 
 
 def _get_destination(self, NwkId, addressmode, Profile, Cluster, sEp, dEp, sequence, payload):
@@ -1171,7 +1159,7 @@ def push_APS_ACK_NACKto_plugin(self, nwkid, Cluster, sequence, result, lqi):
 
     except Exception as e:
         result = -1
-        self.statistics._APSAck += 1
+        self.statistics._APSNck += 1
 
     # Send Ack/Nack to Plugin
     self.forwarder_queue.put(build_plugin_8011_frame_content(self, nwkid, Cluster, sequence, result, lqi))
@@ -1887,3 +1875,15 @@ def specific_endpoints(self):
         and self.pluginconf.pluginConf[plugin]
         for plugin in supported_plugins
     )
+
+
+def _import_class(dotted_path: str):
+    """
+    Imports a class from a dotted module path string.
+
+    Example: 'Classes.ZigpyTransport.AppBellows.App_bellows'
+    → imports Classes.ZigpyTransport.AppBellows, returns App_bellows
+    """
+    module_path, class_name = dotted_path.rsplit(".", 1)
+    module = importlib.import_module(module_path)
+    return getattr(module, class_name)
