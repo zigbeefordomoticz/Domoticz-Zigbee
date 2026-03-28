@@ -10,6 +10,7 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
+
 import asyncio
 import binascii
 import contextlib
@@ -17,6 +18,7 @@ import json
 import logging
 import os.path
 import time
+from datetime import UTC, datetime
 from pathlib import Path
 
 import serial
@@ -55,9 +57,9 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     settings if necessary.
     """
     self.log.logging("TransportZigpy", "Log", "AppGeneric:initialize auto_form: %s force_form: %s Class: %s Logger: %s" %( auto_form, force_form, type(self), LOGGER))
-
     # Make sure the first thing we do is feed the watchdog
     if self.config[zigpy_conf.CONF_WATCHDOG_ENABLED]:
+        _watchdog_period: int = 5
         await self.watchdog_feed()
         self._watchdog_task = asyncio.create_task(self._watchdog_loop(), name="watchdog_loop")
         await asyncio.sleep(1)
@@ -118,27 +120,56 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
 
     # Start Network
     await self.start_network()
+
+    # Networks can move between RF domains so we need to be able to adjust the TX
+    # power on startup
+    tx_power = await self._get_effective_tx_power()
+    max_tx_power = await self._get_effective_maximum_tx_power()
+
+    if max_tx_power is not None and tx_power is not None:
+        if tx_power > max_tx_power:
+            LOGGER.warning(
+                "Requested TX power %0.2f dBm exceeds maximum %0.2f dBm for"
+                " regulatory domain, limiting",
+                tx_power,
+                max_tx_power,
+            )
+            tx_power = max_tx_power
+
+    if tx_power is not None:
+        await self.set_tx_power(tx_power)
+
     self._persist_coordinator_model_strings_in_db()
-
-    # Network interference scan
-    # if self.config[zigpy_conf.CONF_STARTUP_ENERGY_SCAN]:
-    #     # Each scan period is 15.36ms. Scan for at least 200ms (2^4 + 1 periods) to
-    #     # pick up WiFi beacon frames.
-    #     results = await self.energy_scan( channels=zigpy_t.Channels.ALL_CHANNELS, duration_exp=4, count=1 )
-
-    #     if results[self.state.network_info.channel] > ENERGY_SCAN_WARN_THRESHOLD:
-    #         self.log.logging("TransportZigpy", "Error", "WARNING - Zigbee channel %s utilization is %0.2f%%!" %(
-    #             self.state.network_info.channel, 100 * results[self.state.network_info.channel] / 255, ))
-    #         self.log.logging("TransportZigpy", "Error", const.INTERFERENCE_MESSAGE)
-    #         self.log.logging("TransportZigpy", "Log", "Energy scan result:")
-    #         for _chnl in results:
-    #             self.log.logging("TransportZigpy", "Log", f"  [{_chnl}] : %0.2f%%" % (100 * results[_chnl] / 255) )
 
     # Config Top Scan
     if self.config[zigpy_conf.CONF_TOPO_SCAN_ENABLED]:
         # Config specifies the period in minutes, not seconds
         self.topology.start_periodic_scans( period=(60 * self.config[zigpy.config.CONF_TOPO_SCAN_PERIOD]) )
 
+async def watchdog_feed(self) -> None:
+    """Reset the firmware watchdog timer."""
+    LOGGER.info("Feeding watchdog")
+    await self._watchdog_feed()
+
+async def _watchdog_loop(self) -> None:
+    """Watchdog loop to periodically test if the stack is still running."""
+
+    LOGGER.info("Starting watchdog loop with period of %s s" %self._watchdog_period)
+
+    while True:
+        await asyncio.sleep(self._watchdog_period)
+
+        try:
+            await self.watchdog_feed()
+        except Exception as e:  # noqa: BLE001
+            LOGGER.warning("Watchdog failure", exc_info=e)
+
+            # Treat the watchdog failure as a disconnect
+            self.connection_lost(e)
+
+            break
+
+    LOGGER.info("Stopping watchdog loop")
 
 async def shutdown(self, *, db: bool = True) -> None:
     """Shutdown controller."""
@@ -269,18 +300,20 @@ def get_device(self, ieee=None, nwk=None):
     raise KeyError
 
 
-def handle_join(self, nwk: zigpy_t.NWK, ieee: zigpy_t.EUI64, parent_nwk: zigpy_t.NWK) -> None:
+#def handle_join(self, nwk: zigpy_t.NWK, ieee: zigpy_t.EUI64, parent_nwk: zigpy_t.NWK) -> None:
+def handle_join( self, nwk: zigpy_t.NWK, ieee: zigpy_t.EUI64, parent_nwk: zigpy_t.NWK, handle_rejoin: bool = True, ) -> None:
     """
     Called when a device joins or announces itself on the network.
     """
     self.log.logging("TransportZigpy", "Debug","handle_join (0x%04x %s)" %(nwk, ieee))
-    
+
     if str(ieee) in {"00:00:00:00:00:00:00:00", "ff:ff:ff:ff:ff:ff:ff:ff"}:
         # invalid ieee, drop
         self.log.logging("TransportZigpy", "Log", "ignoring invalid neighbor: %s" %ieee)
         return
 
     ieee = zigpy_t.EUI64(ieee)
+
     try:
         dev = self.get_device(ieee)
         time.sleep(1.0)
@@ -288,16 +321,29 @@ def handle_join(self, nwk: zigpy_t.NWK, ieee: zigpy_t.EUI64, parent_nwk: zigpy_t
 
     except KeyError:
         dev = self.add_device(ieee, nwk)
-        dev.update_last_seen()
+
+    else:
+        if handle_rejoin:
+            LOGGER.info("Device 0x%04x (%s) joined the network", nwk, ieee)
+
         time.sleep(1.0)
         self.log.logging("TransportZigpy", "Debug", "New device 0x%04x (%s) joined the network" %(nwk, ieee))
+
+        # Not all stacks send a ZDO command when a device joins so the last_seen should
+        # be updated
+        dev.last_seen = datetime.now(UTC)
+
+        # Cancel all pending requests for the device
+        dev._concurrent_requests_semaphore.cancel_waiting(
+            zigpy.exceptions.DeliveryError("Device has re-joined the network")
+        )
 
     if dev.nwk != nwk:
         dev.nwk = nwk
         _update_nkdids_if_needed(self, ieee, dev.nwk )
         self.log.logging("TransportZigpy", "Debug", "Device %s changed id (0x%04x => 0x%04x)" %(ieee, dev.nwk, nwk))
 
-    super(type(self),self).handle_join(nwk, ieee, parent_nwk) 
+    super(type(self),self).handle_join(nwk, ieee, parent_nwk, handle_rejoin=handle_rejoin)
 
 
 def get_device_ieee(self, nwk):
