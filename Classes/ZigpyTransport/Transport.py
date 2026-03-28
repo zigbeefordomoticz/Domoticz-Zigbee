@@ -28,7 +28,7 @@ from Classes.ZigpyTransport.forwarderThread import (start_forwarder_thread,
 from Classes.ZigpyTransport.instrumentation import (
     instrument_log_command_open, instrument_sendData, open_capture_rx_frames)
 from Classes.ZigpyTransport.zigpyThread import (
-    _cleanup_unused_concurrency_state, start_zigpy_thread, stop_zigpy_thread)
+    cleanup_unused_concurrency_state, start_zigpy_thread, stop_zigpy_thread)
 
 
 class ZigpyTransport(object):
@@ -265,7 +265,7 @@ class ZigpyTransport(object):
         now = time.monotonic()
         if self._periodic_reset is None or now - self._periodic_reset > 3600:
             self._periodic_reset = now
-            _cleanup_unused_concurrency_state(self)
+            cleanup_unused_concurrency_state(self)
 
         _queue = sum(
             self._currently_waiting_requests_list.get(device, 0) + 1

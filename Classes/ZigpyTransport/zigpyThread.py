@@ -1830,8 +1830,7 @@ async def _limit_concurrency(self, destination, sequence):
                 self._currently_waiting_requests_list[ieee] - 1
             )
 
-            
-def _cleanup_unused_concurrency_state(self):
+def cleanup_unused_concurrency_state(self):
     """
     Cleans up semaphore and waiting state for inactive devices.
 
