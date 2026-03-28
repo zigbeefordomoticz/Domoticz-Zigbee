@@ -9,7 +9,149 @@
 # Initial authors: badz & pipiche38 & badz
 #
 # SPDX-License-Identifier:    GPL-3.0 license
+"""
+AppGeneric.py — Radio-agnostic Zigpy application layer overrides.
 
+Part of the Zigbee for Domoticz plugin.
+https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+
+Overview
+--------
+This module defines a set of standalone functions that override or extend
+methods of zigpy's ControllerApplication class. Rather than subclassing
+ControllerApplication directly, these functions are injected into
+radio-specific application classes at runtime (zigpy-znp, bellows/EZSP,
+zigpy-zigate, zigpy-deconz, etc.) via the ZigpyTransport layer. Each
+function receives the application instance as its first argument (self),
+following the same calling convention as bound methods.
+
+This design allows a single set of plugin-specific behaviours to be shared
+across all supported radio backends without duplicating code in each
+radio-specific module.
+
+Relationship to Zigpy
+---------------------
+The functions here override the following ControllerApplication methods:
+
+    _load_db()                  — adds error handling around DB restore
+    initialize()                — adds watchdog setup, backup restore,
+                                  TX power clamping and topology scan start
+    watchdog_feed()             — thin delegation to _watchdog_feed()
+    _watchdog_loop()            — overrides period to 5s (upstream: 30s)
+    shutdown()                  — adds coordinator backup before teardown
+    connection_lost()           — adds radio-specific recovery and restart logic
+    get_device()                — adds plugin DB fallback on zigpy cache miss
+    handle_join()               — adds NWK sync and invalid IEEE filtering
+    handle_leave()              — adds plugin 0x8048 frame delivery
+    handle_relays()             — adds debug logging
+    packet_received()           — full routing override for plugin frame delivery
+
+The following are plugin-only additions with no upstream equivalent:
+
+    connection_lost_error()     — shared fatal-error handler
+    get_device_ieee()           — NWK-to-IEEE lookup for the plugin layer
+    get_device_with_address()   — AddrModeAddress convenience wrapper
+    get_device_rssi()           — RSSI retrieval by NWK address
+    get_zigpy_version()         — transport version for the plugin layer
+    register_specific_endpoints() — vendor-specific endpoint registration
+    is_zigpy_topology_in_progress() — topology scan state query
+    network_interference_scan() — channel energy scan with report persistence
+    build_json_to_store()       — energy report formatter for WebUI
+    scan_channel()              — per-channel energy level formatter
+    _retrieve_previous_backup() — backup retrieval and auto-restore setup
+    _create_backup()            — backup persistence via plugin callback
+    do_retreive_backup()        — deferred delegate to Modules.zigpyBackup
+    _update_nkdids_if_needed()  — NWK address sync between zigpy and plugin DB
+    measure_execution_time()    — decorator for packet handler timing
+
+Packet Routing
+--------------
+The central function in this module is packet_received(), which intercepts
+every incoming Zigbee frame before (and sometimes instead of) passing it to
+the upstream zigpy stack. The routing logic separates:
+
+    - ZDO frames (coordinator or ZDO endpoint) → upstream zigpy
+    - Mgmt_Permit_Join_rsp (0x8036)            → plugin frame 0x8014
+    - Mgmt_Leave_rsp (0x8034)                  → plugin frame 0x8047
+    - ZCL frames from devices (profile 0x0104) → plugin frame 0x8002,
+                                                  upstream skipped so the
+                                                  plugin owns ZCL responses
+    - All other frames                          → plugin frame 0x8002
+                                                  + upstream zigpy
+
+Connection Recovery
+-------------------
+connection_lost() implements a grace-period mechanism to tolerate NCP
+resets that occur within GRACE_PERIOD_AFTER_START (60) seconds of plugin
+startup. Outside that window, any fatal radio error sets self.restarting
+and triggers a full plugin restart via self.callBackRestartPlugin().
+
+Note that connection_lost() imports bellows-specific types inline
+(NcpFailure, NcpResetCode). On non-bellows radios these imports will
+fail if bellows is not installed; this is a known limitation of the
+current implementation.
+
+Coordinator Backup and Restore
+-------------------------------
+On shutdown, a full coordinator backup (including the device list) is
+created via zigpy's backup API and handed to the plugin layer through
+self.callBackBackup(). On startup, if 'autoRestore' is set in plugin
+config, the most recent backup is retrieved and passed to
+self.backups.restore_backup() before network formation, allowing the
+coordinator's PAN ID, extended PAN ID, network key and device list to
+survive a coordinator replacement.
+
+The 'OverWriteCoordinatorIEEEOnlyOnce' config key injects the EZSP-specific
+one-time EUI64 overwrite flag into the backup metadata when restoring to a
+new bellows/EZSP coordinator.
+
+Module-level Constants
+----------------------
+ENERGY_SCAN_WARN_THRESHOLD : float
+    Energy level (0–255 scale) above which a channel is considered
+    heavily congested. Set to 75% of the maximum (0.75 * 255 = 191.25).
+    Currently defined but not yet used in scan reporting logic.
+
+GRACE_PERIOD_AFTER_START : int
+    Number of seconds after plugin startup during which an NCP ACK-timeout
+    reset is tolerated without triggering a plugin restart. Default: 60.
+
+Dependencies
+------------
+External:
+    zigpy               — core Zigbee stack and type system
+    zigpy.backups       — NetworkBackup for coordinator state persistence
+    serial              — SerialException detection in connection_lost()
+    bellows             — NcpFailure / NcpResetCode (inline import,
+                          bellows-only radios)
+
+Internal:
+    Classes.ZigpyTransport.Transport        — ZigpyTransport (isinstance guard)
+    Classes.ZigpyTransport.instrumentation  — write_capture_rx_frames()
+    Classes.ZigpyTransport.plugin_encoders  — build_plugin_80xx_frame_content()
+    Modules.zigpyBackup                     — handle_zigpy_retreive_last_backup()
+                                              (deferred import in do_retreive_backup)
+
+Known Limitations
+-----------------
+- The inline bellows imports in connection_lost() couple this generic module
+  to a specific radio backend. Non-bellows deployments should ensure these
+  imports are guarded or that the bellows package is present in the
+  environment.
+
+- super(type(self), self) is used throughout in place of super() because
+  these are module-level functions rather than class methods. This pattern
+  is fragile in deep inheritance chains and may cause infinite recursion if
+  a subclass of the injected class calls these functions. This is a known
+  architectural trade-off of the monkey-patching approach.
+
+- do_retreive_backup() retains its misspelled name for backwards
+  compatibility with callers in other modules. The public-facing wrapper
+  _retrieve_previous_backup() uses the correct spelling.
+
+- The z4d_ieee parameter of get_device_rssi() is accepted for API symmetry
+  but is not currently used in the device lookup.
+"""
 
 import asyncio
 import binascii
@@ -43,7 +185,14 @@ GRACE_PERIOD_AFTER_START = 60  # 60 seconds of period after plugin start to allo
 
 
 async def _load_db(self) -> None:
-    """Restore save state."""
+    """
+    Restore the Zigpy persistent device database from disk.
+
+    Wraps the upstream ControllerApplication._load_db() with error handling so
+    that a corrupted or missing database file does not silently swallow the
+    exception — it is logged and re-raised to let the caller decide how to
+    proceed.
+    """
     try:
         await super(type(self),self)._load_db()
     except Exception as e:
@@ -53,29 +202,56 @@ async def _load_db(self) -> None:
 
 async def initialize(self, *, auto_form: bool = False, force_form: bool = False):
     """
-    Starts the network on a connected radio, optionally forming one with random
-    settings if necessary.
+    Start the Zigbee network on the connected radio.
+
+    Overrides ControllerApplication.initialize() to add plugin-specific
+    behaviour around network startup:
+
+    - Starts the firmware watchdog at a 5-second period (overriding the
+      upstream default of 30 seconds) if watchdog is enabled in config.
+    - Optionally restores the most recent coordinator backup before forming
+      the network, controlled by the 'autoRestore' plugin configuration key.
+    - If force_form is True, re-forms the network (or restores a backup if
+      one exists) before loading network info.
+    - If auto_form is True and no network exists, forms a new network or
+      restores from the most recent backup.
+    - Validates that the current radio state is compatible with the stored
+      backup when CONF_NWK_VALIDATE_SETTINGS is enabled.
+    - Adjusts TX power to stay within the regulatory domain maximum.
+    - Starts periodic topology scans if enabled in config.
+
+    Args:
+        auto_form:  If True, automatically form a new network when none is
+                    found on the radio.
+        force_form: If True, unconditionally re-form (or restore) the network
+                    before loading network info, regardless of current state.
+
+    Raises:
+        zigpy.exceptions.NetworkNotFormed: If no network exists and
+            auto_form is False.
+        zigpy.exceptions.NetworkSettingsInconsistent: If the current radio
+            state is incompatible with the most recent backup and
+            CONF_NWK_VALIDATE_SETTINGS is enabled.
     """
     self.log.logging("TransportZigpy", "Log", "AppGeneric:initialize auto_form: %s force_form: %s Class: %s Logger: %s" %( auto_form, force_form, type(self), LOGGER))
     # Make sure the first thing we do is feed the watchdog
     if self.config[zigpy_conf.CONF_WATCHDOG_ENABLED]:
-        _watchdog_period: int = 5
         await self.watchdog_feed()
         self._watchdog_task = asyncio.create_task(self._watchdog_loop(), name="watchdog_loop")
         await asyncio.sleep(1)
         self.log.logging("TransportZigpy", "Log", "AppGeneric:initialize - Watchdog loop started watchdog_task: {}".format(self._watchdog_task))
 
     # Retreive Last Backup
-    _retreived_backup = _retreive_previous_backup(self)
+    _retrieved_backup = _retrieve_previous_backup(self)
 
     # If We need to Create a new Zigbee network annd restore the last backup
     if force_form:
         with contextlib.suppress(Exception):
-            if _retreived_backup is None:
+            if _retrieved_backup is None:
                 await super(type(self),self).form_network()
             else:
                 self.log.logging( "Zigpy", "Status","++ Force Form: Restoring the most recent network backup")
-                await self.backups.restore_backup(  _retreived_backup ) 
+                await self.backups.restore_backup(  _retrieved_backup ) 
 
     # Load Network Information
     try:
@@ -90,28 +266,28 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         self.log.logging( "Zigpy", "Status","++ Forming a new network")
         await super(type(self),self).form_network()
 
-        if _retreived_backup is None:
+        if _retrieved_backup is None:
             # Form a new network if we have no backup
             self.log.logging( "Zigpy", "Status","++ Forming a new network with no backup")
             await self.form_network()
         else:
             # Otherwise, restore the most recent backup
             self.log.logging( "Zigpy", "Status","++ Restoring the most recent network backup")
-            await self.backups.restore_backup( _retreived_backup )
+            await self.backups.restore_backup( _retrieved_backup )
 
         await self.load_network_info(load_devices=True)
 
     new_state = self.backups.from_network_state()
     if (
         self.config[zigpy_conf.CONF_NWK_VALIDATE_SETTINGS]
-        and _retreived_backup is not None
+        and _retrieved_backup is not None
         and not new_state.is_compatible_with(self.backups)
     ):
         raise zigpy.exceptions.NetworkSettingsInconsistent(
             f"Radio network settings are not compatible with most recent backup!\n"
             f"Current settings: {new_state!r}\n"
-            f"Last backup: {_retreived_backup!r}",
-            old_state=_retreived_backup,
+            f"Last backup: {_retrieved_backup!r}",
+            old_state=_retrieved_backup,
             new_state=new_state,
         )
 
@@ -146,33 +322,26 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         # Config specifies the period in minutes, not seconds
         self.topology.start_periodic_scans( period=(60 * self.config[zigpy.config.CONF_TOPO_SCAN_PERIOD]) )
 
-async def watchdog_feed(self) -> None:
-    """Reset the firmware watchdog timer."""
-    LOGGER.info("Feeding watchdog")
-    await self._watchdog_feed()
 
-async def _watchdog_loop(self) -> None:
-    """Watchdog loop to periodically test if the stack is still running."""
-
-    LOGGER.info("Starting watchdog loop with period of %s s" %self._watchdog_period)
-
-    while True:
-        await asyncio.sleep(self._watchdog_period)
-
-        try:
-            await self.watchdog_feed()
-        except Exception as e:  # noqa: BLE001
-            LOGGER.warning("Watchdog failure", exc_info=e)
-
-            # Treat the watchdog failure as a disconnect
-            self.connection_lost(e)
-
-            break
-
-    LOGGER.info("Stopping watchdog loop")
 
 async def shutdown(self, *, db: bool = True) -> None:
-    """Shutdown controller."""
+    """
+    Shut down the controller application cleanly.
+
+    Overrides ControllerApplication.shutdown() to add plugin-specific teardown:
+
+    - Guards against duplicate shutdown calls via self.shutting_down.
+    - Skips coordinator backup if the current error is 'connection lost',
+      since the radio state may be unreliable.
+    - Creates and persists a full coordinator backup (including device list)
+      before shutting down, if CONF_NWK_BACKUP_ENABLED is set.
+    - Waits 3 seconds after calling the upstream shutdown to allow in-flight
+      operations to complete.
+
+    Args:
+        db: Whether to persist the Zigpy device database on shutdown.
+            Passed through to the upstream implementation.
+    """
     if self.shutting_down:
         LOGGER.warning("Ignoring duplicate shutdown event")
         return
@@ -215,12 +384,40 @@ async def _create_backup(self, backup) -> None:
 
 
 def connection_lost(self, exc: Exception) -> None:
-    """Handle connection lost event."""
+    """
+    Handle an unexpected loss of connection to the radio.
 
-    from bellows.ash import \
-        NcpFailure  # pylint: disable=import-outside-toplevel
-    from bellows.types.named import \
-        NcpResetCode  # pylint: disable=import-outside-toplevel
+    Overrides ControllerApplication.connection_lost() to implement
+    plugin-specific recovery logic:
+
+    - No-ops if a shutdown or restart is already in progress.
+    - For bellows NcpFailure with ERROR_EXCEEDED_MAXIMUM_ACK_TIMEOUT_COUNT,
+      allows a grace period of GRACE_PERIOD_AFTER_START seconds after plugin
+      startup before treating it as fatal, to accommodate NCP recovery on
+      restart.
+    - Treats SerialException, CancelledError, TimeoutError, and
+      asyncio.TimeoutError as fatal connection errors requiring a plugin
+      restart.
+
+    Note:
+        Bellows-specific types (NcpFailure, NcpResetCode) are imported inline.
+        On non-bellows radios these imports will fail at runtime if bellows is
+        not installed. Callers on non-bellows stacks should ensure this code
+        path is not reached, or the imports should be guarded with a
+        try/except ImportError.
+
+    Args:
+        exc: The exception that caused the connection loss.
+    """
+
+    try:
+        from bellows.ash import \
+            NcpFailure  # pylint: disable=import-outside-toplevel
+        from bellows.types.named import \
+            NcpResetCode  # pylint: disable=import-outside-toplevel
+        is_ncp_failure = isinstance(exc, NcpFailure) and exc.code == NcpResetCode.ERROR_EXCEEDED_MAXIMUM_ACK_TIMEOUT_COUNT
+    except ImportError:
+        is_ncp_failure = False
 
     LOGGER.warning("+ Connection to the radio was lost: %s %r", type(exc), exc)
 
@@ -228,7 +425,7 @@ def connection_lost(self, exc: Exception) -> None:
         LOGGER.warning("+ shutdown or restart in progress")
         return
 
-    if isinstance(exc, NcpFailure) and exc.code == NcpResetCode.ERROR_EXCEEDED_MAXIMUM_ACK_TIMEOUT_COUNT:
+    if is_ncp_failure:
         # it seems that the NCP is stuck, but during a plugin restart, it usally recovery, so let's give a grace period
         if time.time() < (self.start_time + GRACE_PERIOD_AFTER_START):
             LOGGER.warning("+ Connection to the radio was lost, give time for recover ...")
@@ -244,35 +441,70 @@ def connection_lost(self, exc: Exception) -> None:
 
 
 def connection_lost_error(self, message: str) -> None:
+    """
+    Mark the controller as restarting and trigger a plugin restart.
+
+    Sets self.restarting = True and self.current_error = 'connection lost',
+    logs the provided message at ERROR level, then calls
+    self.callBackRestartPlugin() to request a full plugin restart from the
+    Domoticz layer.
+
+    This is a shared helper called by connection_lost() for all fatal
+    error conditions.
+
+    Args:
+        message: A human-readable description of the error condition,
+                 included in the ERROR log entry.
+    """
     self.restarting = True
     self.current_error = "connection lost"
     LOGGER.error(message)
     self.callBackRestartPlugin()
 
 
-def _retreive_previous_backup(self):
-    _retreived_backup = None
+def _retrieve_previous_backup(self):
+    _retrieved_backup = None
     if "autoRestore" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoRestore"]:
         # In case of a fresh coordinator, let's load the latest backup
-        _retreived_backup = do_retreive_backup( self )
-        if _retreived_backup:
-            _retreived_backup = NetworkBackup.from_dict( _retreived_backup )
+        _retrieved_backup = do_retrieve_backup( self )
+        if _retrieved_backup:
+            _retrieved_backup = NetworkBackup.from_dict( _retrieved_backup )
 
-        if _retreived_backup:
+        if _retrieved_backup:
             if self.pluginconf.pluginConf[ "OverWriteCoordinatorIEEEOnlyOnce"]:
                 self.log.logging("TransportZigpy", "Log", "Allow eui64 overwrite only once !!!")
-                _retreived_backup.network_info.stack_specific.setdefault("ezsp", {})[ "i_understand_i_can_update_eui64_only_once_and_i_still_want_to_do_it"] = True
+                _retrieved_backup.network_info.stack_specific.setdefault("ezsp", {})[ "i_understand_i_can_update_eui64_only_once_and_i_still_want_to_do_it"] = True
 
-            self.log.logging("TransportZigpy", "Debug", "Last backup retreived: %s" % _retreived_backup )
-            self.backups.add_backup( backup=_retreived_backup )
-    return _retreived_backup
+            self.log.logging("TransportZigpy", "Debug", "Last backup retreived: %s" % _retrieved_backup )
+            self.backups.add_backup( backup=_retrieved_backup )
+    return _retrieved_backup
    
 
 def get_device(self, ieee=None, nwk=None):
-    # LOGGER.debug("get_device nwk %s ieee %s" % (nwk, ieee))
-    # self.callBackGetDevice is set to zigpy_get_device(self, nwkid = None, ieee=None)
-    # will return None if not found
-    # will return (nwkid, ieee) if found ( nwkid and ieee are numbers)
+    """
+    Look up a zigpy Device by IEEE address or NWK address.
+
+    Overrides ControllerApplication.get_device() to add a two-stage lookup:
+
+    1. Attempts the standard zigpy lookup. On success, calls
+       _update_nkdids_if_needed() to ensure the plugin database is in sync
+       with zigpy's view of the device's NWK address.
+    2. On KeyError (device not in zigpy's database), falls back to
+       self.callBackGetDevice() to query the plugin database. If found,
+       registers the device in zigpy via add_device() so future lookups
+       succeed without the fallback.
+
+    Args:
+        ieee: The IEEE (EUI64) address of the device, or None.
+        nwk:  The 16-bit NWK address of the device, or None.
+
+    Returns:
+        A zigpy Device object.
+
+    Raises:
+        KeyError: If the device is not found in either the zigpy database
+                  or the plugin database.
+    """
     dev = None
     try:
         dev = super(type(self),self).get_device(ieee, nwk)
@@ -300,10 +532,27 @@ def get_device(self, ieee=None, nwk=None):
     raise KeyError
 
 
-#def handle_join(self, nwk: zigpy_t.NWK, ieee: zigpy_t.EUI64, parent_nwk: zigpy_t.NWK) -> None:
 def handle_join( self, nwk: zigpy_t.NWK, ieee: zigpy_t.EUI64, parent_nwk: zigpy_t.NWK, handle_rejoin: bool = True, ) -> None:
     """
-    Called when a device joins or announces itself on the network.
+    Handle a device join or rejoin announcement on the Zigbee network.
+
+    Overrides ControllerApplication.handle_join() to add plugin-specific
+    behaviour:
+
+    - Drops joins from invalid IEEE addresses (all-zeros or all-ones).
+    - On first join, registers the device via add_device().
+    - On rejoin, updates last_seen, cancels any pending requests that were
+      waiting on the old session, and logs the event.
+    - If the device's NWK address has changed, updates it on the device
+      object and notifies the plugin database via _update_nkdids_if_needed().
+    - Delegates to the upstream handle_join() after local processing.
+
+    Args:
+        nwk:          The new 16-bit NWK address assigned to the device.
+        ieee:         The device's IEEE (EUI64) address.
+        parent_nwk:   The NWK address of the device's parent router.
+        handle_rejoin: If True, log and process the event as a rejoin.
+                       Passed through to the upstream implementation.
     """
     self.log.logging("TransportZigpy", "Debug","handle_join (0x%04x %s)" %(nwk, ieee))
 
@@ -316,7 +565,6 @@ def handle_join( self, nwk: zigpy_t.NWK, ieee: zigpy_t.EUI64, parent_nwk: zigpy_
 
     try:
         dev = self.get_device(ieee)
-        time.sleep(1.0)
         self.log.logging("TransportZigpy", "Debug", "Device 0x%04x (%s) joined the network" %(nwk, ieee))
 
     except KeyError:
@@ -326,7 +574,6 @@ def handle_join( self, nwk: zigpy_t.NWK, ieee: zigpy_t.EUI64, parent_nwk: zigpy_
         if handle_rejoin:
             LOGGER.info("Device 0x%04x (%s) joined the network", nwk, ieee)
 
-        time.sleep(1.0)
         self.log.logging("TransportZigpy", "Debug", "New device 0x%04x (%s) joined the network" %(nwk, ieee))
 
         # Not all stacks send a ZDO command when a device joins so the last_seen should
@@ -347,8 +594,20 @@ def handle_join( self, nwk: zigpy_t.NWK, ieee: zigpy_t.EUI64, parent_nwk: zigpy_
 
 
 def get_device_ieee(self, nwk):
-    # Call from the plugin to retreive the ieee
-    # we assumed nwk as an hex string
+    """
+    Return the IEEE address for a device identified by its NWK address.
+
+    Intended to be called from the plugin layer, which passes NWK addresses
+    as hex strings (e.g. '1a2b').
+
+    Args:
+        nwk: A hex string representing the 16-bit NWK address.
+
+    Returns:
+        A 16-character lowercase hex string representing the IEEE (EUI64)
+        address (e.g. '0123456789abcdef'), or None if the device is not
+        found in the zigpy database.
+    """
     try:
         dev = super(type(self),self).get_device( nwk=int(nwk,16))
         LOGGER.debug("AppZnp get_device  nwk: %s returned %s" %( nwk, dev))
@@ -363,6 +622,19 @@ def get_device_ieee(self, nwk):
 
 
 def handle_leave(self, nwk, ieee):
+    """
+    Handle a device leave event.
+
+    Overrides ControllerApplication.handle_leave() to notify the plugin layer
+    in addition to the standard zigpy processing.
+
+    Calls the upstream handle_leave() first, then builds a plugin 0x8048
+    frame and delivers it via self.callBackFunction().
+
+    Args:
+        nwk: The 16-bit NWK address of the departing device.
+        ieee: The IEEE (EUI64) address of the departing device.
+    """
     self.log.logging("TransportZigpy", "Debug","handle_leave (0x%04x %s)" %(nwk, ieee))
     super(type(self),self).handle_leave(nwk, ieee)
     plugin_frame = build_plugin_8048_frame_content(self, ieee)
@@ -370,8 +642,18 @@ def handle_leave(self, nwk, ieee):
     
 
 def handle_relays(self, nwk, relays) -> None:
+    """
+    Handle receipt of a source-routing relay list for a device.
+
+    Overrides ControllerApplication.handle_relays() with logging, then
+    delegates to the upstream implementation unchanged.
+
+    Args:
+        nwk:    The 16-bit NWK address of the device whose relay list was
+                received.
+        relays: The list of NWK addresses of intermediate relay devices.
+    """
     self.log.logging("TransportZigpy", "Debug","handle_relays (0x%04x %s)" %(nwk, str(relays)))
-    """Called when a list of relaying devices is received."""
     super(type(self),self).handle_relays(nwk, relays)
 
 
@@ -398,8 +680,44 @@ def packet_received(
     self, 
     packet: zigpy_t.ZigbeePacket
     ) -> None:
+    """
+    Process an incoming Zigbee packet and route it to the plugin and/or zigpy.
 
-    """Notify zigpy of a received Zigbee packet.""" 
+    Overrides ControllerApplication.packet_received() to implement
+    plugin-specific frame routing before (and sometimes instead of) passing
+    the packet to the upstream zigpy stack. Decorated with
+    @measure_execution_time.
+
+    Routing logic (in order):
+
+    1. If the sender is the coordinator ('0000') or the packet involves the
+       ZDO endpoint, the packet is forwarded to the upstream
+       packet_received() for zigpy's internal ZDO handling.
+
+    2. If cluster is 0x8036 (Mgmt_Permit_Join_rsp), a plugin 0x8014 frame is
+       built and delivered, the upstream is also notified, and the function
+       returns early.
+
+    3. If cluster is 0x8034 (Mgmt_Leave_rsp), a plugin 0x8047 frame is built
+       and delivered, the upstream is also notified, and the function
+       returns early.
+
+    4. For all other packets, a plugin 0x8002 frame is built from the message
+       payload and delivered via self.callBackFunction().
+
+    5. If the packet is a ZCL message (profile 0x0104) from a non-coordinator
+       device, the function returns early without calling the upstream, so
+       that the plugin (not zigpy) owns the ZCL response.
+
+    6. Otherwise the upstream packet_received() is called so zigpy can
+       process the packet normally.
+
+    All received frames are also written to the capture log via
+    write_capture_rx_frames() for debugging.
+
+    Args:
+        packet: The incoming ZigbeePacket as provided by the radio layer.
+    """
     self.log.logging("TransportZigpy", "Debug", "packet_received %s" %(packet))
 
     sender = packet.src.address.serialize()[::-1].hex()
@@ -420,10 +738,9 @@ def packet_received(
     self.log.logging("TransportZigpy", "Debug", "packet_received - %s %s %s %s %s %s %s %s" %(
         packet.src, profile, cluster, src_ep, dst_ep, message, hex_message, dst_addressing))
 
-    hex_message = binascii.hexlify(message).decode("utf-8")
     write_capture_rx_frames( self, packet.src, profile, cluster, src_ep, dst_ep, message, hex_message, dst_addressing)
 
-    if sender == 0x0000 or ( zigpy.zdo.ZDO_ENDPOINT in (packet.src_ep, packet.dst_ep)): 
+    if sender == "0000" or ( zigpy.zdo.ZDO_ENDPOINT in (packet.src_ep, packet.dst_ep)): 
         self.log.logging("TransportZigpy", "Debug", "packet_received from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
             sender, profile, cluster, src_ep, dst_ep, hex_message))
         super(type(self),self).packet_received(packet)
@@ -473,7 +790,7 @@ def _update_nkdids_if_needed( self, ieee, new_nwkid ):
 
 def get_zigpy_version(self):
     # This is a fake version number. This is just to inform the plugin that we are using ZNP over Zigpy
-    LOGGER.debug("get_zigpy_version ake version number. !!")
+    LOGGER.debug("get_zigpy_version fake version number. !!")
     return self.version
 
 
@@ -522,7 +839,7 @@ async def register_specific_endpoints(self):
             )
 
 
-def do_retreive_backup( self ):
+def do_retrieve_backup( self ):
     from Modules.zigpyBackup import handle_zigpy_retreive_last_backup
     
     LOGGER.debug("Retreiving last backup")
