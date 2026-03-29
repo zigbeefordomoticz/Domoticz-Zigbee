@@ -628,8 +628,8 @@ def handle_leave(self, nwk, ieee):
     Overrides ControllerApplication.handle_leave() to notify the plugin layer
     in addition to the standard zigpy processing.
 
-    Calls the upstream handle_leave() first, then builds a plugin 0x8048
-    frame and delivers it via self.callBackFunction().
+    get it handled by plugin and do the cleanup first (via 0x8048), then 
+    calls the upstream handle_leave().
 
     Args:
         nwk: The 16-bit NWK address of the departing device.
