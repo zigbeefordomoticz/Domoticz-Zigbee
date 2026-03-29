@@ -229,20 +229,17 @@ class LoggingManagement:
         domoticz_status_api("Z4D Please watch plugin logs into %s" % _logfilename)
 
         handler = (
-            TimedRotatingFileHandler(_logfilename, when="midnight", interval=1, backupCount=_backupCount)
+            TimedRotatingFileHandler(_logfilename, when="midnight", interval=1, backupCount=_backupCount, encoding='utf-8')
             if _maxBytes == 0
-            else RotatingFileHandler(_logfilename, maxBytes=_maxBytes, backupCount=_backupCount)
+            else RotatingFileHandler(_logfilename, maxBytes=_maxBytes, backupCount=_backupCount, encoding='utf-8')
         )
+        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)-8s:%(message)s"))
 
-        kwargs = dict(
-            level=logging.DEBUG,
-            format="%(asctime)s %(levelname)-8s:%(message)s",
-            handlers=[handler],
-        )
-        if sys.version_info >= (3, 9):
-            kwargs["encoding"] = "utf-8"
-
-        logging.basicConfig(**kwargs)
+        # Remove any existing handlers on the root logger to avoid the ASCII fallback
+        root_logger = logging.getLogger()
+        root_logger.handlers.clear()
+        root_logger.setLevel(logging.DEBUG)
+        root_logger.addHandler(handler)
 
         _log_mode = self.pluginconf.pluginConf.get("PluginLogMode")
         if _log_mode in (0o640, 0o644):
