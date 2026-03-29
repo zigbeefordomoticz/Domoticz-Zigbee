@@ -636,9 +636,10 @@ def handle_leave(self, nwk, ieee):
         ieee: The IEEE (EUI64) address of the departing device.
     """
     self.log.logging("TransportZigpy", "Debug","handle_leave (0x%04x %s)" %(nwk, ieee))
-    super(type(self),self).handle_leave(nwk, ieee)
     plugin_frame = build_plugin_8048_frame_content(self, ieee)
     self.callBackFunction(plugin_frame)
+
+    super(type(self),self).handle_leave(nwk, ieee)
     
 
 def handle_relays(self, nwk, relays) -> None:
