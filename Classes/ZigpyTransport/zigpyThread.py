@@ -464,9 +464,16 @@ def ezsp_configuration_setup(self, bellows_conf, serialPort, serial_specifics):
         self.log.logging("TransportZigpy", "Status", "++ Set The maximum number of end device children that Coordinater will support to 0")
         config[bellows_conf.CONF_EZSP_CONFIG]["CONFIG_MAX_END_DEVICE_CHILDREN"] = 0
 
-    if self.pluginconf.pluginConf.get("TXpower_set"):
-        self.log.logging("TransportZigpy", "Status", "++ Enables boost power mode and the alternate transmitter output.")
+    if self.pluginconf.pluginConf.get("TXpower_set") is not None:
+        tx_power = int(self.pluginconf.pluginConf["TXpower_set"])
+        self.log.logging("TransportZigpy", "Status", f"++ Setting TX Power to {tx_power} dBm")
+
+        # Boost mode flag (keep if you want PA boost enabled)
         config[bellows_conf.CONF_EZSP_CONFIG]["CONFIG_TX_POWER_MODE"] = 0x3
+        self.log.logging("TransportZigpy", "Status", "++ Setting mode of transmission power adjustment 'TX_POWER_MODE_BOOST' dBm")
+
+        # Actual power level via zigpy network config
+        config[zigpy.config.CONF_NWK][zigpy.config.CONF_NWK_TX_POWER] = tx_power
 
     return config
 
@@ -500,11 +507,14 @@ def znp_configuration_setup(self, znp_conf, serialPort, serial_specifics):
         zigpy.config.CONF_OTA: {
         },
     }
+    if self.pluginconf.pluginConf.get("TXpower_set") is not None:
+        tx_power = int(self.pluginconf.pluginConf["TXpower_set"])
+        config[znp_conf.CONF_ZNP_CONFIG]["tx_power"] = tx_power          # znp-specific
+        config[zigpy.config.CONF_NWK][zigpy.config.CONF_NWK_TX_POWER] = tx_power  # zigpy layer
+
     if specific_endpoints(self):
         config[ znp_conf.CONF_ZNP_CONFIG][ "prefer_endpoint_1" ] = False
     
-    if "TXpower_set" in self.pluginconf.pluginConf:
-        config[znp_conf.CONF_ZNP_CONFIG]["tx_power"] = int(self.pluginconf.pluginConf["TXpower_set"])
         
     return config
 
@@ -586,6 +596,9 @@ def optional_configuration_setup(self, config, radio_conf, set_extendedPanId, se
     # In case we have to force the Channel
     if radio_conf and set_channel != 0:
         config[zigpy.config.CONF_NWK][zigpy.config.CONF_NWK_CHANNEL] = set_channel
+
+    if self.pluginconf.pluginConf.get("TXpower_set") is not None:
+        config[zigpy.config.CONF_NWK][zigpy.config.CONF_NWK_TX_POWER] = int(self.pluginconf.pluginConf["TXpower_set"])
 
     # Enable or not Source Routing based on zigpySourceRouting setting
     config[zigpy.config.CONF_SOURCE_ROUTING] = bool( self.pluginconf.pluginConf["zigpySourceRouting"] )

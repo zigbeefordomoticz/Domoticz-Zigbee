@@ -301,6 +301,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     # power on startup
     tx_power = await self._get_effective_tx_power()
     max_tx_power = await self._get_effective_maximum_tx_power()
+    self.log.logging("TransportZigpy", "Status", f"Effective TxPower: {tx_power}, Max TxPower: {max_tx_power}")
 
     if max_tx_power is not None and tx_power is not None:
         if tx_power > max_tx_power:
