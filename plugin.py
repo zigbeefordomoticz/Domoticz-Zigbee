@@ -11,7 +11,7 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 """
-<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="8.1" shared="true">
+<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="8.1" shared="false">
     <description>
         <h1> Plugin Zigbee for domoticz</h1><br/>
             <br/><h2> Informations</h2><br/>
