@@ -136,8 +136,8 @@ import z4d_certified_devices
 
 from Classes.AdminWidgets import AdminWidgets
 from Classes.ConfigureReporting import ConfigureReporting
-from Classes.DomoticzDB import (DomoticzDB_DeviceStatus, DomoticzDB_Hardware,
-                                DomoticzDB_Preferences)
+from Classes.DomoticzDB import (DomoticzAPIClient, DomoticzDB_DeviceStatus,
+                                DomoticzDB_Hardware, DomoticzDB_Preferences)
 from Classes.GroupMgtv2.GroupManagement import GroupsManagement
 from Classes.IAS import IAS_Zone_Management
 from Classes.LoggingManagement import LoggingManagement
@@ -243,6 +243,7 @@ class BasePlugin:
         self.networkmap = None
         self.zigpy_topology = None
         self.networkenergy = None
+        self.domoticz_api = None
         self.domoticzdb_DeviceStatus = None  # Object allowing direct access to Domoticz DB DeviceSatus
         self.domoticzdb_Hardware = None  # Object allowing direct access to Domoticz DB Hardware
         self.domoticzdb_Preferences = None  # Object allowing direct access to Domoticz DB Preferences
@@ -370,11 +371,11 @@ class BasePlugin:
         Domoticz.Status( "Z4D requires python3.11 or above and you are running %s.%s" %(
             _current_python_version_major, _current_python_version_minor))
     
-        if sys.version_info < (3, 11):
-            Domoticz.Error("Z4D requires Python 3.11+, found %d.%d" % (
-                sys.version_info.major, sys.version_info.minor))
-            self.onStop()
-            return
+        #if sys.version_info < (3, 11):
+        #    Domoticz.Error("Z4D requires Python 3.11+, found %d.%d" % (
+        #        sys.version_info.major, sys.version_info.minor))
+        #    self.onStop()
+        #    return
 
         if Parameters["Mode1"] == "V1" and Parameters["Mode2"] in ( "USB", "DIN", "PI", "Wifi", ):
             self.transport = Parameters["Mode2"]
@@ -504,32 +505,17 @@ class BasePlugin:
         self.StartupFolder = Parameters["StartupFolder"]
 
         Domoticz.Status("Z4D is initializing a connection to Domoticz Api/Json")
-        self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( 
-            Parameters["Mode5"], 
-            self.pluginconf, 
-            self.HardwareID, 
-            self.log,
-            self.DomoticzBuild,
-            self.DomoticzMajor,
-            self.DomoticzMinor,
-        )
+        self.domoticz_api = DomoticzAPIClient( Parameters["Mode5"], self.pluginconf, self.log)
+        
+        self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( self.domoticz_api )
 
         self.log.logging("Plugin", "Debug", "   - Hardware table")
-        self.domoticzdb_Hardware = DomoticzDB_Hardware(
-            Parameters["Mode5"], 
-            self.pluginconf, 
-            self.HardwareID, 
-            self.log, 
-            self.pluginParameters ,
-            self.DomoticzBuild,
-            self.DomoticzMajor,
-            self.DomoticzMinor,
-            )
+        self.domoticzdb_Hardware = DomoticzDB_Hardware(self.domoticz_api, self.HardwareID)
         
         if (
             self.zigbee_communication 
             and self.zigbee_communication == "zigpy" 
-            and ( self.pluginconf.pluginConf["forceZigpy_noasyncio"] or self.domoticzdb_Hardware.multiinstances_z4d_plugin_instance())
+            and ( self.pluginconf.pluginConf["forceZigpy_noasyncio"] or self.domoticzdb_Hardware.is_multi_instance())
             ):
             # https://github.com/python/cpython/issues/91375
             self.log.logging("Plugin", "Status", "Z4D Multi-instances detected. Enabling 'asyncio' workaround")
@@ -543,15 +529,8 @@ class BasePlugin:
                 
         self.log.logging("Plugin", "Debug", "   - Preferences table")
         
-        self.domoticzdb_Preferences = DomoticzDB_Preferences(
-            Parameters["Mode5"], 
-            self.pluginconf, 
-            self.log,
-            self.DomoticzBuild,
-            self.DomoticzMajor,
-            self.DomoticzMinor,
-            )
-        self.WebUsername, self.WebPassword = self.domoticzdb_Preferences.retreiveWebUserNamePassword()
+        self.domoticzdb_Preferences = DomoticzDB_Preferences( self.domoticz_api)
+        self.WebUsername, self.WebPassword = self.domoticzdb_Preferences.retrieve_web_credentials()
 
         self.adminWidgets = AdminWidgets( self.log , self.pluginconf, self.pluginParameters, self.ListOfDomoticzWidget, Devices, self.ListOfDevices, self.HardwareID, self.IEEE2NWK)
         self.adminWidgets.updateStatusWidget(Devices, "Z4D Starting up") 
