@@ -816,6 +816,10 @@ def domoticz_log_api( message):
     Domoticz.Log( message )
 
 
+def domoticz_debug_api( message):
+    Domoticz.Debug( message )
+
+
 def domoticz_error_api( message):
     Domoticz.Error( message )
 
