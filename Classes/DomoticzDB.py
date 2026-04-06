@@ -17,7 +17,8 @@ import urllib.parse
 
 
 CACHE_TIMEOUT = (15 * 60) + 15  # seconds
-
+MAX_RETRY = 1
+GET_TIMEOUT = 2 
 
 class DomoticzAPIClient:
 
@@ -100,7 +101,7 @@ class DomoticzAPIClient:
     # ------------------------------------------------------
     # 🌐 Unified HTTP GET with cache
     # ------------------------------------------------------
-    def get(self, query, retry=3, timeout=10, use_cache=True):
+    def get(self, query, retry=MAX_RETRY, timeout=GET_TIMEOUT, use_cache=True):
         url = self.url_ready + query
 
         # 🔹 Cache lookup
@@ -141,7 +142,7 @@ class DomoticzAPIClient:
 
             self.logging("Error", f"{url} failed: {reason} (retrying)")
             retry -= 1
-            time.sleep(1)
+            #time.sleep(1). # No sleep as we are in the domoticz main loop
 
         self.logging("Error", f"{url} failed after retries")
         return None
