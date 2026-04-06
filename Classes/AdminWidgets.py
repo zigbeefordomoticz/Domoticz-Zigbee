@@ -143,26 +143,17 @@ class AdminWidgets:
 
         # Search for legacy name at 1st
         for legacy_id in legacy_ids:
-            domoticz_log_api(f"Trying legacy_id={legacy_id}")
             unit = find_first_unit_widget_from_deviceID(self, Devices, legacy_id)
             if unit is not None:
-                domoticz_log_api(f"_resolve_deviceid: Result for legacy_id={legacy_id} -> unit={unit}")
                 return legacy_id, unit
 
         # If not found let look for new 
         z4d_id = z4d_prefix + suffix_padded
-        domoticz_log_api(f"_resolve_deviceid: Trying z4d_id={z4d_id}")
 
         unit = find_first_unit_widget_from_deviceID(self, Devices, z4d_id)
-        domoticz_log_api(f"_resolve_deviceid: Result for z4d_id={z4d_id} -> unit={unit}")
 
         if unit:
-            domoticz_log_api(f"_resolve_deviceid: FOUND via z4d_id={z4d_id}, unit={unit}")
             return z4d_id, unit
-
-        domoticz_log_api(
-            f"_resolve_deviceid: NOT FOUND (legacy_id={legacy_id}, z4d_id={z4d_id})"
-        )
 
         return None, None
    
