@@ -509,6 +509,8 @@ class BasePlugin:
         self.domoticz_api = DomoticzAPIClient( Parameters["Mode5"], self.pluginconf, self.log)
         self.domoticz_device_cache = DomoticzDeviceCache(self.domoticz_api)
         
+        self.domoticz_device_cache.dump_cache()
+        
         self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( self.domoticz_device_cache )
 
         self.log.logging("Plugin", "Debug", "   - Hardware table")
@@ -924,6 +926,8 @@ class BasePlugin:
             return
         
         self.internalHB += 1
+        
+        #self.domoticz_device_cache.dump_cache()
 
         if self.PDMready:
             if (self.internalHB % HEARTBEAT) != 0:
@@ -986,6 +990,7 @@ class BasePlugin:
             self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
             WriteDeviceList(self, 0)  # write immediatly
             networksize_update(self)
+            self.domoticz_device_cache.refresh()
   
         _trigger_coordinator_backup( self )
 
@@ -1023,6 +1028,13 @@ class BasePlugin:
         return True
 
 
+    def onDeviceModified(self, Unit):
+        # DeviceID, Unit
+        self.domoticz_device_cache.refresh_device( Unit)
+        
+        
+        
+        
 def _onConnect_status_error(self, Status, Description):
     self.log.logging("Plugin", "Error", "Failed to connect (" + str(Status) + ")")
     self.log.logging("Plugin", "Debug", "Failed to connect (" + str(Status) + ") with error: " + Description)
@@ -1686,6 +1698,11 @@ def onDisconnect(Connection):
 def onHeartbeat():
     global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     _plugin.onHeartbeat()
+
+
+def onDeviceModified( Unit):
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
+    _plugin.onDeviceModified(Unit )
 
 
 # Generic helper functions
