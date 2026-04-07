@@ -106,7 +106,8 @@ class DomoticzAPIClient:
         self._stop_event.set()
         try:
             self._queue.put_nowait((None, None))
-        except Exception:
+        except Exception as er:
+            self.logging("Error", f"Worker did not stop cleanly {er}")
             pass
         self._worker.join(timeout=2)
         if self._worker.is_alive():
@@ -116,7 +117,8 @@ class DomoticzAPIClient:
 
     def logging(self, level, msg):
         """Wrapper for logging through plugin logger."""
-        self.log.logging("DZapi", level, msg)
+        if self.log:
+            self.log.logging("DZapi", level, msg)
 
     # ------------------------------
     # URL / Auth Helpers
