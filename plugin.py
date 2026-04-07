@@ -136,7 +136,7 @@ import z4d_certified_devices
 
 from Classes.AdminWidgets import AdminWidgets
 from Classes.ConfigureReporting import ConfigureReporting
-from Classes.DomoticzDB import (DomoticzAPIClient, DomoticzDB_DeviceStatus,
+from Classes.DomoticzDB import (DomoticzAPIClient, DomoticzDB_DeviceStatus,DomoticzDeviceCache,
                                 DomoticzDB_Hardware, DomoticzDB_Preferences)
 from Classes.GroupMgtv2.GroupManagement import GroupsManagement
 from Classes.IAS import IAS_Zone_Management
@@ -244,6 +244,7 @@ class BasePlugin:
         self.zigpy_topology = None
         self.networkenergy = None
         self.domoticz_api = None
+        self.domoticz_device_cache = None
         self.domoticzdb_DeviceStatus = None  # Object allowing direct access to Domoticz DB DeviceSatus
         self.domoticzdb_Hardware = None  # Object allowing direct access to Domoticz DB Hardware
         self.domoticzdb_Preferences = None  # Object allowing direct access to Domoticz DB Preferences
@@ -506,8 +507,9 @@ class BasePlugin:
 
         Domoticz.Status("Z4D is initializing a connection to Domoticz Api/Json")
         self.domoticz_api = DomoticzAPIClient( Parameters["Mode5"], self.pluginconf, self.log)
+        self.domoticz_device_cache = DomoticzDeviceCache(self.domoticz_api)
         
-        self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( self.domoticz_api )
+        self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( self.domoticz_device_cache )
 
         self.log.logging("Plugin", "Debug", "   - Hardware table")
         self.domoticzdb_Hardware = DomoticzDB_Hardware(self.domoticz_api, self.HardwareID)
@@ -671,6 +673,9 @@ class BasePlugin:
             self.log.logging(["Transport", "StopProcess"], "Log", "Flushing plugin database onto disk")
         if self.pluginconf:
             WriteDeviceList(self, 0)  # write immediatly
+
+        if self.domoticz_api:
+            self.domoticz_api.stop()
 
         # Uninstall Z4D custom UI from Domoticz
         uninstall_Z4D_to_domoticz_custom_ui()
