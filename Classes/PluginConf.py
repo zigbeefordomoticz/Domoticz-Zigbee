@@ -244,7 +244,7 @@ SETTINGS = {
             "CustomDevicePolling": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Danfoss": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "DNS": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
-            "DZDB": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "DZapi": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             
             "GammaTroniques": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Database": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
