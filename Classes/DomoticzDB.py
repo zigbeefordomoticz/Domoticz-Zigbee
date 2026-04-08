@@ -34,9 +34,9 @@ from collections import OrderedDict
 # ----------------------
 # Configuration Constants
 # ----------------------
-CACHE_TIMEOUT = 3600           # seconds per API/device cache
+CACHE_TIMEOUT = 3600         # seconds per API/device cache
 GET_TIMEOUT = 5              # HTTP request timeout
-MAX_CACHE_SIZE = 256         # max number of global API cache entries
+MAX_CACHE_SIZE = 16          # max number of global API cache entries
 TRACKED_ATTRIBUTES = {
     "AddjValue",
     "AddjValue2",
@@ -102,18 +102,18 @@ class DomoticzAPIClient:
 
     def stop(self):
         """Stops the worker thread cleanly."""
-        self.logging("Debug", "Stopping API worker thread")
+        self.logging("Status", "Zigbee: ++ DomoticzDB Api thread stop requrested")
         self._stop_event.set()
         try:
             self._queue.put_nowait((None, None))
         except Exception as er:
-            self.logging("Error", f"Worker did not stop cleanly {er}")
+            self.logging("Error", f"DomoticzDB Api thread  did not stop cleanly {er}")
             pass
         self._worker.join(timeout=2)
         if self._worker.is_alive():
-            self.logging("Error", "Worker did not stop cleanly")
+            self.logging("Error", "DomoticzDB Api thread  did not stop cleanly")
         else:
-            self.logging("Debug", "Worker stopped")
+            self.logging("Debug", "Zigbee: ++ DomoticzDB Api thread stopped.")
 
     def logging(self, level, msg):
         """Wrapper for logging through plugin logger."""
@@ -260,6 +260,7 @@ class DomoticzAPIClient:
             if query is None:
                 continue
 
+            self.logging("Debug", f"_worker_loop - key: {cache_key} query: {query}")
             try:
                 url = self.url_ready + query
                 data = self._do_request(url)
@@ -300,15 +301,17 @@ class DomoticzAPIClient:
         """
         ssl_context = None
         if url.lower().startswith("https") and not self.pluginconf.pluginConf.get("CheckSSLCertificateValidity", True):
+            self.logging("Debug", f"_do_request set ssl_context")
             ssl_context = ssl.create_default_context()
             ssl_context.check_hostname = False
             ssl_context.verify_mode = ssl.CERT_NONE
 
         try:
-            self.logging("Debug", f"Performing HTTP GET: {url}")
+            self.logging("Debug", f"Performing HTTP/HTTPS GET: {url}")
             request = urllib.request.Request(url)
             if self.auth_header:
                 request.add_header("Authorization", f"Basic {self.auth_header}")
+                self.logging("Debug", f"_do_request Authorization set {self.auth_header}")
 
             with urllib.request.urlopen(request, context=ssl_context, timeout=GET_TIMEOUT) as response:
                 return json.load(response)
