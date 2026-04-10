@@ -250,7 +250,7 @@ def rest_full_reprovisionning(self, verb, data, parameters):
         return _response
 
     data = data.decode("utf8")
-    data = eval(data)
+    data = eval(data)  # nosec B307
     self.logging("Log", "Data: %s" % data)
 
     if "IEEE" not in data and "NWKID" not in data:

@@ -11,7 +11,7 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 """
-<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="8.1">
+<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="8.1" shared="false">
     <description>
         <h1> Plugin Zigbee for domoticz</h1><br/>
             <br/><h2> Informations</h2><br/>
@@ -98,15 +98,17 @@
             <description><br/><h3>Plugin debug</h3>This debugging option has been moved to the WebUI > Tools > Debug<br/></description>
                 <options>
                     <option label="None" value="0"  default="true" />
+                    <option label="Verbose" value="1"  default="true" />
                     <option label="Python Only" value="2"/>
                     <option label="Basic Debugging" value="62"/>
                     <option label="Basic+Messages" value="126"/>
-                    <option label="Connections Only" value="16"/>
-                    <option label="Connections+Queue" value="144"/>
+                    <option label="Shows high level framework messages only about major the plugin" value="4"/>
+                    <option label="Shows plugin framework debug messages related to Devices objects" value="8"/>
+                    <option label="Shows plugin framework debug messages related to Connections objects" value="16"/>
+                    <option label="Shows plugin framework debug messages related to the message queue" value="128"/>
                     <option label="All" value="-1"/>
                 </options>
         </param>
-            
     </params>
 </plugin>
 """
@@ -210,6 +212,12 @@ STARTUP_TIMEOUT_DELAY_FOR_STOP = 120
 ZNP_STARTUP_TIMEOUT_DELAY_FOR_WARNING = 110
 ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP = 160
 
+ZIGPY_BACKENDS = {
+    "ZigpyZNP":     ("znp",    "zigpy_znp",    "ZNP"),
+    "ZigpydeCONZ":  ("deCONZ", "zigpy_deconz", "deConz"),
+    "ZigpyEZSP":    ("ezsp",   "bellows",      "EZSP"),
+    "ZigpyBLZ":     ("blz",    "zigpy_blz",    "Bouffalo Lab Zigbee"),
+}
 
 class BasePlugin:
     enabled = False
@@ -335,8 +343,10 @@ class BasePlugin:
     def onStart(self):
         #tracemalloc.start()
 
-        if Parameters["Mode6"] != "0":
-            Domoticz.Debugging(int(Parameters["Mode6"]))
+        mode6 = Parameters.get("Mode6", "0")
+        if mode6.lstrip("-").isdigit():
+            Domoticz.Status( f"Enabling Debug Log Level: {mode6}")
+            Domoticz.Debugging(int(mode6))
 
         Domoticz.Status( "Welcome to Zigbee for Domoticz (Z4D) plugin. (c)pipiche38 - 2018 - 2025")
 
@@ -347,13 +357,24 @@ class BasePlugin:
         else:
             Domoticz.Log("PYTHONPATH is not set")
         
+        # Print VIRTUAL_ENV if set
+        virualenv= os.getenv('VIRTUAL_ENV')
+        if virualenv:
+            Domoticz.Log(f"VIRTUAL_ENV is set to: {virualenv}")
+        else:
+            Domoticz.Log("VIRTUAL_ENV is not set")
+
         _current_python_version_major = sys.version_info.major
         _current_python_version_minor = sys.version_info.minor
 
-        Domoticz.Status( "Z4D requires python3.9 or above and you are running %s.%s" %(
+        Domoticz.Status( "Z4D requires python3.11 or above and you are running %s.%s" %(
             _current_python_version_major, _current_python_version_minor))
     
-        assert sys.version_info >= (3, 9)  # nosec
+        if sys.version_info < (3, 11):
+            Domoticz.Error("Z4D requires Python 3.11+, found %d.%d" % (
+                sys.version_info.major, sys.version_info.minor))
+            self.onStop()
+            return
 
         if Parameters["Mode1"] == "V1" and Parameters["Mode2"] in ( "USB", "DIN", "PI", "Wifi", ):
             self.transport = Parameters["Mode2"]
@@ -1074,31 +1095,67 @@ def start_zigbee_transport(self ):
     elif self.transport == "None":
         _start_fake_coordinator(self)
 
-    elif self.transport == "ZigpyZNP":
-        _start_zigpy_ZNP(self)
-        
-    elif self.transport == "ZigpydeCONZ":
-        _start_zigpy_deConz(self)
-                
-    elif self.transport == "ZigpyEZSP":
-        _start_zigpy_EZSP(self)
-
-    elif self.transport == "ZigpyBLZ":
-        _start_zigpy_BLZ(self)
+    elif self.transport in  ZIGPY_BACKENDS:
+        _start_zigpy_backend(self, self.transport)
         
     else:
         self.log.logging("Plugin", "Error", "Unknown Transport comunication protocol : %s" % str(self.transport))
         self.onStop()
         return
 
+def _start_zigpy_backend(self, backend_key):
 
+    radio_lib, zigpy_module, label = ZIGPY_BACKENDS[backend_key]
+    import zigpy
+    __import__(zigpy_module)
+
+    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
+                              SCHEMA_DEVICE)
+
+    from Classes.ZigpyTransport.Transport import ZigpyTransport
+
+    check_python_modules_version( self )
+    self.zigbee_communication = "zigpy"
+    self.pluginParameters["Zigpy"] = True
+    self.log.logging("Plugin", "Status", f"Z4D starting {label}")
+
+    if Parameters["Mode2"] == "Socket":
+        SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
+        self.transport += "Socket"
+        communication_specifics = None
+    else:
+        # Serial mode via USB
+        communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
+        SerialPort = Parameters["SerialPort"]
+
+    self.ControllerLink= ZigpyTransport(
+        self.ControllerData,
+        self.pluginParameters,
+        self.pluginconf,
+        self.processFrame,
+        self.zigpy_chk_upd_device,
+        self.zigpy_get_device,
+        self.zigpy_backup_available,
+        self.restart_plugin,
+        self.log,
+        self.statistics,
+        self.HardwareID,
+        radio_lib,
+        SerialPort,
+        communication_specifics
+        )
+
+    self.ControllerLink.open_cie_connection()
+    self.pluginconf.pluginConf["ControllerInRawMode"] = True
+    
+    
 def _start_fake_coordinator(self):
-        from Classes.ZigateTransport.Transport import ZigateTransport
-        self.pluginconf.pluginConf["ControllerInRawMode"] = False
-        self.pluginParameters["Zigpy"] = False
-        self.log.logging("Plugin", "Status", "Transport mode set to None, no communication.")
-        self.FirmwareVersion = "031c"
-        self.PluginHealth["Firmware Update"] = {"Progress": "75 %", "Device": "1234"}
+    from Classes.ZigateTransport.Transport import ZigateTransport
+    self.pluginconf.pluginConf["ControllerInRawMode"] = False
+    self.pluginParameters["Zigpy"] = False
+    self.log.logging("Plugin", "Status", "Transport mode set to None, no communication.")
+    self.FirmwareVersion = "031c"
+    self.PluginHealth["Firmware Update"] = {"Progress": "75 %", "Device": "1234"}
     
 
 def _start_native_usb_zigate(self):
@@ -1176,172 +1233,6 @@ def parse_mode2_serial_com_specifics(mode2):
         result["FlowControl"] = parts[2]
 
     return result
-
-
-def _start_zigpy_ZNP(self):
-    import zigpy
-    import zigpy_znp
-    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
-                              SCHEMA_DEVICE)
-
-    from Classes.ZigpyTransport.Transport import ZigpyTransport
-
-    check_python_modules_version( self )
-    self.zigbee_communication = "zigpy"
-    self.pluginParameters["Zigpy"] = True
-    self.log.logging("Plugin", "Status", "Z4D starting ZNP")
-
-    if Parameters["Mode2"] == "Socket":
-        SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
-        self.transport += "Socket"
-        communication_specifics = None
-    else:
-        # Serial mode via USB
-        communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
-        SerialPort = Parameters["SerialPort"]
-
-    self.ControllerLink= ZigpyTransport(
-        self.ControllerData,
-        self.pluginParameters,
-        self.pluginconf,
-        self.processFrame,
-        self.zigpy_chk_upd_device,
-        self.zigpy_get_device,
-        self.zigpy_backup_available,
-        self.restart_plugin,
-        self.log,
-        self.statistics,
-        self.HardwareID,
-        "znp",
-        SerialPort,
-        communication_specifics
-        )
-    self.ControllerLink.open_cie_connection()
-    self.pluginconf.pluginConf["ControllerInRawMode"] = True
-    
-
-def _start_zigpy_deConz(self):
-    import zigpy
-    import zigpy_deconz
-    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
-                              SCHEMA_DEVICE)
-
-    from Classes.ZigpyTransport.Transport import ZigpyTransport
-
-    check_python_modules_version( self )
-    self.pluginParameters["Zigpy"] = True
-    self.log.logging("Plugin", "Status","Z4D starting deConz")
-
-    if Parameters["Mode2"] == "Socket":
-        SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
-        self.transport += "Socket"
-        communication_specifics = None
-    else:
-        # Serial mode via USB
-        communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
-        SerialPort = Parameters["SerialPort"]
-
-    self.ControllerLink= ZigpyTransport(
-        self.ControllerData,
-        self.pluginParameters,
-        self.pluginconf,
-        self.processFrame,
-        self.zigpy_chk_upd_device,
-        self.zigpy_get_device,
-        self.zigpy_backup_available,
-        self.restart_plugin,
-        self.log,
-        self.statistics,
-        self.HardwareID,
-        "deCONZ",
-        SerialPort,
-        communication_specifics
-        )
-    self.ControllerLink.open_cie_connection()
-    self.pluginconf.pluginConf["ControllerInRawMode"] = True
-    
-
-def _start_zigpy_EZSP(self):
-    import bellows
-    import zigpy
-    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
-                              SCHEMA_DEVICE)
-
-    from Classes.ZigpyTransport.Transport import ZigpyTransport
-
-    check_python_modules_version( self )
-    self.zigbee_communication = "zigpy"
-    self.pluginParameters["Zigpy"] = True
-    self.log.logging("Plugin", "Status","Z4D starting EZSP")
-
-    if Parameters["Mode2"] == "Socket":
-        SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
-        self.transport += "Socket"
-        communication_specifics = None
-    else:
-        communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
-        SerialPort = Parameters["SerialPort"]
-
-    self.ControllerLink= ZigpyTransport(
-        self.ControllerData,
-        self.pluginParameters,
-        self.pluginconf,
-        self.processFrame,
-        self.zigpy_chk_upd_device,
-        self.zigpy_get_device,
-        self.zigpy_backup_available,
-        self.restart_plugin,
-        self.log,
-        self.statistics,
-        self.HardwareID,
-        "ezsp",
-        SerialPort,
-        communication_specifics
-        )
-
-    self.ControllerLink.open_cie_connection()
-    self.pluginconf.pluginConf["ControllerInRawMode"] = True
-    
-def _start_zigpy_BLZ(self):
-    import zigpy
-    import zigpy_blz
-    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
-                              SCHEMA_DEVICE)
-
-    from Classes.ZigpyTransport.Transport import ZigpyTransport
-
-    check_python_modules_version( self )
-    self.zigbee_communication = "zigpy"
-    self.pluginParameters["Zigpy"] = True
-    self.log.logging("Plugin", "Status","Z4D starting Bouffalo Lab Zigbee (BLZ) ")
-
-    if Parameters["Mode2"] == "Socket":
-        SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
-        self.transport += "Socket"
-        communication_specifics = None
-    else:
-        communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
-        SerialPort = Parameters["SerialPort"]
-
-    self.ControllerLink= ZigpyTransport(
-        self.ControllerData,
-        self.pluginParameters,
-        self.pluginconf,
-        self.processFrame,
-        self.zigpy_chk_upd_device,
-        self.zigpy_get_device,
-        self.zigpy_backup_available,
-        self.restart_plugin,
-        self.log,
-        self.statistics,
-        self.HardwareID,
-        "blz",
-        SerialPort,
-        communication_specifics
-        )
-
-    self.ControllerLink.open_cie_connection()
-    self.pluginconf.pluginConf["ControllerInRawMode"] = True
 
 
 def zigateInit_Phase1(self):
@@ -1765,51 +1656,51 @@ def debuging_information(self, mode):
         self.log.logging("Plugin", mode, "%s: %s" % (info_name, info_value))
 
  
-global _plugin  # pylint: disable=global-variable-not-assigned
+global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
 _plugin = BasePlugin()
 
 
 def onStart():
-    global _plugin  # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     _plugin.onStart()
 
 
 def onStop():
-    global _plugin  # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     _plugin.onStop()
 
 
 #def onDeviceRemoved(DeviceID, Unit):
 def onDeviceRemoved( Unit):
-    global _plugin  # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     #_plugin.onDeviceRemoved(DeviceID, Unit)
     _plugin.onDeviceRemoved( Unit)
 
 
 def onConnect(Connection, Status, Description):
-    global _plugin  # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     _plugin.onConnect(Connection, Status, Description)
 
 
 def onMessage(Connection, Data):
-    global _plugin  # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     _plugin.onMessage(Connection, Data)
 
 
 #def onCommand(DeviceID, Unit, Command, Level, Color):
 def onCommand(Unit, Command, Level, Color):
-    global _plugin
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     #_plugin.onCommand(DeviceID, Unit, Command, Level, Color)
     _plugin.onCommand( Unit, Command, Level, Color)
 
 
 def onDisconnect(Connection):
-    global _plugin  # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     _plugin.onDisconnect(Connection)
 
 
 def onHeartbeat():
-    global _plugin  # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     _plugin.onHeartbeat()
 
 

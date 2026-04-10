@@ -67,6 +67,7 @@ import math
 import os
 import socket
 import struct
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -102,9 +103,9 @@ VENDOR_PROFILES = {
         "notes": "Strict timing, small buffers, strong CRC/header validation."
     },
 
-    0x118C: {  # IKEA (TRÅDFRI / Dirigera)
-        "max_data": 56,
-        "min_delay": 0.12,
+    0x117C: {  # IKEA (TRÅDFRI / Dirigera)
+        "max_data": 64,
+        "min_delay": 0,
         "retry": 3,
         "notes": "Generally robust; failures often mesh-related."
     },
@@ -116,21 +117,33 @@ VENDOR_PROFILES = {
         "notes": "Very picky image metadata; some devices require vendor-style packaging."
     },
 
-    0x112D: {  # Develco / frient
+    0x1015: {  # Develco / frient
         "max_data": 56,
         "min_delay": 0.16,
         "retry": 2,
         "notes": "Known mid-OTA stalls; allow long idle periods."
     },
 
-    0x1224: {  # NodOn
+    0x128B: {  # NodOn
         "max_data": 52,
         "min_delay": 0.12,
         "retry": 3,
         "notes": "Verify manufacturer/image type; some ‘No image available’ errors."
     },
 
-    0x10A4: {  # Osram / LEDVANCE
+    0x1189: {  # Osram / LEDVANCE
+        "max_data": 56,
+        "min_delay": 0.12,
+        "retry": 3,
+        "notes": "Generally easier OTA; check mesh stability during upgrade."
+    },
+    0xBBAA: {  # Osram / LEDVANCE
+        "max_data": 56,
+        "min_delay": 0.12,
+        "retry": 3,
+        "notes": "Generally easier OTA; check mesh stability during upgrade."
+    },
+    0x110C: {  # Osram / LEDVANCE
         "max_data": 56,
         "min_delay": 0.12,
         "retry": 3,
@@ -1726,7 +1739,7 @@ def notify_upgrade_end(
         logging(self, "Status", _textmsg, MsgSrcAddr)
         if "Firmware Update" in self.PluginHealth and len(self.PluginHealth["Firmware Update"]) > 0:
             self.PluginHealth["Firmware Update"]["Progress"] = "Success"
-
+        
     elif Status == "Aborted":
         _textmsg = "Firmware update aborted error code %s for Device %s in %s hour %s min %s sec" % (
             Status,
@@ -1759,6 +1772,9 @@ def notify_upgrade_end(
             self.PluginHealth["Firmware Update"]["Progress"] = "More"
 
     self.adminWidgets.updateNotificationWidget(self.Devices, _textmsg)
+
+    # And finaly remove if there is firmware URL
+    self.ListOfDevices.get(MsgSrcAddr, {}).get("OTAUpdate", {}).pop(image_type, None)
 
 
 def convert_time(seconds):
@@ -1963,16 +1979,13 @@ def notify_ota_firmware_available(self, srcnwkid, manufcode, imagetype, filevers
     logging(self, "Status", "   URL to download: %s" % _ota_available["url"])
 
     if srcnwkid in self.ListOfDevices:
-        if "OTAUpdate" not in self.ListOfDevices[srcnwkid]:
-            self.ListOfDevices[srcnwkid]["OTAUpdate"] = {}
-        if imagetype in self.ListOfDevices[srcnwkid]["OTAUpdate"]:
-            self.ListOfDevices[srcnwkid]["OTAUpdate"][imagetype].clear()
-        self.ListOfDevices[srcnwkid]["OTAUpdate"][imagetype] = {
+        ota = self.ListOfDevices[srcnwkid].setdefault("OTAUpdate", {})
+        ota[imagetype] = {
             "currentversion": str(fileversion),
-            "newestversion" : str(_ota_available["fileVersion"]),
+            "newestversion": str(_ota_available["fileVersion"]),
             "url": _ota_available["url"],
         }
-        
+
     if folder:
         logging(self, "Status", "   Folder to store: %s" % folder)
     else:
@@ -2028,8 +2041,12 @@ def trace_ota_block(self, dest_addr, image_type_hex, offset, size, sequence, raw
         timestamp | seq | offset | size | data_hex
     """
     filename = f"ota_blocks_{dest_addr}_{image_type_hex}.log"
-    log_path = self.pluginconf.pluginConf.get("pluginLogs", "/tmp")
-    full_path = os.path.join(log_path, filename)
+    # Use the plugin config if set, else a secure temp directory
+    log_dir = self.pluginconf.pluginConf.get("pluginLogs")
+    if log_dir is None:
+        log_dir = tempfile.mkdtemp(prefix="ota_logs_")  # creates a unique temp dir
+
+    full_path = os.path.join(log_dir, filename)
 
     # Convert bytes → hex string
     data_hex = raw_ota_data.hex()

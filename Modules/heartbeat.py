@@ -30,7 +30,7 @@ from Modules.domoTools import (RetreiveWidgetTypeList,
                                reset_device_ieee_unit_if_needed,
                                timedOutDevice)
 from Modules.linky import collect_ticmeter_linky
-from Modules.pairingProcess import (binding_needed_clusters_with_zigate,
+from Modules.pairingProcess import (binding_needed_clusters_with_coordinator,
                                     processNotinDBDevices)
 from Modules.paramDevice import sanity_check_of_param
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
@@ -284,7 +284,7 @@ def check_delay_binding( self, NwkId, model ):
             self.ListOfDevices[ NwkId ]["Bind"] = {} 
         self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s request Configure Reporting (and so bindings)" % (
             NwkId), NwkId, )
-        binding_needed_clusters_with_zigate(self, NwkId)
+        binding_needed_clusters_with_coordinator(self, NwkId)
         self.configureReporting.processConfigureReporting( NwkId=NwkId ) 
         self.ListOfDevices[ NwkId ]["DelayBindingAtPairing"] = "Completed"
 

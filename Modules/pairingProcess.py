@@ -412,7 +412,7 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
 
     # Bindings ....
     if not delay_binding_and_reporting(self, NWKID):
-        binding_needed_clusters_with_zigate(self, NWKID)
+        binding_needed_clusters_with_coordinator(self, NWKID)
         reWebBind_Clusters(self, NWKID)
         mgmt_rtg(self, NWKID, "BindingTable")
 
@@ -463,13 +463,13 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
         del self.ListOfDevices[NWKID]["ReqEpv2"]
 
 
-def binding_needed_clusters_with_zigate(self, NWKID):
+def binding_needed_clusters_with_coordinator(self, NWKID):
     cluster_to_bind = CLUSTERS_LIST
 
     # Do we have to follow Certified Conf file, or look for standard mecanishm ?
     model_name = self.ListOfDevices[NWKID].get("Model", "")
     if model_name not in ( {}, "") and model_name in self.DeviceConf:
-        self.log.logging("Pairing", "Debug", "binding_needed_clusters_with_zigate %s based on Device Configuration" % (NWKID))
+        self.log.logging("Pairing", "Debug", "binding_needed_clusters_with_coordinator %s based on Device Configuration" % (NWKID))
         _model = self.ListOfDevices[NWKID]["Model"]
 
         # Check if we have to unbind clusters
@@ -521,7 +521,7 @@ def delay_binding_and_reporting(self, Nwkid):
     if _model in self.DeviceConf and "DelayBindingAtPairing" in self.DeviceConf[_model] and self.DeviceConf[_model]["DelayBindingAtPairing"]:
         self.ListOfDevices[ Nwkid ]["DelayBindingAtPairing"] = int(( time.time() + int(self.DeviceConf[_model]["DelayBindingAtPairing"])))
         
-        self.log.logging("Pairing", "Debug", "binding_needed_clusters_with_zigate %s Skip Binding due to >DelayBindingAtPairing<" % (Nwkid))
+        self.log.logging("Pairing", "Debug", "binding_needed_clusters_with_coordinator %s Skip Binding due to >DelayBindingAtPairing<" % (Nwkid))
         return True
     return False
 

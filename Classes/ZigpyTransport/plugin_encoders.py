@@ -9,10 +9,6 @@
 # Initial authors: zaraki673 & pipiche38
 #
 # SPDX-License-Identifier:    GPL-3.0 license
-# coding: utf-8 -*-
-#
-# Author: pipiche38
-#
 
 import binascii
 import time
@@ -86,12 +82,6 @@ def build_plugin_8002_frame_content(
 
 
 def build_plugin_8009_frame_content(self, radiomodule):
-    # addr = MsgData[0:4]
-    # extaddr = MsgData[4:20]
-    # PanID = MsgData[20:24]
-    # extPanID = MsgData[24:40]
-    # Channel = MsgData[40:42]
-
     # Get Network State
     self.log.logging(
         "TransportPluginEncoder",
@@ -115,7 +105,7 @@ def build_plugin_8010_frame_content(Branch, Major, Version, full_version):
 
 def build_plugin_8011_frame_content(self, nwkid, cluster, sequence, status, lqi):
 
-    lqi = lqi or 0x00
+    lqi = lqi if lqi is not None else 0x00
 
     # Format components
     cluster_str = f"{cluster:04x}" if isinstance(cluster, int) else str(cluster)
@@ -159,13 +149,18 @@ def build_plugin_8015_frame_content( self, network_info):
     # Get list of active devices
     self.log.logging( "TransportPluginEncoder", "Debug", "build_plugin_8015_frame_content key_table %s" %str(network_info))
     buildPayload = ""
-    idx = 0
-    for ieee, nwk in network_info.nwk_addresses.items():
-            self.log.logging( "TransportPluginEncoder", "Debug", "build_plugin_8015_frame_content nwk_addresses : ieee: %s nwk_addr: %s" %(
-                ieee.serialize()[::-1].hex(),
-                nwk.serialize()[::-1].hex(),
-            ))
-            buildPayload += "%02x" %idx + "%04x" %int(nwk.serialize()[::-1].hex(),16 ) + "%016x" %int( ieee.serialize()[::-1].hex(), 16) + "ff" + "00"
+    for idx, (ieee, nwk) in enumerate(network_info.nwk_addresses.items()):
+        nwk_hex = "%04x" % int(nwk.serialize()[::-1].hex(), 16)
+        ieee_hex = "%016x" % int(ieee.serialize()[::-1].hex(), 16)
+
+        # Attempt to get real LQI if available, fallback to 0x00
+        lqi = 0x00
+        if hasattr(network_info, 'lqi') and ieee in network_info.lqi:
+            lqi = network_info.lqi[ieee]
+
+        self.log.logging("TransportPluginEncoder", "Debug", "build_plugin_8015_frame_content nwk: %s ieee: %s" % (nwk_hex, ieee_hex))
+        buildPayload += "%02x" % idx + nwk_hex + ieee_hex + "ff" + "%02x" % lqi
+
     return encapsulate_plugin_frame("8015", buildPayload, "00")
 
 

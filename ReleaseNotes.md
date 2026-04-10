@@ -18,7 +18,29 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
-## Dec. 2025 - Stable8.1.001 ( 2025.8)
+## Fev. 2026 - stable8.1.002 ( 2026.1)
+
+- [Technical] - Better handling of python3 venv, and relying on VIRUAL_ENV
+- [Technical] - Improving 'docker' support
+- [Technical] - Store plugin databases, groups, coordinator backup and plugin conf in Domoticz.
+- [Technical] - Backup script provided in Tools. Backing up ( Data, Conf as well as domoticz.db )
+- [Technical] - Adding ZCL Cluster 0x0005
+- [Technical] - Enabling use of latest dnspython.
+- [Technical] - Upgrading zigpy libs
+- [Technical] - Enabling storage/retreival plugin database to/from Domoticz
+- [Technical] - Minimum python3 version is now 3.11 or above
+- [Technical] - refactoring of the Plugin Admin and Status widgets
+- [Technical] - Tx power management correctly managed and transmitted to the dongle
+- [Technical] - Use official pypi zigpy-blz library
+- [Technical] - Enable async loop latency monitoring
+- [Technical] - New parameter "ZigpyAutoTopology" to enable zigpy automatic topology
+- [Technical] - refactoring of zigpy thread (and how commands are sent)
+- [Technical] - Review the way device leave message is handled.
+- [Technical] - Refactor logging thread, and performance optimisation.
+
+- [Technical] - Discontinue support of Zigate flash tools
+
+## Dec. 2025 - Stable8.1.001 
 
 - Technical version ISO Stable7 7.1.026, to prepare DomoticzEx and other features
 
