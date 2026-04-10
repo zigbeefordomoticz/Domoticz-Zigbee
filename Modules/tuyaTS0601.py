@@ -1603,6 +1603,7 @@ TS0601_COMMANDS = {
     "MediumMotionDetectionSensitivity": (None, "04"),
     "SmallDetectionSensitivity": ( None, "04"),
     "TuyaFadingTime": ( None, "02"),
+    "TuyaIlluminanceFrequency": (None, "02"),
     "TRV7WindowDetection": ts0601_window_detection_mode,
     "TRV7ChildLock": ts0601_action_child_lock_mode,
     "KeypadLockout": ts0601_action_child_lock_mode,
