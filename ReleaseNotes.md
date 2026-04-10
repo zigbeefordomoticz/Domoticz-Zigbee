@@ -18,7 +18,7 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
-## Fev. 2026 - stable8.1.002 ( 2026.1)
+## Apr. 2026 - stable8.1.002 ( 2026.1)
 
 - [Technical] - Better handling of python3 venv, and relying on VIRUAL_ENV
 - [Technical] - Improving 'docker' support
