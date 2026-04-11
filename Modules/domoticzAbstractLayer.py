@@ -310,7 +310,13 @@ def FreeUnit(self, Devices, DeviceId, nbunit_=1):
 
 
 def is_device_ieee_in_domoticz_db(self, Devices, DeviceID_):
-    self.log.logging("AbstractDz", "Debug", f"is_device_ieee_in_domoticz_db: DeviceID: {DeviceID_} in {Devices}")
+    found = DeviceID_ in Devices
+    self.log.logging(
+        "AbstractDz",
+        "Debug",
+        f"is_device_ieee_in_domoticz_db: DeviceID={DeviceID_}, found={found}, total_devices={len(Devices)}"
+    )
+
     return DeviceID_ in Devices and len(Devices[ DeviceID_].Units) > 0
     
 
