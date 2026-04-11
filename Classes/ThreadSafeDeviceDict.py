@@ -183,7 +183,7 @@ class ThreadSafeDeviceDict(MutableMapping):
  
     Enable per-call trace logging globally::
  
-        import thread_safe_device_dict as tsdd
+        import ThreadSafeDeviceDict as tsdd
         tsdd.TSDD_DEBUG = True              # module-level flag (takes effect immediately)
  
         # or via the class helper:
