@@ -1,6 +1,7 @@
 [flake8]
 max-line-length = 160
 ignore =
+        F824,
         E501,
         E302,
         E201, E202, E231, E503, E265, E225, E123, E271, E303, E125, E117, E305, E203,

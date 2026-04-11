@@ -183,7 +183,7 @@ def ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluste
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
         _context = create_context(MsgClusterId, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)
 
-        self.log.logging( "Cluster", "Error", "ReadCluster - Warning - unknow %s/%s Cluster: %s Attribute: %s Status: %s DataType: %s DataSize: %s Data: %s" %(
+        self.log.logging( "Cluster", "Log", "ReadCluster - Warning - unknow %s/%s Cluster: %s Attribute: %s Status: %s DataType: %s DataSize: %s Data: %s" %(
             MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr, _context, )
 
 

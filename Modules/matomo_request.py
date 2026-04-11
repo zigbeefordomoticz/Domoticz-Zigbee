@@ -19,7 +19,9 @@ import re
 import time
 from Modules.tools import how_many_devices
 import distro
-import requests
+import urllib.parse
+import urllib.request
+#import requests
 
 # Matomo endpoint details
 MATOMO_URL = "https://z4d.pipiche.net/matomo.php"
@@ -201,25 +203,35 @@ def send_matomo_request(self, action_name, custom_variable=None, custom_dimensio
     # Send the request
     response = fetch_data_with_timeout(self, MATOMO_URL, payload)
 
-
-def fetch_data_with_timeout(self, url, params, connect_timeout=3, read_timeout=5):
+def fetch_data_with_timeout(self, url, params, timeout=5):
     try:
-        response = requests.get(url, params=params, timeout=(connect_timeout, read_timeout))
-        response.raise_for_status()  # Raise HTTPError for bad responses (4xx and 5xx)
+        query = urllib.parse.urlencode(params or {})
+        full_url = f"{url}?{query}" if query else url
 
-        if response.status_code == 200:
-            self.log.logging( "Matomo", "Debug", f"send_matomo_request - Request sent successfully! {response}")
+        urllib.request.urlopen(full_url, timeout=timeout).close()
 
-        else:
-            self.log.logging( "Matomo", "Error", f"send_matomo_request - Failed to send request. Status code: {response.status_code}")
-            self.log.logging( "Matomo", "Error", "send_matomo_request - Response content:", response.content)
+    except Exception as e:
+        self.log.logging("Matomo", "Debug", f"Matomo request failed: {e}")
 
-    except requests.exceptions.Timeout:
-        self.log.logging( "Matomo", "Error",f"Timeout after {connect_timeout}s connect / {read_timeout}s read.")
 
-    except requests.exceptions.RequestException as e:
-        self.log.logging( "Matomo", "Error",f"Request failed: {e}")
-
+#def fetch_data_with_timeout(self, url, params, connect_timeout=3, read_timeout=5):
+#    try:
+#        response = requests.get(url, params=params, timeout=(connect_timeout, read_timeout))
+#        response.raise_for_status()  # Raise HTTPError for bad responses (4xx and 5xx)
+#
+#        if response.status_code == 200:
+#            self.log.logging( "Matomo", "Debug", f"send_matomo_request - Request sent successfully! {response}")
+#
+#        else:
+#            self.log.logging( "Matomo", "Error", f"send_matomo_request - Failed to send request. Status code: {response.status_code}")
+#            self.log.logging( "Matomo", "Error", "send_matomo_request - Response content:", response.content)
+#
+#    except requests.exceptions.Timeout:
+#        self.log.logging( "Matomo", "Error",f"Timeout after {connect_timeout}s connect / {read_timeout}s read.")
+#
+#    except requests.exceptions.RequestException as e:
+#        self.log.logging( "Matomo", "Error",f"Request failed: {e}")
+#
 
 def get_architecture_model(self):
     """

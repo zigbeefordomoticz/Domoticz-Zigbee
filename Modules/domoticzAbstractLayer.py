@@ -15,11 +15,14 @@
     Description: Set of functions which abstract Domoticz Legacy and Extended framework API
 """
 
+
+import base64
+import contextlib
+import json
 import time
+
 import DomoticzEx as Domoticz
 DOMOTICZ_EXTENDED_API = True
-
-#import Domoticz as Domoticz
 
 DIMMABLE_WIDGETS = {
     (7, 1, 241): { "Widget": "Dimmable_Light", "Name": "RGBW", "partially_opened_nValue": 15},
@@ -113,17 +116,57 @@ def prepare_dict_for_storage(dict_items, Attribute):
 
 
 def repair_dict_after_load(b64_dict, Attribute):
-    if b64_dict in ("", {}):
+    if not b64_dict or b64_dict == "":
         return {}
-    if "Version" not in b64_dict:
+
+    # Ensure format is supported
+    if not isinstance(b64_dict, dict) or "Version" not in b64_dict:
         domoticz_log_api("repair_dict_after_load - Not supported storage")
         return {}
-    if Attribute in b64_dict:
-        from base64 import b64decode
 
-        b64_dict[Attribute] = eval(b64decode(b64_dict[Attribute]))
+    if Attribute not in b64_dict:
+        return b64_dict
+
+    value = b64_dict[Attribute]
+
+    # Already decoded → nothing to do
+    if isinstance(value, dict):
+        return b64_dict
+
+    # Only strings or bytes can be base64 decoded
+    if not isinstance(value, (str, bytes, bytearray)):
+        domoticz_log_api(
+            f"repair_dict_after_load - Unexpected type for {Attribute}: {type(value)}"
+        )
+        return b64_dict
+
+    # Try decode safely
+    try:
+        b64_dict[Attribute] = decode_b64_payload(value, attribute_name=Attribute)
+
+    except Exception as e:
+        domoticz_log_api(f"repair_dict_after_load - Failed to decode {Attribute}: {value} - {e}")
+        return {}
+
     return b64_dict
 
+
+def decode_b64_payload(value, attribute_name=""):
+    try:
+        decoded = base64.b64decode(value).decode("utf-8")
+    except Exception as e:
+        raise ValueError(f"{attribute_name}: base64 decode failed: {e}") from e
+
+    # Try JSON first
+    with contextlib.suppress(json.JSONDecodeError):
+        return json.loads(decoded)
+
+    # Try Python literal
+    try:
+        return ast.literal_eval(decoded)
+    except Exception as e:
+        raise ValueError(
+            f"{attribute_name}: neither JSON nor Python literal: {e}\nDecoded content was:\n{decoded}") from e
 
 # Devices helpers
 
@@ -281,7 +324,7 @@ def FreeUnit(self, Devices, DeviceId, nbunit_=1):
 
     if DOMOTICZ_EXTENDED_API:
         self.log.logging("AbstractDz", "Debug", f"FreeUnit - looking for a free unit in {DeviceId}")
-        available_units = set(Devices[DeviceId].Units.keys()) if DeviceId in Devices else []
+        available_units = set(Devices[DeviceId].Units.keys()) if DeviceId in Devices else set()
         return _free_unit_in_device( available_units, nbunit_ )
             
     
@@ -293,8 +336,9 @@ def FreeUnit(self, Devices, DeviceId, nbunit_=1):
 
 def is_device_ieee_in_domoticz_db(self, Devices, DeviceID_):
     self.log.logging("AbstractDz", "Debug", f"is_device_ieee_in_domoticz_db: DeviceID: {DeviceID_}")
-    
-    return DOMOTICZ_EXTENDED_API and DeviceID_ in Devices or any(DeviceID_ == device.DeviceID for device in Devices.values())
+    if DOMOTICZ_EXTENDED_API:
+        return DeviceID_ in Devices
+    return any(DeviceID_ == device.DeviceID for device in Devices.values())
 
 
 def domo_create_api(self, Devices, DeviceID_, Unit_, Name_, widgetType=None, Type_=None, Subtype_=None, Switchtype_=None, widgetOptions=None, Image=None):
@@ -375,8 +419,8 @@ def domo_delete_widget( self, Devices, DeviceID_, Unit_):
         # Update the ListOfWidgets index
         load_list_of_domoticz_widget(self, Devices)
 
-    elif Unit_ in self.Devices:
-        self.Devices[Unit_].Delete()
+    elif Unit_ in Devices:
+        Devices[Unit_].Delete()
         # Update the ListOfWidgets index
         load_list_of_domoticz_widget(self, Devices)
 
@@ -560,7 +604,8 @@ def domo_read_LastUpdate(self, Devices, DeviceId_, Unit_):
     if DOMOTICZ_EXTENDED_API:
         device = Devices.get(DeviceId_)
         if device:
-            return device.Units.get(Unit_).LastUpdate if device.Units else None
+            unit = device.Units.get(Unit_)
+            return unit.LastUpdate if unit else None
     else:
         device = Devices.get(Unit_)
         if device:
@@ -688,7 +733,7 @@ def _device_touch_unit_api(self, Devices, DeviceId_, Unit_, now):
     last_update_time_seconds = time.mktime(time.strptime(last_time, "%Y-%m-%d %H:%M:%S"))
 
     if now > ( last_update_time_seconds + DELAY_BETWEEN_TOUCH):
-        # Last Touch was done more than 30 seconds ago.
+        # Last Touch was done more than 120 seconds ago.
         Devices[DeviceId_].Units[Unit_].Touch() if DOMOTICZ_EXTENDED_API else Devices[Unit_].Touch()
         return
     
@@ -702,7 +747,8 @@ def timeout_widget_api(self, Devices, DeviceId_, timeout_value):
         if timeout_value == 1 and self.pluginconf.pluginConf["deviceOffWhenTimeOut"]:
             # Then we will switch off as per User setting
             for unit in Devices[ DeviceId_].Units:
-                _switch_off_widget_due_to_timedout(self, Devices, DeviceId_, unit)
+                _nValue, _sValue = domo_read_nValue_sValue(self, Devices, DeviceId_, unit)
+                _switch_off_widget_due_to_timedout(self, Devices, DeviceId_, unit, _nValue, _sValue)
     else:
         for unit in list(Devices):
             if Devices[ unit ].DeviceID == DeviceId_:
@@ -768,6 +814,10 @@ def _switch_off_widget_due_to_timedout(self, Devices, DevicesId, Unit, _nValue, 
     
 def domoticz_log_api( message):
     Domoticz.Log( message )
+
+
+def domoticz_debug_api( message):
+    Domoticz.Debug( message )
 
 
 def domoticz_error_api( message):

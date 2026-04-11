@@ -11,12 +11,12 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 """
-<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="7.1">
+<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="8.1" shared="false">
     <description>
         <h1> Plugin Zigbee for domoticz</h1><br/>
             <br/><h2> Informations</h2><br/>
                 <ul style="list-style-type:square">
-                    <li>&Documentations : &<a href="https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Home.md">English wiki</a>|<a href="https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/fr-fr/Home.md">Wiki Français</a></li>
+                    <li>&Documentations : &<a href="https://zigbeefordomoticz.github.io/wiki/en-eng/">English wiki</a>|<a href="https://zigbeefordomoticz.github.io/wiki/fr-fr/">Wiki Français</a></li>
                     <li>&Forums : &<a href="https://www.domoticz.com/forum/viewforum.php?f=68">English (www.domoticz.com)</a>|<a href="https://easydomoticz.com/forum/viewforum.php?f=28">Français (www.easydomoticz.com)</a></li>
                     <li>&List of supported devices : &<a href="https://zigbee.blakadder.com/z4d.html">www.zigbee.blakadder.com</a></li>
                 </ul>
@@ -98,15 +98,17 @@
             <description><br/><h3>Plugin debug</h3>This debugging option has been moved to the WebUI > Tools > Debug<br/></description>
                 <options>
                     <option label="None" value="0"  default="true" />
+                    <option label="Verbose" value="1"  default="true" />
                     <option label="Python Only" value="2"/>
                     <option label="Basic Debugging" value="62"/>
                     <option label="Basic+Messages" value="126"/>
-                    <option label="Connections Only" value="16"/>
-                    <option label="Connections+Queue" value="144"/>
+                    <option label="Shows high level framework messages only about major the plugin" value="4"/>
+                    <option label="Shows plugin framework debug messages related to Devices objects" value="8"/>
+                    <option label="Shows plugin framework debug messages related to Connections objects" value="16"/>
+                    <option label="Shows plugin framework debug messages related to the message queue" value="128"/>
                     <option label="All" value="-1"/>
                 </options>
         </param>
-            
     </params>
 </plugin>
 """
@@ -126,18 +128,16 @@ import json
 import os
 import os.path
 import pathlib
-import re
 import sys
 import threading
 import time
-#import tracemalloc
 
 import z4d_certified_devices
 
 from Classes.AdminWidgets import AdminWidgets
 from Classes.ConfigureReporting import ConfigureReporting
-from Classes.DomoticzDB import (DomoticzDB_DeviceStatus, DomoticzDB_Hardware,
-                                DomoticzDB_Preferences)
+from Classes.DomoticzDB import (DomoticzAPIClient, DomoticzDB_DeviceStatus,DomoticzDeviceCache,
+                                DomoticzDB_Hardware, DomoticzDB_Preferences)
 from Classes.GroupMgtv2.GroupManagement import GroupsManagement
 from Classes.IAS import IAS_Zone_Management
 from Classes.LoggingManagement import LoggingManagement
@@ -198,6 +198,8 @@ from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
 
+#import tracemalloc
+
 VERSION_FILENAME = ".hidden/VERSION"
 
 TEMPO_NETWORK = 2  # Start HB totrigget Network Status
@@ -210,6 +212,12 @@ STARTUP_TIMEOUT_DELAY_FOR_STOP = 120
 ZNP_STARTUP_TIMEOUT_DELAY_FOR_WARNING = 110
 ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP = 160
 
+ZIGPY_BACKENDS = {
+    "ZigpyZNP":     ("znp",    "zigpy_znp",    "ZNP"),
+    "ZigpydeCONZ":  ("deCONZ", "zigpy_deconz", "deConz"),
+    "ZigpyEZSP":    ("ezsp",   "bellows",      "EZSP"),
+    "ZigpyBLZ":     ("blz",    "zigpy_blz",    "Bouffalo Lab Zigbee"),
+}
 
 class BasePlugin:
     enabled = False
@@ -235,6 +243,8 @@ class BasePlugin:
         self.networkmap = None
         self.zigpy_topology = None
         self.networkenergy = None
+        self.domoticz_api = None
+        self.domoticz_device_cache = None
         self.domoticzdb_DeviceStatus = None  # Object allowing direct access to Domoticz DB DeviceSatus
         self.domoticzdb_Hardware = None  # Object allowing direct access to Domoticz DB Hardware
         self.domoticzdb_Preferences = None  # Object allowing direct access to Domoticz DB Preferences
@@ -335,8 +345,10 @@ class BasePlugin:
     def onStart(self):
         #tracemalloc.start()
 
-        if Parameters["Mode6"] != "0":
-            Domoticz.Debugging(int(Parameters["Mode6"]))
+        mode6 = Parameters.get("Mode6", "0")
+        if mode6.lstrip("-").isdigit():
+            Domoticz.Status( f"Enabling Debug Log Level: {mode6}")
+            Domoticz.Debugging(int(mode6))
 
         Domoticz.Status( "Welcome to Zigbee for Domoticz (Z4D) plugin. (c)pipiche38 - 2018 - 2025")
 
@@ -347,13 +359,24 @@ class BasePlugin:
         else:
             Domoticz.Log("PYTHONPATH is not set")
         
+        # Print VIRTUAL_ENV if set
+        virualenv= os.getenv('VIRTUAL_ENV')
+        if virualenv:
+            Domoticz.Log(f"VIRTUAL_ENV is set to: {virualenv}")
+        else:
+            Domoticz.Log("VIRTUAL_ENV is not set")
+
         _current_python_version_major = sys.version_info.major
         _current_python_version_minor = sys.version_info.minor
 
-        Domoticz.Status( "Z4D requires python3.9 or above and you are running %s.%s" %(
+        Domoticz.Status( "Z4D requires python3.11 or above and you are running %s.%s" %(
             _current_python_version_major, _current_python_version_minor))
     
-        assert sys.version_info >= (3, 9)  # nosec
+        #if sys.version_info < (3, 11):
+        #    Domoticz.Error("Z4D requires Python 3.11+, found %d.%d" % (
+        #        sys.version_info.major, sys.version_info.minor))
+        #    self.onStop()
+        #    return
 
         if Parameters["Mode1"] == "V1" and Parameters["Mode2"] in ( "USB", "DIN", "PI", "Wifi", ):
             self.transport = Parameters["Mode2"]
@@ -483,32 +506,20 @@ class BasePlugin:
         self.StartupFolder = Parameters["StartupFolder"]
 
         Domoticz.Status("Z4D is initializing a connection to Domoticz Api/Json")
-        self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( 
-            Parameters["Mode5"], 
-            self.pluginconf, 
-            self.HardwareID, 
-            self.log,
-            self.DomoticzBuild,
-            self.DomoticzMajor,
-            self.DomoticzMinor,
-        )
+        self.domoticz_api = DomoticzAPIClient( Parameters["Mode5"], self.pluginconf, self.log)
+        self.domoticz_device_cache = DomoticzDeviceCache(self.domoticz_api)
+        
+        self.domoticz_device_cache.dump_cache()
+        
+        self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( self.domoticz_device_cache )
 
         self.log.logging("Plugin", "Debug", "   - Hardware table")
-        self.domoticzdb_Hardware = DomoticzDB_Hardware(
-            Parameters["Mode5"], 
-            self.pluginconf, 
-            self.HardwareID, 
-            self.log, 
-            self.pluginParameters ,
-            self.DomoticzBuild,
-            self.DomoticzMajor,
-            self.DomoticzMinor,
-            )
+        self.domoticzdb_Hardware = DomoticzDB_Hardware(self.domoticz_api, self.HardwareID)
         
         if (
             self.zigbee_communication 
             and self.zigbee_communication == "zigpy" 
-            and ( self.pluginconf.pluginConf["forceZigpy_noasyncio"] or self.domoticzdb_Hardware.multiinstances_z4d_plugin_instance())
+            and ( self.pluginconf.pluginConf["forceZigpy_noasyncio"] or self.domoticzdb_Hardware.is_multi_instance())
             ):
             # https://github.com/python/cpython/issues/91375
             self.log.logging("Plugin", "Status", "Z4D Multi-instances detected. Enabling 'asyncio' workaround")
@@ -522,18 +533,11 @@ class BasePlugin:
                 
         self.log.logging("Plugin", "Debug", "   - Preferences table")
         
-        self.domoticzdb_Preferences = DomoticzDB_Preferences(
-            Parameters["Mode5"], 
-            self.pluginconf, 
-            self.log,
-            self.DomoticzBuild,
-            self.DomoticzMajor,
-            self.DomoticzMinor,
-            )
-        self.WebUsername, self.WebPassword = self.domoticzdb_Preferences.retreiveWebUserNamePassword()
+        self.domoticzdb_Preferences = DomoticzDB_Preferences( self.domoticz_api)
+        self.WebUsername, self.WebPassword = self.domoticzdb_Preferences.retrieve_web_credentials()
 
         self.adminWidgets = AdminWidgets( self.log , self.pluginconf, self.pluginParameters, self.ListOfDomoticzWidget, Devices, self.ListOfDevices, self.HardwareID, self.IEEE2NWK)
-        self.adminWidgets.updateStatusWidget(Devices, "Z4D Starting up")
+        self.adminWidgets.updateStatusWidget(Devices, "Z4D Starting up") 
 
         self.DeviceListName = "DeviceList-" + str(Parameters["HardwareID"]) + ".txt"
         self.log.logging("Plugin", "Log", "Z4D Database found: %s" % self.DeviceListName)
@@ -595,12 +599,15 @@ class BasePlugin:
         # Create Statistics object
         self.statistics = TransportStatistics(self.pluginconf, self.log, self.zigbee_communication)
 
-
         if len(self.ListOfDevices) > 10:
             # Don't do Energy Scan if too many objects, as Energy scan don't make the difference between real traffic and noise
             self.pluginconf.pluginConf["EnergyScanAtStatup"] = 0
 
-        start_zigbee_transport(self )
+        try:
+            start_zigbee_transport(self )
+
+        except Exception as e:
+            self.log.logging("Plugin", "Error", "Error while starting zigbee Transport %s" %e)
 
         if self.transport not in ("ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP", "ZigpyZiGate", "ZigpyBLZ", "None" ):
             self.log.logging("Plugin", "Debug", "Establish Zigate connection")
@@ -631,6 +638,12 @@ class BasePlugin:
 
         self.busy = False
 
+        # Log running threads. We should have only the main thread (MainThread)
+        self.log.logging("Plugin", "Log", "Active threads after onStart():")
+        for t in threading.enumerate():
+            self.log.logging("Plugin", "Log", f"    - Thread {t.name}: alive={t.is_alive()}, ident={t.ident}, daemon={t.daemon}")
+
+
 
     def onStop(self):
         """
@@ -641,7 +654,17 @@ class BasePlugin:
         Returns:
             None
         """
-        Domoticz.Log("onStop()")
+        # Log onStop event
+        if self.pluginconf and self.log:
+            self.log.logging("Plugin", "Log", "onStop called")
+        else:
+            Domoticz.Log("onStop()")
+
+        # Log running threads. We should have only the main thread (MainThread)
+        if self.pluginconf and self.log:
+            self.log.logging(["Plugin", "StopProcess"], "Log", "Active threads starting onstop():")
+            for t in threading.enumerate():
+                self.log.logging(["Transport", "StopProcess"], "Log", f"    - Thread {t.name}: alive={t.is_alive()}, ident={t.ident}, daemon={t.daemon}")
 
         if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
             matomo_plugin_shutdown(self)
@@ -649,9 +672,12 @@ class BasePlugin:
 
         # Flush ListOfDevices
         if self.log:
-            self.log.logging("Plugin", "Log", "Flushing plugin database onto disk")
+            self.log.logging(["Transport", "StopProcess"], "Log", "Flushing plugin database onto disk")
         if self.pluginconf:
             WriteDeviceList(self, 0)  # write immediatly
+
+        if self.domoticz_api:
+            self.domoticz_api.stop()
 
         # Uninstall Z4D custom UI from Domoticz
         uninstall_Z4D_to_domoticz_custom_ui()
@@ -660,22 +686,22 @@ class BasePlugin:
         if self.pluginconf and self.pluginconf.pluginConf["ListImportedModules"]:
             list_all_modules_loaded(self)
 
-        # Log onStop event
-        if self.pluginconf and self.log:
-            self.log.logging("Plugin", "Log", "onStop called")
 
         # Close CIE connection and shutdown transport thread
         if self.pluginconf and self.ControllerLink:
-            self.log.logging("Plugin", "Log", "onStop called shutding down CIE connection and transport thread")
+            self.log.logging(["Transport", "StopProcess"], "Log", "onStop called, shuting down CIE connection, transport and forwarder threads")
             self.ControllerLink.thread_transport_shutdown()
             self.ControllerLink.close_cie_connection()
 
         # Stop WebServer
         if self.pluginconf and self.webserver:
+            self.log.logging(["Transport", "StopProcess"], "Log", "onStop called, shuting down WebUI thread")
             self.webserver.onStop()
 
         # Save plugin database
         if self.PDMready and self.pluginconf:
+            if self.log:
+                self.log.logging(["Transport", "StopProcess"], "Log", "Flushing plugin database onto disk")
             WriteDeviceList(self, 0)
 
         # Print and save statistics if configured
@@ -685,13 +711,13 @@ class BasePlugin:
 
         # Close logging management
         if self.pluginconf and self.log:
-            self.log.logging("Plugin", "Log", "Closing Logging Management")
+            self.log.logging(["Transport", "StopProcess"], "Log", "onStop called, shuting down LoggingManagement thread")
             self.log.closeLogFile()
 
         # Log running threads. We should have only the main thread (MainThread)
-        active_threads = threading.enumerate()
-        thread_info = [(t.name, t.ident, t.is_alive()) for t in active_threads]
-        Domoticz.Log("Remaining active threads: %s" % thread_info)
+        Domoticz.Log("Remaining active threads:")
+        for t in threading.enumerate():
+            Domoticz.Log(f"    - Thread {t.name}: alive={t.is_alive()}, ident={t.ident}, daemon={t.daemon}")
 
         # Update plugin health status
         self.PluginHealth["Flag"] = 3
@@ -900,6 +926,8 @@ class BasePlugin:
             return
         
         self.internalHB += 1
+        
+        #self.domoticz_device_cache.dump_cache()
 
         if self.PDMready:
             if (self.internalHB % HEARTBEAT) != 0:
@@ -962,6 +990,7 @@ class BasePlugin:
             self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
             WriteDeviceList(self, 0)  # write immediatly
             networksize_update(self)
+            self.domoticz_device_cache.refresh()
   
         _trigger_coordinator_backup( self )
 
@@ -999,6 +1028,13 @@ class BasePlugin:
         return True
 
 
+    def onDeviceModified(self, Unit):
+        # DeviceID, Unit
+        self.domoticz_device_cache.refresh_device( Unit)
+        
+        
+        
+        
 def _onConnect_status_error(self, Status, Description):
     self.log.logging("Plugin", "Error", "Failed to connect (" + str(Status) + ")")
     self.log.logging("Plugin", "Debug", "Failed to connect (" + str(Status) + ") with error: " + Description)
@@ -1055,31 +1091,67 @@ def start_zigbee_transport(self ):
     elif self.transport == "None":
         _start_fake_coordinator(self)
 
-    elif self.transport == "ZigpyZNP":
-        _start_zigpy_ZNP(self)
-        
-    elif self.transport == "ZigpydeCONZ":
-        _start_zigpy_deConz(self)
-                
-    elif self.transport == "ZigpyEZSP":
-        _start_zigpy_EZSP(self)
-
-    elif self.transport == "ZigpyBLZ":
-        _start_zigpy_BLZ(self)
+    elif self.transport in  ZIGPY_BACKENDS:
+        _start_zigpy_backend(self, self.transport)
         
     else:
         self.log.logging("Plugin", "Error", "Unknown Transport comunication protocol : %s" % str(self.transport))
         self.onStop()
         return
 
+def _start_zigpy_backend(self, backend_key):
 
+    radio_lib, zigpy_module, label = ZIGPY_BACKENDS[backend_key]
+    import zigpy
+    __import__(zigpy_module)
+
+    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
+                              SCHEMA_DEVICE)
+
+    from Classes.ZigpyTransport.Transport import ZigpyTransport
+
+    check_python_modules_version( self )
+    self.zigbee_communication = "zigpy"
+    self.pluginParameters["Zigpy"] = True
+    self.log.logging("Plugin", "Status", f"Z4D starting {label}")
+
+    if Parameters["Mode2"] == "Socket":
+        SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
+        self.transport += "Socket"
+        communication_specifics = None
+    else:
+        # Serial mode via USB
+        communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
+        SerialPort = Parameters["SerialPort"]
+
+    self.ControllerLink= ZigpyTransport(
+        self.ControllerData,
+        self.pluginParameters,
+        self.pluginconf,
+        self.processFrame,
+        self.zigpy_chk_upd_device,
+        self.zigpy_get_device,
+        self.zigpy_backup_available,
+        self.restart_plugin,
+        self.log,
+        self.statistics,
+        self.HardwareID,
+        radio_lib,
+        SerialPort,
+        communication_specifics
+        )
+
+    self.ControllerLink.open_cie_connection()
+    self.pluginconf.pluginConf["ControllerInRawMode"] = True
+    
+    
 def _start_fake_coordinator(self):
-        from Classes.ZigateTransport.Transport import ZigateTransport
-        self.pluginconf.pluginConf["ControllerInRawMode"] = False
-        self.pluginParameters["Zigpy"] = False
-        self.log.logging("Plugin", "Status", "Transport mode set to None, no communication.")
-        self.FirmwareVersion = "031c"
-        self.PluginHealth["Firmware Update"] = {"Progress": "75 %", "Device": "1234"}
+    from Classes.ZigateTransport.Transport import ZigateTransport
+    self.pluginconf.pluginConf["ControllerInRawMode"] = False
+    self.pluginParameters["Zigpy"] = False
+    self.log.logging("Plugin", "Status", "Transport mode set to None, no communication.")
+    self.FirmwareVersion = "031c"
+    self.PluginHealth["Firmware Update"] = {"Progress": "75 %", "Device": "1234"}
     
 
 def _start_native_usb_zigate(self):
@@ -1157,172 +1229,6 @@ def parse_mode2_serial_com_specifics(mode2):
         result["FlowControl"] = parts[2]
 
     return result
-
-
-def _start_zigpy_ZNP(self):
-    import zigpy
-    import zigpy_znp
-    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
-                              SCHEMA_DEVICE)
-
-    from Classes.ZigpyTransport.Transport import ZigpyTransport
-
-    check_python_modules_version( self )
-    self.zigbee_communication = "zigpy"
-    self.pluginParameters["Zigpy"] = True
-    self.log.logging("Plugin", "Status", "Z4D starting ZNP")
-
-    if Parameters["Mode2"] == "Socket":
-        SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
-        self.transport += "Socket"
-        communication_specifics = None
-    else:
-        # Serial mode via USB
-        communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
-        SerialPort = Parameters["SerialPort"]
-
-    self.ControllerLink= ZigpyTransport(
-        self.ControllerData,
-        self.pluginParameters,
-        self.pluginconf,
-        self.processFrame,
-        self.zigpy_chk_upd_device,
-        self.zigpy_get_device,
-        self.zigpy_backup_available,
-        self.restart_plugin,
-        self.log,
-        self.statistics,
-        self.HardwareID,
-        "znp",
-        SerialPort,
-        communication_specifics
-        )
-    self.ControllerLink.open_cie_connection()
-    self.pluginconf.pluginConf["ControllerInRawMode"] = True
-    
-
-def _start_zigpy_deConz(self):
-    import zigpy
-    import zigpy_deconz
-    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
-                              SCHEMA_DEVICE)
-
-    from Classes.ZigpyTransport.Transport import ZigpyTransport
-
-    check_python_modules_version( self )
-    self.pluginParameters["Zigpy"] = True
-    self.log.logging("Plugin", "Status","Z4D starting deConz")
-
-    if Parameters["Mode2"] == "Socket":
-        SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
-        self.transport += "Socket"
-        communication_specifics = None
-    else:
-        # Serial mode via USB
-        communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
-        SerialPort = Parameters["SerialPort"]
-
-    self.ControllerLink= ZigpyTransport(
-        self.ControllerData,
-        self.pluginParameters,
-        self.pluginconf,
-        self.processFrame,
-        self.zigpy_chk_upd_device,
-        self.zigpy_get_device,
-        self.zigpy_backup_available,
-        self.restart_plugin,
-        self.log,
-        self.statistics,
-        self.HardwareID,
-        "deCONZ",
-        SerialPort,
-        communication_specifics
-        )
-    self.ControllerLink.open_cie_connection()
-    self.pluginconf.pluginConf["ControllerInRawMode"] = True
-    
-
-def _start_zigpy_EZSP(self):
-    import bellows
-    import zigpy
-    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
-                              SCHEMA_DEVICE)
-
-    from Classes.ZigpyTransport.Transport import ZigpyTransport
-
-    check_python_modules_version( self )
-    self.zigbee_communication = "zigpy"
-    self.pluginParameters["Zigpy"] = True
-    self.log.logging("Plugin", "Status","Z4D starting EZSP")
-
-    if Parameters["Mode2"] == "Socket":
-        SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
-        self.transport += "Socket"
-        communication_specifics = None
-    else:
-        communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
-        SerialPort = Parameters["SerialPort"]
-
-    self.ControllerLink= ZigpyTransport(
-        self.ControllerData,
-        self.pluginParameters,
-        self.pluginconf,
-        self.processFrame,
-        self.zigpy_chk_upd_device,
-        self.zigpy_get_device,
-        self.zigpy_backup_available,
-        self.restart_plugin,
-        self.log,
-        self.statistics,
-        self.HardwareID,
-        "ezsp",
-        SerialPort,
-        communication_specifics
-        )
-
-    self.ControllerLink.open_cie_connection()
-    self.pluginconf.pluginConf["ControllerInRawMode"] = True
-    
-def _start_zigpy_BLZ(self):
-    import zigpy_blz
-    import zigpy
-    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
-                              SCHEMA_DEVICE)
-
-    from Classes.ZigpyTransport.Transport import ZigpyTransport
-
-    check_python_modules_version( self )
-    self.zigbee_communication = "zigpy"
-    self.pluginParameters["Zigpy"] = True
-    self.log.logging("Plugin", "Status","Z4D starting Bouffalo Lab Zigbee (BLZ) ")
-
-    if Parameters["Mode2"] == "Socket":
-        SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
-        self.transport += "Socket"
-        communication_specifics = None
-    else:
-        communication_specifics = parse_mode2_serial_com_specifics(Parameters["Mode2"])
-        SerialPort = Parameters["SerialPort"]
-
-    self.ControllerLink= ZigpyTransport(
-        self.ControllerData,
-        self.pluginParameters,
-        self.pluginconf,
-        self.processFrame,
-        self.zigpy_chk_upd_device,
-        self.zigpy_get_device,
-        self.zigpy_backup_available,
-        self.restart_plugin,
-        self.log,
-        self.statistics,
-        self.HardwareID,
-        "blz",
-        SerialPort,
-        communication_specifics
-        )
-
-    self.ControllerLink.open_cie_connection()
-    self.pluginconf.pluginConf["ControllerInRawMode"] = True
 
 
 def zigateInit_Phase1(self):
@@ -1517,6 +1423,8 @@ def zigateInit_Phase3(self):
         message = "Z4D with Zigpy, coordinator %s, firmware %s communication confirmed." % (
             self.pluginParameters["CoordinatorModel"], self.pluginParameters["CoordinatorFirmwareVersion"])
         self.log.logging("Plugin", "Status", message)
+        
+        self.adminWidgets.updateNotificationWidget(Devices, message)
 
     # If firmware above 3.0d, Get Network State
     if (self.HeartbeatCount % (3600 // HEARTBEAT)) == 0 and self.transport != "None":
@@ -1744,52 +1652,57 @@ def debuging_information(self, mode):
         self.log.logging("Plugin", mode, "%s: %s" % (info_name, info_value))
 
  
-global _plugin  # pylint: disable=global-variable-not-assigned
+global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
 _plugin = BasePlugin()
 
 
 def onStart():
-    global _plugin  # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     _plugin.onStart()
 
 
 def onStop():
-    global _plugin  # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     _plugin.onStop()
 
 
 #def onDeviceRemoved(DeviceID, Unit):
 def onDeviceRemoved( Unit):
-    global _plugin  # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     #_plugin.onDeviceRemoved(DeviceID, Unit)
     _plugin.onDeviceRemoved( Unit)
 
 
 def onConnect(Connection, Status, Description):
-    global _plugin  # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     _plugin.onConnect(Connection, Status, Description)
 
 
 def onMessage(Connection, Data):
-    global _plugin  # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     _plugin.onMessage(Connection, Data)
 
 
 #def onCommand(DeviceID, Unit, Command, Level, Color):
 def onCommand(Unit, Command, Level, Color):
-    global _plugin
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     #_plugin.onCommand(DeviceID, Unit, Command, Level, Color)
     _plugin.onCommand( Unit, Command, Level, Color)
 
 
 def onDisconnect(Connection):
-    global _plugin  # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     _plugin.onDisconnect(Connection)
 
 
 def onHeartbeat():
-    global _plugin  # pylint: disable=global-variable-not-assigned
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
     _plugin.onHeartbeat()
+
+
+def onDeviceModified( Unit):
+    global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
+    _plugin.onDeviceModified(Unit )
 
 
 # Generic helper functions

@@ -18,6 +18,8 @@ import json
 import threading
 import time
 
+from contextlib import suppress
+
 import zigpy.application
 
 from Classes.ZigateTransport.sqnMgmt import sqn_init_stack
@@ -26,7 +28,7 @@ from Classes.ZigpyTransport.forwarderThread import (start_forwarder_thread,
 from Classes.ZigpyTransport.instrumentation import (
     instrument_log_command_open, instrument_sendData, open_capture_rx_frames)
 from Classes.ZigpyTransport.zigpyThread import (
-    _cleanup_unused_concurrency_state, start_zigpy_thread, stop_zigpy_thread)
+    cleanup_unused_concurrency_state, start_zigpy_thread, stop_zigpy_thread)
 
 
 class ZigpyTransport(object):
@@ -56,7 +58,8 @@ class ZigpyTransport(object):
         self.FirmwareBranch = None
         self.FirmwareMajorVersion = None
         self.FirmwareVersion = None
-        self.running = True
+        self.forwarder_running = None
+        self.zigpy_running = True
         self.ControllerData = ControllerData
 
         self.permit_to_join_timer = { "Timer": None, "Duration": None}
@@ -87,14 +90,22 @@ class ZigpyTransport(object):
         self.manual_topology_scan_task = None   # Store topology task when manual started
         self.manual_interference_scan_task = None   # Store topology task when manual started
 
+        self.loop_latency_monitor = None   # Manage the Event loop latency monitoring if enabled
         self.use_of_zigpy_persistent_db = self.pluginconf.pluginConf["enableZigpyPersistentInFile"] or self.pluginconf.pluginConf["enableZigpyPersistentInMemory"]
 
    
     def open_cie_connection(self):
         self.log.logging("Transport", "Log", f"Radio model {self._radiomodule} Serial Port: {self._serialPort}, Communication specifics: {self._serialPort_communication_specifics}")
 
-        start_zigpy_thread(self)
-        start_forwarder_thread(self)
+        if not self.zigpy_thread:
+            start_zigpy_thread(self)
+        if not self.forwarder_thread:
+            start_forwarder_thread(self)
+
+        # Log running threads. We should have only the main thread (MainThread)
+        self.log.logging("Transport", "Log", "Active threads after open_cie_connection:")
+        for t in threading.enumerate():
+            self.log.logging("Transport", "Log", f"    - Thread {t.name}: alive={t.is_alive()}, ident={t.ident}, daemon={t.daemon}")
 
 
     def re_connect_cie(self):
@@ -106,58 +117,69 @@ class ZigpyTransport(object):
 
 
     def thread_transport_shutdown(self):
-        self.log.logging("Transport", "Debug", "Starting Zigpy transport shutdown sequence")
+        self.log.logging(["Transport", "StopProcess"], "Debug", "Starting Zigpy transport shutdown sequence")
 
-        # --- Stop Zigpy Thread ---
-        try:
-                self.log.logging("Transport", "Debug", "Stopping zigpy thread")
-                stop_zigpy_thread(self)
-                self.log.logging("Transport", "Debug", "Zigpy thread stop requested")
-        except Exception as e:
-            self.log.logging("Transport", "Error", f"Error stopping zigpy thread: {e}")
+        # Helper to stop and join a thread with consistent logging and error handling
+        def _stop_and_join(thread_attr: str, running_attr: str, stop_callable, name: str, timeout: float):
+            # Attempt to signal the thread to stop
+            try:
+                if running_attr:
+                    setattr(self, running_attr, False)
+                if stop_callable:
+                    self.log.logging(["Transport", "StopProcess"], "Debug", f"{name} stop requested")
+                    stop_callable(self)
 
-        # --- Stop Forwarder Thread ---
-        try:
-                stop_forwarder_thread(self)
-                self.log.logging("Transport", "Debug", "Zigpy forwarder stop requested")
-        except Exception as e:
-            self.log.logging("Transport", "Error", f"Error stopping zigpy forwarder thread: {e}")
+            except Exception as e:
+                self.log.logging(["Transport", "StopProcess"], "Error", f"Error stopping {name}: {e}")
 
-        # --- Join Zigpy Thread ---
-        try:
-            thread = getattr(self, "zigpy_thread", None)
-            if thread is not None:
-                self.log.logging("Transport", "Debug", "Joining zigpy thread (timeout 120s)")
-                thread.join(timeout=120)
-                if thread.is_alive():
-                    self.log.logging("Transport", "Error", "Zigpy thread did not terminate within 120 seconds")
-                    active_threads = threading.enumerate()
-                    thread_info = [(t.name, t.ident, t.is_alive()) for t in active_threads]
-                    self.log.logging("Transport", "Error", f"Active threads: {thread_info}")
+            # Grab reference then break circular reference on the instance
+            try:
+                thread = getattr(self, thread_attr, None)
+                setattr(self, thread_attr, None)  # break self <-> thread cycle
+
+                self.log.logging(["Transport", "StopProcess"], "Debug", f"Thread object ({name}): {thread}, alive={thread.is_alive() if thread else 'N/A'}")
+                self.log.logging(["Transport", "StopProcess"], "Debug", f"Thread ident ({name}) : {thread.ident if thread else 'N/A'}")
+                self.log.logging(["Transport", "StopProcess"], "Debug", f"Thread daemon ({name}): {thread.daemon if thread else 'N/A'}")
+
+                if thread:
+                    self.log.logging(["Transport", "StopProcess"], "Debug", f"Joining {name} (timeout {timeout}s)")
+                    thread.join(timeout=timeout)
+                    import gc
+                    gc.collect()
+                    if thread.is_alive():
+                        self.log.logging(["Transport", "StopProcess"], "Error", f"{name} did not terminate within {timeout} seconds")
+                        # Provide active thread snapshot for debugging
+                        with suppress(Exception):
+                            active_threads = threading.enumerate()
+                            thread_info = [(t.name, t.ident, t.is_alive()) for t in active_threads]
+                            self.log.logging(["Transport", "StopProcess"], "Error", f"Active threads: {thread_info}")
+                    else:
+                        self.log.logging(["Transport", "StopProcess"], "Debug", f"{name} join completed")
                 else:
-                    self.log.logging("Transport", "Debug", "Zigpy thread join completed")
-            else:
-                self.log.logging("Transport", "Log", "Zigpy thread not found or not started")
-        except Exception as e:
-            self.log.logging("Transport", "Error", f"Error joining zigpy thread: {e}")
+                    self.log.logging(["Transport", "StopProcess"], "Log", f"{name} not found or not started")
+            except Exception as e:
+                self.log.logging(["Transport", "StopProcess"], "Error", f"Error joining {name}: {e}")
 
-        # --- Join Forwarder Thread ---
-        try:
-            thread = getattr(self, "forwarder_thread", None)
-            if thread is not None:
-                self.log.logging("Transport", "Debug", "Joining zigpy forwarder thread (timeout 5s)")
-                thread.join(timeout=5)
-                if thread.is_alive():
-                    self.log.logging("Transport", "Error", "Forwarder thread did not terminate within 5 seconds")
-                else:
-                    self.log.logging("Transport", "Debug", "Forwarder join completed")
-            else:
-                self.log.logging("Transport", "Log", "Forwarder thread not found or not started")
-        except Exception as e:
-            self.log.logging("Transport", "Error", f"Error joining forwarder thread: {e}")
+        # Stop and join forwarder (short timeout)
+        _stop_and_join(
+            thread_attr="forwarder_thread",
+            running_attr="forwarder_running",
+            stop_callable=stop_forwarder_thread,
+            name="Zigpy forwarder",
+            timeout=5,
+        )
+
+        # Stop and join zigpy (longer timeout)
+        _stop_and_join(
+            thread_attr="zigpy_thread",
+            running_attr="zigpy_running",
+            stop_callable=stop_zigpy_thread,
+            name="Zigpy thread",
+            timeout=120,
+        )
 
         # --- Summary ---
-        self.log.logging("Transport", "Status", "Zigpy transport threads shutdown attempted")
+        self.log.logging(["Transport", "StopProcess"], "Status", "Zigpy transport threads shutdown attempted")
 
 
     def sendData(self, cmd, datas, sqn=None, highpriority=False, ackIsDisabled=False, waitForResponseIn=False, NwkId=None):
@@ -243,7 +265,7 @@ class ZigpyTransport(object):
         now = time.monotonic()
         if self._periodic_reset is None or now - self._periodic_reset > 3600:
             self._periodic_reset = now
-            _cleanup_unused_concurrency_state(self)
+            cleanup_unused_concurrency_state(self)
 
         _queue = sum(
             self._currently_waiting_requests_list.get(device, 0) + 1

@@ -1,364 +1,579 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-#
-# Implementation of Zigbee for Domoticz plugin.
-#
-# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
-# (C) 2015-2024
-#
-# Initial authors: badz & pipiche38
-#
-# SPDX-License-Identifier:    GPL-3.0 license
-
 """
-    Module: z_DomoticzDico.py
+Domoticz Zigbee Plugin API Client and Device Cache
 
-    Description: Retreive & Build Domoticz Dictionary
+This module provides a non-blocking, threaded Python API client for interacting with
+the Domoticz JSON API. It includes:
 
+- DomoticzAPIClient: main client handling requests, caching, and authentication.
+- DomoticzDeviceCache: per-device caching with LRU eviction.
+- DomoticzDB_DeviceStatus: helpers for reading device attributes.
+- DomoticzDB_Preferences: access to Domoticz system preferences.
+- DomoticzDB_Hardware: access to Domoticz hardware settings.
+
+Caching is implemented both globally (API responses) and per-device to reduce
+network traffic and improve performance in large installations.
+
+Author: pipiche38
+License: GPL-3.0
+GitHub: https://github.com/zigbeefordomoticz/Domoticz-Zigbee
 """
-
 
 import base64
-import binascii
 import json
+import queue
 import socket
 import ssl
+import threading
 import time
+import urllib.parse
 import urllib.request
+from collections import OrderedDict
 
-from Classes.LoggingManagement import LoggingManagement
-from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
-from Modules.tools import is_domoticz_new_API
-
-CACHE_TIMEOUT = (15 * 60) + 15  # num seconds
-
-def init_domoticz_api(self):
-    
-    if is_domoticz_new_API(self):
-        self.logging("Debug", 'Init domoticz api based on new api')
-        init_domoticz_api_settings(
-            self,
-            "type=command&param=getsettings",
-            "type=command&param=gethardware",
-            "type=command&param=getdevices&rid=",
-        )
-    else:
-        self.logging("Debug", 'Init domoticz api based on old api')
-        init_domoticz_api_settings(
-            self, "type=settings", "type=hardware", "type=devices&rid="
-        )
-        
-def init_domoticz_api_settings(self, settings_api, hardware_api, devices_api):
-    self.DOMOTICZ_SETTINGS_API = settings_api
-    self.DOMOTICZ_HARDWARE_API = hardware_api
-    self.DOMOTICZ_DEVICEST_API = devices_api
+# ----------------------
+# Configuration Constants
+# ----------------------
+CACHE_TIMEOUT = 3600         # seconds per API/device cache
+GET_TIMEOUT = 5              # HTTP request timeout
+MAX_CACHE_SIZE = 16          # max number of global API cache entries
+TRACKED_ATTRIBUTES = {
+    "AddjValue",
+    "AddjValue2",
+}
 
 
-def isBase64( sb ):    
-    try:
-        return base64.b64encode(base64.b64decode(sb)).decode() == sb
-    except TypeError:
-        return False
-    except binascii.Error:
-        return False
-    
-def extract_username_password( self, url_base_api ):
-    
-    items = url_base_api.split('@')
-    if len(items) != 2:
-        return None, None, None, None
-    
-    self.logging("Debug", f'Extract username/password {url_base_api} ==> {items} ')
-    host_port = items[1]
-    proto = None
-    if items[0].find("https") == 0:
-        proto = 'https'
-        items[0] = items[0][:5].lower() + items[0][5:]
-        item1 = items[0].replace('https://','')
-        usernamepassword = item1.split(':')
-        if len(usernamepassword) == 2:
-            username, password = usernamepassword
-            return username, password, host_port, proto
-        self.logging("Error", f'We are expecting a username and password but do not find it in {url_base_api} ==> {items} ==> {item1} ==> {usernamepassword}')
-            
-    elif items[0].find("http") == 0:
-        proto = 'http'
-        items[0] = items[0][:4].lower() + items[0][4:]
-        item1 = items[0].replace('http://','')
-        usernamepassword = item1.split(':')
-        if len(usernamepassword) == 2:
-            username, password = usernamepassword
-            return username, password, host_port, proto
-        self.logging("Error", f'We are expecting a username and password but do not find it in {url_base_api} ==> {items} ==> {item1} ==> {usernamepassword}')
+# ===============================
+# Domoticz API Client
+# ===============================
+class DomoticzAPIClient:
+    """
+    Client for interacting with the Domoticz JSON API.
 
-    self.logging("Error", f'We are expecting a username and password but do not find it in {url_base_api} ==> {items} ')
-    return None, None, None, None
-        
+    Handles:
+    - Threaded, non-blocking HTTP requests
+    - Global caching of API responses with LRU eviction
+    - Deduplication of inflight requests
+    - Authentication (Basic Auth)
+    - Registration of per-device caches
 
-def open_and_read( self, url ):
-    self.logging("Log", f'opening url {url}')
-    
-    myssl_context = None
-    if "https" in url.lower() and not self.pluginconf.pluginConf["CheckSSLCertificateValidity"]:
-        myssl_context = ssl.create_default_context()
-        myssl_context.check_hostname=False
-        myssl_context.verify_mode=ssl.CERT_NONE
-    
-    retry = 3
-    while retry:
+    Attributes:
+        base_url (str): Base URL of Domoticz API.
+        pluginconf (dict): Plugin configuration dictionary.
+        log (logger-like object): Object with `logging(category, level, msg)` method.
+    """
+
+    def __init__(self, base_url, pluginconf, log):
+        """
+        Initializes the API client.
+
+        Args:
+            base_url (str): Domoticz server URL (may include user:pass).
+            pluginconf (dict): Plugin configuration.
+            log (object): Logger for debug/error messages.
+        """
+        self.base_url = base_url.rstrip('/')
+        self.pluginconf = pluginconf
+        self.log = log
+
+        self.username = None
+        self.password = None
+        self.auth_header = None
+        self.url_ready = None
+
+        # Global cache
+        self._cache = OrderedDict()
+        self._cache_lock = threading.Lock()
+
+        # Deduplicate inflight requests
+        self._inflight = set()
+        self._inflight_lock = threading.Lock()
+
+        # Async worker thread
+        self._stop_event = threading.Event()
+        self._queue = queue.Queue()
+        self._worker = threading.Thread(target=self._worker_loop, name="DomoticzAPI", daemon=False)
+        self._worker.start()
+
+        # Per-device caches
+        self._device_caches = []
+
+        self._parse_url()
+
+    def stop(self):
+        """Stops the worker thread cleanly."""
+        self.logging("Status", "Zigbee: ++ DomoticzDB Api thread stop requrested")
+        self._stop_event.set()
         try:
-            self.logging("Debug", f'opening url {url} with context {myssl_context}')
-            with urllib.request.urlopen(url, context=myssl_context) as response:
-                return response.read()
+            self._queue.put_nowait((None, None))
+        except Exception as er:
+            self.logging("Error", f"DomoticzDB Api thread  did not stop cleanly {er}")
+            pass
+        self._worker.join(timeout=2)
+        if self._worker.is_alive():
+            self.logging("Error", "DomoticzDB Api thread  did not stop cleanly")
+        else:
+            self.logging("Debug", "Zigbee: ++ DomoticzDB Api thread stopped.")
 
-        except urllib.error.HTTPError as e:
-            if e.code in [429,504]:  # 429=too many requests, 504=gateway timeout
-                reason = f'{e.code} {str(e.reason)}'
-            elif isinstance(e.reason, socket.timeout):
-                reason = f'HTTPError socket.timeout {e.reason} - {e}'
+    def logging(self, level, msg):
+        """Wrapper for logging through plugin logger."""
+        if self.log:
+            self.log.logging("DZapi", level, msg)
+
+    # ------------------------------
+    # URL / Auth Helpers
+    # ------------------------------
+    def _parse_url(self):
+        """Parse base URL, extract credentials, and prepare JSON endpoint URL."""
+        parsed = urllib.parse.urlparse(self.base_url)
+        self.username = parsed.username
+        self.password = parsed.password
+        netloc = parsed.hostname
+        if parsed.port:
+            netloc += f":{parsed.port}"
+
+        if self.username and self.password:
+            self.auth_header = base64.b64encode(
+                f"{self.username}:{self.password}".encode()
+            ).decode()
+
+        self.url_ready = f"{parsed.scheme}://{netloc}/json.htm?"
+
+    def _normalize_query(self, query):
+        """
+        Normalize query string by sorting parameters.
+
+        Args:
+            query (str): URL query string.
+
+        Returns:
+            str: Canonicalized query string.
+        """
+        params = urllib.parse.parse_qsl(query, keep_blank_values=True)
+        return urllib.parse.urlencode(sorted(params))
+
+    # ------------------------------
+    # Cache Handling
+    # ------------------------------
+    def _get_cache(self, query, key):
+        """
+        Retrieve cached API response if valid.
+
+        Args:
+            query (str): Original API query.
+            key (str): Normalized cache key.
+
+        Returns:
+            dict or None: Cached JSON response or None if missing/stale.
+        """
+        with self._cache_lock:
+            entry = self._cache.get(key)
+            if not entry:
+                self.logging("Debug", f"Cache MISS for key {key}")
+                return None
+            ts, data = entry
+            if time.time() - ts > CACHE_TIMEOUT:
+                self._enqueue(query, key, False)
+            # Mark as recently used
+            self._cache.move_to_end(key)
+            self.logging("Debug", f"Cache HIT for key {key}")
+            return data
+
+    def _set_cache(self, key, data):
+        """
+        Set a cached response and evict oldest if full.
+
+        Args:
+            key (str): Normalized cache key.
+            data (dict): JSON response to cache.
+        """
+        with self._cache_lock:
+            if key in self._cache:
+                self._cache[key] = (time.time(), data)
+                self._cache.move_to_end(key)
             else:
-                raise
-        except urllib.error.URLError as e:
-            if isinstance(e.reason, socket.timeout):
-                reason = f'URLError socket.timeout {e.reason} - {e}'
+                if len(self._cache) >= MAX_CACHE_SIZE:
+                    oldest_key, _ = self._cache.popitem(last=False)
+                    self.logging("Debug", f"Cache full, evicted oldest key {oldest_key}")
+                self._cache[key] = (time.time(), data)
+
+    # ------------------------------
+    # Public API Access
+    # ------------------------------
+    def get(self, query, use_cache=True, priority=False):
+        """
+        Retrieve API response, optionally from cache.
+
+        Args:
+            query (str): API query string.
+            use_cache (bool): If True, return cached response if available.
+            priority (bool): If True, fetch immediately in queue.
+
+        Returns:
+            dict or None: Cached response or None if background fetch scheduled.
+        """
+        cache_key = self._normalize_query(query)
+        if use_cache:
+            cached = self._get_cache(query, cache_key)
+            if cached is not None:
+                return cached
+        self._enqueue(query, cache_key, priority)
+        return None
+
+    def _enqueue(self, query, cache_key, priority=False):
+        """
+        Add query to worker queue if not already inflight.
+
+        Args:
+            query (str): API query string.
+            cache_key (str): Normalized cache key.
+            priority (bool): If True, place at front of queue.
+        """
+        self.logging("Debug", f"Enqueue request: {query} (cache_key={cache_key})")
+        if self._stop_event.is_set():
+            return
+        with self._inflight_lock:
+            if cache_key in self._inflight:
+                return
+            self._inflight.add(cache_key)
+        try:
+            if priority:
+                self._queue.queue.appendleft((query, cache_key))
             else:
-                raise
-        except socket.timeout as e:
-            reason = f'socket.timeout {e}'
-        netloc = urllib.parse.urlsplit(url).netloc  # e.g. nominatim.openstreetmap.org
-        self.logging("Error", f'*** {netloc} {reason}; will retry')
-        time.sleep(1)
-        retry -= 1
+                self._queue.put((query, cache_key))
+        except Exception as e:
+            self.logging("Debug", f"Enqueue request error: {e}")
+            with self._inflight_lock:
+                self._inflight.discard(cache_key)
 
-def domoticz_request( self, url):
-    self.logging("Debug",'domoticz request url: %s' %url)
-    try:
-        request = urllib.request.Request(url)
-    except urllib.error.URLError as e:
-        self.logging("Error", "Request to %s rejected. Error: %s" %(url, e))
-        return None
-    
-    self.logging("Debug",'domoticz request result: %s' %request)
-    if self.authentication_str:
-        self.logging("Debug",'domoticz request Authorization: %s' %request)
-        request.add_header("Authorization", "Basic %s" % self.authentication_str)
-    self.logging("Debug",'domoticz request open url')
-    
-    myssl_context = None
-    if "https" in url.lower() and not self.pluginconf.pluginConf["CheckSSLCertificateValidity"]:
-        myssl_context = ssl.create_default_context()
-        myssl_context.check_hostname=False
-        myssl_context.verify_mode=ssl.CERT_NONE
+    # ------------------------------
+    # Worker Thread
+    # ------------------------------
+    def _worker_loop(self):
+        """Background thread fetching API requests and updating caches."""
+        while not self._stop_event.is_set():
+            try:
+                query, cache_key = self._queue.get(timeout=0.5)
+            except queue.Empty:
+                continue
 
-    try:
-        self.logging("Debug", f'opening url {request} with context {myssl_context}')
-        response = urllib.request.urlopen(request, context=myssl_context)
-    except urllib.error.URLError as e:
-        self.logging("Error", "Urlopen to %s rejected. Error: %s" %(url, e))
-        return None
-    
-    return response.read()
-  
-def domoticz_base_url(self):
-    
-    if self.url_ready:
-        self.logging( "Debug", "domoticz_base_url - API URL ready %s Basic Authentication: %s" %(self.url_ready, self.authentication_str))
-        return self.url_ready
-    
-    username, password, host_port, proto = extract_username_password( self, self.api_base_url )
-    
-    self.logging("Debug",'Username: %s' %username)
-    self.logging("Debug",'Password: %s' %password)
-    self.logging("Debug",'Host+port: %s' %host_port)
+            if query is None:
+                continue
 
-    if len(self.api_base_url) == 0:
-        # Seems that the field is empty
-        self.logging( "Error", "You need to setup the URL Base to access the Domoticz JSON/API")
-        return None
+            self.logging("Debug", f"_worker_loop - key: {cache_key} query: {query}")
+            try:
+                url = self.url_ready + query
+                data = self._do_request(url)
+                self.logging("Debug", f"_worker_loop fetched: cache_key={cache_key} data={data}")
+                
+                if data:
+                    self._set_cache(cache_key, data)
+
+                    # Update per-device caches if relevant
+                    if "rid=" in query:
+                        # getdevices for One or a list of Id
+                        for cache in self._device_caches:
+                            cache.update_device_from_response(data)
+
+                    elif "result" in data:
+                        # getdevices for ALL
+                        for cache in self._device_caches:
+                            cache.update_device_from_response(data)
+
+            except Exception as e:
+                self.logging("Error", f"Worker error: {repr(e)}")
+            finally:
+                with self._inflight_lock:
+                    self._inflight.discard(cache_key)
+
+    # ------------------------------
+    # HTTP Request
+    # ------------------------------
+    def _do_request(self, url):
+        """
+        Perform HTTP GET request to Domoticz API.
+
+        Args:
+            url (str): Full URL to request.
+
+        Returns:
+            dict or None: Parsed JSON response or None on error.
+        """
+        ssl_context = None
+        if url.lower().startswith("https") and not self.pluginconf.pluginConf.get("CheckSSLCertificateValidity", True):
+            self.logging("Debug", f"_do_request set ssl_context")
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+
+        try:
+            self.logging("Debug", f"Performing HTTP/HTTPS GET: {url}")
+            request = urllib.request.Request(url)
+            if self.auth_header:
+                request.add_header("Authorization", f"Basic {self.auth_header}")
+                self.logging("Debug", f"_do_request Authorization set {self.auth_header}")
+
+            with urllib.request.urlopen(request, context=ssl_context, timeout=GET_TIMEOUT) as response:
+                return json.load(response)
+
+        except (urllib.error.HTTPError, urllib.error.URLError, socket.timeout, json.JSONDecodeError) as e:
+            self.logging("Error", f"{url} failed: {repr(e)}")
+            return None
+
+    # ------------------------------
+    # Device Cache Registration
+    # ------------------------------
+    def register_device_cache(self, device_cache):
+        """
+        Register a per-device cache to be updated after fetches.
+
+        Args:
+            device_cache (DomoticzDeviceCache): Device cache instance.
+        """
+        if device_cache not in self._device_caches:
+            self._device_caches.append(device_cache)
         
-    # Check that last char is not a / , if the case then remove it 
-    # https://www.domoticz.com/wiki/Security / https://username:password@IP:PORT/json.htm 
-    if self.api_base_url[-1] == '/':
-        self.api_base_url = self.api_base_url[:-1]
-    if username and password and host_port:
-        self.authentication_str = base64.encodebytes(('%s:%s' %(username, password)).encode()).decode().replace('\n','')
-        url = f"{proto}://{host_port}/json.htm?"
-    else:
-        url = self.api_base_url + '/json.htm?'
-    self.logging("Debug", "url: %s" %url)
-    self.url_ready = url
-    return url      
 
+class DomoticzDeviceCache:
+    """
+    Per-device cache for Domoticz API responses.
+
+    Maintains cached values for individual devices with:
+    - Thread-safe access
+    - Automatic background refresh via DomoticzAPIClient
+
+    Attributes:
+        api (DomoticzAPIClient): Reference to the main API client.
+        devices (OrderedDict): Cached device attributes by device ID.
+        _last_refresh (OrderedDict): Last refresh timestamp per device.
+    """
+
+    def __init__(self, api_client: DomoticzAPIClient):
+        """
+        Initialize a device cache.
+
+        Args:
+            api_client (DomoticzAPIClient): The API client to fetch devices from.
+        """
+        self.api = api_client
+        self.devices = {}
+        self._last_refresh = {}
+        self._lock = threading.Lock()
+        self.api.register_device_cache(self)
+        self.api.logging("Debug", "DomoticzDeviceCache initialized")
+        self.refresh()
+
+    def dump_cache(self):
+        self.api.logging("Debug", "Dumping Domoticz Cache")
+        for x in self.devices:
+            self.api.logging("Debug", f"devices {x} : {self.devices[x]}")
+
+    def refresh(self):
+        """
+        Trigger a full refresh of all devices from Domoticz.
+
+        This schedules a background fetch via the API client.
+        """
+        self.api.logging("Debug", "Refreshing all devices (full load)")
+        query = "type=command&param=getdevices"
+        cache_key = self.api._normalize_query(query)
+        self.api._enqueue(query, cache_key, priority=True)
+
+    def refresh_device(self, device_id):
+        """
+        Schedule a background refresh for a single device.
+
+        Args:
+            device_id (int or str): ID of the device to refresh.
+        """
+        device_id = str(device_id)
+        query = f"type=command&param=getdevices&rid={device_id}"
+        cache_key = self.api._normalize_query(query)
+        self.api.logging("Debug", f"Scheduling background refresh for device {device_id}")
+        self.api._enqueue(query, cache_key, priority=True)
+
+    def get_value(self, device_id, attribute, default=None):
+        """
+        Retrieve a cached device attribute, triggering background fetch if stale.
+
+        Args:
+            device_id (int or str): ID of the device.
+            attribute (str): Attribute name (e.g., "AddjValue").
+            default (any): Value to return if attribute is missing.
+
+        Returns:
+            any: Cached attribute value or default if unavailable.
+        """
+        device_id = str(device_id)
+        now = time.time()
+        last = self._last_refresh.get(device_id, 0)
+
+        if now - last > CACHE_TIMEOUT or device_id not in self.devices:
+            self.api.logging("Debug", f"Device {device_id} cache expired or missing. Triggering refresh")
+            self.refresh_device(device_id)
+        else:
+            self.api.logging("Debug", f"Cache HIT for device {device_id}")
+
+        device = self.devices.get(device_id)
+        if not device:
+            self.api.logging("Debug", f"Device {device_id} not in cache yet. Returning default for {attribute}")
+            return default
+
+        val = device.get(attribute, default)
+        self.api.logging("Debug", f"Returning value for device {device_id} attribute {attribute}: {val}")
+        return val
+
+    def update_device_from_response(self, data):
+        """
+        Update device cache from a fetched API response.
+
+        Args:
+            data (dict or list): API response containing "result" with device data.
+        """
+        if not data or "result" not in data:
+            self.api.logging("Debug", "No result in response")
+            return
+
+        devices = data["result"]
+        self.api.logging("Debug", f"{len(devices)} devices received")
+
+        for d in devices:
+            self._update_single_device(d)
+
+    def _update_single_device(self, d):
+        """
+        Update or add a single device to the cache.
+
+        Handles:
+        - Filtering tracked attributes
+        - LRU ordering
+        - Eviction if cache is full
+
+        Args:
+            d (dict): Device data dictionary from Domoticz API.
+        """
+        idx = d.get("idx")
+        if idx is None:
+            self.api.logging("Debug", f"Device data missing idx: {d}")
+            return
+        idx = str(idx)
+
+        filtered = {attr: d.get(attr) for attr in TRACKED_ATTRIBUTES if attr in d}
+        if not filtered:
+            self.api.logging("Debug", f"No tracked attributes in device {idx}: {d}")
+            return
+
+        with self._lock:
+            self.devices[idx] = filtered
+            self._last_refresh[idx] = time.time()
+
+            self.api.logging("Debug", f"Updated cache for device {idx}: {json.dumps(filtered)}")
+
+
+# ===============================
+# Device Status Accessor
+# ===============================
+class DomoticzDB_DeviceStatus:
+    """
+    Convenience class for reading specific device attributes from a DomoticzDeviceCache.
+    """
+
+    def __init__(self, device_cache: DomoticzDeviceCache):
+        """
+        Args:
+            device_cache (DomoticzDeviceCache): Reference to the device cache.
+        """
+        self.cache = device_cache
+
+    def retrieve_baro_adjustment(self, device_id):
+        """Retrieve barometric adjustment (AddjValue2) for a device."""
+        return self.cache.get_value(device_id, "AddjValue2", 0)
+
+    def retrieve_temp_adjustment(self, device_id):
+        """Retrieve temperature adjustment (AddjValue) for a device."""
+        return self.cache.get_value(device_id, "AddjValue", 0)
+
+    def retrieve_motion_timeout(self, device_id):
+        """Retrieve motion timeout (AddjValue) for a device."""
+        return self.cache.get_value(device_id, "AddjValue", 0)
+
+
+# ===============================
+# Domoticz Preferences
+# ===============================
 class DomoticzDB_Preferences:
-    # sourcery skip: replace-interpolation-with-fstring
-    
-    def __init__(self, api_base_url, pluginconf, log, DomoticzBuild, DomoticzMajor, DomoticzMinor):
-        self.api_base_url = api_base_url
+    """
+    Access Domoticz system preferences.
+    """
+
+    def __init__(self, api_client: DomoticzAPIClient):
+        """
+        Args:
+            api_client (DomoticzAPIClient): Reference to the API client.
+        """
+        self.api = api_client
         self.preferences = {}
-        self.pluginconf = pluginconf
-        self.log = log
-        self.authentication_str = None
-        self.url_ready = None
-        self.DomoticzBuild = DomoticzBuild
-        self.DomoticzMajor = DomoticzMajor
-        self.DomoticzMinor = DomoticzMinor
-        init_domoticz_api(self)
-        self.load_preferences()
+        self.load()
+
+    def load(self):
+        """Fetch preferences from Domoticz."""
+        result = self.api.get("type=command&param=getsettings")
+        if result:
+            self.preferences = result
+
+    def retrieve_accept_new_hardware(self):
+        """Return the 'AcceptNewHardware' setting."""
+        return self.preferences.get("AcceptNewHardware")
+
+    def retrieve_web_credentials(self):
+        """Return web UI username and password."""
+        return (
+            self.preferences.get("WebUserName", ""),
+            self.preferences.get("WebPassword", "")
+        )
 
 
-    def load_preferences(self):
-        # sourcery skip: replace-interpolation-with-fstring
-        url = domoticz_base_url(self)
-        if url is None:
-            return
-        url += self.DOMOTICZ_HARDWARE_API
-
-        dz_response = domoticz_request( self, url)
-        if dz_response is None:
-            return
-
-        self.preferences = json.loads( dz_response )
-        
-    def logging(self, logType, message):
-        # sourcery skip: replace-interpolation-with-fstring
-        self.log.logging("DZDB", logType, message)
-
-    def retreiveAcceptNewHardware(self):
-        # sourcery skip: replace-interpolation-with-fstring
-        self.logging("Debug", "retreiveAcceptNewHardware status %s" %self.preferences['AcceptNewHardware'])
-        return self.preferences['AcceptNewHardware']
-
-    def retreiveWebUserNamePassword(self):
-        # sourcery skip: replace-interpolation-with-fstring
-        webUserName = webPassword = ''
-        if 'WebPassword' in self.preferences:
-            webPassword = self.preferences['WebPassword']
-        if 'WebUserName' in self.preferences:
-            webUserName = self.preferences['WebUserName']
-        self.logging("Debug", "retreiveWebUserNamePassword %s %s" %(webUserName, webPassword))   
-        return webUserName, webPassword
-
+# ===============================
+# Domoticz Hardware
+# ===============================
 class DomoticzDB_Hardware:
-    def __init__(self, api_base_url, pluginconf, hardwareID, log, pluginParameters, DomoticzBuild, DomoticzMajor, DomoticzMinor):
-        self.api_base_url = api_base_url
-        self.authentication_str = None
-        self.url_ready = None
+    """
+    Access Domoticz hardware settings.
+    """
+
+    def __init__(self, api_client: DomoticzAPIClient, hardware_id):
+        """
+        Args:
+            api_client (DomoticzAPIClient): API client.
+            hardware_id (int or str): Hardware device index.
+        """
+        self.api = api_client
+        self.hardware_id = str(hardware_id)
         self.hardware = {}
-        self.HardwareID = hardwareID
-        self.pluginconf = pluginconf
-        self.log = log
-        self.pluginParameters = pluginParameters
-        self.DomoticzBuild = DomoticzBuild
-        self.DomoticzMajor = DomoticzMajor
-        self.DomoticzMinor = DomoticzMinor
+        self.load()
 
-        init_domoticz_api(self)
-        self.load_hardware()
-
-    def load_hardware(self):  
-        # sourcery skip: replace-interpolation-with-fstring
-        url = domoticz_base_url(self)
-        if url is None:
+    def load(self):
+        """Load hardware information from Domoticz."""
+        result = self.api.get("type=command&param=gethardware")
+        if not result or "result" not in result:
             return
-        url += self.DOMOTICZ_HARDWARE_API
 
-        dz_result = domoticz_request( self, url)
-        if dz_result is None:
-            return
-        result = json.loads( dz_result )
-        
-        for x in result['result']:
-            idx = x[ "idx" ]
-            self.hardware[ idx ] = x
-
-    def logging(self, logType, message):
-        self.log.logging("DZDB", logType, message)
-
-    def disableErasePDM(self, webUserName, webPassword):
-        # sourcery skip: replace-interpolation-with-fstring
-        # To disable the ErasePDM, we have to restart the plugin
-        # This is usally done after ErasePDM
-        restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=self.api_base_url)
+        self.hardware = {str(x["idx"]): x for x in result["result"]}
 
     def get_loglevel_value(self):
-        # sourcery skip: replace-interpolation-with-fstring
-        if (
-            self.hardware 
-            and ("%s" %self.HardwareID) in self.hardware
-            and 'LogLevel' in self.hardware[ '%s' %self.HardwareID ]
-        ): 
-            self.logging("Debug", "get_loglevel_value %s " %(self.hardware[ '%s' %self.HardwareID ]['LogLevel']))
-            return self.hardware[ '%s' %self.HardwareID ]['LogLevel']
-        return 7
+        """Return log level for this hardware (default 7)."""
+        hw = self.hardware.get(self.hardware_id, {})
+        return hw.get("LogLevel", 7)
 
-    def multiinstances_z4d_plugin_instance(self):
-        # sourcery skip: replace-interpolation-with-fstring
-        self.logging("Debug", "multiinstances_z4d_plugin_instance")
-        if sum("Zigate" in self.hardware[ x ]["Extra"] for x in self.hardware) > 1:
-            return True
-        return False
-
-class DomoticzDB_DeviceStatus:
-    def __init__(self, api_base_url, pluginconf, hardwareID, log, DomoticzBuild, DomoticzMajor, DomoticzMinor):
-        self.api_base_url = api_base_url
-        self.HardwareID = hardwareID
-        self.pluginconf = pluginconf
-        self.log = log
-        self.authentication_str = None
-        self.url_ready = None
-        self.DomoticzBuild = DomoticzBuild
-        self.DomoticzMajor = DomoticzMajor
-        self.DomoticzMinor = DomoticzMinor
-
-        init_domoticz_api(self)
-
-    def logging(self, logType, message):
-        # sourcery skip: replace-interpolation-with-fstring
-        self.log.logging("DZDB", logType, message)
-
-    def get_device_status(self, ID):
-        # "http://%s:%s@127.0.0.1:%s" 
-        # sourcery skip: replace-interpolation-with-fstring
-        url = domoticz_base_url(self)
-        if url is None:
-            return
-        url += self.DOMOTICZ_DEVICEST_API + "%s" %ID
-
-        dz_result = domoticz_request( self, url)
-        if dz_result is None:
-            return None
-        result = json.loads( dz_result )
-        self.logging("Debug", "Result: %s" %result)
-        return result
-    
-    def extract_AddValue(self, ID, attribute):
-        # sourcery skip: replace-interpolation-with-fstring
-        result = self.get_device_status( ID)
-        if result is None:
-            return 0
-
-        if 'result' not in result:
-            return 0
-        AdjValue = 0
-        for x in result['result']:
-            AdjValue = x[attribute]    
-        self.logging("Debug", "return extract_AddValue %s %s %s" % (ID, attribute, AdjValue)  )  
-        return AdjValue
-       
-    def retreiveAddjValue_baro(self, ID):
-        # sourcery skip: replace-interpolation-with-fstring
-        return self.extract_AddValue( ID, 'AddjValue2')
-
-    def retreiveTimeOut_Motion(self, ID):
-        # sourcery skip: replace-interpolation-with-fstring
+    def is_multi_instance(self):
         """
-        Retreive the TmeeOut Motion value of Device.ID
-        """
-        return self.extract_AddValue( ID, 'AddjValue')  
+        Determine if multiple 'Zigate' instances exist.
 
-    def retreiveAddjValue_temp(self, ID):
-        # sourcery skip: replace-interpolation-with-fstring
+        Returns:
+            bool: True if more than one Zigate hardware exists.
         """
-        Retreive the AddjValue of Device.ID
-        """
-        return self.extract_AddValue( ID, 'AddjValue')
+        count = sum(
+            1 for x in self.hardware.values()
+            if "Zigate" in x.get("Extra", "")
+        )
+        return count > 1

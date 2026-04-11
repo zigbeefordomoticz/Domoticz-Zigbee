@@ -1,19 +1,38 @@
-name: JSON check
+name: JSON Syntax Check
 
 on:
+  pull_request:
+    paths:
+      - '**/*.json'
   push:
     paths:
-      - '**.json'
-  pull_request:
-      paths:
-      - '**.json'
+      - '**/*.json'
 
 jobs:
-  test:
+  json_check:
+    name: Validate changed JSON files
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v2
-      - name: json-syntax-check
-        uses: limitusus/json-syntax-check@v1
+      # 1️⃣ Checkout repository (no need for full main branch)
+      - name: Checkout repository
+        uses: actions/checkout@v3
         with:
-          pattern: "\\.json$"
+          fetch-depth: 2   # enough for PR diffs
+
+      # 2️⃣ Get list of changed JSON files
+      - name: List changed JSON files
+        id: changed_files
+        run: |
+          echo "CHANGED_JSON=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- '*.json' | paste -sd ',' -)" >> $GITHUB_ENV
+          echo "Changed JSON files: $CHANGED_JSON"
+
+      # 3️⃣ Run Super-Linter only on changed JSON files
+      - name: Lint changed JSON files
+        if: env.CHANGED_JSON != ''
+        uses: github/super-linter@v6
+        env:
+          VALIDATE_JSON: true
+          FILES: ${{ env.CHANGED_JSON }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
