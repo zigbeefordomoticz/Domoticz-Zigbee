@@ -134,8 +134,9 @@ import z4d_certified_devices
 
 from Classes.AdminWidgets import AdminWidgets
 from Classes.ConfigureReporting import ConfigureReporting
-from Classes.DomoticzDB import (DomoticzAPIClient, DomoticzDB_DeviceStatus,DomoticzDeviceCache,
-                                DomoticzDB_Hardware, DomoticzDB_Preferences)
+from Classes.DomoticzDB import (DomoticzAPIClient, DomoticzDB_DeviceStatus,
+                                DomoticzDB_Hardware, DomoticzDB_Preferences,
+                                DomoticzDeviceCache)
 from Classes.GroupMgtv2.GroupManagement import GroupsManagement
 from Classes.IAS import IAS_Zone_Management
 from Classes.LoggingManagement import LoggingManagement
@@ -158,11 +159,10 @@ from Modules.command import domoticz_command
 from Modules.database import (LoadDeviceList, WriteDeviceList,
                               checkDevices2LOD, checkListOfDevice2Devices,
                               import_local_device_conf)
-from Modules.domoticzAbstractLayer import (domo_read_Name,
-                                           find_legacy_DeviceID_from_unit,
-                                           how_many_legacy_slot_available,
-                                           is_domoticz_extended,
-                                           load_list_of_domoticz_widget)
+from Modules.domoticzAbstractLayer import (
+    domo_read_Name, find_legacy_DeviceID_from_unit,
+    how_many_legacy_slot_available, is_domoticz_extended,
+    load_list_of_domoticz_widget, retreive_widgetid_from_deviceId_unit)
 from Modules.heartbeat import processListOfDevices
 from Modules.input import zigbee_receive_message
 from Modules.matomo_request import (matomo_coordinator_initialisation,
@@ -642,7 +642,6 @@ class BasePlugin:
             self.log.logging("Plugin", "Log", f"    - Thread {t.name}: alive={t.is_alive()}, ident={t.ident}, daemon={t.daemon}")
 
 
-
     def onStop(self):
         """
         Performs cleanup actions when the plugin is stopped.
@@ -725,8 +724,7 @@ class BasePlugin:
             self.adminWidgets.updateStatusWidget(Devices, "No Communication")
 
 
-    def onDeviceRemoved(self, Unit):
-        # def onDeviceRemoved(self, DeviceID, Unit):
+    def onDeviceRemoved(self, DeviceID, Unit):
         if not self.ControllerIEEE:
             self.log.logging( "Plugin", "Error", "onDeviceRemoved - too early, coordinator and plugin initialisation not completed", )
 
@@ -868,8 +866,7 @@ class BasePlugin:
 
         restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=Parameters["Mode5"])
 
-    #def onCommand(self, DeviceID, Unit, Command, Level, Color):
-    def onCommand(self, Unit, Command, Level, Color):
+    def onCommand(self, DeviceID, Unit, Command, Level, Color):
         if (  self.ControllerLink is None or not self.VersionNewFashion or self.pluginconf is None or not self.log ):
             self.log.logging( "Command", "Log", "onCommand - Not yet ready, plugin not fully started, we drop the command")
             return
@@ -1026,13 +1023,11 @@ class BasePlugin:
         return True
 
 
-    def onDeviceModified(self, Unit):
-        # DeviceID, Unit
-        self.domoticz_device_cache.refresh_device( Unit)
-        
-        
-        
-        
+    def onDeviceModified(self, DeviceId, Unit):
+        device_idx = retreive_widgetid_from_deviceId_unit(self, Devices, DeviceId, Unit)
+        self.domoticz_device_cache.refresh_device( device_idx)
+
+
 def _onConnect_status_error(self, Status, Description):
     self.log.logging("Plugin", "Error", "Failed to connect (" + str(Status) + ")")
     self.log.logging("Plugin", "Debug", "Failed to connect (" + str(Status) + ") with error: " + Description)
@@ -1664,11 +1659,9 @@ def onStop():
     _plugin.onStop()
 
 
-#def onDeviceRemoved(DeviceID, Unit):
-def onDeviceRemoved( Unit):
+def onDeviceRemoved(DeviceID, Unit):
     global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
-    #_plugin.onDeviceRemoved(DeviceID, Unit)
-    _plugin.onDeviceRemoved( Unit)
+    _plugin.onDeviceRemoved(DeviceID, Unit)
 
 
 def onConnect(Connection, Status, Description):
@@ -1681,11 +1674,9 @@ def onMessage(Connection, Data):
     _plugin.onMessage(Connection, Data)
 
 
-#def onCommand(DeviceID, Unit, Command, Level, Color):
-def onCommand(Unit, Command, Level, Color):
+def onCommand(DeviceID, Unit, Command, Level, Color):
     global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
-    #_plugin.onCommand(DeviceID, Unit, Command, Level, Color)
-    _plugin.onCommand( Unit, Command, Level, Color)
+    _plugin.onCommand(DeviceID, Unit, Command, Level, Color)
 
 
 def onDisconnect(Connection):
@@ -1698,9 +1689,9 @@ def onHeartbeat():
     _plugin.onHeartbeat()
 
 
-def onDeviceModified( Unit):
+def onDeviceModified( DeviceID, Unit):
     global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
-    _plugin.onDeviceModified(Unit )
+    _plugin.onDeviceModified(DeviceID, Unit )
 
 
 # Generic helper functions
