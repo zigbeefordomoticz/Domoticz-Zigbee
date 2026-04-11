@@ -45,7 +45,7 @@ from Modules.pluginModels import check_found_plugin_model
 from Modules.tuyaConst import TUYA_MANUFACTURER_NAME
 from Modules.zlinky import update_zlinky_device_model_if_needed
 
-
+DATABASE_VERSION = 4
 
 CIE_ATTRIBUTES = {
     "Version", 
@@ -313,8 +313,8 @@ def loadTxtDatabase(self, dbName):
                 self.log.logging("Database", "Error", "LoadDeviceList - entry " + key + " not loaded - not Version 3 - " + str(dlVal))
                 res = "Failed"
                 continue
-            if dlVal["Version"] != "3":
-                self.log.logging("Database", "Error", "LoadDeviceList - entry " + key + " not loaded - not Version 3 - " + str(dlVal))
+            if int(dlVal["Version"]) > int(DATABASE_VERSION):
+                self.log.logging("Database", "Error", f"LoadDeviceList - entry {key} not loaded - not Version {DATABASE_VERSION} or below\n" + str(dlVal))
                 res = "Failed"
                 continue
             else:
