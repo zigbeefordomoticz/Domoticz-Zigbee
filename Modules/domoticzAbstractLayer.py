@@ -16,12 +16,14 @@
 """
 
 
+import ast
 import base64
 import contextlib
 import json
 import time
 
 import DomoticzEx as Domoticz
+
 DOMOTICZ_EXTENDED_API = True
 
 DIMMABLE_WIDGETS = {
