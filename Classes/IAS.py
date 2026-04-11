@@ -306,26 +306,35 @@ class IAS_Zone_Management:
             self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Status"] = "Enrolled"
             self.ListOfDevices[NwkId]["IAS"]["ZoneId"] = ZoneId
 
-
     def IAS_CIE_write_response(self, NwkId, Ep, Status):
         # We are receiving a Write Attribute response
         self.logging("Debug", f"IAS CIE write Response for {NwkId}/{Ep}  Status: {Status}")
-        if (
-            NwkId not in self.ListOfDevices
-            or "IAS" not in self.ListOfDevices[ NwkId ]
-            or "Auto-Enrollment" not in self.ListOfDevices[ NwkId ]["IAS"]
-            or "Ep" not in self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]
-            or Ep in "Status" not in self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"]
-            or "Status" not in self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]
-            or self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] != "set IAS CIE Address"
-        ):
-            self.logging("Debug", f"IAS CIE write Response for {NwkId}/{Ep} but not expected !!")
+
+        def _get_enrollment_ep():
+            return (
+                self.ListOfDevices
+                .get(NwkId, {})
+                .get("IAS", {})
+                .get("Auto-Enrollment", {})
+                .get("Ep", {})
+                .get(Ep)
+            )
+
+        enrollment_ep = _get_enrollment_ep()
+
+        if enrollment_ep is None:
+            self.logging("Debug", f"IAS CIE write Response for {NwkId}/{Ep} but not expected (missing path)")
+            return
+
+        if enrollment_ep.get("Status") != "set IAS CIE Address":
+            self.logging("Debug", f"IAS CIE write Response for {NwkId}/{Ep} but not expected "
+                                   f"(unexpected status: {enrollment_ep.get('Status')!r})")
             return
 
         # We got the confirmation. Now we have to wait for the Enrollment Request
         if Status == "00":
             self.logging("Debug", f"IAS CIE write Response for {NwkId}/{Ep}  Waiting for Enrollment request")
-            self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Wait for Enrollment request"
+            enrollment_ep["Status"] = "Wait for Enrollment request"
 
 
     def IASWD_enroll(self, NwkId, Epout):
