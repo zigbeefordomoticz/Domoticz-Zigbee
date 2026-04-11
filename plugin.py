@@ -195,7 +195,7 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
-
+from Classes.ThreadSafeDeviceDict import ThreadSafeDeviceDict
 #import tracemalloc
 
 VERSION_FILENAME = ".hidden/VERSION"
@@ -223,16 +223,18 @@ class BasePlugin:
     def __init__(self):
 
         self.internet_available = None
-        self.ListOfDevices = (
-            {}
-        )  # {DevicesAddresse : { status : status_de_detection, data : {ep list ou autres en fonctions du status}}, DevicesAddresse : ...}
-        self.DiscoveryDevices = {}  # Used to collect pairing information
-        self.IEEE2NWK = {}
-        self.ControllerData = {}
+        
         self.DeviceConf = {}  # Store DeviceConf.txt, all known devices configuration
         self.ModelManufMapping = {}
         self.readZclClusters = {}
-        self.ListOfDomoticzWidget = {}
+        self.pluginconf = None  # PlugConf object / all configuration parameters
+
+        self.ListOfDomoticzWidget = ThreadSafeDeviceDict()
+        self.ListOfDevices = ThreadSafeDeviceDict()
+        self.IEEE2NWK = ThreadSafeDeviceDict()
+
+        self.DiscoveryDevices = {}  # Used to collect pairing information
+        self.ControllerData = {}
 
         # Objects from Classe
         self.configureReporting = None
@@ -247,7 +249,7 @@ class BasePlugin:
         self.domoticzdb_Hardware = None  # Object allowing direct access to Domoticz DB Hardware
         self.domoticzdb_Preferences = None  # Object allowing direct access to Domoticz DB Preferences
         self.adminWidgets = None  # Manage AdminWidgets object
-        self.pluginconf = None  # PlugConf object / all configuration parameters
+        
         self.OTA = None
         self.statistics = None
         self.iaszonemgt = None  # Object to manage IAS Zone
