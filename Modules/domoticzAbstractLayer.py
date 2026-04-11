@@ -196,8 +196,8 @@ def load_list_of_domoticz_widget(self, Devices):
             }
             self.ListOfDomoticzWidget[unit_data.ID] = widget_info
 
-    for x in self.ListOfDomoticzWidget:
-        self.log.logging( "AbstractDz", "Debug", f"Loading Devices[{x}]: {self.ListOfDomoticzWidget[ x ]}")
+    #for x in self.ListOfDomoticzWidget:
+    #    self.log.logging( "AbstractDz", "Debug", f"Loading Devices[{x}]: {self.ListOfDomoticzWidget[ x ]}")
 
 
 def find_widget_unit_from_WidgetID(self, Devices, Widget_Idx ):
@@ -238,13 +238,13 @@ def retreive_widgetid_from_deviceId_unit(self, Devices, DeviceId, Unit):
     
     
 def find_first_unit_widget_from_deviceID(self, Devices, DeviceID):
-    """ return the first unit for a specific DeviceID else return None"""
+    """Return the first unit index for a specific DeviceID, or None if not found."""
     self.log.logging("AbstractDz", "Debug", f"find_first_unit_widget_from_deviceID: {DeviceID}")
-    if DeviceID in Devices:
-        for unit in Devices[DeviceID].Units:
-            return unit
-    return None
-    
+    if DeviceID not in Devices:
+        return None
+    units = Devices[DeviceID].Units
+    return next(iter(units), None)
+   
 
 def find_legacy_DeviceID_from_unit(self, Devices, Unit):
     self.log.logging("AbstractDz", "Debug", f"find_legacy_DeviceID_from_unit: Unit: {Unit}")
@@ -348,7 +348,7 @@ def domo_create_api(self, Devices, DeviceID_, Unit_, Name_, widgetType=None, Typ
         
     if widgetType:
         self.log.logging("AbstractDz", "Debug", "- based on widgetType %s" %widgetType)
-        myUnit = Domoticz.Unit( DeviceID=DeviceID_, Name=Name_, Unit=Unit_, TypeName=widgetType, )
+        myUnit = Domoticz.Unit( DeviceID=DeviceID_, Name=Name_, Unit=Unit_, TypeName=widgetType, ).Create()
 
     elif widgetOptions:
         # In case of widgetOptions, we have a Selector widget
@@ -357,24 +357,31 @@ def domo_create_api(self, Devices, DeviceID_, Unit_, Name_, widgetType=None, Typ
             Type_ = 244
             Subtype_ = 62
             Switchtype_ = 18
-        myUnit = Domoticz.Unit( DeviceID=DeviceID_, Name=Name_, Unit=Unit_, Type=Type_, Subtype=Subtype_, Switchtype=Switchtype_,Options=widgetOptions,)
+        myUnit = Domoticz.Unit( DeviceID=DeviceID_, Name=Name_, Unit=Unit_, Type=Type_, Subtype=Subtype_, Switchtype=Switchtype_,Options=widgetOptions,).Create()
                
     elif Image:     
         self.log.logging("AbstractDz", "Debug", "- based on Image %s" %Image)     
-        myUnit = Domoticz.Unit( DeviceID=DeviceID_, Name=Name_, Unit=Unit_, Type=Type_, Subtype=Subtype_, Switchtype=Switchtype_, Image=Image, )
+        myUnit = Domoticz.Unit( DeviceID=DeviceID_, Name=Name_, Unit=Unit_, Type=Type_, Subtype=Subtype_, Switchtype=Switchtype_, Image=Image, ).Create()
 
     elif Switchtype_:
         self.log.logging("AbstractDz", "Debug", "- based on Switchtype_ %s" %Switchtype_)     
-        myUnit = Domoticz.Unit( DeviceID=DeviceID_, Name=Name_, Unit=Unit_, Type=Type_, Subtype=Subtype_, Switchtype=Switchtype_)
+        myUnit = Domoticz.Unit( DeviceID=DeviceID_, Name=Name_, Unit=Unit_, Type=Type_, Subtype=Subtype_, Switchtype=Switchtype_).Create()
         
     else:
         self.log.logging("AbstractDz", "Debug", "- default")   
-        myUnit = Domoticz.Unit( DeviceID=DeviceID_, Name=Name_, Unit=Unit_, Type=Type_, Subtype=Subtype_, )
+        myUnit = Domoticz.Unit( DeviceID=DeviceID_, Name=Name_, Unit=Unit_, Type=Type_, Subtype=Subtype_, ).Create()
 
-    myUnit.Create()
+    # Refresh list of Widgets
+    load_list_of_domoticz_widget(self, Devices)
 
-    self.log.logging("AbstractDz", "Debug", f"domo_create_api Created device: {Devices[DeviceID_].Units[Unit_].Name} point to ID {Devices[DeviceID_].Units[Unit_].ID}")
-                     
+    if DeviceID_ not in Devices and Unit_ not in Devices[DeviceID_].Units:
+        self.log.logging("AbstractDz", "Error", f"domo_create_api Created device: {DeviceID_} {Unit_} {Name_} failed !!!")
+        return -1
+
+    units_summary = {k: v.ID for k, v in Devices[DeviceID_].Units.items()}
+    self.log.logging("AbstractDz", "Debug", f"domo_create_api Created device: {DeviceID_} {Unit_} {Name_}")
+    self.log.logging("AbstractDz", "Debug", f"        Units:   {units_summary}")
+    self.log.logging("AbstractDz", "Debug", f"        ID:      {Devices[DeviceID_].Units[Unit_].ID}")
     return Devices[DeviceID_].Units[Unit_].ID
 
 
@@ -492,9 +499,10 @@ def domo_read_nValue_sValue(self, Devices, DeviceID, Unit):
     """
     self.log.logging("AbstractDz", "Debug", "domo_read_nValue_sValue: DeviceID: %s Unit: %s" %(DeviceID, Unit))
 
-    _unit = Devices[DeviceID].Units[Unit]
-
-    return _unit.nValue, _unit.sValue
+    if DeviceID in Devices and Unit in Devices[DeviceID].Units:
+        _unit = Devices[DeviceID].Units[Unit]
+        return _unit.nValue, _unit.sValue
+    return None, None
 
 
 def domo_read_TimedOut( self, Devices, DeviceId_ ):
@@ -536,7 +544,9 @@ def domo_read_Color( self, Devices, DeviceId_, Unit_, ):
 
 def domo_read_Name( self, Devices, DeviceId_, Unit_, ):
     self.log.logging("AbstractDz", "Debug", f"domo_read_Name: DeviceID: {DeviceId_} Unit {Unit_}")
-    return Devices[DeviceId_].Units[Unit_].Name
+    if DeviceId_ in Devices and Unit_ in Devices[DeviceId_].Units:
+        return Devices[DeviceId_].Units[Unit_].Name
+    return ""
 
 
 def domo_read_Options( self, Devices, DeviceId_, Unit_,):
