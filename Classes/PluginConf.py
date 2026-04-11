@@ -23,7 +23,6 @@ import os.path
 import time
 from pathlib import Path
 
-#import Domoticz
 import DomoticzEx as Domoticz
 from Modules.domoticzAbstractLayer import getConfigItem, setConfigItem
 from Modules.tools import is_domoticz_db_available, is_hex
