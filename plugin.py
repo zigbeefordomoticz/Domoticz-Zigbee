@@ -729,7 +729,7 @@ class BasePlugin:
             self.log.logging( "Plugin", "Error", "onDeviceRemoved - too early, coordinator and plugin initialisation not completed", )
 
         if self.log:
-            self.log.logging("Plugin", "Debug", "onDeviceRemoved called")
+            self.log.logging("Plugin", "Log", "onDeviceRemoved called")
 
         if not is_domoticz_extended():
             DeviceID = find_legacy_DeviceID_from_unit(self, Devices, Unit)
@@ -756,13 +756,12 @@ class BasePlugin:
                 self.log.logging( "Plugin", "Status", f"Request device {device_name} -> {DeviceID} to be removed from coordinator" )
 
             self.log.logging("Plugin", "Debug", f"ListOfDevices :After REMOVE {self.ListOfDevices}")
-            load_list_of_domoticz_widget(self, Devices)
-            return
-
-        if self.groupmgt and DeviceID in self.groupmgt.ListOfGroups:
+  
+        elif self.groupmgt and DeviceID in self.groupmgt.ListOfGroups:
             self.log.logging("Plugin", "Status", f"Request device {DeviceID} to be remove from Group(s)")
             self.groupmgt.FullRemoveOfGroup(Unit, DeviceID)
 
+        load_list_of_domoticz_widget(self, Devices)
 
     def onConnect(self, Connection, Status, Description):
 
