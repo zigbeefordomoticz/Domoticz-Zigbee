@@ -115,11 +115,9 @@
 
 
 import DomoticzEx as Domoticz
-#import Domoticz
 
 try:
     from DomoticzEx import Devices, Images, Parameters, Settings
-    #from Domoticz import Devices, Images, Parameters, Settings
 except ImportError:
     pass
 
