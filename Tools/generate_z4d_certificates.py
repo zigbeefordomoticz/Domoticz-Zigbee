@@ -35,7 +35,7 @@ Note:
 
 import os
 import ssl
-import subprocess
+import subprocess  # nosec B404
 
 
 def create_self_signed_cert(cert_dir):
@@ -68,7 +68,7 @@ def create_self_signed_cert(cert_dir):
         "-newkey", "rsa:4096", "-keyout", key_path,
         "-out", cert_path,
         "-subj", "/C=FR/ST=California/L=Paris/O=Z4D/OU=Org/CN=localhost"
-    ])
+    ])  # nosec B607, B603
 
     print(f"Certificate and key generated: {cert_path}, {key_path}")
     return cert_path, key_path

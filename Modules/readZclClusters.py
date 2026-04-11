@@ -446,7 +446,7 @@ def majdomodevice_possiblevalues( self, MsgSrcEp, MsgClusterId, MsgAttrID, model
     _majdomodeviceValidValues = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "ValidValuesDomoDevices", model=model)
     if _majdomodeviceValidValues is None:
         return True
-    eval_result = eval( _majdomodeviceValidValues )
+    eval_result = eval( _majdomodeviceValidValues )  # nosec B307
 
     self.log.logging("ZclClusters", "Debug", " . majdomodevice_possiblevalues: >%s<(%s) %s -> %s" %(
         value, type(value), eval_result, _majdomodeviceValidValues))
@@ -494,7 +494,7 @@ def compute_attribute_value( self, nwkid, ep, cluster, attribut, value, _eval_in
         
     if _eval_formula is not None and _eval_formula != "":
         try:
-            evaluation_result = eval( _eval_formula )
+            evaluation_result = eval( _eval_formula )  # nosec B307
             self.log.logging("ZclClusters", "Debug", " . after evaluation value: %s -> %s" %( value, evaluation_result), nwkid)
             return evaluation_result
 

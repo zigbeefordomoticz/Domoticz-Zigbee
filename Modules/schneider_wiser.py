@@ -1779,6 +1779,9 @@ def schneider_find_attribute_and_set(self, NWKID, EP, ClusterID, attr, defaultVa
         ep_data[attr] = newValue
         found = newValue
 
+    if found and isinstance( found, str):
+        found = int(found)
+
     return found
 
 

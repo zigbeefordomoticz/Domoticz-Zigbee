@@ -18,16 +18,59 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
-## Oct. 2025 - Stable7.1.024 ( 2025.7) 
+## Apr. 2026 - stable8.1.002 ( 2026.1)
 
-   ** Last version supporting python 3.9 and 3.10 **
+- [Technical] - Better handling of python3 venv, and relying on VIRUAL_ENV
+- [Technical] - Improving 'docker' support
+- [Technical] - Store plugin databases, groups, coordinator backup and plugin conf in Domoticz.
+- [Technical] - Backup script provided in Tools. Backing up ( Data, Conf as well as domoticz.db )
+- [Technical] - Adding ZCL Cluster 0x0005
+- [Technical] - Enabling use of latest dnspython.
+- [Technical] - Upgrading zigpy libs
+- [Technical] - Enabling storage/retreival plugin database to/from Domoticz
+- [Technical] - Minimum python3 version is now 3.11 or above
+- [Technical] - refactoring of the Plugin Admin and Status widgets
+- [Technical] - Tx power management correctly managed and transmitted to the dongle
+- [Technical] - Use official pypi zigpy-blz library
+- [Technical] - Enable async loop latency monitoring
+- [Technical] - New parameter "ZigpyAutoTopology" to enable zigpy automatic topology
+- [Technical] - refactoring of zigpy thread (and how commands are sent)
+- [Technical] - Review the way device leave message is handled.
+- [Technical] - Refactor logging thread, and performance optimisation.
+
+- [Technical] - Discontinue support of Zigate flash tools
+
+## Dec. 2025 - Stable8.1.001 
+
+- Technical version ISO Stable7 7.1.026, to prepare DomoticzEx and other features
+
+## Dec. 2025 - Stable7.1.026 ( 2025.7)
+
+- [Issue] - Fix OTA not working for Legrand and Philips Hue.
+- [Issue] - Ikea Remote, fix issue where On/Off where not detected after a long press.
+- [Issue] - Fix issue on Schneider Wiser (Legacy) Thermostat
+
+- [Technical] - Dedicate python standalone tool to read OTA firmware ( Tools/read_ota_headers.py )
+- [Technical] - During OTA, manage the Minimum Block Delay
+
+- [Hardware] - Dedicated widget for ICASA ICZB-KPD185
+- [Hardware] - ZLinky - manage zlinky zen contract  (@maverick81)
+- [Hardware] - Provide support to Ikea Rodret Remote
+
+## Oct. 2025 - Stable7.1.025 ( 2025.8)
+
+- [Issue] - Fixing issue generating a Domoticz crash at shutdown (#1874)
+- [Issue] - Make Ikea functions more robust (#1881)
+- [Issue] - Make DNS functions more robust (#1871)
+- [Issue] - Mkae web_server rest_api on empty dict more robust (#1870)
+
+## Oct. 2025 - Stable7.1.024 ( 2025.7)
 
 - [Technical] - Major bug fixing in regards to Zigbee send default response. Could impact mainy devices and especially IAS
 - [Technical] - Latest zigpy libs version
 
 - [Hardware] - Integrating Develco/Frient Intelligent Keypad
 - [Hardware] - Integrate Chameleon ERL, Somfy Linky TIC
-
 
 ## Sept. 2025 - Stable7.1.023 ( 2025.6 )
 

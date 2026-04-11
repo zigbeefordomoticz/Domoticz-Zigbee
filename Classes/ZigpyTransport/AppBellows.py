@@ -140,7 +140,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
 
     def handle_join(self, nwk: t.EmberNodeId, ieee: t.EmberEUI64, parent_nwk: t.EmberNodeId, *, handle_rejoin: bool = True,) -> None:
-        return Classes.ZigpyTransport.AppGeneric.handle_join(self, nwk, ieee, parent_nwk)
+        return Classes.ZigpyTransport.AppGeneric.handle_join(self, nwk, ieee, parent_nwk, handle_rejoin=handle_rejoin)
 
             
     def get_device_ieee(self, nwk):

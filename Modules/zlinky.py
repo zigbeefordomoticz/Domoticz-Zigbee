@@ -111,6 +111,11 @@ OP_TARIFAIRE_MAP = {
     "HEURE  PLEINE": (2, "Peak Hours"),
     "HEURE PLEINE": (2, "Peak Hours"),
 
+    "HC SEMAINE": (1, "Heures Creuses Semaine"),
+    "HP SEMAINE": (4, "Heures Pleines Semaine"),
+    "HC WEEK END": (1, "Heures Creuses Weekend"),
+    "HP WEEK END": (2, "Heures Pleines Weekend"),
+
     "HN..": (1, "Normal Hours"),
     "EJPHN": (1, "Normal Hours"),
     "PM..": (4, "Mobile Peak Hours"),
@@ -205,6 +210,8 @@ def get_OPTARIF(self, nwkid):
             base_tarifaire = "TEMPO"  # Treat any BBRx as TEMPO
         elif op_tarifaire.startswith("EJP"):
             base_tarifaire = "EJP"  # Treat any EJPx as EJP
+        elif op_tarifaire.startswith("HC ") or op_tarifaire.startswith("HP "):
+            base_tarifaire = "HC SEM ET HC WE"
         else:
             base_tarifaire = op_tarifaire
         return base_tarifaire
@@ -368,7 +375,8 @@ def update_zlinky_device_model_if_needed(self, nwkid):
     zlinky_conf = linky_device_conf(self, nwkid)
 
     if not linky_upgrade_authorized(model_name, zlinky_conf):
-        self.log.logging("ZLinky", "Log", f"Not authorized to adjust ZLinky model from {model_name} to {zlinky_conf}")
+        if zlinky_conf != model_name:
+            self.log.logging("ZLinky", "Log", f"Not authorized to adjust ZLinky model from {model_name} to {zlinky_conf}")
         return
 
     self.log.logging("ZLinky", "Status", f"Adjusting ZLinky model from {model_name} to {zlinky_conf}")

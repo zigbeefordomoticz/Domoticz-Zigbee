@@ -1036,6 +1036,28 @@ SWITCH_SELECTORS = {
                 "LevelNames": "Off|Ouvrir|Fermer|Arreter"
             }
         }
+    },
+    "Pulse8SKeypad": {
+        0: (0, "00"),    # Off
+        1: (1, "10"),    # On
+        2: (2, "20"),    # Brightness Stop (release)
+        3: (3, "30"),    # Brightness Up. (On long push)
+        4: (4, "40"),    # Brightness Down. (Off long push)
+        5: (5, "50"),    # S1
+        6: (6, "60"),    # S2
+        7: (7, "70"),    # S3
+        8: (8, "80"),    # S4
+        9: (9, "90"),    # S5
+        10: (10, "100"),  # S6
+        11: (11, "110"),  # R1
+        12: (12, "120"),  # R2
+        13: (13, "130"),  # R3
+        14: (14, "140"),  # R4
+        15: (15, "150"),  # R5
+        16: (16, "160"),  # R6
+        "ForceUpdate": True,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|Open|Dim+|Dim-|S1|S2|S3|S4|S5|S6|R1|R2|R3|R4|R5|R6",
     }
 }
 

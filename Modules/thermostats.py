@@ -122,7 +122,9 @@ def thermostat_Setpoint(self, NwkId, setpoint):
 
     self.log.logging(["Thermostats","Schneider"], "Debug", "thermostat_Setpoint - for %s with value %s" % (NwkId, setpoint), nwkid=NwkId)
 
-    model_name = self.ListOfDevices[NwkId].get("Model")
+    device = self.ListOfDevices.get(NwkId, {})
+    params = device.get("Param", {})
+    model_name = device.get("Model")
 
     if model_name in ("AC211", "AC221", "CAC221"):
         casaia_check_irPairing(self, NwkId)
@@ -153,7 +155,7 @@ def thermostat_Setpoint(self, NwkId, setpoint):
             self.log.logging( ["Thermostats","Schneider"], "Debug", "thermostat_Setpoint - calling Schneider for %s with value %s" % (
                 NwkId, setpoint), nwkid=NwkId, )
 
-            type_heater = self.ListOfDevices[NwkId].get("Schneider",{}).get('HeaterType')
+            type_heater = device.get("Schneider",{}).get('HeaterType')
             self.log.logging( ["Thermostats","Schneider"], "Debug", "thermostat_Setpoint - CCTFR6700 - heating type >%s<" % (type_heater), nwkid=NwkId, )
 
             if type_heater in ("fip", "conventional"):
@@ -172,11 +174,13 @@ def thermostat_Setpoint(self, NwkId, setpoint):
             return
 
         if (
-            model_name in ("eTRV0100", "eT093WRO")
+            model_name in ( "eT093WRG", "eT093WRO", "eTRV0100", "RV001")
             and "Param" in self.ListOfDevices[NwkId]
             and "DanfossSetPointType" in self.ListOfDevices[NwkId]["Param"]
-            and int(self.ListOfDevices[NwkId]["Param"]["DanfossSetPointType"])
+            and int(params.get("DanfossSetPointType", 0))
         ):
+            self.log.logging(["Thermostats","Danfoss"], "Debug", "thermostat_Setpoint - DanfossSetPointType: %s for %s with value %s" % (
+                int(params.get("DanfossSetPointType", 0)), NwkId, setpoint), nwkid=NwkId)
             thermostat_Calibration(self, NwkId)
             thermostat_Setpoint_Danfoss(self, NwkId, setpoint)
             ReadAttributeRequest_0201(self, NwkId)
@@ -184,9 +188,10 @@ def thermostat_Setpoint(self, NwkId, setpoint):
 
     self.log.logging(["Thermostats","Schneider"], "Debug", "thermostat_Setpoint - standard for %s with value %s" % (NwkId, setpoint), nwkid=NwkId)
 
-    eps = self.ListOfDevices.get(NwkId, {}).get("Ep", {})
+    eps = device.get("Ep", {})
     EPout = next((ep for ep, clusters in eps.items() if THERMOSTAT_CLUSTER in clusters), "01")
-    ep = self.ListOfDevices.get(NwkId, {}).get("Ep", {}).get(EPout, {})
+
+    ep = eps.get(EPout, {})
     thermostat_cluster = ep.get(THERMOSTAT_CLUSTER, {})
 
     if model_name == "Aidoo Zigbee":
@@ -209,36 +214,67 @@ def thermostat_Setpoint(self, NwkId, setpoint):
     return
 
 
-def write_thermostat_setpoint(self, NwkId, EPout, setpoint, Hattribute):
-    """Write a thermostat setpoint value to a Zigbee device."""
+def write_thermostat_setpoint(self, nwkid, ep_out, setpoint, hattribute):
+    """
+    Write a thermostat setpoint to a Zigbee device.
+
+    The setpoint is rounded to the nearest 0.5°C, and written as a 16-bit 
+    signed integer (data type 0x29) to the Thermostat cluster (0x0201).
+
+    If the plugin configuration specifies `READ_ATTRIBUTE_AFTER_COMMAND`, the function
+    will trigger an immediate readback of the thermostat cluster to confirm the update.
+
+    A firmware patch is applied for ZiGate V2 devices running firmware earlier than 0x0320.
+
+    Parameters
+    ----------
+    nwkid : str
+        The 16-bit network address of the Zigbee device (e.g., "0x1234").
+    ep_out : str
+        The output endpoint on which to write the attribute.
+    model_name : str
+        The model identifier of the device, used to check configuration options.
+    setpoint : float
+        The requested temperature setpoint in degrees Celsius.
+    hattribute : str
+        The Zigbee attribute ID within the Thermostat cluster to write to (e.g., "0012" for
+        occupied heating setpoint).
+
+    Notes
+    -----
+    - The write operation uses the standard manufacturer ID ("0000") and non-manufacturer
+      specific mode ("00").
+    - Data type 0x29 corresponds to a signed 16-bit integer in Zigbee encoding.
+    - Decoding on the remote side should divide by 10 to recover the temperature in °C.
+
+    """
 
     cluster_id = THERMOSTAT_CLUSTER
     manuf_id = "0000"
     manuf_spec = "00"
     data_type = "29"  # Int16
 
-    # Round to nearest 0.5°C step
+    # Round to nearest 0.5°C
     rounded_setpoint = round(setpoint * 2) / 2
-    self.log.logging(["Thermostats", "Schneider"], "Debug", f"setpoint {Hattribute} (original): {setpoint}, (rounded): {rounded_setpoint}", nwkid=NwkId)
+    self.log.logging( ["Thermostats", "Schneider", "Danfoss"], "Debug", f"Setpoint {hattribute}: original={setpoint:.2f}, rounded={rounded_setpoint:.1f}", nwkid=nwkid, )
 
-    # Format as 16-bit signed integer (in deci-degrees
-    Hdata = f"{int(rounded_setpoint):04x}"  # Ensure a 4-character hex format
+    # Convert to Zigbee-compatible format (Int16, deci-degrees)
+    deci_degrees = int(rounded_setpoint)
+    hdata = f"{(deci_degrees & 0xFFFF):04x}"  # Always 4 hex chars, handle negatives too
 
-    # Patch for ZiGate V2 firmware < 0x0320
-    if self.zigbee_communication == "native" and self.ZiGateModel == 2 and int(self.FirmwareVersion, 16) < 0x0320:
-        self.log.logging(["Thermostats", "Schneider"], "Debug", f"--- ZiGate Model: {self.ZiGateModel}  Version: {self.FirmwareVersion}")
-        Hdata = Hdata[2:] + Hdata[:2]
-        self.log.logging(["Thermostats", "Schneider"], "Debug", f"Patched Hdata: {Hdata}")
+    # Firmware compatibility patch
+    if ( self.zigbee_communication == "native" and self.ZiGateModel == 2 and int(self.FirmwareVersion, 16) < 0x0320):
+        self.log.logging( ["Thermostats", "Schneider", "Danfoss"], "Debug", f"Applying ZiGate V2 <0x0320 patch for {nwkid}", nwkid=nwkid, )
+        hdata = hdata[2:4] + hdata[:2]
+        self.log.logging(["Thermostats", "Schneider", "Danfoss"], "Debug", f"Patched Hdata: {hdata}")
 
-    self.log.logging(["Thermostats", "Schneider"], "Debug",
-                     f"thermostat_Setpoint - for {NwkId} with value 0x{Hdata} / cluster: {cluster_id}, "
-                     f"attribute: {Hattribute}, type: {data_type}", nwkid=NwkId)
+    # Log write operation
+    self.log.logging( ["Thermostats", "Schneider", "Danfoss"], "Debug", ( f"Writing thermostat setpoint for {nwkid}: " f"value=0x{hdata}, cluster={cluster_id}, " f"attribute={hattribute}, type={data_type}" ), nwkid=nwkid, )
 
-    # Write attribute to Zigbee device
-    write_attribute(self, NwkId, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+    # Perform the Zigbee write
+    write_attribute( self, nwkid, "01", ep_out, cluster_id, manuf_id, manuf_spec, hattribute, data_type, hdata,)
 
-    # Trigger read back to confirm write
-    ReadAttributeRequest_0201(self, NwkId)
+    ReadAttributeRequest_0201(self, nwkid)
 
 
 def thermostat_eurotronic_hostflag(self, NwkId, action):

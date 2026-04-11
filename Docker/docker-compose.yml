@@ -1,0 +1,23 @@
+services:
+  domoticz:
+    build:
+      context: .
+      dockerfile: dockerfile
+    image: domoticz-custom:stable
+    container_name: domoticz
+    restart: unless-stopped
+
+    # Pass devices to container
+    devices:
+       - "/dev/serial/by-id/usb-ITEAD_SONOFF_Zigbee_3.0_USB_Dongle_Plus_V2_20230220181151-if00:/dev/ttyUSB-SonOff-E"
+
+    ports:
+      - "443:443"
+      - "8080:8080"
+      - "9440:9440"
+
+    logging:
+      driver: "journald"
+
+    volumes:
+      - ./userdata:/opt/domoticz/userdata

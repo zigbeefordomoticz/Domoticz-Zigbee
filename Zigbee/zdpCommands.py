@@ -88,10 +88,10 @@ def zdp_active_endpoint_request(self, nwkid):
     return send_zigatecmd_raw(self, "0045", nwkid)
 
 
-def zdp_management_leave_request(self, nwkid, ieee, rejoin="01", remove_children="00"):
+def zdp_management_leave_request(self, nwkid, ieee, rejoin="00", remove_children="00"):
     self.log.logging("zdpCommand", "Debug", "zdp_management_leave_request %s %s %s %s" % (nwkid, ieee, rejoin, remove_children))
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
-        return zdp_raw_leave_request(self, nwkid, ieee, rejoin="01", remove_children="00")
+        return zdp_raw_leave_request(self, nwkid, ieee, rejoin=rejoin, remove_children=remove_children)
     return send_zigatecmd_raw(self, "0047", nwkid + ieee + rejoin + remove_children)
 
 
