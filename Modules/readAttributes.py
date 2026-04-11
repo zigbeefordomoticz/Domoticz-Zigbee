@@ -110,10 +110,10 @@ def get_max_read_attributes(self, nwkid=None):
 
     # --- Pairing safety: always use the plugin default while pairing ---
     if device.get("PairingInProgress"):
-        return get_device_config_param(self, nwkid, "ReadAttributeChunkWhenPairing", 3)
+        return get_device_config_param(self, nwkid, "ReadAttributeChunkWhenPairing") or 3
 
     # --- Plugin default (fallback) ---
-    plugin_default_chunk = self.pluginconf.pluginConf.get("ReadAttributeChunk", 3)
+    plugin_default_chunk = self.pluginconf.pluginConf.get("ReadAttributeChunk") or 3
     
     # --- If there is an explicit per-device config, it takes precedence ---
     device_chunk = get_device_config_param(self, nwkid, "ReadAttributeChunk")
