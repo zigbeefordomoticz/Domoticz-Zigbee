@@ -20,11 +20,9 @@ import base64
 import contextlib
 import json
 import time
-import ast
 
-#import DomoticzEx as Domoticz
-#DOMOTICZ_EXTENDED_API = True#
-import Domoticz as Domoticz
+import DomoticzEx as Domoticz
+DOMOTICZ_EXTENDED_API = True
 
 DIMMABLE_WIDGETS = {
     (7, 1, 241): { "Widget": "Dimmable_Light", "Name": "RGBW", "partially_opened_nValue": 15},
@@ -41,7 +39,6 @@ DIMMABLE_WIDGETS = {
 
 }
 
-DOMOTICZ_EXTENDED_API = False
 
 DELAY_BETWEEN_TOUCH = 120
 
