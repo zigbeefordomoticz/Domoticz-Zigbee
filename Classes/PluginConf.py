@@ -106,7 +106,8 @@ SETTINGS = {
             "ConfigureReportingChunk": { "type": "int", "default": 3, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "AqaraOppleBulbMode": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "reenforcementWiser": { "type": "int", "default": 300, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
-            "ReadAttributeChunk": { "type": "int", "default": 3, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
+            "ReadAttributeChunk": { "type": "int", "default": 10, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
+            "ReadAttributeChunkWhenPairing": { "type": "int", "default": 3, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "ZiGateConfigureReporting": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,"ZigpyRadio": ""},
             "bindingDelay": {"type": "int","default": 0.75,"current": None,"restart": 0,"hidden": False,"Advanced": True},
             "pairingCommandsDelay": {"type": "int","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True},
@@ -310,7 +311,9 @@ SETTINGS = {
             "Python/Classes-ZigpyTransport-AppGeneric": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
 
             "ReadAttributes": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "ReadAttributeMaxAttributes": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "StopProcess": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+
             "Schneider": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Sonoff": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Sunricher": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
