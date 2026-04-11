@@ -327,7 +327,7 @@ def FreeUnit(self, Devices, DeviceId, nbunit_=1):
 
     if DOMOTICZ_EXTENDED_API:
         self.log.logging("AbstractDz", "Debug", f"FreeUnit - looking for a free unit in {DeviceId}")
-        available_units = set(Devices[DeviceId].Units.keys()) if DeviceId in Devices else []
+        available_units = set(Devices[DeviceId].Units.keys()) if DeviceId in Devices else set()
         return _free_unit_in_device( available_units, nbunit_ )
             
     
@@ -339,8 +339,9 @@ def FreeUnit(self, Devices, DeviceId, nbunit_=1):
 
 def is_device_ieee_in_domoticz_db(self, Devices, DeviceID_):
     self.log.logging("AbstractDz", "Debug", f"is_device_ieee_in_domoticz_db: DeviceID: {DeviceID_}")
-    
-    return DOMOTICZ_EXTENDED_API and DeviceID_ in Devices or any(DeviceID_ == device.DeviceID for device in Devices.values())
+    if DOMOTICZ_EXTENDED_API:
+        return DeviceID_ in Devices
+    return any(DeviceID_ == device.DeviceID for device in Devices.values())
 
 
 def domo_create_api(self, Devices, DeviceID_, Unit_, Name_, widgetType=None, Type_=None, Subtype_=None, Switchtype_=None, widgetOptions=None, Image=None):
@@ -421,8 +422,8 @@ def domo_delete_widget( self, Devices, DeviceID_, Unit_):
         # Update the ListOfWidgets index
         load_list_of_domoticz_widget(self, Devices)
 
-    elif Unit_ in self.Devices:
-        self.Devices[Unit_].Delete()
+    elif Unit_ in Devices:
+        Devices[Unit_].Delete()
         # Update the ListOfWidgets index
         load_list_of_domoticz_widget(self, Devices)
 
@@ -606,7 +607,8 @@ def domo_read_LastUpdate(self, Devices, DeviceId_, Unit_):
     if DOMOTICZ_EXTENDED_API:
         device = Devices.get(DeviceId_)
         if device:
-            return device.Units.get(Unit_).LastUpdate if device.Units else None
+            unit = device.Units.get(Unit_)
+            return unit.LastUpdate if unit else None
     else:
         device = Devices.get(Unit_)
         if device:
@@ -734,7 +736,7 @@ def _device_touch_unit_api(self, Devices, DeviceId_, Unit_, now):
     last_update_time_seconds = time.mktime(time.strptime(last_time, "%Y-%m-%d %H:%M:%S"))
 
     if now > ( last_update_time_seconds + DELAY_BETWEEN_TOUCH):
-        # Last Touch was done more than 30 seconds ago.
+        # Last Touch was done more than 120 seconds ago.
         Devices[DeviceId_].Units[Unit_].Touch() if DOMOTICZ_EXTENDED_API else Devices[Unit_].Touch()
         return
     
@@ -748,7 +750,8 @@ def timeout_widget_api(self, Devices, DeviceId_, timeout_value):
         if timeout_value == 1 and self.pluginconf.pluginConf["deviceOffWhenTimeOut"]:
             # Then we will switch off as per User setting
             for unit in Devices[ DeviceId_].Units:
-                _switch_off_widget_due_to_timedout(self, Devices, DeviceId_, unit)
+                _nValue, _sValue = domo_read_nValue_sValue(self, Devices, DeviceId_, unit)
+                _switch_off_widget_due_to_timedout(self, Devices, DeviceId_, unit, _nValue, _sValue)
     else:
         for unit in list(Devices):
             if Devices[ unit ].DeviceID == DeviceId_:
