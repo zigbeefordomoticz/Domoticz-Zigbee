@@ -251,7 +251,7 @@ def find_legacy_DeviceID_from_unit(self, Devices, Unit):
     
     return Devices[ Unit ].DeviceID if Unit in Devices else None    
 
-    
+
 def how_many_legacy_slot_available( Devices):
     """Return the number of unit slot available
 
@@ -262,7 +262,7 @@ def how_many_legacy_slot_available( Devices):
         int: number of available unit slot
     """
     return sum(x not in Devices for x in range( 1, 255 ))
-    
+
 
 def FreeUnit(self, Devices, DeviceId, nbunit_=1):
     """Look for a Free Unit number. If nbunit > 1 then we look for nbunit consecutive slots
@@ -307,14 +307,12 @@ def FreeUnit(self, Devices, DeviceId, nbunit_=1):
     self.log.logging("AbstractDz", "Debug", f"FreeUnit - looking for a free unit in {DeviceId}")
     available_units = set(Devices[DeviceId].Units.keys()) if DeviceId in Devices else set()
     return _free_unit_in_device( available_units, nbunit_ )
-            
-    
 
 
 def is_device_ieee_in_domoticz_db(self, Devices, DeviceID_):
-    self.log.logging("AbstractDz", "Debug", f"is_device_ieee_in_domoticz_db: DeviceID: {DeviceID_}")
-    return DeviceID_ in Devices
-
+    self.log.logging("AbstractDz", "Debug", f"is_device_ieee_in_domoticz_db: DeviceID: {DeviceID_} in {Devices}")
+    return DeviceID_ in Devices and len(Devices[ DeviceID_].Units) > 0
+    
 
 def domo_create_api(self, Devices, DeviceID_, Unit_, Name_, widgetType=None, Type_=None, Subtype_=None, Switchtype_=None, widgetOptions=None, Image=None):
     """abstract layer to be used for Legacy or Extended framework in order to create a Domoticz Widget
@@ -342,7 +340,7 @@ def domo_create_api(self, Devices, DeviceID_, Unit_, Name_, widgetType=None, Typ
     Name_ = f"{self.pluginParameters['Name']} - {Name_}"
 
     # Determine the correct class to use based on the API type
-    domoticz_device_api_class = Domoticz.Unit
+    myUnit = None
 
     # Define default values if necessary
     if widgetOptions is None:
@@ -350,7 +348,7 @@ def domo_create_api(self, Devices, DeviceID_, Unit_, Name_, widgetType=None, Typ
         
     if widgetType:
         self.log.logging("AbstractDz", "Debug", "- based on widgetType %s" %widgetType)
-        myDev = domoticz_device_api_class( DeviceID=DeviceID_, Name=Name_, Unit=Unit_, TypeName=widgetType, )
+        myUnit = Domoticz.Unit( DeviceID=DeviceID_, Name=Name_, Unit=Unit_, TypeName=widgetType, )
 
     elif widgetOptions:
         # In case of widgetOptions, we have a Selector widget
@@ -359,23 +357,24 @@ def domo_create_api(self, Devices, DeviceID_, Unit_, Name_, widgetType=None, Typ
             Type_ = 244
             Subtype_ = 62
             Switchtype_ = 18
-        myDev = domoticz_device_api_class( DeviceID=DeviceID_, Name=Name_, Unit=Unit_, Type=Type_, Subtype=Subtype_, Switchtype=Switchtype_,Options=widgetOptions,)
+        myUnit = Domoticz.Unit( DeviceID=DeviceID_, Name=Name_, Unit=Unit_, Type=Type_, Subtype=Subtype_, Switchtype=Switchtype_,Options=widgetOptions,)
                
     elif Image:     
         self.log.logging("AbstractDz", "Debug", "- based on Image %s" %Image)     
-        myDev = domoticz_device_api_class( DeviceID=DeviceID_, Name=Name_, Unit=Unit_, Type=Type_, Subtype=Subtype_, Switchtype=Switchtype_, Image=Image, )
+        myUnit = Domoticz.Unit( DeviceID=DeviceID_, Name=Name_, Unit=Unit_, Type=Type_, Subtype=Subtype_, Switchtype=Switchtype_, Image=Image, )
 
     elif Switchtype_:
         self.log.logging("AbstractDz", "Debug", "- based on Switchtype_ %s" %Switchtype_)     
-        myDev = domoticz_device_api_class( DeviceID=DeviceID_, Name=Name_, Unit=Unit_, Type=Type_, Subtype=Subtype_, Switchtype=Switchtype_)
+        myUnit = Domoticz.Unit( DeviceID=DeviceID_, Name=Name_, Unit=Unit_, Type=Type_, Subtype=Subtype_, Switchtype=Switchtype_)
         
     else:
         self.log.logging("AbstractDz", "Debug", "- default")   
-        myDev = domoticz_device_api_class( DeviceID=DeviceID_, Name=Name_, Unit=Unit_, Type=Type_, Subtype=Subtype_, )
+        myUnit = Domoticz.Unit( DeviceID=DeviceID_, Name=Name_, Unit=Unit_, Type=Type_, Subtype=Subtype_, )
 
-    myDev.Create()
+    myUnit.Create()
 
-    self.log.logging("AbstractDz", "Debug", "domo_create_api status %s" %Devices[DeviceID_].Units[Unit_].ID)
+    self.log.logging("AbstractDz", "Debug", f"domo_create_api Created device: {Devices[DeviceID_].Units[Unit_].Name} point to ID {Devices[DeviceID_].Units[Unit_].ID}")
+                     
     return Devices[DeviceID_].Units[Unit_].ID
 
 
@@ -383,6 +382,10 @@ def domo_delete_widget( self, Devices, DeviceID_, Unit_):
     self.log.logging("AbstractDz", "Debug", "domo_delete_widget: DeviceID_ : %s Unit_: %s " %( DeviceID_, Unit_))
 
     Devices[DeviceID_].Units[Unit_].Delete()
+    
+    if len(Devices[DeviceID_].Units) == 0:
+        Devices[DeviceID_].Delete()
+
     # Update the ListOfWidgets index
     load_list_of_domoticz_widget(self, Devices)
 
@@ -463,7 +466,7 @@ def domo_update_SwitchType_SubType_Type(self, Devices, DeviceID_, Unit_, Type_=0
     if Typename_:
         Devices[DeviceID_].Units[Unit_].Update(TypeName=Typename_)
     return
-    
+
 
 def domo_browse_widgets(self, Devices):
     """ return list of DeviceId, Unit """
@@ -473,8 +476,8 @@ def domo_browse_widgets(self, Devices):
     for deviceId in Devices:
         list_domoticz_widgets.extend((deviceId, unit) for unit in Devices[deviceId].Units)
     return list_domoticz_widgets
-            
-    
+
+
 def domo_read_nValue_sValue(self, Devices, DeviceID, Unit):
     """
     Read the nValue and sValue of a device unit.
@@ -499,10 +502,12 @@ def domo_read_TimedOut( self, Devices, DeviceId_ ):
     self.log.logging("AbstractDz", "Debug", f"domo_read_TimedOut: DeviceID: {DeviceId_}")
     if DeviceId_ in Devices:
         return Devices[ DeviceId_].TimedOut
-        
+
+
 def domo_read_legacy_TimedOut( self, Devices, DeviceId_, UnitId_ ):
     return Devices[ UnitId_ ].TimedOut
-    
+
+
 def domo_read_LastUpdate(self, Devices, DeviceId_, Unit_):
     self.log.logging("AbstractDz", "Debug", f"domo_read_LastUpdate: DeviceID: {DeviceId_} Unit {Unit_}")
 
@@ -592,7 +597,6 @@ def device_touch_api(self, Devices, DeviceId_):
             _device_touch_unit_api(self, Devices, DeviceId_, unit, now)
 
 
-
 def _device_touch_unit_api(self, Devices, DeviceId_, Unit_, now):
     """ Touch one widget for a particular Device """
     self.log.logging("AbstractDz", "Debug", f"device_touch_unit_api: {DeviceId_} {Unit_}")
@@ -622,36 +626,13 @@ def timeout_widget_api(self, Devices, DeviceId_, timeout_value):
     """ TimedOut all Device Widgets """
     self.log.logging("AbstractDz", "Debug", f"timeout_widget_api: {DeviceId_}")
     
-    Devices[ DeviceId_].TimedOut = timeout_value
-    if timeout_value == 1 and self.pluginconf.pluginConf["deviceOffWhenTimeOut"]:
-        # Then we will switch off as per User setting
-        for unit in Devices[ DeviceId_].Units:
-            _nValue, _sValue = domo_read_nValue_sValue(self, Devices, DeviceId_, unit)
-            _switch_off_widget_due_to_timedout(self, Devices, DeviceId_, unit, _nValue, _sValue)
-
-
-def timeout_legacy_device_unit_api(self, Devices, DeviceId_, Unit_, timeout_value):
-    """ TimedOut one Device widget """
-
-    self.log.logging("AbstractDz", "Debug", f"timeout_legacy_device_unit_api: {DeviceId_} {Unit_} {timeout_value}")
-    if _is_meter_widget( self, Devices, DeviceId_, Unit_):
-        return
-
-    _nValue, _sValue = domo_read_nValue_sValue(self, Devices, DeviceId_, Unit_)
-    _TimedOut = domo_read_legacy_TimedOut( self, Devices, DeviceId_, Unit_ )
-    _Name = domo_read_Name( self, Devices, DeviceId_, Unit_, )
-
-    self.log.logging("Widget", "Debug", "timeout_legacy_device_unit_api unit %s -> %s from %s:%s %s" % (
-        _Name, bool(timeout_value), _nValue, _sValue, bool(_TimedOut)))
-
-    if _TimedOut == timeout_value:
-        return
-
-    # Update is required
-    if timeout_value == 1 and self.pluginconf.pluginConf["deviceOffWhenTimeOut"]:
-        _switch_off_widget_due_to_timedout(self, Devices, DeviceId_, Unit_, _nValue, _sValue,)
-    else:
-        domo_update_api(self, Devices, DeviceId_, Unit_, _nValue, _sValue, TimedOut=timeout_value)
+    if DeviceId_ in Devices:
+        Devices[ DeviceId_].TimedOut = timeout_value
+        if timeout_value == 1 and self.pluginconf.pluginConf["deviceOffWhenTimeOut"]:
+            # Then we will switch off as per User setting
+            for unit in Devices[ DeviceId_].Units:
+                _nValue, _sValue = domo_read_nValue_sValue(self, Devices, DeviceId_, unit)
+                _switch_off_widget_due_to_timedout(self, Devices, DeviceId_, unit, _nValue, _sValue)
 
 
 def update_battery_api(self, Devices, DeviceId, battery_level):
