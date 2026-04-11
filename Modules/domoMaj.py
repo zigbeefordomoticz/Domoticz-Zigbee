@@ -874,7 +874,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         if WidgetType == "Humi":
             NewSvalue = "%s" % humi_status
             self.log.logging(["Widget", "Humidity"], "Debug", "------>  Humi update: %s - %s" % (value, NewSvalue))
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, value, NewSvalue, BatteryLevel, SignalLevel)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, int(value), NewSvalue, BatteryLevel, SignalLevel)
 
         elif WidgetType == "Temp+Hum":
             NewSvalue = f"{current_temp};{value};{humi_status}"
