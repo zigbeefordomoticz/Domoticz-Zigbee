@@ -160,7 +160,7 @@ from Modules.database import (LoadDeviceList, WriteDeviceList,
                               checkDevices2LOD, checkListOfDevice2Devices,
                               import_local_device_conf)
 from Modules.domoticzAbstractLayer import (
-    domo_read_Name, find_legacy_DeviceID_from_unit,
+    domo_read_Name,
     how_many_legacy_slot_available, is_domoticz_extended,
     load_list_of_domoticz_widget, retreive_widgetid_from_deviceId_unit)
 from Modules.heartbeat import processListOfDevices
@@ -733,9 +733,6 @@ class BasePlugin:
         if self.log:
             self.log.logging("Plugin", "Log", "onDeviceRemoved called")
 
-        if not is_domoticz_extended():
-            DeviceID = find_legacy_DeviceID_from_unit(self, Devices, Unit)
-
         device_name = domo_read_Name( self, Devices, DeviceID, Unit, )
         
         # Let's check if this is End Node, or Group related.
@@ -874,9 +871,6 @@ class BasePlugin:
 
         self.log.logging( "Command", "Debug", "onCommand - unit: %s, command: %s, level: %s, color: %s" % (Unit, Command, Level, Color) )
 
-        if not is_domoticz_extended():
-            DeviceID = find_legacy_DeviceID_from_unit(self, Devices, Unit)
-        
         # Let's check if this is End Node, or Group related.
         if DeviceID in self.IEEE2NWK:
             # Command belongs to a end node
