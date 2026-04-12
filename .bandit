@@ -1,4 +1,3 @@
 [bandit]
-exclude = test
-exclude: /GroupMgtv2
+exclude= test
 skips: B301,B602,B310
