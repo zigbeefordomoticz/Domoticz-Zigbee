@@ -255,7 +255,9 @@ def find_widget_unit_from_WidgetID(self, Devices, Widget_Idx):
             try:
                 if Devices[x].Units[y].ID == Widget_Idx:
                     return y
-            except Exception:
+            except Exception as er:
+                self.log.logging("AbstractDz", "Log", f"Plugin looks for Domoticz Widget Id {Widget_Idx} - can Devices directly - {er}")
+
                 continue
     return None
 
