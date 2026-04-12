@@ -52,7 +52,7 @@ from contextlib import contextmanager
 # Debug flag — flip to True to enable trace logging, or call
 # ThreadSafeDeviceDict.set_debug(True) at runtime.
 # ---------------------------------------------------------------------------
-TSDD_DEBUG: bool = True
+TSDD_DEBUG: bool = False
  
 logger = logging.getLogger(__name__)
 
