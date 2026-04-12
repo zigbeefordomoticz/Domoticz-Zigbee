@@ -11,13 +11,23 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 """
-    Module: z_input.py
+Module: input.py
 
-    Description: manage inputs from Zigate
+Manages incoming messages from the Zigate coordinator.
 
+Entry point is :func:`zigbee_receive_message`, which:
+
+1. Validates the raw Zigate frame envelope (``01`` … ``03``).
+2. Extracts ``MsgType``, ``MsgData``, and ``MsgLQI`` from the frame.
+3. Optionally decodes a ``0x8002`` data-indication wrapper and re-extracts
+   the inner application message.
+4. Dispatches to the appropriate decoder via :data:`DECODERS` or the
+   specialised handler for ``0x8011``.
+
+All decoder calls are wrapped in a ``try/except`` block so that a single
+malformed message never takes down the whole receive loop.
 """
 
-from Modules.basicOutputs import getListofAttribute
 from Z4D_decoders.z4d_decoder_Active_Ep_Rsp import Decode8045
 from Z4D_decoders.z4d_decoder_Attr_Discovery_Rsp import Decode8140
 from Z4D_decoders.z4d_decoder_bindings import Decode8030, Decode8031
@@ -70,7 +80,26 @@ from Z4D_decoders.z4d_decoder_Zigate_PDM import (Decode0302, Decode8006,
 from Z4D_decoders.z4d_decoder_Zigate_Time_Srv import Decode8017
 from Zigbee.decode8002 import decode8002_and_process
 
-DECODERS = {
+# ---------------------------------------------------------------------------
+# Decoder dispatch table
+#
+# Maps lower-case hex MsgType strings to their decoder callables.
+#
+# Notes:
+#   "8002" is intentionally absent – raw Data Indication frames that survive
+#   the decode8002_and_process unwrapping stage fall through to the explicit
+#   elif in _decode_message so that the original *full* Data argument can be
+#   forwarded to Decode8002 (which needs it).
+#
+#   "8011" is also absent for the same reason: its decoder signature differs
+#   from the standard (self, Devices, MsgData, MsgLQI) convention.
+#
+#   "8139" is intentionally aliased to Decode8140 because the firmware emits
+#   two type codes (0x8139 and 0x8140) for what is logically the same
+#   Attribute Discovery Response payload.  If this ever diverges, introduce
+#   a dedicated Decode8139.
+# ---------------------------------------------------------------------------
+DECODERS: dict = {
     "004d": Decode004D,
     "0040": Decode0040,
     "0041": Decode0041,
@@ -80,7 +109,6 @@ DECODERS = {
     "0302": Decode0302,
     "0400": Decode0400,
     "8000": Decode8000_v2,
-    "8002": Decode8002,
     "8003": Decode8003,
     "8004": Decode8004,
     "8005": Decode8005,
@@ -127,6 +155,7 @@ DECODERS = {
     "8110": Decode8110,
     "8120": Decode8120,
     "8122": Decode8122,
+    # 0x8139 and 0x8140 share the same payload format – see note above.
     "8139": Decode8140,
     "8140": Decode8140,
     "8400": Decode8400,
@@ -140,23 +169,61 @@ DECODERS = {
     "7000": Decode7000,
 }
 
+# Expected Zigate frame delimiters (lower-case hex pairs).
+_FRAME_START = "01"
+_FRAME_STOP = "03"
+
+
 def zigbee_receive_message(self, Devices, Data):
+    """Process a raw Zigate serial frame and dispatch it to a decoder.
+
+    This is the single entry point for all data arriving from the Zigate
+    coordinator.  It performs three tasks:
+
+    1. **Envelope validation** – checks that the frame is bracketed by the
+       expected ``01`` / ``03`` sentinel bytes.  Malformed frames are logged
+       and discarded.
+    2. **Header extraction** – delegates to :func:`extract_message_infos` to
+       obtain the *MsgType*, *MsgData*, and *MsgLQI* fields.
+    3. **8002 unwrapping** – when the outer MsgType is ``8002`` (a Zigate
+       Data Indication wrapper), :func:`decode8002_and_process` is called to
+       extract the inner application frame before dispatching.
+
+    Args:
+        self:     Plugin instance (carries ``self.log``, ``self.Ping``, etc.).
+        Devices:  Domoticz ``Devices`` dictionary.
+        Data:     Raw frame string as a continuous lower-case hex sequence,
+                  e.g. ``"0100...03"``.  ``None`` is silently ignored.
+    """
     if Data is None:
         return
 
     FrameStart = Data[:2]
     FrameStop = Data[-2:]
-    if FrameStart != "01" and FrameStop != "03":
-        self.log.logging("Input", "Error", f"zigbee_receive_message - received a non-zigate frame Data: {Data} FS/FS = {FrameStart}/{FrameStop}")
+
+    # BUG FIX: original used 'and' so a bad FrameStart was ignored when
+    # FrameStop was also wrong.  The correct guard rejects either mismatch.
+    if FrameStart != _FRAME_START or FrameStop != _FRAME_STOP:
+        self.log.logging(
+            "Input", "Error",
+            f"zigbee_receive_message - received a non-zigate frame "
+            f"Data: {Data} FS/FE = {FrameStart}/{FrameStop}",
+        )
         return
 
     MsgType, MsgData, MsgLQI = extract_message_infos(self, Data)
-    self.Ping["Nb Ticks"] = 0  # We receive a valid packet
+    self.Ping["Nb Ticks"] = 0  # Reset watchdog – we received a valid packet.
 
-    self.log.logging("Input", "Debug", f"zigbee_receive_message - MsgType: {MsgType}, Data: {MsgData}, LQI: {int(MsgLQI, 16)}")
+    self.log.logging(
+        "Input", "Debug",
+        f"zigbee_receive_message - MsgType: {MsgType}, Data: {MsgData}, "
+        f"LQI: {int(MsgLQI, 16)}",
+    )
 
     if MsgType == "8002":
-        # Let's try to see if we can decode it, and then get a new MsgType
+        # Attempt to unwrap the Data Indication envelope and obtain the inner
+        # application MsgType.  If unwrapping fails (returns None) we discard
+        # the frame – decode8002_and_process already logs the reason.
         decoded_frame = decode8002_and_process(self, Data)
         if decoded_frame is None:
             return
@@ -166,16 +233,53 @@ def zigbee_receive_message(self, Devices, Data):
 
 
 def _decode_message(self, MsgType, Devices, Data, MsgData, MsgLQI):
-    
-    if MsgType in DECODERS:
-        decoding_method = DECODERS[MsgType]
-        decoding_method(self, Devices, MsgData, MsgLQI)
-        
-    elif MsgType == "8002":
-        Decode8002(self, Devices, Data, MsgData, MsgLQI)
-        
-    elif MsgType == "8011":
-        Decode8011(self, Devices, MsgData, MsgLQI)
-        
-    else:
-        self.log.logging("Input", "Error", f"_decode_message - not found for {MsgType}")
+    """Dispatch a parsed Zigate message to the appropriate decoder.
+
+    The majority of message types are handled via a simple :data:`DECODERS`
+    dict look-up.  Two types are handled outside the table:
+
+    * ``"8002"`` – Raw (un-unwrapped) Data Indication.  The full *Data*
+      argument is passed because :func:`Decode8002` needs the complete
+      frame, not just the payload slice.
+    * ``"8011"`` – Zigate command response with a non-standard decoder
+      signature; kept separate to avoid polluting the dispatch table.
+
+    All decoder calls are wrapped in a ``try/except`` block.  A single
+    malformed or unexpected payload therefore never silences subsequent
+    messages.
+
+    Args:
+        self:     Plugin instance.
+        MsgType:  Four-character lower-case hex string, e.g. ``"8045"``.
+        Devices:  Domoticz ``Devices`` dictionary.
+        Data:     Full raw frame string (needed only by ``Decode8002``).
+        MsgData:  Payload slice extracted from the frame.
+        MsgLQI:   Link-quality indicator as a two-character hex string.
+    """
+    try:
+        if MsgType in DECODERS:
+            DECODERS[MsgType](self, Devices, MsgData, MsgLQI)
+
+        elif MsgType == "8002":
+            # Reaches here only when decode8002_and_process returned None in
+            # zigbee_receive_message and the caller bypassed the early-return
+            # (should not happen in normal flow, but kept as a safety net).
+            Decode8002(self, Devices, Data, MsgData, MsgLQI)
+
+        elif MsgType == "8011":
+            # Decode8011 has a non-standard signature – it does not accept
+            # the MsgLQI argument.
+            Decode8011(self, Devices, MsgData, MsgLQI)
+
+        else:
+            self.log.logging(
+                "Input", "Error",
+                f"_decode_message - no decoder registered for MsgType {MsgType}",
+            )
+
+    except Exception as exc:  # noqa: BLE001
+        self.log.logging(
+            "Input", "Error",
+            f"_decode_message - unhandled exception while processing "
+            f"MsgType {MsgType}: {exc}",
+        )
