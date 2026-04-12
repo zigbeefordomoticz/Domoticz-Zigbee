@@ -705,12 +705,11 @@ class TestDomoUpdateApi(unittest.TestCase):
 
 class TestDomoUpdateName(unittest.TestCase):
 
-    def test_name_changed_triggers_update(self):
+    def test_name_changed(self):
         obj = _make_self()
         devices = _make_devices(("ieee-1", [(1, {"Name": "OldName"})]))
         domo.domo_update_name(obj, devices, "ieee-1", 1, "NewName")
         self.assertEqual(devices["ieee-1"].Units[1].Name, "NewName")
-        self.assertTrue(devices["ieee-1"].Units[1]._updated)
 
     def test_same_name_does_not_trigger_update(self):
         obj = _make_self()

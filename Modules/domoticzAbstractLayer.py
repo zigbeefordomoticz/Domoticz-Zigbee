@@ -553,22 +553,25 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue,
                          f"domo_update_api - Unit.Update() raised: {e}", nwkid)
 
 
-def domo_update_name(self, Devices, DeviceID_, Unit_, Name_):
-    self.log.logging("AbstractDz", "Log",
-                     f"domo_update_name: DeviceID_: {DeviceID_} Unit_: {Unit_} Name: {Name_}")
+def domo_update_name(self, Devices, DeviceID_, Unit_, new_name):
+    self.log.logging("AbstractDz", "Debug", f"domo_update_name: DeviceID_: {DeviceID_} Unit_: {Unit_} Name: {new_name}")
 
     if not _device_unit_exists(Devices, DeviceID_, Unit_):
-        self.log.logging("AbstractDz", "Error",
-                         f"domo_update_name - {DeviceID_}/{Unit_} does not exist")
+        self.log.logging("AbstractDz", "Error", f"domo_update_name - {DeviceID_}/{Unit_} does not exist")
         return
 
-    if Devices[DeviceID_].Units[Unit_].Name != Name_:
-        Devices[DeviceID_].Units[Unit_].Name = Name_
+    if Devices[DeviceID_].Units[Unit_].Name != new_name:
+        self.log.logging("AbstractDz", "Debug", f"domo_update_name: Updating from {Devices[DeviceID_].Units[Unit_].Name} to {new_name}")
+
         try:
-            Devices[DeviceID_].Units[Unit_].Update(Log=True)
+            Devices[DeviceID_].Units[Unit_].Name = new_name
+            Devices[DeviceID_].Units[Unit_].nValue = 0
+            Devices[DeviceID_].Units[Unit_].sValue = ""
+
+            Devices[DeviceID_].Units[Unit_].Update(UpdateProperties=True,SuppressTriggers=True)
+
         except Exception as e:
-            self.log.logging("AbstractDz", "Error",
-                             f"domo_update_name - Update() raised: {e}")
+            self.log.logging("AbstractDz", "Error", f"domo_update_name - Update() raised: {e}")
 
 
 def domo_update_SwitchType_SubType_Type(self, Devices, DeviceID_, Unit_,
