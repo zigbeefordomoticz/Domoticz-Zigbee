@@ -264,7 +264,7 @@ def _decode_message(self, MsgType, Devices, Data, MsgData, MsgLQI):
             # Reaches here only when decode8002_and_process returned None in
             # zigbee_receive_message and the caller bypassed the early-return
             # (should not happen in normal flow, but kept as a safety net).
-            Decode8002(self, Devices, Data, MsgData, MsgLQI)
+            Decode8002(self, Devices, MsgData, MsgLQI)
 
         elif MsgType == "8011":
             # Decode8011 has a non-standard signature – it does not accept
