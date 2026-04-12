@@ -58,7 +58,6 @@
 
 import json
 import os
-import pickle
 
 from Classes.GroupMgtv2.GrpMigration import GrpMgtv2Migration
 from Classes.GroupMgtv2.GrpServices import scan_device_for_grp_membership
@@ -135,25 +134,6 @@ class GroupsManagement(object):
         self.ListOfDomoticzWidget = ListOfDomoticzWidget
         self.pairing_in_progress = pairing_in_progress
         
-        # Check if we have to open the old format
-        if os.path.isfile(self.pluginconf.pluginConf["pluginData"] + "/GroupsList-%02d.pck" % hardwareID):
-            # We are in the Migration from Old Group Managemet to new.
-            self.GroupStatus = "Migration"
-            with open(self.pluginconf.pluginConf["pluginData"] + "/GroupsList-%02d.pck" % hardwareID, "rb") as handle:
-                self.ListOfGroups = pickle.load(handle)  # nosec
-
-            # Migrate to new Format:
-            GrpMgtv2Migration(self)
-
-            # Save it with new format
-            self.GroupListFileName = self.pluginconf.pluginConf["pluginData"] + "/GroupsList-%02d.json" % hardwareID
-            self.write_groups_list()
-
-            # Remove the old format
-            os.remove(self.pluginconf.pluginConf["pluginData"] + "/GroupsList-%02d.pck" % hardwareID)
-            del self.ListOfGroups
-            self.ListOfGroups = {}
-
         # Open file and load config
         self.GroupListFileName = self.pluginconf.pluginConf["pluginData"] + "/GroupsList-%02d.json" % hardwareID
         self.load_groups_list_from_json()
