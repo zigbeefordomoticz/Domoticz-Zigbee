@@ -144,6 +144,7 @@ from Classes.NetworkEnergy import NetworkEnergy
 from Classes.NetworkMap import NetworkMap
 from Classes.OTA import OTAManagement
 from Classes.PluginConf import PluginConf
+from Classes.ThreadSafeDeviceDict import ThreadSafeDeviceDict
 from Classes.TransportStats import TransportStatistics
 from Classes.WebServer.WebServer import WebServer
 from Classes.ZigpyTopology import ZigpyTopology
@@ -160,9 +161,8 @@ from Modules.database import (LoadDeviceList, WriteDeviceList,
                               checkDevices2LOD, checkListOfDevice2Devices,
                               import_local_device_conf)
 from Modules.domoticzAbstractLayer import (
-    domo_read_Name,
-    how_many_legacy_slot_available, is_domoticz_extended,
-    load_list_of_domoticz_widget, retreive_widgetid_from_deviceId_unit)
+    domo_read_Name, load_list_of_domoticz_widget,
+    retreive_widgetid_from_deviceId_unit)
 from Modules.heartbeat import processListOfDevices
 from Modules.input import zigbee_receive_message
 from Modules.matomo_request import (matomo_coordinator_initialisation,
@@ -195,10 +195,11 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
-from Classes.ThreadSafeDeviceDict import ThreadSafeDeviceDict
+
 #import tracemalloc
 
 VERSION_FILENAME = ".hidden/VERSION"
+MIN_PYTHON = (3, 11)
 
 TEMPO_NETWORK = 2  # Start HB totrigget Network Status
 TIMEDOUT_START = 10  # Timeoud for the all startup
@@ -350,7 +351,7 @@ class BasePlugin:
             Domoticz.Status( f"Enabling Debug Log Level: {mode6}")
             Domoticz.Debugging(int(mode6))
 
-        Domoticz.Status( "Welcome to Zigbee for Domoticz (Z4D) plugin. (c)pipiche38 - 2018 - 2025")
+        Domoticz.Status( "Welcome to Zigbee for Domoticz (Z4D) plugin. (c)pipiche38 - 2018 - 2026")
 
         # Print PYTHONPATH if set
         pythonpath = os.getenv('PYTHONPATH')
@@ -369,14 +370,16 @@ class BasePlugin:
         _current_python_version_major = sys.version_info.major
         _current_python_version_minor = sys.version_info.minor
 
-        Domoticz.Status( "Z4D requires python3.11 or above and you are running %s.%s" %(
-            _current_python_version_major, _current_python_version_minor))
-    
-        #if sys.version_info < (3, 11):
-        #    Domoticz.Error("Z4D requires Python 3.11+, found %d.%d" % (
-        #        sys.version_info.major, sys.version_info.minor))
-        #    self.onStop()
-        #    return
+        Domoticz.Status(
+            f"Running Python {sys.version_info.major}.{sys.version_info.minor}"
+        )
+        if not check_python_version():
+            Domoticz.Error(
+                f"Z4D requires Python {MIN_PYTHON[0]}.{MIN_PYTHON[1]}, found {sys.version_info.major}.{sys.version_info.minor}"
+            )
+            self.onStop()
+            return
+
 
         if Parameters["Mode1"] == "V1" and Parameters["Mode2"] in ( "USB", "DIN", "PI", "Wifi", ):
             self.transport = Parameters["Mode2"]
@@ -626,15 +629,7 @@ class BasePlugin:
             else:
                 self.log.logging( "Plugin", "Error", "WebServer disabled du to Parameter Mode4 set to %s" % Parameters["Mode4"] )
 
-        if is_domoticz_extended():
-            framework_status = "Extended Framework"
-        else:
-            framework_status = "legacy Framework"
-            free_slots = how_many_legacy_slot_available(Devices)
-            usage_percentage = round(((255 - free_slots) / 255) * 100, 1)
-            self.log.logging("Plugin", "Status", f"Z4D Widgets usage is at {usage_percentage}% ({free_slots} units free)")
-
-        self.log.logging("Plugin", "Status", f"Z4D started with Domoticz {framework_status}")
+        self.log.logging("Plugin", "Status", f"Z4D starting with Domoticz 'Extended Framework'")
 
         self.busy = False
 
@@ -1427,6 +1422,9 @@ def zigateInit_Phase3(self):
 
     if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
         matomo_plugin_analytics_infos(self)
+        
+    self.log.logging("Plugin", "Status", "Z4D with Domoticz 'Extended Framework' started")
+    
 
 
 def start_GrpManagement(self, homefolder):
@@ -1893,3 +1891,6 @@ def _post_readiness_startup_completed( self ):
             return False
         
     return True
+
+def check_python_version(min_version=MIN_PYTHON):
+    return sys.version_info >= min_version
