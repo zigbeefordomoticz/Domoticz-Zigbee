@@ -342,14 +342,21 @@ class LoggingManagement:
 
 
 def _is_to_be_logged(self, logType, module):
+    
+    # Always log if logType is Log, Status or Error, no matter the module, to avoid missing important information in Domoticz log or status
     if logType in ( "Log", "Status", "Error"):
         return True
+
+    # Debug mode, check if module is in debug list
     if module in self.pluginconf.pluginConf:
         if self.pluginconf.pluginConf[module]:
             return True
     else:
+        # If module is not in pluginConf, log it to Domoticz log to inform user about missing configuration for this module, but only for debug logType to avoid flooding Domoticz log with unknown module in case of error logType
         domoticz_error_api("%s debug module unknown %s" % (module, module))
-        return True     
+        return True
+    
+    # If not explicitly enabled, do not log
     return False
 
 
@@ -370,39 +377,51 @@ def enqueue_logging( self, thread_id, module, logType, message, nwkid, context )
         domoticz_log_api("%s" % message)
 
 
-def _loggingStatus(self, thread_name, message, module, nwkid):
+def _logging_status(self, thread_name, message, module, nwkid):
     if self.pluginconf.pluginConf["logThreadName"]:
         message = "[%17s] " %thread_name + "[%17s] " %module + "[%s]" %nwkid + message
+
     if self.pluginconf.pluginConf["enablePluginLogging"]:
+        # Log to plugin log file
         logging.info(message)
+
+    # Log to Domoticz status
     domoticz_status_api(message)
 
 
-def _loggingToFile(self, thread_name, message, module, nwkid):
+def _logging_to_plugin_log(self, thread_name, message, module, nwkid):
     if self.pluginconf.pluginConf["logThreadName"]:
         message = "[%17s] " % thread_name + "[%17s] " % module + "[%s]" % nwkid + message
+
     if self.pluginconf.pluginConf["enablePluginLogging"]:
+        # Log to plugin log file
         logging.info(message)
     else:
+        # Log to Domoticz log
         domoticz_log_api(message)
 
 
-def _logginfilter(self, thread_name, message, module, nwkid):
+def _debug_logging_filtering(self, thread_name, message, module, nwkid):
 
     if nwkid is None:
-        _loggingToFile(self, thread_name, message, module, nwkid)
+        # No nwkid, Log strait to plugin log if module is in debug list
+        _logging_to_plugin_log(self, thread_name, message, module, nwkid)
+
     elif nwkid:
+        # Debug mode, filtering on nwkid against the WebUI filetring
         nwkid = nwkid.lower()
         _debugMatchId = self.pluginconf.pluginConf["MatchingNwkId"].lower().strip().split(",")
+
         if ("ffff" in _debugMatchId) or (nwkid in _debugMatchId) or (nwkid == "ffff"):
-            _loggingToFile(self, thread_name, message, module, nwkid)
+            _logging_to_plugin_log(self, thread_name, message, module, nwkid)
 
 
 def loggingDirector(self, thread_name, logType, message, module, nwkid):
     if logType == "Log":
-        _loggingToFile(self, thread_name, message, module, nwkid)
+        _logging_to_plugin_log(self, thread_name, message, module, nwkid)
+
     elif logType == "Status":
-        _loggingStatus(self, thread_name, message, module, nwkid)
+        _logging_status(self, thread_name, message, module, nwkid)
 
 
 def loggingError(self, thread_name, message, module, nwkid, context):
@@ -568,7 +587,7 @@ def process_logging_event( self, logging_tuple):
         loggingError(self, thread_name, message, module, nwkid, context)
 
     elif logType == "Debug" and _should_log_debug(self, thread_name) and _is_to_be_logged(self, logType, module):
-        _logginfilter(self, thread_name, message, module, nwkid)
+        _debug_logging_filtering(self, thread_name, message, module, nwkid)
 
     else:
         loggingDirector(self, thread_name, logType, message, module, nwkid)
