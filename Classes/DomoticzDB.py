@@ -311,7 +311,7 @@ class DomoticzAPIClient:
             request = urllib.request.Request(url)
             if self.auth_header:
                 request.add_header("Authorization", f"Basic {self.auth_header}")
-                self.logging("Debug", f"_do_request Authorization set {self.auth_header}")
+                self.logging("Debug", "_do_request Authorization header set")
 
             with urllib.request.urlopen(request, context=ssl_context, timeout=GET_TIMEOUT) as response:  # nosec B310
                 return json.load(response)

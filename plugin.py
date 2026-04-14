@@ -411,6 +411,7 @@ class BasePlugin:
         ):
             Domoticz.Error("Please cross-check the Domoticz Hardware setting for the plugin instance. >%s< You must set the API base URL" %Parameters["Mode5"])
             self.onStop()
+            return
 
         # Set plugin heartbeat to 1s
         Domoticz.Heartbeat(1)
@@ -860,8 +861,9 @@ class BasePlugin:
         restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=Parameters["Mode5"])
 
     def onCommand(self, DeviceID, Unit, Command, Level, Color):
-        if (  self.ControllerLink is None or not self.VersionNewFashion or self.pluginconf is None or not self.log ):
-            self.log.logging( "Command", "Log", "onCommand - Not yet ready, plugin not fully started, we drop the command")
+        if (  self.ControllerLink is None or not self.VersionNewFashion or self.pluginconf is None ):
+            if self.log:
+                self.log.logging( "Command", "Log", "onCommand - Not yet ready, plugin not fully started, we drop the command")
             return
 
         self.log.logging( "Command", "Debug", "onCommand - unit: %s, command: %s, level: %s, color: %s" % (Unit, Command, Level, Color) )

@@ -24,8 +24,9 @@ import time
 from pathlib import Path
 
 import DomoticzEx as Domoticz
+
 from Modules.domoticzAbstractLayer import getConfigItem, setConfigItem
-from Modules.tools import is_domoticz_db_available, is_hex
+from Modules.tools import is_hex
 
 SETTINGS = {
     "Services": {
