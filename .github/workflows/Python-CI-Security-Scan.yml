@@ -9,6 +9,10 @@ on:
     branches: ["*"]
     paths:
       - "**/*.py"
+  workflow_run:
+    workflows: ["Tests"]
+    types:
+      - completed
   schedule:
     - cron: '44 10 * * 6'  # Weekly run for CodeQL
 
