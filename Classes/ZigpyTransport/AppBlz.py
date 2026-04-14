@@ -199,7 +199,7 @@ class App_blz(zigpy_blz.zigbee.application.ControllerApplication):
 
 
     async def network_interference_scan(self):
-        await Classes.ZigpyTransport.AppGeneric.network_interference_scan(self)
+        self.manual_interference_scan_task = await Classes.ZigpyTransport.AppGeneric.network_interference_scan(self)
 
 
     def get_topology(self):
@@ -211,7 +211,7 @@ class App_blz(zigpy_blz.zigbee.application.ControllerApplication):
 
 
     async def start_topology_scan(self):
-        await self.topology.scan()
+        self.manual_topology_scan_task = await self.topology.scan()
 
 
     def get_device_rssi(self, z4d_ieee=None, z4d_nwk=None):
