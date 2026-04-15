@@ -460,7 +460,7 @@ def connection_lost_error(self, message: str) -> None:
     self.restarting = True
     self.current_error = "connection lost"
     LOGGER.error(message)
-    self.callBackRestartPlugin()
+    #self.callBackRestartPlugin()
 
 
 def _retrieve_previous_backup(self):

@@ -83,21 +83,33 @@ VERIFY_KEY_DELAY = 6
 
 DEAD_STACK_THRESHOLD = 240   # seconds without heartbeat to consider the stack dead
 WATCH_DG_HEARTBEAT_INTERVAL = 30  # seconds between heartbeat checks (internal tick)
+MAX_RESTARTS_PER_HOUR = 10   # circuit-breaker: escalate to plugin restart after this many
 
 def stop_zigpy_thread(self):
     """
-    Stops the Zigpy thread by sending a STOP message to the writer_queue.
+    Requests a clean shutdown of the Zigpy thread.
 
-    This function sets the zigpy_running flag to False and cancels any manual
-    topology or interference scan tasks to ensure clean shutdown.
+    Sets _zigpy_stop_requested so the supervisor exits its restart loop
+    without scheduling another run.  Also interrupts any in-progress cycle
+    immediately by signalling the current _shutdown_event from the calling
+    (Domoticz) thread via call_soon_threadsafe, and enqueues a STOP sentinel
+    so worker_loop exits cleanly if it is still processing commands.
     """
-
     self.log.logging(["TransportZigpy", "StopProcess"], "Debug", "stop_zigpy_thread - Stopping zigpy thread")
-    if self.writer_queue:
-        self.writer_queue.put_nowait("STOP")
+
+    # Tell the supervisor not to restart after the current run ends.
+    self._zigpy_stop_requested = True
     self.zigpy_running = False
 
-    # Make sure top the manualy started task
+    # Wake up the current run-cycle immediately (thread-safe: called from outside the loop).
+    if self.zigpy_loop and self._shutdown_event:
+        self.zigpy_loop.call_soon_threadsafe(self._shutdown_event.set)
+
+    # Also push a STOP sentinel so worker_loop exits without waiting for a command.
+    if self.writer_queue:
+        self.writer_queue.put_nowait("STOP")
+
+    # Cancel any manually-started long-running tasks.
     if self.manual_topology_scan_task:
         self.manual_topology_scan_task.cancel()
 
@@ -152,7 +164,6 @@ def zigpy_thread_function(self):
 
     This function is responsible for:
       - Creating and binding a dedicated asyncio event loop to this thread
-      - Initializing Zigbee runtime supervision state
       - Starting the asynchronous supervisor task
       - Running the event loop for the lifetime of the Zigbee stack
 
@@ -160,16 +171,20 @@ def zigpy_thread_function(self):
         1. Apply random startup delay (staggered startup in multi-thread environments)
         2. Create a new asyncio event loop (thread-local)
         3. Store loop reference for cross-layer async operations
-        4. Initialize shutdown coordination primitive (_shutdown_event)
-        5. Launch the asynchronous supervisor task
-        6. Run loop until explicitly stopped or crashed
-        7. Perform cleanup on exit
+        4. Launch the asynchronous supervisor task
+        5. Run loop until _supervisor calls loop.stop()
+        6. Perform cleanup on exit
 
     Notes:
-        - This thread owns the entire Zigbee async runtime
-        - loop.run_forever() is intentionally used for long-lived execution
-        - Shutdown is coordinated via _shutdown_event
-    """    
+        - This thread owns the entire Zigbee async runtime.
+        - loop.run_forever() is intentionally used for long-lived execution.
+        - _shutdown_event is *not* initialised here; _supervisor creates a fresh
+          asyncio.Event for every restart cycle so the loop guard cannot be
+          prematurely tripped by a stale set() from a previous run.
+        - External shutdown is signalled via _zigpy_stop_requested (bool) which
+          stop_zigpy_thread() sets from the Domoticz thread, plus a
+          call_soon_threadsafe() on the current cycle's _shutdown_event.
+    """
     self.log.logging("TransportZigpy", "Log", "zigpyThread starting")
 
     time.sleep(random.uniform(0.5, 3.5))  # nosec
@@ -177,8 +192,6 @@ def zigpy_thread_function(self):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     self.zigpy_loop = loop
-
-    self._shutdown_event = asyncio.Event()
 
     loop.create_task(_supervisor(self))
 
@@ -192,8 +205,7 @@ async def _supervisor(self):
     """
     High-level lifecycle supervisor for the Zigbee stack.
 
-    This coroutine implements a resilient restart strategy similar to
-    Home Assistant / ZHA supervision logic.
+    Implements a resilient restart strategy similar to Home Assistant / ZHA.
 
     Responsibilities:
         - Start and monitor the Zigbee stack lifecycle
@@ -201,46 +213,95 @@ async def _supervisor(self):
         - Apply exponential backoff between restarts
         - Track stack health state transitions
         - Trigger optional radio recovery after repeated failures
+        - Escalate to a full plugin restart if the circuit breaker trips
 
     State transitions:
         STARTING → RUNNING → (EXIT | CRASHED) → RESTARTING
 
     Restart policy:
-        - Exponential backoff up to a maximum delay
-        - Periodic radio recovery hook after repeated failures
+        - Exponential backoff: 2 s → 4 s → … → 60 s (capped)
+        - Radio recovery hook after every 5th consecutive restart
+        - Circuit breaker: escalate to plugin restart after MAX_RESTARTS_PER_HOUR
+          restarts within a rolling 1-hour window
 
     Exit conditions:
-        - _shutdown_event is set (external stop request)
+        - _zigpy_stop_requested is True  (external stop via stop_zigpy_thread)
+        - Circuit breaker tripped and plugin restart was requested
+
+    Design note — why _zigpy_stop_requested instead of _shutdown_event:
+        _run_zigbee_stack() *always* calls _shutdown_event.set() before it
+        returns, so that all intra-cycle tasks (watchdog, heartbeat, shutdown
+        sentinel) are cancelled cleanly.  If the supervisor loop tested
+        _shutdown_event it would exit after the very first run and never
+        restart.  _zigpy_stop_requested is a plain bool set only by
+        stop_zigpy_thread(), which allows the supervisor to distinguish a
+        genuine external shutdown from an internal restart trigger.
+        A fresh asyncio.Event is created at the start of every cycle so there
+        is no risk of a stale set() from a previous run bleeding through.
     """
     self.log.logging("TransportZigpy", "Log", "Supervisor started")
 
     restart_delay = 2
 
-    while not self._shutdown_event.is_set():
+    while not self._zigpy_stop_requested:
+
+        # Fresh event for this run cycle — prevents a stale set() from a
+        # previous cycle from prematurely exiting the next run.
+        self._shutdown_event = asyncio.Event()
+
+        # Reset liveness tracking so the watchdog startup window is accurate
+        # for this cycle (stale timestamp from a prior run would suppress it).
+        self._last_heartbeat = None
 
         try:
             self._stack_health = "STARTING"
-
             await _run_zigbee_stack(self)
-
-            # normal exit → treat as restart condition too
             self.log.logging("TransportZigpy", "Log", "Zigbee stack exited")
 
         except Exception as e:
             self.log.logging("TransportZigpy", "Error", f"Zigbee crash: {e}")
-
             self._stack_health = "CRASHED"
 
-        # 🔥 recovery logic
+        # If the run ended because stop_zigpy_thread() was called, leave now
+        # without scheduling a restart.
+        if self._zigpy_stop_requested:
+            self.log.logging("TransportZigpy", "Log", "Supervisor: stop requested — not restarting")
+            break
+
+        # --- restart / recovery logic -----------------------------------------
+
         self._restart_count += 1
 
-        if self._restart_count % 5 == 0:
-            self.log.logging("TransportZigpy", "Error", "Multiple restarts → consider radio reset hook")
+        # Circuit breaker: count restarts in the last hour.
+        now = time.monotonic()
+        self._restart_timestamps = [t for t in self._restart_timestamps if now - t < 3600]
+        self._restart_timestamps.append(now)
 
+        if len(self._restart_timestamps) >= MAX_RESTARTS_PER_HOUR:
+            self.log.logging(
+                "TransportZigpy", "Error",
+                f"Supervisor: {MAX_RESTARTS_PER_HOUR} restarts in 1 h — escalating to plugin restart"
+            )
+            if callable(getattr(self, "restart_plugin", None)):
+                self.restart_plugin()
+            break
+
+        if self._restart_count % 5 == 0:
+            self.log.logging("TransportZigpy", "Error",
+                             f"Supervisor: {self._restart_count} restarts — attempting radio recovery")
             await _maybe_reset_radio(self)
 
+        self.log.logging(
+            "TransportZigpy", "Log",
+            f"Supervisor: restarting in {restart_delay}s (attempt #{self._restart_count})"
+        )
         await asyncio.sleep(restart_delay)
-        restart_delay = min(restart_delay * 2, 60)           
+        restart_delay = min(restart_delay * 2, 60)
+
+    # Signal the event loop to stop so zigpy_thread_function's run_forever()
+    # returns and _cleanup() is called.
+    self.log.logging("TransportZigpy", "Log", "Supervisor exiting — stopping event loop")
+    asyncio.get_running_loop().stop()
 
 
 async def _run_zigbee_stack(self):
