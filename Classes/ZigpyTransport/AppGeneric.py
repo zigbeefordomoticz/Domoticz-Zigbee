@@ -463,14 +463,21 @@ def connection_lost_error(self, message: str) -> None:
 
     # If the in-process supervisor is active, let it handle recovery
     # without triggering a full Domoticz plugin restart
+    # If the supervisor is active, let it handle recovery without a full plugin restart.
+    # _supervisor_running and zigpy_running_ref are injected onto self.app by _radio_startup().
     supervisor_active = getattr(self, '_supervisor_running', False)
-    if supervisor_active:
+    transport = getattr(self, 'zigpy_running_ref', None)
+
+    if supervisor_active and transport is not None:
         LOGGER.warning("connection_lost — signalling supervisor for stack restart")
-        # zigpy_running=False causes worker_loop to exit gracefully,
-        # which causes start_zigpy_task to exit, which the supervisor catches
-        self.zigpy_running = False
+        # Setting zigpy_running=False causes worker_loop to exit on its next tick.
+        # The STOP sentinel wakes get_next_command immediately (it polls at 100ms).
+        transport.zigpy_running = False
+        if transport.writer_queue:
+            with contextlib.suppress(Exception):
+                transport.writer_queue.put_nowait("STOP")
     else:
-        LOGGER.warning("connection_lost — no supervisor, requesting plugin restart")
+        LOGGER.warning("connection_lost — no active supervisor, requesting plugin restart")
         self.callBackRestartPlugin()
 
 

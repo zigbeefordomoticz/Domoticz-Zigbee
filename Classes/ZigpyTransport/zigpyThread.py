@@ -240,8 +240,7 @@ async def _supervisor(self):
         is no risk of a stale set() from a previous run bleeding through.
     """
     self.log.logging("TransportZigpy", "Log", "Supervisor started")
-    self._supervisor_running = True
-    
+
     restart_delay = 2
 
     while not self._zigpy_stop_requested:
@@ -254,6 +253,11 @@ async def _supervisor(self):
         # for this cycle (stale timestamp from a prior run would suppress it).
         self._last_heartbeat = None
 
+        # Clean up state left over from the previous run.
+        await _prepare_for_restart(self)
+
+        run_start = asyncio.get_running_loop().time()
+
         try:
             self._stack_health = "STARTING"
             await _run_zigbee_stack(self)
@@ -262,6 +266,8 @@ async def _supervisor(self):
         except Exception as e:
             self.log.logging("TransportZigpy", "Error", f"Zigbee crash: {e}")
             self._stack_health = "CRASHED"
+
+        run_duration = asyncio.get_running_loop().time() - run_start
 
         # If the run ended because stop_zigpy_thread() was called, leave now
         # without scheduling a restart.
@@ -272,6 +278,18 @@ async def _supervisor(self):
         # --- restart / recovery logic -----------------------------------------
 
         self._restart_count += 1
+        self._consecutive_failures += 1
+
+        # Stability reset: if the stack ran for > 5 min, the crash is likely
+        # a transient event — reset backoff and consecutive failure counter so
+        # the next restart is fast and radio recovery is not triggered early.
+        if run_duration > 300:
+            self.log.logging(
+                "TransportZigpy", "Log",
+                f"Supervisor: stack was stable for {run_duration:.0f}s — resetting backoff and failure counter"
+            )
+            restart_delay = 2
+            self._consecutive_failures = 0
 
         # Circuit breaker: count restarts in the last hour.
         now = time.monotonic()
@@ -287,14 +305,18 @@ async def _supervisor(self):
                 self.restart_plugin()
             break
 
-        if self._restart_count % 5 == 0:
-            self.log.logging("TransportZigpy", "Error",
-                             f"Supervisor: {self._restart_count} restarts — attempting radio recovery")
+        # Radio recovery after repeated *consecutive* failures (not total count).
+        if self._consecutive_failures > 0 and self._consecutive_failures % 5 == 0:
+            self.log.logging(
+                "TransportZigpy", "Error",
+                f"Supervisor: {self._consecutive_failures} consecutive failures — attempting radio recovery"
+            )
             await _maybe_reset_radio(self)
 
         self.log.logging(
             "TransportZigpy", "Log",
-            f"Supervisor: restarting in {restart_delay}s (attempt #{self._restart_count})"
+            f"Supervisor: restarting in {restart_delay}s "
+            f"(attempt #{self._restart_count}, consecutive={self._consecutive_failures})"
         )
         await asyncio.sleep(restart_delay)
         restart_delay = min(restart_delay * 2, 60)
@@ -302,46 +324,61 @@ async def _supervisor(self):
     # Signal the event loop to stop so zigpy_thread_function's run_forever()
     # returns and _cleanup() is called.
     self.log.logging("TransportZigpy", "Log", "Supervisor exiting — stopping event loop")
-    self._supervisor_running = False
     asyncio.get_running_loop().stop()
+
+
+async def _prepare_for_restart(self):
+    """
+    Reset volatile state before a supervised restart.
+
+    Called by _supervisor at the start of every cycle.  Ensures that a
+    crash or timeout in the previous run does not leave dangling resources
+    (open serial port, stale commands, locked semaphores) visible to the
+    next start_zigpy_task invocation.
+
+    Safe to call on the very first cycle (all attributes are None / empty).
+    """
+    # If the previous run's app was not shut down cleanly (e.g. radio_start
+    # timed out), force-disconnect now before re-opening the serial port.
+    if self.app is not None:
+        with contextlib.suppress(Exception):
+            await asyncio.wait_for(self.app.disconnect(), timeout=5.0)
+        self.app = None
+
+    # Replace the writer queue so stale pre-crash commands are not replayed.
+    self.writer_queue = queue.Queue()
+
+    # Clear per-device concurrency tracking — semaphores from the previous
+    # run are invalid after a restart.
+    self._concurrent_requests_semaphores_list.clear()
+    self._currently_waiting_requests_list.clear()
+    self._currently_not_reachable.clear()
+
+    # Ensure the running flag is in a known state for the next start_zigpy_task.
+    self.zigpy_running = False
 
 
 async def _run_zigbee_stack(self):
     """
-    High-level lifecycle supervisor for the Zigbee stack.
+    Run the Zigbee stack as a set of concurrent tasks for one lifecycle.
 
-    This coroutine implements a resilient restart strategy similar to
-    Home Assistant / ZHA supervision logic.
+    Starts three tasks in parallel:
+        - zigbee_task:    the main radio loop (start_zigpy_task)
+        - watchdog_task:  health monitor and hard-failure detector
+        - shutdown_task:  waits for the external _shutdown_event signal
 
-    Responsibilities:
-        - Start and monitor the Zigbee stack lifecycle
-        - Detect crash or abnormal exit conditions
-        - Apply exponential backoff between restarts
-        - Track stack health state transitions
-        - Trigger optional radio recovery after repeated failures
+    Returns as soon as *any* of them finishes (FIRST_COMPLETED), then
+    sets _shutdown_event and cancels the remaining tasks.
 
-    State transitions:
-        STARTING → RUNNING → (EXIT | CRASHED) → RESTARTING
-
-    Restart policy:
-        - Exponential backoff up to a maximum delay
-        - Periodic radio recovery hook after repeated failures
-
-    Exit conditions:
-        - _shutdown_event is set (external stop request)
+    The supervisor treats any return from this coroutine as a signal to
+    restart, unless _zigpy_stop_requested is set.
     """
-    zigbee_task = asyncio.create_task(
-        start_zigpy_task(self, channel=0, extended_pan_id=0)
-    )
-
+    zigbee_task   = asyncio.create_task(start_zigpy_task(self, channel=0, extended_pan_id=0))
     shutdown_task = asyncio.create_task(self._shutdown_event.wait())
-
     watchdog_task = asyncio.create_task(_watchdog(self))
-    
-    heartbeat_task = asyncio.create_task(_heartbeat_monitor(self))
 
     done, pending = await asyncio.wait(
-        {zigbee_task, shutdown_task, watchdog_task, heartbeat_task},
+        {zigbee_task, shutdown_task, watchdog_task},
         return_when=asyncio.FIRST_COMPLETED
     )
 
@@ -414,141 +451,120 @@ def zigpy_heartbeat_activity(self):
     self._last_heartbeat = now
 
 
-async def _heartbeat_monitor(self):
+async def _watchdog(self):
     """
-    Background health monitor for Zigbee activity state.
+    Combined health monitor and hard-failure detector for the Zigbee stack.
 
-    This coroutine does NOT detect failure directly.
-    Instead, it provides a health classification layer based on
-    activity recency.
+    Replaces the previous split between _heartbeat_monitor (observational)
+    and _watchdog (failure detection) with a single task that does both.
 
-    Health states:
-        ALIVE  → recent activity (< 30s)
-        IDLE   → no recent activity (< 120s)
-        SUSPECT → no activity for extended period (> 120s)
+    Health classification (updates _stack_health):
+        ALIVE   — last heartbeat < 30 s ago
+        IDLE    — last heartbeat 30–120 s ago
+        SUSPECT — last heartbeat 120 s – DEAD_STACK_THRESHOLD ago
+        DEAD    — last heartbeat > DEAD_STACK_THRESHOLD seconds ago
 
-    Purpose:
-        - Provide visibility into Zigbee stack health
-        - Help distinguish idle networks from failing ones
-        - Complement watchdog (which detects actual failure)
+    Failure conditions that trigger a supervised restart:
+        1. No heartbeat received within 120 s of startup (startup timeout).
+        2. Heartbeat gap exceeds DEAD_STACK_THRESHOLD (hard failure).
 
-    Important:
-        - This task does NOT trigger restarts
-        - It is purely observational
+    Logging policy:
+        - State transitions are logged at Log level.
+        - Failure triggers are logged at Error level.
+        - No per-tick log spam (previous version logged every 5 s).
+
+    Poll interval: WATCH_DG_HEARTBEAT_INTERVAL (30 s).
     """
+    self.log.logging("TransportZigpy", "Log", "Watchdog started")
 
-    self.log.logging("TransportZigpy", "Log", "Heartbeat monitor started")
+    loop = asyncio.get_running_loop()
+    startup_deadline = loop.time() + 120  # 2 min to receive the first heartbeat
+    _prev_health = self._stack_health
 
     while not self._shutdown_event.is_set():
         await asyncio.sleep(WATCH_DG_HEARTBEAT_INTERVAL)
 
-        loop = self.zigpy_loop
-        if loop is None:
-            continue
-
         now = loop.time()
 
         if self._last_heartbeat is None:
+            # Still waiting for the first heartbeat after (re)start.
+            if now > startup_deadline:
+                self.log.logging(
+                    "TransportZigpy", "Error",
+                    "Watchdog: no heartbeat within 120s startup window — triggering supervised restart"
+                )
+                self._stack_health = "DEAD"
+                self._shutdown_event.set()
+                return
             continue
 
         delta = now - self._last_heartbeat
 
-        # This is NOT failure detection, just status tracking
+        # Classify current health.
         if delta < 30:
-            self._stack_health = "ALIVE"
+            new_health = "ALIVE"
         elif delta < 120:
-            self._stack_health = "IDLE"
+            new_health = "IDLE"
+        elif delta < DEAD_STACK_THRESHOLD:
+            new_health = "SUSPECT"
         else:
-            self._stack_health = "SUSPECT"
+            new_health = "DEAD"
 
-
-async def _watchdog(self):
-    """
-    Hard failure detection mechanism for the Zigbee stack.
-
-    This coroutine is responsible for detecting:
-        - Complete Zigbee stack freeze
-        - Loss of all activity beyond acceptable timeout
-        - Silent failures where no exception is raised
-
-    Logic:
-        - Periodically checks last heartbeat timestamp
-        - Computes inactivity duration
-        - Triggers shutdown if inactivity exceeds threshold
-
-    Failure condition:
-        delta_time > DEAD_STACK_THRESHOLD
-
-    Reaction:
-        - Marks stack as DEAD
-        - Triggers shutdown event
-        - Forces supervisor restart cycle
-
-    Important:
-        - This is a safety mechanism, not a health monitor
-        - It is intentionally aggressive to ensure recovery
-    """
-    self.log.logging("TransportZigpy", "Log", "Watchdog started")
-
-    while not self._shutdown_event.is_set():
-
-        await asyncio.sleep(5)
-        
-        if self._last_heartbeat is None:
-            continue
-
-        loop = asyncio.get_running_loop()
-        now = loop.time()
-
-        delta = now - self._last_heartbeat
-        self.log.logging("TransportZigpy", "Log", "_watchdog: heartbeat received, time since last heartbeat: %.0f seconds" % delta)
-        
-
-        # DEAD STACK DETECTION
-        if delta > DEAD_STACK_THRESHOLD:
+        # Log only on state transitions — no per-tick noise.
+        if new_health != _prev_health:
             self.log.logging(
-                "TransportZigpy",
-                "Error",
-                f"Zigbee heartbeat lost ({delta:.0f}s) → restart"
+                "TransportZigpy", "Log",
+                f"Watchdog: stack health {_prev_health} → {new_health} ({delta:.0f}s since last heartbeat)"
             )
+            _prev_health = new_health
+            self._stack_health = new_health
 
-            self._stack_health = "DEAD"
+        if new_health == "DEAD":
+            self.log.logging(
+                "TransportZigpy", "Error",
+                f"Watchdog: heartbeat lost for {delta:.0f}s — triggering supervised restart"
+            )
             self._shutdown_event.set()
             return
 
 async def _maybe_reset_radio(self):
     """
-    Attempts recovery of the Zigbee radio hardware after repeated failures.
+    Last-resort radio recovery: force-disconnect the adapter and wait for
+    the OS to release the serial/USB port before the next restart cycle.
 
-    This function is invoked when multiple restart cycles have occurred,
-    suggesting a potential hardware or transport-level issue.
+    Invoked by the supervisor after every 5th consecutive failure.  The
+    actual reconnect is left to the next supervisor cycle's radio_start call.
 
-    Intended actions (implementation-specific):
-        - Reset serial connection
-        - Reinitialize Zigbee adapter
-        - Recover USB/ZNP/Zigbee coordinator state
+    Strategy:
+        1. Disconnect the zigpy ControllerApplication (closes serial/USB fd).
+        2. Null the app reference so _prepare_for_restart doesn't retry.
+        3. Sleep 5 s to give the OS time to fully release the port.
 
-    Purpose:
-        - Recover from hardware-level lockups
-        - Prevent infinite restart loops without progress
-
-    Notes:
-        - This is a last-resort recovery mechanism
-        - Must be adapted to the specific transport layer used
+    After this function returns the supervisor will call _prepare_for_restart
+    and then _run_zigbee_stack → radio_start as normal.
     """
-    self.log.logging("TransportZigpy", "Error",
-                     "Attempting Zigbee radio recovery")
-
+    self.log.logging(
+        "TransportZigpy", "Error",
+        f"Radio recovery: forcing adapter disconnect "
+        f"(consecutive failures: {self._consecutive_failures})"
+    )
     try:
-        # Example hooks (adapt to your transport layer)
-        # - close serial
-        # - reopen device
-        # - reset adapter
+        if self.app is not None:
+            with contextlib.suppress(Exception):
+                await asyncio.wait_for(self.app.disconnect(), timeout=10.0)
+            self.app = None
 
-        await asyncio.sleep(2)
-
+        self.log.logging(
+            "TransportZigpy", "Status",
+            "Radio recovery: adapter disconnected — waiting 5s for OS to release port"
+        )
+        await asyncio.sleep(5)
+        self.log.logging(
+            "TransportZigpy", "Status",
+            "Radio recovery: ready — next supervisor cycle will reconnect"
+        )
     except Exception as e:
-        self.log.logging("TransportZigpy", "Error", f"Radio reset failed: {e}")
+        self.log.logging("TransportZigpy", "Error", f"Radio reset error: {e}")
 
 
 async def start_zigpy_task(self, channel, extended_pan_id):
@@ -580,6 +596,13 @@ async def start_zigpy_task(self, channel, extended_pan_id):
     except asyncio.TimeoutError:
         self.log.logging("TransportZigpy", "Error",
                          "radio_start timed out after 60s — triggering supervised restart")
+        # asyncio.wait_for cancels radio_start via CancelledError, which may
+        # leave the serial port open.  Disconnect now so the OS releases the
+        # fd before the next restart cycle tries to reopen it.
+        if self.app is not None:
+            with contextlib.suppress(Exception):
+                await asyncio.wait_for(self.app.disconnect(), timeout=5.0)
+            self.app = None
         return   # start_zigpy_task returns → supervisor restarts
 
     except Exception as e:
@@ -604,6 +627,10 @@ async def start_zigpy_task(self, channel, extended_pan_id):
         self.log.logging("TransportZigpy", "Error", f"start_zigpy_task worker_loop(self) error: {e}")
 
     # We exit the worker_loop, shutdown time
+    # worker_loop has exited — clear the supervisor flag before shutdown
+    if self.app:
+        self.app._supervisor_running = False
+
     try:
         self.log.logging("TransportZigpy", "Debug", "Shutting down zigpy thread...")
         if self.app:
@@ -1025,6 +1052,11 @@ async def _radio_startup(self, statistics, pluginconf, use_of_zigpy_persistent_d
     self.ControllerData["Network key"] = ":".join( f"{c:02x}" for c in self.app.state.network_information.network_key.key )
     
     post_coordinator_startup(self, radiomodule)
+    # Signal to AppGeneric that the supervisor owns this app instance
+    if self.app:
+        self.app._supervisor_running = True
+        self.app.zigpy_running_ref = self
+
     
 
 def post_coordinator_startup(self, radiomodule):
@@ -1232,6 +1264,33 @@ async def dispatch_command(self, data):
 
     elif cmd == "ZIGPY-TOPOLOGY-SCAN":
         self.manual_topology_scan_task = asyncio.create_task( self.app.start_topology_scan(), name="ZIGPY-TOPOLOGY-SCAN")
+
+    elif cmd == "RESTART-ZIGPY-STACK":
+        # Graceful stack restart: exit worker_loop → start_zigpy_task exits →
+        # supervisor restarts the full stack.  Does NOT restart the Domoticz plugin.
+        self.log.logging("TransportZigpy", "Log",
+                         "RESTART-ZIGPY-STACK: graceful stack restart requested")
+        self.zigpy_running = False
+        self.writer_queue.put_nowait("STOP")
+
+    elif cmd == "RESET-RADIO-COMMUNICATION":
+        # Soft reset: disconnect and reconnect the transport layer only.
+        # The zigpy stack (network state, device table) is preserved.
+        # Falls back to a full stack restart if reconnect fails.
+        self.log.logging("TransportZigpy", "Log",
+                         "RESET-RADIO-COMMUNICATION: transport reconnect requested")
+        if self.app:
+            try:
+                await asyncio.wait_for(self.app.disconnect(), timeout=10.0)
+                await asyncio.sleep(2)
+                await asyncio.wait_for(self.app.connect(), timeout=15.0)
+                self.log.logging("TransportZigpy", "Status",
+                                 "RESET-RADIO-COMMUNICATION: radio communication reset complete")
+            except Exception as e:
+                self.log.logging("TransportZigpy", "Error",
+                                 f"RESET-RADIO-COMMUNICATION failed ({e}) — falling back to full stack restart")
+                self.zigpy_running = False
+                self.writer_queue.put_nowait("STOP")
 
 
 async def _permit_to_joint(self, data):
