@@ -16,7 +16,7 @@ from Classes.GroupMgtv2.GrpCommands import (set_hue_saturation,
                                             set_kelvin_color, set_rgb_color)
 from Classes.GroupMgtv2.GrpDatabase import update_due_to_nwk_id_change
 from Modules.domoticzAbstractLayer import (
-    FreeUnit, domo_create_api, domo_delete_widget, domo_read_Name,
+    domo_create_api, domo_delete_widget, domo_read_Name,
     domo_read_nValue_sValue, domo_read_SwitchType_SubType_Type,
     domo_update_api, domo_update_name, domo_update_SwitchType_SubType_Type,
     find_first_unit_widget_from_deviceID)
