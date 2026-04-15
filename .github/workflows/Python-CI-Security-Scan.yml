@@ -2,11 +2,11 @@ name: Python CI & Security Scan
 
 on:
   push:
-    branches: ["*"]
+    branches: ["**"]
     paths:
       - "**/*.py"
   pull_request:
-    branches: ["*"]
+    branches: ["**"]
     paths:
       - "**/*.py"
   workflow_run:
