@@ -18,6 +18,7 @@ Parameters not define in the PluginConf.txt file will be set to their default va
 
 """
 
+import ast
 import json
 import os.path
 import time
@@ -713,8 +714,9 @@ def _import_oldfashon_param(self, temp_pluginconf_data, filename):
     -----
     - This method is intended for backward compatibility only and should not be
       used for new configuration files.
-    - The function uses `eval()` to parse legacy data; in modern code, prefer
-      `json.loads()` for safer deserialization.
+    - The function uses `ast.literal_eval()` to parse legacy data safely.
+      Only Python literals (dict, list, str, int, float, bool, None) are accepted;
+      arbitrary expressions are rejected, unlike the former `eval()` call.
     - The method validates parameter types according to `SETTINGS` definitions:
         * `"hex"` values are converted from hexadecimal string to int.
         * `"int"` and `"bool"` values are cast from string digits.
@@ -722,10 +724,10 @@ def _import_oldfashon_param(self, temp_pluginconf_data, filename):
 
     """
     try:
-        plugin_conf_dict = eval(temp_pluginconf_data)  # nosec B307
+        plugin_conf_dict = ast.literal_eval(temp_pluginconf_data)
     except SyntaxError:
         Domoticz.Error("Syntax Error in %s, all plugin parameters set to default" % filename)
-    except (NameError, TypeError, ZeroDivisionError):
+    except (ValueError, TypeError):
         Domoticz.Error("Error while importing %s, all plugin parameters set to default" % filename)
     else:
         for theme in SETTINGS:

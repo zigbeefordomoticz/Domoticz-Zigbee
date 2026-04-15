@@ -725,6 +725,7 @@ class BasePlugin:
     def onDeviceRemoved(self, DeviceID, Unit):
         if not self.ControllerIEEE:
             self.log.logging( "Plugin", "Error", "onDeviceRemoved - too early, coordinator and plugin initialisation not completed", )
+            return
 
         if self.log:
             self.log.logging("Plugin", "Log", "onDeviceRemoved called")
