@@ -463,7 +463,7 @@ def loggingError(self, thread_name, message, module, nwkid, context):
         self.LogErrorHistory[str(index)]["StartTime"] = self._startTime
         self.LogErrorHistory[str(index)]["FirmwareVersion"] = self.FirmwareVersion
         self.LogErrorHistory[str(index)]["FirmwareMajorVersion"] = self.FirmwareMajorVersion
-        self.LogErrorHistory[str(index)]["PluginVersion"] = (self.PluginVersion,)
+        self.LogErrorHistory[str(index)]["PluginVersion"] = (self.PluginVersion)
         self.LogErrorHistory[str(index)]["0"] = loggingBuildContext(self, thread_name, module, message, nwkid, context)
     else:
         self.LogErrorHistory[str(index)]["LastLog"] += 1
