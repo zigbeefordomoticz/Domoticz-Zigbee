@@ -84,9 +84,10 @@ def znp_extract_versioning_for_plugin(self, znp_model, znp_manuf, version):
         firmware_branch = firmware_major_version = 22
         firmware_version = "Z-Stack Home " + "(build %s)" %build
         
-    if "Z-Stack 3.0.x" in version:
+    elif "Z-Stack 3.0.x" in version:
         firmware_branch = firmware_major_version = 21
         firmware_version = "Z-Stack 3.0.x " + "(build %s)" %build
+
     else:
         firmware_branch = firmware_major_version = ZNP_MODEL[ znp_model ]
         firmware_version = "Z-Stack 3.30+ " + "(build %s)" %build
