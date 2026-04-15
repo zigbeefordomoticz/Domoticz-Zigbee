@@ -4,7 +4,7 @@
 # Implementation of Zigbee for Domoticz plugin.
 #
 # This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
-# (C) 2015-2024
+# (C) 2015-2026
 #
 # Initial authors: zaraki673 & pipiche38
 #
@@ -162,7 +162,7 @@ from Modules.database import (LoadDeviceList, WriteDeviceList,
                               import_local_device_conf)
 from Modules.domoticzAbstractLayer import (
     domo_read_Name, load_list_of_domoticz_widget,
-    retreive_widgetid_from_deviceId_unit)
+    retrieve_widgetid_from_deviceId_unit)
 from Modules.heartbeat import processListOfDevices
 from Modules.input import zigbee_receive_message
 from Modules.matomo_request import (matomo_coordinator_initialisation,
@@ -400,7 +400,7 @@ class BasePlugin:
         else:
             Domoticz.Error(
                 "Please cross-check the plugin starting parameters Mode1: %s Mode2: %s and make sure you have restarted Domoticz after updating the plugin"
-                % (Parameters["Mode1"] == "V1", Parameters["Mode2"])
+                % (Parameters["Mode1"], Parameters["Mode2"])
             )
             self.onStop()
             return
@@ -1017,7 +1017,7 @@ class BasePlugin:
 
 
     def onDeviceModified(self, DeviceId, Unit):
-        device_idx = retreive_widgetid_from_deviceId_unit(self, Devices, DeviceId, Unit)
+        device_idx = retrieve_widgetid_from_deviceId_unit(self, Devices, DeviceId, Unit)
         self.domoticz_device_cache.refresh_device( device_idx)
 
 
