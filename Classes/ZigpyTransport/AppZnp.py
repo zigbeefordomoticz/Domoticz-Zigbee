@@ -184,11 +184,11 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
     async def set_extended_pan_id(self,extended_pan_ip):
         self.config[znp_conf.CONF_NWK][znp_conf.CONF_NWK_EXTENDED_PAN_ID] = extended_pan_ip
-        self.startup(self.callBackFunction,self.callBackGetDevice,auto_form=True,force_form=True,log=self.log)
+        await self.startup(self.callBackFunction,self.callBackGetDevice,auto_form=True,force_form=True,log=self.log)
 
 
     async def set_channel(self,channel):
-        self.config[znp_conf.CONF_NWK][znp_conf.CONF_NWK_EXTENDED_PAN_ID] = channel
+        self.config[znp_conf.CONF_NWK][znp_conf.CONF_NWK_CHANNEL] = channel
         self.startup(self.callBackFunction,self.callBackGetDevice,auto_form=True,force_form=True,log=self.log)
 
 
