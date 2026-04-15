@@ -262,9 +262,9 @@ def find_widget_unit_from_WidgetID(self, Devices, Widget_Idx):
     return None
 
 
-def retreive_widgetid_from_deviceId_unit(self, Devices, DeviceId, Unit):
+def retrieve_widgetid_from_deviceId_unit(self, Devices, DeviceId, Unit):
     self.log.logging("AbstractDz", "Debug",
-                     f"retreive_widgetid_from_deviceId_unit: DeviceId: {DeviceId} Unit: {Unit}")
+                     f"retrieve_widgetid_from_deviceId_unit: DeviceId: {DeviceId} Unit: {Unit}")
     return next(
         (
             x for x in self.ListOfDomoticzWidget
@@ -288,14 +288,7 @@ def find_first_unit_widget_from_deviceID(self, Devices, DeviceID):
 
 
 
-def how_many_legacy_slot_available(Devices):
-    """Return the number of unit slot available."""
-    if Devices is None:
-        return 0
-    return sum(x not in Devices for x in range(1, 255))
-
-
-def FreeUnit(self, Devices, DeviceId, nbunit_=1):
+def retreive_free_unit_for_widget(self, Devices, DeviceId, nbunit_=1):
     """
     Look for a free Unit number. If nbunit_ > 1, look for nbunit_ consecutive slots.
 
@@ -303,7 +296,7 @@ def FreeUnit(self, Devices, DeviceId, nbunit_=1):
     """
     if not isinstance(nbunit_, int) or nbunit_ < 1 or nbunit_ > 254:
         self.log.logging("AbstractDz", "Error",
-                         f"FreeUnit - invalid nbunit_: {nbunit_!r}")
+                         f"retreive_free_unit_for_widget - invalid nbunit_: {nbunit_!r}")
         return None
 
     def _log_message(count):
@@ -336,7 +329,7 @@ def FreeUnit(self, Devices, DeviceId, nbunit_=1):
         return None
 
     self.log.logging("AbstractDz", "Debug",
-                     f"FreeUnit - looking for a free unit in {DeviceId}")
+                     f"retreive_free_unit_for_widget - looking for a free unit in {DeviceId}")
     available_units = set()
     if _device_exists(Devices, DeviceId):
         available_units = set(Devices[DeviceId].Units.keys())
@@ -565,8 +558,8 @@ def domo_update_name(self, Devices, DeviceID_, Unit_, new_name):
 
         try:
             Devices[DeviceID_].Units[Unit_].Name = new_name
-            Devices[DeviceID_].Units[Unit_].nValue = 0
-            Devices[DeviceID_].Units[Unit_].sValue = ""
+            Devices[DeviceID_].Units[Unit_].nValue = 0   # nValue must be changed to trigger the update of the name in Domoticz UI
+            Devices[DeviceID_].Units[Unit_].sValue = ""  # sValue must be changed to trigger the update of the name in Domoticz UI
 
             Devices[DeviceID_].Units[Unit_].Update(UpdateProperties=True,SuppressTriggers=True)
 
@@ -621,12 +614,6 @@ def domo_read_TimedOut(self, Devices, DeviceId_):
     if _device_exists(Devices, DeviceId_):
         return Devices[DeviceId_].TimedOut
     return None
-
-
-def domo_read_legacy_TimedOut(self, Devices, DeviceId_, UnitId_):
-    if Devices is None or UnitId_ not in Devices:
-        return None
-    return Devices[UnitId_].TimedOut
 
 
 def domo_read_LastUpdate(self, Devices, DeviceId_, Unit_):
