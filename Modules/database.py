@@ -169,6 +169,7 @@ def LoadDeviceList(self):
     (typically "Success") or True/False in some code paths.
     """
     ListOfDevices_from_Domoticz = None
+    can_use_domoticz_db = False
 
     # This can be enabled only with Domoticz version 2021.1 build 1395 and above, otherwise big memory leak
     use_domoticz_db = self.pluginconf.pluginConf.get("useDomoticzDb")
