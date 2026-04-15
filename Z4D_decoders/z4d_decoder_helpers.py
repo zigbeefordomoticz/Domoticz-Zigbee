@@ -65,9 +65,12 @@ def Network_Address_response_request_next_index(self, nwkid, ieee, index, Actual
 
 def device_leave_announcement(self, devices, msg_ext_address):
     if is_device_ieee_in_domoticz_db(self, devices, msg_ext_address):
-        leaving_device = devices[ msg_ext_address]
-        for widget_name in leaving_device.Units:
-            self.adminWidgets.updateNotificationWidget(devices, f"Leave indication from {msg_ext_address} for {widget_name}")
+        units = devices[msg_ext_address].Units
+        first_unit = next(iter(units), None)
+        dev_name = units[first_unit].Name if first_unit is not None else msg_ext_address
+        self.adminWidgets.updateNotificationWidget(
+            devices, f"Leave indication from {msg_ext_address} for {dev_name}")
+        
 
 
 def device_reset(self, nwk_id):
