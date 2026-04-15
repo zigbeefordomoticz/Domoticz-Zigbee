@@ -460,7 +460,18 @@ def connection_lost_error(self, message: str) -> None:
     self.restarting = True
     self.current_error = "connection lost"
     LOGGER.error(message)
-    #self.callBackRestartPlugin()
+
+    # If the in-process supervisor is active, let it handle recovery
+    # without triggering a full Domoticz plugin restart
+    supervisor_active = getattr(self, '_supervisor_running', False)
+    if supervisor_active:
+        LOGGER.warning("connection_lost — signalling supervisor for stack restart")
+        # zigpy_running=False causes worker_loop to exit gracefully,
+        # which causes start_zigpy_task to exit, which the supervisor catches
+        self.zigpy_running = False
+    else:
+        LOGGER.warning("connection_lost — no supervisor, requesting plugin restart")
+        self.callBackRestartPlugin()
 
 
 def _retrieve_previous_backup(self):

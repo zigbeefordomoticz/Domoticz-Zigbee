@@ -240,7 +240,8 @@ async def _supervisor(self):
         is no risk of a stale set() from a previous run bleeding through.
     """
     self.log.logging("TransportZigpy", "Log", "Supervisor started")
-
+    self._supervisor_running = True
+    
     restart_delay = 2
 
     while not self._zigpy_stop_requested:
@@ -301,6 +302,7 @@ async def _supervisor(self):
     # Signal the event loop to stop so zigpy_thread_function's run_forever()
     # returns and _cleanup() is called.
     self.log.logging("TransportZigpy", "Log", "Supervisor exiting — stopping event loop")
+    self._supervisor_running = False
     asyncio.get_running_loop().stop()
 
 
@@ -571,7 +573,14 @@ async def start_zigpy_task(self, channel, extended_pan_id):
     self.log.logging( "TransportZigpy", "Debug", f"start_zigpy_task -extendedPANID {self.pluginconf.pluginConf['extendedPANID']} {extended_pan_id}", )
 
     try:
-        await radio_start(self, self.statistics, self.pluginconf, self.use_of_zigpy_persistent_db, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extended_pan_id)
+        await asyncio.wait_for(
+            radio_start(self, self.statistics, self.pluginconf, self.use_of_zigpy_persistent_db, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extended_pan_id),
+            timeout=60.0   # 60s to open serial and get network info
+        )
+    except asyncio.TimeoutError:
+        self.log.logging("TransportZigpy", "Error",
+                         "radio_start timed out after 60s — triggering supervised restart")
+        return   # start_zigpy_task returns → supervisor restarts
 
     except Exception as e:
         self.log.logging("TransportZigpy", "Error", f"start_zigpy_task error in radio_start: {e}")
