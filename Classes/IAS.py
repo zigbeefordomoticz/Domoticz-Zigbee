@@ -436,7 +436,7 @@ def ias_sirene_mode( self, NwkId , mode, warning_duration ):
     
     strobe_mode = warning_mode = strobe_level = 0x00
 
-    if self.ListOfDevices[NwkId]["Model"] == "WarningDevice":
+    if self.ListOfDevices[NwkId].get("Model") == "WarningDevice":
         strobe_mode, warning_mode = WARNING_DEVICE_MODES.get(mode, (0x00, 0x00))
 
     elif mode in SIRENE_MODE:
