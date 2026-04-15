@@ -77,7 +77,17 @@ class ZigpyTransport(object):
         
         self.writer_queue = None
         self.forwarder_queue = None
+        
+        # Zigpy health state
         self.zigpy_loop = None
+        self._last_heartbeat = None
+        self._last_activity = None     # Zigbee traffic
+        self._last_tick = None         # async monitor
+
+        self._stack_health = "INIT"
+        self._restart_count = 0
+
+        self._shutdown_event = None
         self.zigpy_thread = None
         self.forwarder_thread = None
         
