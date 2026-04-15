@@ -17,7 +17,7 @@ from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
 from Modules.domoticzAbstractLayer import (
     domo_browse_widgets, domo_read_Device_Idx, domo_read_Name,
-    domoticz_error_api, retreive_widgetid_from_deviceId_unit)
+    domoticz_error_api, retrieve_widgetid_from_deviceId_unit)
 
 LIST_CLUSTERTYPE_FOR_GROUPS = ( 
     "LvlControl", "Switch", "Plug",
@@ -158,7 +158,7 @@ def _build_device_widgetList_infos( self, widgetID, ep, ZDeviceName ):
     widget_list = []
     
     for device_ieee, unit in domo_browse_widgets(self, self.Devices): 
-        widget_idx = retreive_widgetid_from_deviceId_unit(self, self.Devices, device_ieee, unit)
+        widget_idx = retrieve_widgetid_from_deviceId_unit(self, self.Devices, device_ieee, unit)
         if widget_idx != int(widgetID):
             continue
         widget = {

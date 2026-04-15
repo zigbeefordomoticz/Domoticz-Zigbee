@@ -16,7 +16,7 @@
 """
 
 
-from Modules.domoticzAbstractLayer import FreeUnit, domo_create_api
+from Modules.domoticzAbstractLayer import retreive_free_unit_for_widget, domo_create_api
 from Modules.domoTools import (GetType, subtypeRGB_FromProfile_Device_IDs,
                                subtypeRGB_FromProfile_Device_IDs_onEp2,
                                update_domoticz_widget)
@@ -142,7 +142,7 @@ def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None
     forceClusterType if you want to overwrite the ClusterType usally based with cType
     """
 
-    unit = FreeUnit(self, Devices, ieee)
+    unit = retreive_free_unit_for_widget(self, Devices, ieee)
     self.log.logging("WidgetCreation", "Debug", "createDomoticzWidget - unit: %s" % unit, nwkid)
 
     self.log.logging( "WidgetCreation", "Debug", "--- cType: %s widgetType: %s Type: %s Subtype: %s SwitchType: %s widgetOption: %s Image: %s ForceCluster: %s" % (
@@ -426,7 +426,7 @@ def create_xcube_widgets(self, Devices, NWKID, DeviceID_IEEE, Ep, t):
 
     # Create the XCube Widget
     Options = createSwitchSelector(self, 10, DeviceType=t, OffHidden=True, SelectorStyle=1)
-    unit = FreeUnit(self, Devices, DeviceID_IEEE, nbunit_=2)  # Look for 2 consecutive slots
+    unit = retreive_free_unit_for_widget(self, Devices, DeviceID_IEEE, nbunit_=2)  # Look for 2 consecutive slots
     
     idx = domo_create_api(self, Devices, DeviceID_IEEE, unit, deviceName(self, NWKID, t, DeviceID_IEEE, Ep), Type_=244, Subtype_=62, Switchtype_=18, widgetOptions=Options)
     

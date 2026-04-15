@@ -18,7 +18,7 @@ status, and notification widgets used by the Zigbee for Domoticz plugin.
 from typing import Any, Dict, Optional, Tuple
 
 from Modules.domoticzAbstractLayer import (
-    FreeUnit, domo_create_api, domo_read_nValue_sValue, domo_update_api,
+    retreive_free_unit_for_widget, domo_create_api, domo_read_nValue_sValue, domo_update_api,
     domoticz_debug_api, domoticz_error_api, domoticz_log_api,
     find_first_unit_widget_from_deviceID, is_device_ieee_in_domoticz_db)
 
@@ -175,7 +175,7 @@ class AdminWidgets:
         
         new_deviceid = Z4D_DEVICEID_ADMIN_WIDGET + f"{self.HardwareID:02d}"
         widget_name = Z4D_DEVICEID_ADMIN_WIDGET_TXT + f" {self.HardwareID:02d}"
-        free_unit = FreeUnit(self, Devices, new_deviceid, nbunit_=1)
+        free_unit = retreive_free_unit_for_widget(self, Devices, new_deviceid, nbunit_=1)
 
         ID: int = domo_create_api(
             self,
@@ -210,7 +210,7 @@ class AdminWidgets:
 
         new_deviceid = Z4D_DEVICEID_STATUS_WIDGET + f"{self.HardwareID:02d}"
         widget_name = Z4D_DEVICEID_STATUS_WIDGET_TXT + f" {self.HardwareID:02d}"
-        free_unit = FreeUnit(self, Devices, new_deviceid, nbunit_=1)
+        free_unit = retreive_free_unit_for_widget(self, Devices, new_deviceid, nbunit_=1)
 
         ID: int = domo_create_api(
             self, Devices, new_deviceid, free_unit, widget_name,
@@ -236,7 +236,7 @@ class AdminWidgets:
 
         new_deviceid = Z4D_DEVICEID_TXT_WIDGET + f"{self.HardwareID:02d}"
         widget_name = Z4D_DEVICEID_TXT_WIDGET_TXT + f" {self.HardwareID:02d}"
-        free_unit = FreeUnit(self, Devices, new_deviceid, nbunit_=1)
+        free_unit = retreive_free_unit_for_widget(self, Devices, new_deviceid, nbunit_=1)
 
         ID: int = domo_create_api(
             self, Devices, new_deviceid, free_unit, widget_name,
