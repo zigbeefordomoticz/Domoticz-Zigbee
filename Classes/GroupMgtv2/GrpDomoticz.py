@@ -763,7 +763,7 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         # Update Device
         nValue = 1
         sValue = str(Level)
-        domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue, Color=Color_), 
+        domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue, Color=Color_)
 
     # Request to force ReadAttribute to each devices part of that group
     resetDevicesHearttBeat(self, GrpId)
