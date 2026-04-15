@@ -669,11 +669,15 @@ def measure_execution_time(func):
             func(self, packet)
 
         finally:
-            if t_start:
-                t_end = int(1000 * time.time())
-                t_elapse = t_end - t_start
-                self.statistics.add_rxTiming(t_elapse)  
-                self.log.logging("TransportZigpy", "Log", f"| (packet_received) | {t_elapse} | {packet.src.address.serialize()[::-1].hex()} | {packet.profile_id} | {packet.lqi} | {packet.rssi} |")
+            try:
+                if t_start:
+                    t_end = int(1000 * time.time())
+                    t_elapse = t_end - t_start
+                    self.statistics.add_rxTiming(t_elapse)  
+                    self.log.logging("TransportZigpy", "Log", f"| (packet_received) | {t_elapse} | {packet.src.address.serialize()[::-1].hex()} | {packet.profile_id} | {packet.lqi} | {packet.rssi} |")
+            except Exception as e:
+                self.log.logging("TransportZigpy", "Error", f"Error in measure_execution_time: {e}") 
+            
     return wrapper
 
     
