@@ -172,12 +172,12 @@ import zigpy.zdo
 import zigpy.zdo.types as zdo_types
 from zigpy.backups import NetworkBackup
 
-from Classes.ZIgpyTransport.zigpyThread import zigpy_heartbeat_activity
 from Classes.ZigpyTransport.instrumentation import write_capture_rx_frames
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8002_frame_content, build_plugin_8014_frame_content,
     build_plugin_8047_frame_content, build_plugin_8048_frame_content)
 from Classes.ZigpyTransport.Transport import ZigpyTransport
+from Classes.ZigpyTransport.zigpyThread import zigpy_heartbeat_activity
 
 LOGGER = logging.getLogger(__name__)
 
@@ -745,8 +745,12 @@ def packet_received(
     """
     self.log.logging("TransportZigpy", "Debug", "packet_received %s" %(packet))
 
-    # Let's notify watchdog that we have received a message
-    zigpy_heartbeat_activity(self)
+    # Notify the watchdog that the stack is alive.
+    # zigpy_heartbeat_activity() expects the ZigpyTransport instance,
+    # not self (which is the App_* object).
+    _transport = getattr(self, 'zigpy_running_ref', None)
+    if _transport is not None:
+        zigpy_heartbeat_activity(_transport)
     
     sender = packet.src.address.serialize()[::-1].hex()
     addr_mode = int(packet.src.addr_mode) if packet.src.addr_mode is not None else None

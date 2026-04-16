@@ -83,7 +83,7 @@ VERIFY_KEY_DELAY = 6
 
 DEAD_STACK_THRESHOLD = 240   # seconds without heartbeat to consider the stack dead
 WATCH_DG_HEARTBEAT_INTERVAL = 30  # seconds between heartbeat checks (internal tick)
-MAX_RESTARTS_PER_HOUR = 2   # circuit-breaker: escalate to plugin restart after this many
+MAX_RESTARTS_PER_HOUR = 5   # circuit-breaker: escalate to plugin restart after this many
 
 def stop_zigpy_thread(self):
     """
@@ -301,7 +301,8 @@ async def _supervisor(self):
                 "TransportZigpy", "Error",
                 f"Supervisor: {MAX_RESTARTS_PER_HOUR} restarts in 1 h — escalating to plugin restart"
             )
-            self.callBackRestartPlugin()
+            if callable(getattr(self, "restart_plugin", None)):
+                self.restart_plugin()
             break
 
         # Radio recovery after repeated *consecutive* failures (not total count).
@@ -573,7 +574,7 @@ async def start_zigpy_task(self, channel, extended_pan_id):
     Configures channel and extended PAN ID from plugin config, starts the radio,
     initializes the writer_queue, runs the worker_loop, and handles shutdown.
     """
-    self.log.logging("TransportZigpy", "Debug", "start_zigpy_task - Starting zigpy thread")
+    self.log.logging("TransportZigpy", "Debug", "start_zigpy_task - Starting zigpy stack with channel %s and extended PAN ID 0x%016x" % (channel, extended_pan_id))
     self.zigpy_running = True
     
     if "channel" in self.pluginconf.pluginConf:
@@ -648,7 +649,7 @@ async def start_zigpy_task(self, channel, extended_pan_id):
 
     await _shutdown_remaining_task(self)
 
-    self.log.logging(["TransportZigpy", "StopProcess"], "Debug", "start_zigpy_task - exiting zigpy thread")
+    self.log.logging(["TransportZigpy", "StopProcess"], "Debug", "start_zigpy_task - exiting zigpy task.")
 
 
 async def _shutdown_remaining_task(self):
