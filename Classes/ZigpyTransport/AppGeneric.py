@@ -172,6 +172,7 @@ import zigpy.zdo
 import zigpy.zdo.types as zdo_types
 from zigpy.backups import NetworkBackup
 
+from Classes.ZIgpyTransport.zigpyThread import zigpy_heartbeat_activity
 from Classes.ZigpyTransport.instrumentation import write_capture_rx_frames
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8002_frame_content, build_plugin_8014_frame_content,
@@ -744,6 +745,9 @@ def packet_received(
     """
     self.log.logging("TransportZigpy", "Debug", "packet_received %s" %(packet))
 
+    # Let's notify watchdog that we have received a message
+    zigpy_heartbeat_activity(self)
+    
     sender = packet.src.address.serialize()[::-1].hex()
     addr_mode = int(packet.src.addr_mode) if packet.src.addr_mode is not None else None
     profile = int(packet.profile_id) if packet.profile_id is not None else None
