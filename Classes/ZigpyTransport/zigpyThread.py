@@ -1197,6 +1197,13 @@ async def get_next_command(self):
             return self.writer_queue.get_nowait()
 
         except queue.Empty:
+            # In case self.zigpy_running is False, we shouldn't wait for a QUIT message
+            # but simply return None, as in worker_loop we will stop iterating 
+            # as self.zigpy_running is False
+            if not self.zigpy_running:
+                return None
+
+            # Otherwise wait a little
             await asyncio.sleep(0.100)
 
         except Exception as e:
