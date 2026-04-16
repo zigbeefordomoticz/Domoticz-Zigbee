@@ -469,8 +469,19 @@ def connection_lost_error(self, message: str) -> None:
     supervisor_active = getattr(self, '_supervisor_running', False)
     transport = getattr(self, 'zigpy_running_ref', None)
 
+    self.log.logging(
+        "TransportZigpyStack", "Debug",
+        f"connection_lost_error: supervisor_active={supervisor_active}, "
+        f"transport={'set' if transport is not None else 'None'}, "
+        f"writer_queue={'set' if (transport and transport.writer_queue) else 'None'}"
+    )
+
     if supervisor_active and transport is not None:
         LOGGER.warning("connection_lost — signalling supervisor for stack restart")
+        self.log.logging(
+            "TransportZigpyStack", "Debug",
+            f"connection_lost_error: setting zigpy_running=False and sending STOP sentinel"
+        )
         # Setting zigpy_running=False causes worker_loop to exit on its next tick.
         # The STOP sentinel wakes get_next_command immediately (it polls at 100ms).
         transport.zigpy_running = False
@@ -479,6 +490,7 @@ def connection_lost_error(self, message: str) -> None:
                 transport.writer_queue.put_nowait("STOP")
     else:
         LOGGER.warning("connection_lost — no active supervisor, requesting plugin restart")
+        self.log.logging("TransportZigpyStack", "Debug", "connection_lost_error: falling back to callBackRestartPlugin()")
         self.callBackRestartPlugin()
 
 
@@ -750,7 +762,10 @@ def packet_received(
     # not self (which is the App_* object).
     _transport = getattr(self, 'zigpy_running_ref', None)
     if _transport is not None:
+        self.log.logging("TransportZigpyStack", "Debug", f"packet_received: heartbeat sent to transport {id(_transport):#x}")
         zigpy_heartbeat_activity(_transport)
+    else:
+        self.log.logging("TransportZigpyStack", "Debug", "packet_received: zigpy_running_ref not set — heartbeat skipped")
     
     sender = packet.src.address.serialize()[::-1].hex()
     addr_mode = int(packet.src.addr_mode) if packet.src.addr_mode is not None else None

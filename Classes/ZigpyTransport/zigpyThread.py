@@ -245,6 +245,13 @@ async def _supervisor(self):
 
     while not self._zigpy_stop_requested:
 
+        self.log.logging(
+            "TransportZigpyStack", "Debug",
+            f"Supervisor: starting cycle #{self._restart_count} "
+            f"(consecutive_failures={self._consecutive_failures}, "
+            f"restart_delay={restart_delay}s, stop_requested={self._zigpy_stop_requested})"
+        )
+
         # Fresh event for this run cycle — prevents a stale set() from a
         # previous cycle from prematurely exiting the next run.
         self._shutdown_event = asyncio.Event()
@@ -257,6 +264,7 @@ async def _supervisor(self):
         await _prepare_for_restart(self)
 
         run_start = self.zigpy_loop.time()
+        self.log.logging("TransportZigpyStack", "Debug", f"Supervisor: entering _run_zigbee_stack (cycle #{self._restart_count})")
 
         try:
             self._stack_health = "STARTING"
@@ -268,6 +276,11 @@ async def _supervisor(self):
             self._stack_health = "CRASHED"
 
         run_duration = self.zigpy_loop.time() - run_start
+        self.log.logging(
+            "TransportZigpyStack", "Debug",
+            f"Supervisor: _run_zigbee_stack returned after {run_duration:.1f}s, "
+            f"health={self._stack_health}, stop_requested={self._zigpy_stop_requested}"
+        )
 
         # If the run ended because stop_zigpy_thread() was called, leave now
         # without scheduling a restart.
@@ -296,6 +309,10 @@ async def _supervisor(self):
         self._restart_timestamps = [t for t in self._restart_timestamps if now - t < 3600]
         self._restart_timestamps.append(now)
 
+        self.log.logging(
+            "TransportZigpyStack", "Debug",
+            f"Supervisor: circuit-breaker count={len(self._restart_timestamps)}/{MAX_RESTARTS_PER_HOUR} in last hour"
+        )
         if len(self._restart_timestamps) >= MAX_RESTARTS_PER_HOUR:
             self.log.logging(
                 "TransportZigpy", "Error",
@@ -317,6 +334,11 @@ async def _supervisor(self):
             "TransportZigpy", "Log",
             f"Supervisor: restarting in {restart_delay}s "
             f"(attempt #{self._restart_count}, consecutive={self._consecutive_failures})"
+        )
+        self.log.logging(
+            "TransportZigpyStack", "Debug",
+            f"Supervisor: sleeping {restart_delay}s before next cycle "
+            f"(next restart_delay will be {min(restart_delay * 2, 60)}s)"
         )
         await asyncio.sleep(restart_delay)
         restart_delay = min(restart_delay * 2, 60)
@@ -341,12 +363,17 @@ async def _prepare_for_restart(self):
     # If the previous run's app was not shut down cleanly (e.g. radio_start
     # timed out), force-disconnect now before re-opening the serial port.
     if self.app is not None:
+        self.log.logging("TransportZigpyStack", "Debug", "_prepare_for_restart: app still set — force-disconnecting")
         with contextlib.suppress(Exception):
             await asyncio.wait_for(self.app.disconnect(), timeout=5.0)
         self.app = None
+        self.log.logging("TransportZigpyStack", "Debug", "_prepare_for_restart: force-disconnect done")
+    else:
+        self.log.logging("TransportZigpyStack", "Debug", "_prepare_for_restart: app is None, no disconnect needed")
 
     # Replace the writer queue so stale pre-crash commands are not replayed.
     self.writer_queue = queue.Queue()
+    self.log.logging("TransportZigpyStack", "Debug", "_prepare_for_restart: fresh writer_queue created")
 
     # Clear per-device concurrency tracking — semaphores from the previous
     # run are invalid after a restart.
@@ -356,6 +383,7 @@ async def _prepare_for_restart(self):
 
     # Ensure the running flag is in a known state for the next start_zigpy_task.
     self.zigpy_running = False
+    self.log.logging("TransportZigpyStack", "Debug", "_prepare_for_restart: state reset complete")
 
 
 async def _run_zigbee_stack(self):
@@ -373,7 +401,9 @@ async def _run_zigbee_stack(self):
     The supervisor treats any return from this coroutine as a signal to
     restart, unless _zigpy_stop_requested is set.
     """
-    zigbee_task   = asyncio.create_task(start_zigpy_task(self, channel=0, extended_pan_id=0))
+    self.log.logging("TransportZigpy", "Log", "_run_zigbee_stack starting")
+    
+    zigbee_task = asyncio.create_task(start_zigpy_task(self, channel=0, extended_pan_id=0))
     shutdown_task = asyncio.create_task(self._shutdown_event.wait())
     watchdog_task = asyncio.create_task(_watchdog(self))
 
@@ -382,12 +412,28 @@ async def _run_zigbee_stack(self):
         return_when=asyncio.FIRST_COMPLETED
     )
 
+    # Log which task(s) triggered the completion for diagnostics
+    task_names = {zigbee_task: "zigbee_task", shutdown_task: "shutdown_task", watchdog_task: "watchdog_task"}
+    for t in done:
+        exc = None
+        try:
+            exc = t.exception()
+        except Exception:
+            pass
+        self.log.logging(
+            "TransportZigpyStack", "Debug",
+            f"_run_zigbee_stack: '{task_names.get(t, t.get_name())}' completed "
+            f"(cancelled={t.cancelled()}, exception={exc!r})"
+        )
+
+    self.log.logging("TransportZigpy", "Log", "_run_zigbee_stack - one task completed, initiating shutdown sequence")
     self._shutdown_event.set()
 
     for task in pending:
         task.cancel()
 
     await asyncio.gather(*pending, return_exceptions=True)
+    self.log.logging("TransportZigpy", "Log", "_run_zigbee_stack ending")
 
 
 def _cleanup(self, loop):
@@ -496,6 +542,10 @@ async def _watchdog(self):
                 self._stack_health = "DEAD"
                 self._shutdown_event.set()
                 return
+            self.log.logging(
+                "TransportZigpyStack", "Debug",
+                f"Watchdog: waiting for first heartbeat, {max(0, startup_deadline - now):.0f}s remaining in startup window"
+            )
             continue
 
         delta = now - self._last_heartbeat
@@ -607,7 +657,12 @@ async def start_zigpy_task(self, channel, extended_pan_id):
 
     except Exception as e:
         self.log.logging("TransportZigpy", "Error", f"start_zigpy_task error in radio_start: {e}")
-        
+
+    self.log.logging(
+        "TransportZigpyStack", "Debug",
+        f"start_zigpy_task: radio_start finished, app={'set' if self.app else 'None'}, zigpy_running={self.zigpy_running}"
+    )
+
     # Run forever
     self.writer_queue = queue.Queue()  # We MUST use queue and not asyncio.Queue, because it is not compatible with the Domoticz framework
 
@@ -628,8 +683,10 @@ async def start_zigpy_task(self, channel, extended_pan_id):
 
     # We exit the worker_loop, shutdown time
     # worker_loop has exited — clear the supervisor flag before shutdown
+    self.log.logging("TransportZigpyStack", "Debug", f"start_zigpy_task: worker_loop exited, zigpy_running={self.zigpy_running}")
     if self.app:
         self.app._supervisor_running = False
+        self.log.logging("TransportZigpyStack", "Debug", "start_zigpy_task: _supervisor_running cleared on app")
 
     try:
         self.log.logging("TransportZigpy", "Debug", "Shutting down zigpy thread...")
@@ -1056,6 +1113,11 @@ async def _radio_startup(self, statistics, pluginconf, use_of_zigpy_persistent_d
     if self.app:
         self.app._supervisor_running = True
         self.app.zigpy_running_ref = self
+        self.log.logging(
+            "TransportZigpyStack", "Debug",
+            f"_radio_startup: supervisor refs injected onto app "
+            f"(_supervisor_running=True, zigpy_running_ref={id(self):#x})"
+        )
 
     
 
