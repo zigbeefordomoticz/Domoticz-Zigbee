@@ -109,7 +109,7 @@ async def _supervisor(self):
         A fresh asyncio.Event is created at the start of every cycle so
         a stale set() from a previous run cannot bleed through.
     """
-    self.log.logging("TransportZigpy", "Log", "Supervisor started")
+    self.log.logging("TransportZigpy", "Debug", "Supervisor started")
 
     restart_delay = 2
 
@@ -138,7 +138,7 @@ async def _supervisor(self):
         try:
             self._stack_health = "STARTING"
             await _run_zigbee_stack(self)
-            self.log.logging("TransportZigpy", "Log", "Zigbee stack exited")
+            self.log.logging("TransportZigpy", "Debug", "Zigbee stack exited")
 
         except Exception as e:
             self.log.logging("TransportZigpy", "Error", f"Zigbee crash: {e}")
@@ -152,7 +152,7 @@ async def _supervisor(self):
         )
 
         if self._zigpy_stop_requested:
-            self.log.logging("TransportZigpy", "Log",
+            self.log.logging("TransportZigpy", "Debug",
                              "Supervisor: stop requested — not restarting")
             break
 
@@ -164,7 +164,7 @@ async def _supervisor(self):
         # Stability reset: a run > 5 min is considered a transient event.
         if run_duration > 300:
             self.log.logging(
-                "TransportZigpy", "Log",
+                "TransportZigpy", "Debug",
                 f"Supervisor: stack was stable for {run_duration:.0f}s "
                 f"— resetting backoff and failure counter"
             )
@@ -203,7 +203,7 @@ async def _supervisor(self):
             await _maybe_reset_radio(self)
 
         self.log.logging(
-            "TransportZigpy", "Log",
+            "TransportZigpy", "Debug",
             f"Supervisor: restarting in {restart_delay}s "
             f"(attempt #{self._restart_count}, consecutive={self._consecutive_failures})"
         )
@@ -215,7 +215,7 @@ async def _supervisor(self):
         await asyncio.sleep(restart_delay)
         restart_delay = min(restart_delay * 2, 60)
 
-    self.log.logging("TransportZigpy", "Log", "Supervisor exiting — stopping event loop")
+    self.log.logging("TransportZigpy", "Debug", "Supervisor exiting — stopping event loop")
     asyncio.get_running_loop().stop()
 
 
@@ -286,7 +286,7 @@ async def _run_zigbee_stack(self):
         itself (coroutines share their enclosing task), so it is
         automatically excluded from the cancel sweep.
     """
-    self.log.logging("TransportZigpy", "Log", "_run_zigbee_stack starting")
+    self.log.logging("TransportZigpy", "Debug", "_run_zigbee_stack starting")
 
     zigbee_task   = asyncio.create_task(start_zigpy_task(self, channel=0, extended_pan_id=0))
     shutdown_task = asyncio.create_task(self._shutdown_event.wait())
@@ -297,7 +297,7 @@ async def _run_zigbee_stack(self):
         return_when=asyncio.FIRST_COMPLETED,
     )
 
-    self.log.logging("TransportZigpyStack", "Log",
+    self.log.logging("TransportZigpyStack", "Debug",
                      "_run_zigbee_stack - one task completed, initiating shutdown sequence")
 
     task_names = {
@@ -338,7 +338,7 @@ async def _run_zigbee_stack(self):
             t.cancel()
         await asyncio.gather(*stray, return_exceptions=True)
 
-    self.log.logging("TransportZigpyStack", "Log", "_run_zigbee_stack ending")
+    self.log.logging("TransportZigpyStack", "Debug", "_run_zigbee_stack ending")
 
 
 # ---------------------------------------------------------------------------
@@ -362,7 +362,7 @@ async def _watchdog(self):
     Logging: state transitions only — no per-tick log spam.
     Poll interval: WATCH_DG_HEARTBEAT_INTERVAL seconds.
     """
-    self.log.logging("TransportZigpy", "Log", "Watchdog started")
+    self.log.logging("TransportZigpy", "Debug", "Watchdog started")
 
     loop = self.zigpy_loop
     startup_deadline = loop.time() + STARTUP_TIMEOUT
@@ -372,7 +372,7 @@ async def _watchdog(self):
         await asyncio.sleep(WATCH_DG_HEARTBEAT_INTERVAL)
 
         self.log.logging(
-            "TransportZigpy", "Log",
+            "TransportZigpy", "Debug",
             f"Watchdog tick: now: {loop.time()}, last_heartbeat={self._last_heartbeat}, "
             f"startup_deadline={startup_deadline}, current_health={self._stack_health}"
         )
@@ -409,7 +409,7 @@ async def _watchdog(self):
 
         if new_health != _prev_health:
             self.log.logging(
-                "TransportZigpyStack", "Log",
+                "TransportZigpyStack", "Debug",
                 f"Watchdog: stack health {_prev_health} → {new_health} "
                 f"({delta:.0f}s since last heartbeat)"
             )
@@ -474,7 +474,7 @@ def _cleanup(self, loop):
     loop.run_forever() returns.  Prevents task leakage and
     "coroutine was never awaited" warnings.
     """
-    self.log.logging("TransportZigpy", "Log", "Cleaning up loop")
+    self.log.logging("TransportZigpy", "Debug", "Cleaning up loop")
 
     for task in asyncio.all_tasks(loop):
         task.cancel()
