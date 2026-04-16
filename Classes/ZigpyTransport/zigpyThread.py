@@ -81,8 +81,9 @@ WAITING_TIME_BETWEEN_REQUESTS = .100
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 VERIFY_KEY_DELAY = 6
 
+STARTUP_TIMEOUT = 120  # 2 min to receive the first heartbeat
 DEAD_STACK_THRESHOLD = 240   # seconds without heartbeat to consider the stack dead
-WATCH_DG_HEARTBEAT_INTERVAL = 30  # seconds between heartbeat checks (internal tick)
+WATCH_DG_HEARTBEAT_INTERVAL = 10  # seconds between heartbeat checks (internal tick)
 MAX_RESTARTS_PER_HOUR = 5   # circuit-breaker: escalate to plugin restart after this many
 
 def stop_zigpy_thread(self):
@@ -402,38 +403,61 @@ async def _run_zigbee_stack(self):
     restart, unless _zigpy_stop_requested is set.
     """
     self.log.logging("TransportZigpy", "Log", "_run_zigbee_stack starting")
-    
+
     zigbee_task = asyncio.create_task(start_zigpy_task(self, channel=0, extended_pan_id=0))
     shutdown_task = asyncio.create_task(self._shutdown_event.wait())
     watchdog_task = asyncio.create_task(_watchdog(self))
 
     done, pending = await asyncio.wait(
-        {zigbee_task, shutdown_task, watchdog_task},
+        {
+            zigbee_task, 
+            shutdown_task, 
+            watchdog_task
+            },
         return_when=asyncio.FIRST_COMPLETED
     )
+    self.log.logging("TransportZigpyStack", "Log", "_run_zigbee_stack - one task completed, initiating shutdown sequence")
 
     # Log which task(s) triggered the completion for diagnostics
     task_names = {zigbee_task: "zigbee_task", shutdown_task: "shutdown_task", watchdog_task: "watchdog_task"}
-    for t in done:
+    for _t in done:
         exc = None
-        try:
-            exc = t.exception()
-        except Exception:
-            pass  # nosec B110 (nothing to do if happen)
+        with contextlib.suppress(Exception):
+            exc = _t.exception()
+
         self.log.logging(
             "TransportZigpyStack", "Debug",
-            f"_run_zigbee_stack: '{task_names.get(t, t.get_name())}' completed "
-            f"(cancelled={t.cancelled()}, exception={exc!r})"
+            f"_run_zigbee_stack: '{task_names.get(_t, _t.get_name())}' completed "
+            f"(cancelled={_t.cancelled()}, exception={exc!r})"
         )
 
-    self.log.logging("TransportZigpy", "Log", "_run_zigbee_stack - one task completed, initiating shutdown sequence")
     self._shutdown_event.set()
 
     for task in pending:
         task.cancel()
 
     await asyncio.gather(*pending, return_exceptions=True)
-    self.log.logging("TransportZigpy", "Log", "_run_zigbee_stack ending")
+
+    # All three lifecycle tasks (zigbee_task, shutdown_task, watchdog_task) are
+    # now done.  asyncio.current_task() here is the _supervisor coroutine itself,
+    # so it is automatically excluded.  Cancel any stray application tasks that
+    # survived (e.g. send_unicast_command-*, topology-scan, etc.).
+    lifecycle_tasks = {zigbee_task, shutdown_task, watchdog_task}
+    stray = [
+        t for t in asyncio.all_tasks()
+        if t is not asyncio.current_task() and t not in lifecycle_tasks
+    ]
+    if stray:
+        self.log.logging(
+            "TransportZigpyStack", "Debug",
+            f"_run_zigbee_stack: cancelling {len(stray)} stray task(s): "
+            f"{[t.get_name() for t in stray]}"
+        )
+        for t in stray:
+            t.cancel()
+        await asyncio.gather(*stray, return_exceptions=True)
+
+    self.log.logging("TransportZigpyStack", "Log", "_run_zigbee_stack ending")
 
 
 def _cleanup(self, loop):
@@ -519,16 +543,17 @@ async def _watchdog(self):
         - Failure triggers are logged at Error level.
         - No per-tick log spam (previous version logged every 5 s).
 
-    Poll interval: WATCH_DG_HEARTBEAT_INTERVAL (30 s).
+    Poll interval: WATCH_DG_HEARTBEAT_INTERVAL.
     """
     self.log.logging("TransportZigpy", "Log", "Watchdog started")
 
     loop = self.zigpy_loop
-    startup_deadline = loop.time() + 120  # 2 min to receive the first heartbeat
+    startup_deadline = loop.time() + STARTUP_TIMEOUT  # 2 min to receive the first heartbeat
     _prev_health = self._stack_health
 
     while not self._shutdown_event.is_set():
         await asyncio.sleep(WATCH_DG_HEARTBEAT_INTERVAL)
+        self.log.logging( "TransportZigpy", "Log", f"Watchdog tick: now: {loop.time()}, last_heartbeat={self._last_heartbeat}, startup_deadline={startup_deadline}, current_health={self._stack_health}" )
 
         now = loop.time()
 
@@ -536,12 +561,13 @@ async def _watchdog(self):
             # Still waiting for the first heartbeat after (re)start.
             if now > startup_deadline:
                 self.log.logging(
-                    "TransportZigpy", "Error",
+                    "TransportZigpyStack", "Error",
                     "Watchdog: no heartbeat within 120s startup window — triggering supervised restart"
                 )
                 self._stack_health = "DEAD"
                 self._shutdown_event.set()
                 return
+
             self.log.logging(
                 "TransportZigpyStack", "Debug",
                 f"Watchdog: waiting for first heartbeat, {max(0, startup_deadline - now):.0f}s remaining in startup window"
@@ -563,7 +589,7 @@ async def _watchdog(self):
         # Log only on state transitions — no per-tick noise.
         if new_health != _prev_health:
             self.log.logging(
-                "TransportZigpy", "Log",
+                "TransportZigpyStack", "Log",
                 f"Watchdog: stack health {_prev_health} → {new_health} ({delta:.0f}s since last heartbeat)"
             )
             _prev_health = new_health
@@ -571,11 +597,12 @@ async def _watchdog(self):
 
         if new_health == "DEAD":
             self.log.logging(
-                "TransportZigpy", "Error",
+                "TransportZigpyStack", "Error",
                 f"Watchdog: heartbeat lost for {delta:.0f}s — triggering supervised restart"
             )
             self._shutdown_event.set()
             return
+
 
 async def _maybe_reset_radio(self):
     """
@@ -701,49 +728,11 @@ async def start_zigpy_task(self, channel, extended_pan_id):
         if self.app:
             await self.app.disconnect()
 
-    #await asyncio.gather(task, return_exceptions=False)
     await asyncio.sleep(1)
-
-    await _shutdown_remaining_task(self)
 
     self.log.logging(["TransportZigpy", "StopProcess"], "Debug", "start_zigpy_task - exiting zigpy task.")
 
 
-async def _shutdown_remaining_task(self):
-    """
-    Cleans up all outstanding asyncio tasks during shutdown.
-
-    Cancels all tasks except the current one, waits for completion, and logs
-    any exceptions. Ensures graceful termination of pending operations.
-    """
-    # Get all tasks except the current one
-    tasks = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
-    
-    if not tasks:
-        self.log.logging(["TransportZigpy", "StopProcess"], "Debug", "No outstanding tasks to cancel")
-        return
-
-    # Log the number of tasks being cancelled
-    self.log.logging(["TransportZigpy", "StopProcess"], "Debug", f"Cancelling {len(tasks)} outstanding tasks")
-
-    # Cancel all tasks
-    for task in tasks:
-        if not task.done():  # Only cancel tasks that are not already done
-            task.cancel()
-
-    # Wait for tasks to complete or handle exceptions
-    try:
-        await asyncio.gather(*tasks, return_exceptions=True)
-
-    except asyncio.CancelledError:
-        # Ignore CancelledError as it's expected during task cancellation
-        pass
-
-    except Exception as e:
-        self.log.logging(["TransportZigpy", "StopProcess"], "Error", f"Error during task shutdown: {e}")
-
-    self.log.logging(["TransportZigpy", "StopProcess"], "Debug", "Task cleanup completed")
-    
 
 async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0):
     """
