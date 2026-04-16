@@ -419,7 +419,7 @@ async def _run_zigbee_stack(self):
         try:
             exc = t.exception()
         except Exception:
-            pass
+            pass  # nosec B110 (nothing to do if happen)
         self.log.logging(
             "TransportZigpyStack", "Debug",
             f"_run_zigbee_stack: '{task_names.get(t, t.get_name())}' completed "
