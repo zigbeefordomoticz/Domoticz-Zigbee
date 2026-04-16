@@ -83,7 +83,7 @@ VERIFY_KEY_DELAY = 6
 
 DEAD_STACK_THRESHOLD = 240   # seconds without heartbeat to consider the stack dead
 WATCH_DG_HEARTBEAT_INTERVAL = 30  # seconds between heartbeat checks (internal tick)
-MAX_RESTARTS_PER_HOUR = 10   # circuit-breaker: escalate to plugin restart after this many
+MAX_RESTARTS_PER_HOUR = 2   # circuit-breaker: escalate to plugin restart after this many
 
 def stop_zigpy_thread(self):
     """
@@ -256,7 +256,7 @@ async def _supervisor(self):
         # Clean up state left over from the previous run.
         await _prepare_for_restart(self)
 
-        run_start = asyncio.get_running_loop().time()
+        run_start = self.zigpy_loop.time()
 
         try:
             self._stack_health = "STARTING"
@@ -267,7 +267,7 @@ async def _supervisor(self):
             self.log.logging("TransportZigpy", "Error", f"Zigbee crash: {e}")
             self._stack_health = "CRASHED"
 
-        run_duration = asyncio.get_running_loop().time() - run_start
+        run_duration = self.zigpy_loop.time() - run_start
 
         # If the run ended because stop_zigpy_thread() was called, leave now
         # without scheduling a restart.
@@ -301,8 +301,7 @@ async def _supervisor(self):
                 "TransportZigpy", "Error",
                 f"Supervisor: {MAX_RESTARTS_PER_HOUR} restarts in 1 h — escalating to plugin restart"
             )
-            if callable(getattr(self, "restart_plugin", None)):
-                self.restart_plugin()
+            self.callBackRestartPlugin()
             break
 
         # Radio recovery after repeated *consecutive* failures (not total count).
@@ -477,7 +476,7 @@ async def _watchdog(self):
     """
     self.log.logging("TransportZigpy", "Log", "Watchdog started")
 
-    loop = asyncio.get_running_loop()
+    loop = self.zigpy_loop
     startup_deadline = loop.time() + 120  # 2 min to receive the first heartbeat
     _prev_health = self._stack_health
 
