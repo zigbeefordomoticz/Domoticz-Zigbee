@@ -420,7 +420,7 @@ def _cleanup(self, loop):
             asyncio.gather(*asyncio.all_tasks(loop), return_exceptions=True)
         )
     except Exception:
-        pass
+        pass  # nosec B110 (nothing to do if happen)
 
     loop.close()
 
