@@ -177,6 +177,7 @@ from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8002_frame_content, build_plugin_8014_frame_content,
     build_plugin_8047_frame_content, build_plugin_8048_frame_content)
 from Classes.ZigpyTransport.Transport import ZigpyTransport
+from Classes.ZigpyTransport.supervisor import zigpy_heartbeat_activity
 
 LOGGER = logging.getLogger(__name__)
 
@@ -460,7 +461,37 @@ def connection_lost_error(self, message: str) -> None:
     self.restarting = True
     self.current_error = "connection lost"
     LOGGER.error(message)
-    self.callBackRestartPlugin()
+
+    # If the in-process supervisor is active, let it handle recovery
+    # without triggering a full Domoticz plugin restart
+    # If the supervisor is active, let it handle recovery without a full plugin restart.
+    # _supervisor_running and zigpy_running_ref are injected onto self.app by _radio_startup().
+    supervisor_active = getattr(self, '_supervisor_running', False)
+    transport = getattr(self, 'zigpy_running_ref', None)
+
+    self.log.logging(
+        "TransportZigpyStack", "Debug",
+        f"connection_lost_error: supervisor_active={supervisor_active}, "
+        f"transport={'set' if transport is not None else 'None'}, "
+        f"writer_queue={'set' if (transport and transport.writer_queue) else 'None'}"
+    )
+
+    if supervisor_active and transport is not None:
+        LOGGER.warning("connection_lost — signalling supervisor for stack restart")
+        self.log.logging(
+            "TransportZigpyStack", "Debug",
+            f"connection_lost_error: setting zigpy_running=False and sending STOP sentinel"
+        )
+        # Setting zigpy_running=False causes worker_loop to exit on its next tick.
+        # The STOP sentinel wakes get_next_command immediately (it polls at 100ms).
+        transport.zigpy_running = False
+        if transport.writer_queue:
+            with contextlib.suppress(Exception):
+                transport.writer_queue.put_nowait("STOP")
+    else:
+        LOGGER.warning("connection_lost — no active supervisor, requesting plugin restart")
+        self.log.logging("TransportZigpyStack", "Debug", "connection_lost_error: falling back to callBackRestartPlugin()")
+        self.callBackRestartPlugin()
 
 
 def _retrieve_previous_backup(self):
@@ -726,6 +757,16 @@ def packet_received(
     """
     self.log.logging("TransportZigpy", "Debug", "packet_received %s" %(packet))
 
+    # Notify the watchdog that the stack is alive.
+    # zigpy_heartbeat_activity() expects the ZigpyTransport instance,
+    # not self (which is the App_* object).
+    _transport = getattr(self, 'zigpy_running_ref', None)
+    if _transport is not None:
+        self.log.logging("TransportZigpyStack", "Debug", f"packet_received: heartbeat sent to transport {id(_transport):#x}")
+        zigpy_heartbeat_activity(_transport)
+    else:
+        self.log.logging("TransportZigpyStack", "Debug", "packet_received: zigpy_running_ref not set — heartbeat skipped")
+    
     sender = packet.src.address.serialize()[::-1].hex()
     addr_mode = int(packet.src.addr_mode) if packet.src.addr_mode is not None else None
     profile = int(packet.profile_id) if packet.profile_id is not None else None
