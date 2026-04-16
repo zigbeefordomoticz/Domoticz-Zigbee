@@ -177,7 +177,7 @@ from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8002_frame_content, build_plugin_8014_frame_content,
     build_plugin_8047_frame_content, build_plugin_8048_frame_content)
 from Classes.ZigpyTransport.Transport import ZigpyTransport
-from Classes.ZigpyTransport.zigpyThread import zigpy_heartbeat_activity
+from Classes.ZigpyTransport.supervisor import zigpy_heartbeat_activity
 
 LOGGER = logging.getLogger(__name__)
 
