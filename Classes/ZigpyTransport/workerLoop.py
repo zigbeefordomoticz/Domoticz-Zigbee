@@ -194,7 +194,7 @@ async def dispatch_command(self, data):
     elif cmd == "RESTART-ZIGPY-STACK":
         # Graceful stack restart: exit worker_loop → start_zigpy_task exits →
         # supervisor restarts the full stack.  Does NOT restart the Domoticz plugin.
-        self.log.logging("TransportZigpy", "Log",
+        self.log.logging("TransportZigpy", "Debug",
                          "RESTART-ZIGPY-STACK: graceful stack restart requested")
         self.zigpy_running = False
         self.writer_queue.put_nowait("STOP")
@@ -203,7 +203,7 @@ async def dispatch_command(self, data):
         # Soft reset: disconnect and reconnect the transport layer only.
         # The zigpy stack (network state, device table) is preserved.
         # Falls back to a full stack restart if reconnect fails.
-        self.log.logging("TransportZigpy", "Log",
+        self.log.logging("TransportZigpy", "Debug",
                          "RESET-RADIO-COMMUNICATION: transport reconnect requested")
         if self.app:
             try:

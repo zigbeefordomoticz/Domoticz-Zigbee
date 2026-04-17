@@ -143,7 +143,7 @@ def zigpy_thread_function(self):
           stop_zigpy_thread() sets from the Domoticz thread, plus a
           call_soon_threadsafe() on the current cycle's _shutdown_event.
     """
-    self.log.logging("TransportZigpy", "Log", "zigpyThread starting")
+    self.log.logging("TransportZigpy", "Debug", "zigpyThread starting")
 
     time.sleep(random.uniform(0.5, 3.5))  # nosec
 
