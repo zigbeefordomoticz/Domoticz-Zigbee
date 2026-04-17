@@ -22,7 +22,17 @@ import unittest
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch, call
 
-import zigpy.config
+# NOTE: zigpy.config is intentionally NOT imported at module level.
+# Module-level imports of external packages run at collection time, before
+# any fixture has had a chance to patch sys.modules.  All zigpy imports
+# happen inside test methods or helpers so that the session-scoped
+# _radio_stubs fixture always runs first.
+
+
+def _zc():
+    """Lazy accessor for zigpy.config — deferred past pytest collection time."""
+    import zigpy.config  # noqa: PLC0415
+    return zigpy.config
 
 
 # ---------------------------------------------------------------------------
@@ -116,7 +126,7 @@ class TestEzspConfigurationSetup(unittest.TestCase):
         rc = _make_radio_conf()
         config = ezsp_configuration_setup(t, rc, "/dev/ttyUSB0", {})
         self.assertEqual(
-            config[zigpy.config.CONF_DEVICE][zigpy.config.CONF_DEVICE_PATH],
+            config[_zc().CONF_DEVICE][_zc().CONF_DEVICE_PATH],
             "/dev/ttyUSB0"
         )
 
@@ -126,7 +136,7 @@ class TestEzspConfigurationSetup(unittest.TestCase):
         rc = _make_radio_conf()
         config = ezsp_configuration_setup(t, rc, "/dev/ttyUSB0", {})
         self.assertEqual(
-            config[zigpy.config.CONF_DEVICE][zigpy.config.CONF_DEVICE_BAUDRATE],
+            config[_zc().CONF_DEVICE][_zc().CONF_DEVICE_BAUDRATE],
             115200
         )
 
@@ -136,7 +146,7 @@ class TestEzspConfigurationSetup(unittest.TestCase):
         rc = _make_radio_conf()
         config = ezsp_configuration_setup(t, rc, "/dev/ttyUSB0", {"Baudrate": 57600})
         self.assertEqual(
-            config[zigpy.config.CONF_DEVICE][zigpy.config.CONF_DEVICE_BAUDRATE],
+            config[_zc().CONF_DEVICE][_zc().CONF_DEVICE_BAUDRATE],
             57600
         )
 
@@ -147,7 +157,7 @@ class TestEzspConfigurationSetup(unittest.TestCase):
         config = ezsp_configuration_setup(t, rc, "/dev/ttyUSB0",
                                           {"FlowControl": "software"})
         self.assertIsNone(
-            config[zigpy.config.CONF_DEVICE][zigpy.config.CONF_DEVICE_FLOW_CONTROL]
+            config[_zc().CONF_DEVICE][_zc().CONF_DEVICE_FLOW_CONTROL]
         )
 
     def test_handle_unknown_devices_is_true(self):
@@ -180,7 +190,7 @@ class TestEzspConfigurationSetup(unittest.TestCase):
         rc = _make_radio_conf()
         config = ezsp_configuration_setup(t, rc, "/dev/ttyUSB0", {})
         self.assertEqual(
-            config[zigpy.config.CONF_NWK][zigpy.config.CONF_NWK_TX_POWER],
+            config[_zc().CONF_NWK][_zc().CONF_NWK_TX_POWER],
             10
         )
 
@@ -197,7 +207,7 @@ class TestZnpConfigurationSetup(unittest.TestCase):
         rc = _make_radio_conf()
         config = znp_configuration_setup(t, rc, "/dev/ttyUSB1", {})
         self.assertEqual(
-            config[zigpy.config.CONF_DEVICE][zigpy.config.CONF_DEVICE_PATH],
+            config[_zc().CONF_DEVICE][_zc().CONF_DEVICE_PATH],
             "/dev/ttyUSB1"
         )
 
@@ -222,7 +232,7 @@ class TestDeconzConfigurationSetup(unittest.TestCase):
         rc = _make_radio_conf()
         config = deconz_configuration_setup(t, rc, "/dev/ttyUSB2", {})
         self.assertEqual(
-            config[zigpy.config.CONF_DEVICE][zigpy.config.CONF_DEVICE_PATH],
+            config[_zc().CONF_DEVICE][_zc().CONF_DEVICE_PATH],
             "/dev/ttyUSB2"
         )
 
@@ -231,8 +241,8 @@ class TestDeconzConfigurationSetup(unittest.TestCase):
         t = make_transport()
         rc = _make_radio_conf()
         config = deconz_configuration_setup(t, rc, "/dev/ttyUSB2", {})
-        self.assertIn(zigpy.config.CONF_NWK, config)
-        self.assertIn(zigpy.config.CONF_OTA, config)
+        self.assertIn(_zc().CONF_NWK, config)
+        self.assertIn(_zc().CONF_OTA, config)
 
 
 # ===========================================================================
@@ -246,7 +256,7 @@ class TestBlzConfigurationSetup(unittest.TestCase):
         t = make_transport()
         config = blz_configuration_setup(t, None, "/dev/ttyUSB0", {})
         self.assertEqual(
-            config[zigpy.config.CONF_DEVICE][zigpy.config.CONF_DEVICE_BAUDRATE],
+            config[_zc().CONF_DEVICE][_zc().CONF_DEVICE_BAUDRATE],
             2_000_000
         )
 
@@ -256,7 +266,7 @@ class TestBlzConfigurationSetup(unittest.TestCase):
         config = blz_configuration_setup(t, None, "/dev/ttyUSB0",
                                          {"Baudrate": 115200})
         self.assertEqual(
-            config[zigpy.config.CONF_DEVICE][zigpy.config.CONF_DEVICE_BAUDRATE],
+            config[_zc().CONF_DEVICE][_zc().CONF_DEVICE_BAUDRATE],
             115200
         )
 
@@ -269,9 +279,9 @@ class TestOptionalConfigurationSetup(unittest.TestCase):
 
     def _base_config(self):
         return {
-            zigpy.config.CONF_DEVICE: {},
-            zigpy.config.CONF_NWK:    {},
-            zigpy.config.CONF_OTA:    {},
+            _zc().CONF_DEVICE: {},
+            _zc().CONF_NWK:    {},
+            _zc().CONF_OTA:    {},
         }
 
     def test_extended_pan_id_set_when_nonzero(self):
@@ -280,7 +290,7 @@ class TestOptionalConfigurationSetup(unittest.TestCase):
         config = self._base_config()
         rc = _make_radio_conf()
         optional_configuration_setup(t, config, rc, set_extendedPanId=0xDEADBEEF, set_channel=0)
-        self.assertIn(zigpy.config.CONF_NWK_EXTENDED_PAN_ID, config[zigpy.config.CONF_NWK])
+        self.assertIn(_zc().CONF_NWK_EXTENDED_PAN_ID, config[_zc().CONF_NWK])
 
     def test_extended_pan_id_not_set_when_zero(self):
         from Classes.ZigpyTransport.radioStart import optional_configuration_setup
@@ -288,7 +298,7 @@ class TestOptionalConfigurationSetup(unittest.TestCase):
         config = self._base_config()
         rc = _make_radio_conf()
         optional_configuration_setup(t, config, rc, set_extendedPanId=0, set_channel=0)
-        self.assertNotIn(zigpy.config.CONF_NWK_EXTENDED_PAN_ID, config[zigpy.config.CONF_NWK])
+        self.assertNotIn(_zc().CONF_NWK_EXTENDED_PAN_ID, config[_zc().CONF_NWK])
 
     def test_channel_set_when_nonzero(self):
         from Classes.ZigpyTransport.radioStart import optional_configuration_setup
@@ -296,7 +306,7 @@ class TestOptionalConfigurationSetup(unittest.TestCase):
         config = self._base_config()
         rc = _make_radio_conf()
         optional_configuration_setup(t, config, rc, set_extendedPanId=0, set_channel=15)
-        self.assertEqual(config[zigpy.config.CONF_NWK][zigpy.config.CONF_NWK_CHANNEL], 15)
+        self.assertEqual(config[_zc().CONF_NWK][_zc().CONF_NWK_CHANNEL], 15)
 
     def test_channel_not_set_when_zero(self):
         from Classes.ZigpyTransport.radioStart import optional_configuration_setup
@@ -304,28 +314,28 @@ class TestOptionalConfigurationSetup(unittest.TestCase):
         config = self._base_config()
         rc = _make_radio_conf()
         optional_configuration_setup(t, config, rc, set_extendedPanId=0, set_channel=0)
-        self.assertNotIn(zigpy.config.CONF_NWK_CHANNEL, config[zigpy.config.CONF_NWK])
+        self.assertNotIn(_zc().CONF_NWK_CHANNEL, config[_zc().CONF_NWK])
 
     def test_ota_disabled(self):
         from Classes.ZigpyTransport.radioStart import optional_configuration_setup
         t = make_transport()
         config = self._base_config()
         optional_configuration_setup(t, config, None, set_extendedPanId=0, set_channel=0)
-        self.assertFalse(config[zigpy.config.CONF_OTA][zigpy.config.CONF_OTA_ENABLED])
+        self.assertFalse(config[_zc().CONF_OTA][_zc().CONF_OTA_ENABLED])
 
     def test_topology_scan_disabled_by_default(self):
         from Classes.ZigpyTransport.radioStart import optional_configuration_setup
         t = make_transport()
         config = self._base_config()
         optional_configuration_setup(t, config, None, set_extendedPanId=0, set_channel=0)
-        self.assertFalse(config[zigpy.config.CONF_TOPO_SCAN_ENABLED])
+        self.assertFalse(config[_zc().CONF_TOPO_SCAN_ENABLED])
 
     def test_watchdog_enabled(self):
         from Classes.ZigpyTransport.radioStart import optional_configuration_setup
         t = make_transport()
         config = self._base_config()
         optional_configuration_setup(t, config, None, set_extendedPanId=0, set_channel=0)
-        self.assertTrue(config[zigpy.config.CONF_WATCHDOG_ENABLED])
+        self.assertTrue(config[_zc().CONF_WATCHDOG_ENABLED])
 
     def test_persistent_db_in_file(self):
         from Classes.ZigpyTransport.radioStart import optional_configuration_setup
@@ -334,8 +344,8 @@ class TestOptionalConfigurationSetup(unittest.TestCase):
         t.pluginconf.pluginConf["pluginData"] = "/tmp/zigbee"
         config = self._base_config()
         optional_configuration_setup(t, config, None, set_extendedPanId=0, set_channel=0)
-        self.assertIn(zigpy.config.CONF_DATABASE, config)
-        self.assertIn("zigpy_persistent_01.db", config[zigpy.config.CONF_DATABASE])
+        self.assertIn(_zc().CONF_DATABASE, config)
+        self.assertIn("zigpy_persistent_01.db", config[_zc().CONF_DATABASE])
 
     def test_persistent_db_in_memory(self):
         from Classes.ZigpyTransport.radioStart import optional_configuration_setup
@@ -343,7 +353,7 @@ class TestOptionalConfigurationSetup(unittest.TestCase):
         t.pluginconf.pluginConf["enableZigpyPersistentInMemory"] = True
         config = self._base_config()
         optional_configuration_setup(t, config, None, set_extendedPanId=0, set_channel=0)
-        self.assertEqual(config.get(zigpy.config.CONF_DATABASE), ":memory:")
+        self.assertEqual(config.get(_zc().CONF_DATABASE), ":memory:")
 
     def test_auto_backup_enabled(self):
         from Classes.ZigpyTransport.radioStart import optional_configuration_setup
@@ -351,8 +361,8 @@ class TestOptionalConfigurationSetup(unittest.TestCase):
         t.pluginconf.pluginConf["autoBackup"] = 3600
         config = self._base_config()
         optional_configuration_setup(t, config, None, set_extendedPanId=0, set_channel=0)
-        self.assertTrue(config.get(zigpy.config.CONF_NWK_BACKUP_ENABLED))
-        self.assertEqual(config.get(zigpy.config.CONF_NWK_BACKUP_PERIOD), 3600)
+        self.assertTrue(config.get(_zc().CONF_NWK_BACKUP_ENABLED))
+        self.assertEqual(config.get(_zc().CONF_NWK_BACKUP_PERIOD), 3600)
 
     def test_auto_backup_disabled_when_none(self):
         from Classes.ZigpyTransport.radioStart import optional_configuration_setup
@@ -360,7 +370,7 @@ class TestOptionalConfigurationSetup(unittest.TestCase):
         t.pluginconf.pluginConf["autoBackup"] = None
         config = self._base_config()
         optional_configuration_setup(t, config, None, set_extendedPanId=0, set_channel=0)
-        self.assertFalse(config.get(zigpy.config.CONF_NWK_BACKUP_ENABLED))
+        self.assertFalse(config.get(_zc().CONF_NWK_BACKUP_ENABLED))
 
 
 # ===========================================================================
