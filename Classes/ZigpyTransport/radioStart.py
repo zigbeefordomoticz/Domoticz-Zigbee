@@ -411,7 +411,7 @@ async def _radio_startup(self, statistics, pluginconf, use_of_zigpy_persistent_d
             callBackGetDevice=self.ZigpyGetDevice,
             callBackBackup=self.ZigpyBackupAvailable,
             callBackRestartPlugin=self.restart_plugin,
-            callBackHeartbeat=lambda: zigpy_coordinator_heartbeat(self),
+            callBackHeartbeat=lambda: _transport_heartbeat(self),
             captureRxFrame=self.captureRxFrame,
             auto_form=True,
             force_form=new_network,
