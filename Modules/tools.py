@@ -300,23 +300,23 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
             return found
 
         # We found IEEE, let's get the Short Address
-        exitsingNwkId = self.IEEE2NWK[lookupIEEE]
-        if exitsingNwkId == lookupNwkId:
+        existing_nwkid = self.IEEE2NWK[lookupIEEE]
+        if existing_nwkid == lookupNwkId:
             # Everything fine, we have found it
             # and this is the same ShortId as the one existing
             return True
 
-        if exitsingNwkId not in self.ListOfDevices:
+        if existing_nwkid not in self.ListOfDevices:
             # Should not happen
             # We have an entry in IEEE2NWK, but no corresponding
             # in ListOfDevices !!
             # Let's cleanup
             del self.IEEE2NWK[lookupIEEE]
             self.log.logging("PluginTools", "Error", "DeviceExist - Found inconsistency ! Not Device %s not found, while looking for %s (%s)" % (
-                exitsingNwkId, lookupIEEE, lookupNwkId))
+                existing_nwkid, lookupIEEE, lookupNwkId))
             return False
 
-        if 'Status' not in self.ListOfDevices[ exitsingNwkId ]:
+        if 'Status' not in self.ListOfDevices[ existing_nwkid ]:
             # Should not happen
             # That seems not correct
             # We might have to do some cleanup here !
@@ -324,12 +324,12 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
             # Delete the entry in IEEE2NWK as it will be recreated in Decode004d
             del self.IEEE2NWK[ lookupIEEE ]
             # Delete the all Data Structure
-            del self.ListOfDevices[ exitsingNwkId ]
+            del self.ListOfDevices[ existing_nwkid ]
             self.log.logging("PluginTools", "Error", "DeviceExist - Found inconsistency ! Not 'Status' attribute for Device %s, while looking for %s (%s)" % (
-                exitsingNwkId, lookupIEEE, lookupNwkId))
+                existing_nwkid, lookupIEEE, lookupNwkId))
             return False
 
-        if self.ListOfDevices[exitsingNwkId]["Status"] in ("004d", "0045", "0043", "8045", "8043", "UNKNOWN", "UNKNOW", ):
+        if self.ListOfDevices[existing_nwkid]["Status"] in ("004d", "0045", "0043", "8045", "8043", "UNKNOWN", "UNKNOW", ):
             # We are in the discovery/provisioning process,
             # and the device got a new Short Id
             # we need to restart from the beginning and remove all existing datastructures.
@@ -338,18 +338,18 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
             # Delete the entry in IEEE2NWK as it will be recreated in Decode004d
             del self.IEEE2NWK[lookupIEEE]
             # Delete the all Data Structure
-            del self.ListOfDevices[exitsingNwkId]
+            del self.ListOfDevices[existing_nwkid]
             self.log.logging("PluginTools", "Status", "DeviceExist - Device %s changed its ShortId: from %s to %s during provisioning. Restarting !" % (
-                lookupIEEE, exitsingNwkId, lookupNwkId))
+                lookupIEEE, existing_nwkid, lookupNwkId))
             return False
 
         # At that stage, we have found an entry for the IEEE, but doesn't match
         # the coming Short Address lookupNwkId.
         # Most likely , device has changed its NwkId
         found = True
-        reconnectNWkDevice(self, lookupNwkId, lookupIEEE, exitsingNwkId)
+        reconnectNWkDevice(self, lookupNwkId, lookupIEEE, existing_nwkid)
 
-        self.adminWidgets.updateNotificationWidget( Devices, "Reconnect %s %s with %s" % (lookupNwkId, lookupIEEE, exitsingNwkId))
+        self.adminWidgets.updateNotificationWidget( Devices, "Reconnect %s %s with %s" % (lookupNwkId, lookupIEEE, existing_nwkid))
 
     return found
 

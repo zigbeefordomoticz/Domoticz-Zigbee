@@ -31,6 +31,7 @@ import ast
 import json
 import os.path
 import time
+from collections import deque
 from pathlib import Path
 from typing import Dict
 
@@ -304,9 +305,15 @@ def loadTxtDatabase(self, dbName):
                 continue
             try:
                 dlVal = eval(val)  # nosec B307
+
             except (SyntaxError, NameError, TypeError, ZeroDivisionError):
                 self.log.logging("Database", "Error", "LoadDeviceList failed on %s" % val)
                 continue
+
+            except Exception as e:
+                self.log.logging("Database", "Error", f"LoadDeviceList unexpected error on {val} : {str(e)}")
+                continue
+
             self.log.logging("Database", "Debug", "LoadDeviceList - " + str(key) + " => dlVal " + str(dlVal), key)
             if not dlVal.get("Version"):
                 if key == "0000":  # Bug fixed in later version
@@ -432,25 +439,27 @@ def _write_DeviceList_txt(self):
     _count = 0
     try:
         self.log.logging("Database", "Debug", "Write %s = %s" % (_DeviceListFileName, str(self.ListOfDevices)))
-        with open(_DeviceListFileName, "wt", encoding='utf-8') as file:
-            for key in self.ListOfDevices:
+
+        with open(_DeviceListFileName, "wt", encoding="utf-8") as file:
+            for key, value in self.ListOfDevices.items():
                 try:
-                    file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
+                    safe_value = _sanitize_devices(value)  # converts deque -> list
+                    file.write(f"{key} : {json.dumps(safe_value, ensure_ascii=False)}\n")
                     _count += 1
-                except UnicodeEncodeError:
-                    self.log.logging( "Database", "Error", "UnicodeEncodeError while while saving %s : %s on file" %( 
-                        key, self.ListOfDevices[key]))
+
+                except (TypeError, ValueError) as e:
+                    self.log.logging( "Database", "Error", f"Error while saving {key}: {e}" )
                     continue
-                except ValueError:
-                    self.log.logging( "Database", "Error", "ValueError while saving %s : %s on file" %( 
-                        key, self.ListOfDevices[key]))
+                
+                except OSError as e:
+                    self.log.logging( "Database", "Error", f"IO error while writing plugin database {_DeviceListFileName}: {e}" )
                     continue
-                except IOError:
-                    self.log.logging( "Database", "Error", "IOError while writing to plugin Database %s" % _DeviceListFileName)
-                    continue
+        
         self.log.logging("Database", "Debug", "WriteDeviceList - flush Plugin db to %s" % _DeviceListFileName)
+
     except FileNotFoundError:
         self.log.logging( "Database", "Error", "WriteDeviceList - File not found >%s<" %_DeviceListFileName)
+
     except IOError:
         self.log.logging( "Database", "Error", "Error while Writing plugin Database %s" % _DeviceListFileName)
     
@@ -476,15 +485,45 @@ def _write_DeviceList_json(self):
 
 
 def _write_DeviceList_Domoticz(self):
-    """Store device list in Domoticz plugin configuration.
-
-    Makes a copy of the device list and stores it along with a timestamp
-    in the Domoticz plugin configuration storage. Returns the result of
-    the setConfigItem call.
     """
-    ListOfDevices_for_save = self.ListOfDevices.copy()
-    self.log.logging("Database", "Log", f"Plugin Database flushed on Domoticz {len(self.ListOfDevices)} records")
-    return setConfigItem( Key="ListOfDevices", Attribute="b64-devicelist", Value={"TimeStamp": time.time(), "b64-devicelist": ListOfDevices_for_save} )
+    Store device list in Domoticz plugin configuration.
+
+    Creates a JSON-safe snapshot of the device list and stores it
+    with a timestamp in Domoticz plugin configuration storage.
+    """
+
+    ListOfDevices_for_save = _sanitize_devices(self.ListOfDevices)
+
+    self.log.logging(
+        "Database",
+        "Log",
+        f"Plugin Database flushed on Domoticz {len(self.ListOfDevices)} records"
+    )
+
+    return setConfigItem(
+        Key="ListOfDevices",
+        Attribute="b64-devicelist",
+        Value={
+            "TimeStamp": time.time(),
+            "b64-devicelist": ListOfDevices_for_save
+        }
+    )
+
+
+def _sanitize_devices(devices):
+    """
+    Convert ListOfDevices into JSON-serializable structure.
+    """
+    def sanitize(value):
+        if isinstance(value, deque):
+            return list(value)
+        if isinstance(value, dict):
+            return {k: sanitize(v) for k, v in value.items()}
+        if isinstance(value, list):
+            return [sanitize(v) for v in value]
+        return value
+
+    return sanitize(devices)
 
 
 def importDeviceConf(self):
