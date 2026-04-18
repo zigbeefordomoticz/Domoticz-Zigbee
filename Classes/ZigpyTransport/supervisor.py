@@ -69,6 +69,26 @@ def zigpy_heartbeat_activity(self):
 
 
 # ---------------------------------------------------------------------------
+# Heartbeat (called from Radio App, outside the supervisor)
+# ---------------------------------------------------------------------------
+
+def zigpy_coordinator_heartbeat(self):
+    """
+    Records that the zigpy coordinator watchdog is alive.
+
+    Called by AppGeneric.watchdog_feed every ~5s via the zigpy internal
+    _watchdog_loop, regardless of device traffic.  Keeps _last_heartbeat
+    fresh on networks with no active devices so the supervisor never
+    mistakes a quiet network for a dead stack.
+
+    This is distinct from zigpy_heartbeat_activity (packet-driven) — both
+    write to _last_heartbeat; the supervisor sees whichever is most recent.
+    """
+    if self.zigpy_loop is None:
+        return
+    self._last_heartbeat = self.zigpy_loop.time()
+
+# ---------------------------------------------------------------------------
 # Supervisor
 # ---------------------------------------------------------------------------
 

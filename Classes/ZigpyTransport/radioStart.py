@@ -38,12 +38,15 @@ import zigpy.config
 import zigpy.types as t
 
 from Classes.ZigpyTransport.plugin_encoders import (
-    build_plugin_0302_frame_content,
-    build_plugin_8009_frame_content,
+    build_plugin_0302_frame_content, build_plugin_8009_frame_content,
     build_plugin_8043_frame_list_node_descriptor,
-    build_plugin_8045_frame_list_controller_ep,
-)
+    build_plugin_8045_frame_list_controller_ep)
 from Classes.ZigpyTransport.workerLoop import worker_loop
+
+def _transport_heartbeat(transport) -> None:
+    """Update supervisor liveness timestamp from the coordinator watchdog tick."""
+    if getattr(transport, 'zigpy_loop', None) is not None:
+        transport._last_heartbeat = transport.zigpy_loop.time()
 
 
 # ---------------------------------------------------------------------------
@@ -408,6 +411,7 @@ async def _radio_startup(self, statistics, pluginconf, use_of_zigpy_persistent_d
             callBackGetDevice=self.ZigpyGetDevice,
             callBackBackup=self.ZigpyBackupAvailable,
             callBackRestartPlugin=self.restart_plugin,
+            callBackHeartbeat=lambda: zigpy_coordinator_heartbeat(self),
             captureRxFrame=self.captureRxFrame,
             auto_form=True,
             force_form=new_network,

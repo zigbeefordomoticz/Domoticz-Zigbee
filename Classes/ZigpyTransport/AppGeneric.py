@@ -176,8 +176,8 @@ from Classes.ZigpyTransport.instrumentation import write_capture_rx_frames
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8002_frame_content, build_plugin_8014_frame_content,
     build_plugin_8047_frame_content, build_plugin_8048_frame_content)
-from Classes.ZigpyTransport.Transport import ZigpyTransport
 from Classes.ZigpyTransport.supervisor import zigpy_heartbeat_activity
+from Classes.ZigpyTransport.Transport import ZigpyTransport
 
 LOGGER = logging.getLogger(__name__)
 
@@ -324,6 +324,22 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         # Config specifies the period in minutes, not seconds
         self.topology.start_periodic_scans( period=(60 * self.config[zigpy.config.CONF_TOPO_SCAN_PERIOD]) )
 
+
+async def watchdog_feed(self) -> None:
+    """
+
+    Feed the zigpy radio watchdog and notify the supervisor heartbeat.
+
+    Overrides ControllerApplication.watchdog_feed() to add a supervisor
+    liveness signal on every coordinator-level watchdog tick (~every 5s).
+    This keeps _last_heartbeat fresh on empty networks where no device
+    traffic reaches packet_received().
+    """
+
+    await super(type(self), self).watchdog_feed()
+    _transport = getattr(self, 'zigpy_running_ref', None)
+    if _transport is not None and getattr(_transport, 'zigpy_loop', None) is not None:
+        _transport._last_heartbeat = _transport.zigpy_loop.time()
 
 
 async def shutdown(self, *, db: bool = True) -> None:
@@ -480,7 +496,7 @@ def connection_lost_error(self, message: str) -> None:
         LOGGER.warning("connection_lost — signalling supervisor for stack restart")
         self.log.logging(
             "TransportZigpyStack", "Debug",
-            f"connection_lost_error: setting zigpy_running=False and sending STOP sentinel"
+            "connection_lost_error: setting zigpy_running=False and sending STOP sentinel"
         )
         # Setting zigpy_running=False causes worker_loop to exit on its next tick.
         # The STOP sentinel wakes get_next_command immediately (it polls at 100ms).
@@ -761,12 +777,14 @@ def packet_received(
     # zigpy_heartbeat_activity() expects the ZigpyTransport instance,
     # not self (which is the App_* object).
     _transport = getattr(self, 'zigpy_running_ref', None)
-    if _transport is not None:
-        self.log.logging("TransportZigpyStack", "Debug", f"packet_received: heartbeat sent to transport {id(_transport):#x}")
-        zigpy_heartbeat_activity(_transport)
+    if _transport is not None and getattr(_transport, 'zigpy_loop', None) is not None:
+        now = _transport.zigpy_loop.time()
+        _transport._last_activity = now
+        _transport._last_heartbeat = now
     else:
         self.log.logging("TransportZigpyStack", "Debug", "packet_received: zigpy_running_ref not set — heartbeat skipped")
-    
+        
+            
     sender = packet.src.address.serialize()[::-1].hex()
     addr_mode = int(packet.src.addr_mode) if packet.src.addr_mode is not None else None
     profile = int(packet.profile_id) if packet.profile_id is not None else None
