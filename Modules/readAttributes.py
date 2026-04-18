@@ -169,7 +169,7 @@ def read_manufacturer_specific_attributes(self, nwkid, ep_out, cluster):
         self.log.logging("ReadAttributes", "Debug", f"Request Manuf.Specific Attributes for cluster {cluster} for {nwkid} {ep_out} {attributes_str}", nwkid=nwkid)
 
         # Perform the Request
-        ReadAttributeReq( self, nwkid, ZIGATE_EP, ep_out, "0201", manufacturer_attributes, manufacturer_spec="01", manufacturer=manufacturer_code, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), checkTime=False, )
+        ReadAttributeReq( self, nwkid, ZIGATE_EP, ep_out, cluster, manufacturer_attributes, manufacturer_spec="01", manufacturer=manufacturer_code, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), checkTime=False, )
 
 
 def split_list(list_in, wanted_parts=1):
@@ -642,7 +642,7 @@ def ReadAttributeRequest_0002(self, key, force_disable_ack=None):
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0002 - Key: %s " % key, nwkid=key)
 
     # Device Temperature
-    ListOfEp = getListOfEpForCluster(self, key, "0001")
+    ListOfEp = getListOfEpForCluster(self, key, "0002")
     for EPout in ListOfEp:
         listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "0002"):
@@ -1387,7 +1387,7 @@ def ReadAttributeRequest_0702(self, key):
             self.log.logging(
                 "ReadAttributes",
                 "Debug",
-                "Request Metering info  via Read Attribute request Manuf Specific %s/%s %s" % (key, EPout, str(listAttributes)),
+                "Request Metering info  via Read Attribute request Manuf Specific %s/%s %s" % (key, EPout, str(listAttrSpecific)),
                 nwkid=key,
             )
             ReadAttributeReq(
