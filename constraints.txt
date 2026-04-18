@@ -1,4 +1,4 @@
-zigpy==1.2.1
+zigpy==1.2.2
 zigpy_znp==0.14.3
 zigpy_deconz==0.25.5
 zigpy-blz==0.1.0
