@@ -443,8 +443,8 @@ def _write_DeviceList_txt(self):
         with open(_DeviceListFileName, "wt", encoding="utf-8") as file:
             for key, value in self.ListOfDevices.items():
                 try:
-                    safe_value = _sanitize_devices(value)  # converts deque -> list
-                    file.write(f"{key} : {json.dumps(safe_value, ensure_ascii=False)}\n")
+                    safe_value = _flatten_deques(value)  # converts deque -> list
+                    file.write(f"{key} : {repr(safe_value)}\n")
                     _count += 1
 
                 except (TypeError, ValueError) as e:
@@ -492,7 +492,7 @@ def _write_DeviceList_Domoticz(self):
     with a timestamp in Domoticz plugin configuration storage.
     """
 
-    ListOfDevices_for_save = _sanitize_devices(self.ListOfDevices)
+    ListOfDevices_for_save = _flatten_deques(self.ListOfDevices)
 
     self.log.logging(
         "Database",
@@ -524,6 +524,18 @@ def _sanitize_devices(devices):
         return value
 
     return sanitize(devices)
+
+def _flatten_deques(obj):
+    if isinstance(obj, deque):
+        return list(obj)
+
+    if isinstance(obj, dict):
+        return {k: _flatten_deques(v) for k, v in obj.items()}
+
+    if isinstance(obj, list):
+        return [_flatten_deques(v) for v in obj]
+
+    return obj
 
 
 def importDeviceConf(self):
