@@ -439,7 +439,6 @@ class ThreadSafeDeviceDict(MutableMapping):
             for k, v in merged.items():
                 self._data[k] = self._wrap(v)
 
-    @_tsdd_trace
     def keys(self):
         """Return a snapshot list of all keys.
 
@@ -452,7 +451,6 @@ class ThreadSafeDeviceDict(MutableMapping):
         with self._lock:
             return list(self._data.keys())
 
-    @_tsdd_trace
     def values(self):
         """Return a snapshot list of all values.
 
@@ -465,7 +463,6 @@ class ThreadSafeDeviceDict(MutableMapping):
         with self._lock:
             return list(self._data.values())
 
-    @_tsdd_trace
     def items(self):
         """Return a snapshot list of all ``(key, value)`` pairs.
 
