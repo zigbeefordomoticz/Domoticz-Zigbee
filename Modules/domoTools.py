@@ -23,9 +23,8 @@ from Modules.domoticzAbstractLayer import (
     device_touch_api, domo_read_BatteryLevel, domo_read_Color,
     domo_read_Device_Idx, domo_read_LastUpdate, domo_read_Name,
     domo_read_nValue_sValue, domo_read_Options, domo_read_TimedOut,
-    domo_update_api, domoticz_log_api, is_domoticz_extended,
-    retrieve_widgetid_from_deviceId_unit, timeout_widget_api,
-    update_battery_api)
+    domo_update_api, domoticz_log_api, retrieve_widgetid_from_deviceId_unit,
+    timeout_widget_api, update_battery_api)
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import (is_domoticz_touch,
                            is_domoticz_update_SuppressTriggers, lookupForIEEE)

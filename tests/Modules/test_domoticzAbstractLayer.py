@@ -1198,16 +1198,6 @@ class TestSwitchOffWidgetDueToTimedout(unittest.TestCase):
         self.assertEqual(devices["ieee-1"].Units[1].sValue, "Off")
 
 
-# ---------------------------------------------------------------------------
-# 19. is_domoticz_extended
-# ---------------------------------------------------------------------------
-
-class TestIsDomoticzExtended(unittest.TestCase):
-
-    def test_returns_true(self):
-        self.assertTrue(domo.is_domoticz_extended())
-
-
 
 # ---------------------------------------------------------------------------
 

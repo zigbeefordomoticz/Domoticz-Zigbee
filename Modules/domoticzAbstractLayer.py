@@ -42,10 +42,6 @@ DIMMABLE_WIDGETS = {
 DELAY_BETWEEN_TOUCH = 120
 
 
-def is_domoticz_extended():
-    return True
-
-
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
@@ -247,18 +243,6 @@ def find_widget_unit_from_WidgetID(self, Devices, Widget_Idx):
     self.log.logging("AbstractDz", "Log",
                      f"Plugin looks for Domoticz Widget Id {Widget_Idx} which does not exist!")
 
-    # Fallback: scan Devices directly (kept for backward compat, to be removed)
-    if Devices is None:
-        return None
-    for x in list(Devices):
-        for y in list(Devices[x].Units):
-            try:
-                if Devices[x].Units[y].ID == Widget_Idx:
-                    return y
-            except Exception as er:
-                self.log.logging("AbstractDz", "Log", f"Plugin looks for Domoticz Widget Id {Widget_Idx} - can Devices directly - {er}")
-
-                continue
     return None
 
 
