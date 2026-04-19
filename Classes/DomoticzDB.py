@@ -7,7 +7,6 @@ This module provides a non-blocking, threaded Python API client for interacting 
 the Domoticz JSON API. It includes:
 
 - DomoticzAPIClient: main client handling requests, caching, and authentication.
-- DomoticzDeviceCache: per-device caching with LRU eviction.
 - DomoticzDB_DeviceStatus: helpers for reading device attributes.
 - DomoticzDB_Preferences: access to Domoticz system preferences.
 - DomoticzDB_Hardware: access to Domoticz hardware settings.
@@ -34,9 +33,9 @@ from collections import OrderedDict
 # ----------------------
 # Configuration Constants
 # ----------------------
-CACHE_TIMEOUT = 3600         # seconds per API/device cache
-GET_TIMEOUT = 5              # HTTP request timeout
-MAX_CACHE_SIZE = 16          # max number of global API cache entries
+CACHE_TIMEOUT = 863400  # seconds per API/device cache ( 863400 = 1 day - 60s ) - adjust as needed based on expected update frequency and performance requirements
+GET_TIMEOUT = 5         # HTTP request timeout
+MAX_CACHE_SIZE = 16     # max number of global API cache entries
 TRACKED_ATTRIBUTES = {
     "AddjValue",
     "AddjValue2",
@@ -91,7 +90,7 @@ class DomoticzAPIClient:
 
         # Async worker thread
         self._stop_event = threading.Event()
-        self._queue = queue.Queue()
+        self._queue = queue.PriorityQueue()
         self._worker = threading.Thread(target=self._worker_loop, name="DomoticzAPI", daemon=False)
         self._worker.start()
 
@@ -102,18 +101,19 @@ class DomoticzAPIClient:
 
     def stop(self):
         """Stops the worker thread cleanly."""
-        self.logging("Status", "Zigbee: ++ DomoticzDB Api thread stop requrested")
+        
+        self.logging("Status", "Zigbee: ++ DomoticzDB Api thread stop requested")
         self._stop_event.set()
         try:
-            self._queue.put_nowait((None, None))
+            self._queue.put_nowait((0, None, None))   # sentinel with priority 0
         except Exception as er:
-            self.logging("Error", f"DomoticzDB Api thread  did not stop cleanly {er}")
-            pass
-        self._worker.join(timeout=2)
+            self.logging("Error", f"DomoticzDB Api thread did not stop cleanly {er}")
+        self._worker.join(timeout=6)   # > GET_TIMEOUT=5
         if self._worker.is_alive():
-            self.logging("Error", "DomoticzDB Api thread  did not stop cleanly")
+            self.logging("Error", "DomoticzDB Api thread did not stop cleanly")
         else:
             self.logging("Debug", "Zigbee: ++ DomoticzDB Api thread stopped.")
+
 
     def logging(self, level, msg):
         """Wrapper for logging through plugin logger."""
@@ -220,6 +220,8 @@ class DomoticzAPIClient:
         self._enqueue(query, cache_key, priority)
         return None
 
+
+    # _enqueue(): use priority tuples (0=high, 1=normal)
     def _enqueue(self, query, cache_key, priority=False):
         """
         Add query to worker queue if not already inflight.
@@ -229,6 +231,7 @@ class DomoticzAPIClient:
             cache_key (str): Normalized cache key.
             priority (bool): If True, place at front of queue.
         """
+
         self.logging("Debug", f"Enqueue request: {query} (cache_key={cache_key})")
         if self._stop_event.is_set():
             return
@@ -237,10 +240,8 @@ class DomoticzAPIClient:
                 return
             self._inflight.add(cache_key)
         try:
-            if priority:
-                self._queue.queue.appendleft((query, cache_key))
-            else:
-                self._queue.put((query, cache_key))
+            prio = 0 if priority else 1
+            self._queue.put((prio, query, cache_key))
         except Exception as e:
             self.logging("Debug", f"Enqueue request error: {e}")
             with self._inflight_lock:
@@ -253,7 +254,7 @@ class DomoticzAPIClient:
         """Background thread fetching API requests and updating caches."""
         while not self._stop_event.is_set():
             try:
-                query, cache_key = self._queue.get(timeout=0.5)
+                _prio, query, cache_key = self._queue.get(timeout=0.5)
             except queue.Empty:
                 continue
 
