@@ -379,27 +379,27 @@ class TestFindWidgetUnitFromWidgetID(unittest.TestCase):
 
     def test_found_returns_unit(self):
         obj, devices, idx = self._setup()
-        result = domo.find_widget_unit_from_WidgetID(obj, devices, idx)
+        result = domo.find_widget_unit_from_WidgetID(obj, idx)
         self.assertEqual(result, 1)
 
     def test_not_found_returns_none(self):
         obj, devices, idx = self._setup()
-        result = domo.find_widget_unit_from_WidgetID(obj, devices, 999999)
+        result = domo.find_widget_unit_from_WidgetID(obj, 999999)
         self.assertIsNone(result)
 
     def test_string_idx_converted(self):
         obj, devices, idx = self._setup()
-        result = domo.find_widget_unit_from_WidgetID(obj, devices, str(idx))
+        result = domo.find_widget_unit_from_WidgetID(obj, str(idx))
         self.assertEqual(result, 1)
 
     def test_invalid_idx_type_returns_none(self):
         obj, devices, _ = self._setup()
-        result = domo.find_widget_unit_from_WidgetID(obj, devices, "not-an-int")
+        result = domo.find_widget_unit_from_WidgetID(obj, "not-an-int")
         self.assertIsNone(result)
 
     def test_none_idx_returns_none(self):
         obj, devices, _ = self._setup()
-        result = domo.find_widget_unit_from_WidgetID(obj, devices, None)
+        result = domo.find_widget_unit_from_WidgetID(obj, None)
         self.assertIsNone(result)
 
 
@@ -1026,11 +1026,11 @@ class TestSanityCheckDeviceUnit(unittest.TestCase):
     def test_existing_returns_false(self):
         obj = _make_self()
         devices = _make_devices(("ieee-1", [(1, {})]))
-        self.assertFalse(domo._sanity_check_device_unit(obj, devices, "ieee-1", 1))
+        self.assertTrue(domo._device_unit_exists(devices, "ieee-1", 1))
 
     def test_missing_returns_true(self):
         obj = _make_self()
-        self.assertTrue(domo._sanity_check_device_unit(obj, {}, "ghost", 1))
+        self.assertFalse(domo._device_unit_exists({}, "ghost", 1))
 
 
 # ---------------------------------------------------------------------------
