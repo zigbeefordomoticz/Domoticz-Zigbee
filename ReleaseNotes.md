@@ -18,6 +18,33 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
+##.          - stable8.1.003 ( 2026.2)
+
+- [Technical] - Migrated plugin from legacy Domoticz framework to DomoticzEx (Extended) framework
+- [Technical] - Introduced ThreadSafeDeviceDict — thread-safe mapping for the device list
+- [Technical] - Upgraded internal database to version 4
+- [Technical] - Replaced legacy pickle-based group persistence with a clean format
+- [Technical] - Replaced Queue with PriorityQueue in DomoticzDB.py for improved scheduling
+- [Technical] - Introduced zigpy thread supervisor with health monitoring (HA-grade resilience)
+- [Technical] - Removed high-frequency method tracing for improved performance
+- [Technical] - Added move_channel API from zigpy radio library
+- [Technical] - CI expanded to test Python 3.11–3.14; added workflow_run trigger to security scan
+- [Technical] - Added 152-test suite for readAttributes.py and 50+ test files for decoders and transport layer
+
+- [BugFixing] - Replaced unsafe eval() with ast.literal_eval()
+- [BugFixing] - Fixed loop iteration safety using snapshot copies
+- [BugFixing] - Removed dead tuple expression in widget updates
+- [BugFixing] - Added missing return statement in error handling paths
+- [BugFixing] - Fixed get_device_config_param not handling default values
+- [BugFixing] - Fixed wrong field count in Decode8002
+- [BugFixing] - Fixed float-to-int conversion when sending Device Updates
+- [BugFixing] - Fixed channel setting in BLE (Blz) and ZNP radios
+- [BugFixing] - Ensured can_use_domoticz_db is always initialized before use
+- [BugFixing] - Made IAS_CIE_write_response and zigbee_receive_message more resilient to errors
+- [BugFixing] - Fixed widget notification handling under DomoticzEx
+
+- [Hardware] - Refactor Danfoss eTRV OEM device support
+
 ## Apr. 2026 - stable8.1.002 ( 2026.1)
 
 - [Technical] - Better handling of python3 venv, and relying on VIRUAL_ENV
