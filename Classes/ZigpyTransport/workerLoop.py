@@ -117,7 +117,7 @@ async def get_next_command(self):
         except queue.Empty:
             if not self.zigpy_running:
                 return None
-            await asyncio.sleep(0.100)
+            await asyncio.sleep(0.250)
 
         except Exception as e:
             self.log.logging("TransportZigpy", "Log", f"Error in get_next_command: {e}")
