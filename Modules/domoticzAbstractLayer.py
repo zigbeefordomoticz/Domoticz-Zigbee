@@ -130,10 +130,9 @@ def getConfigItem(Key=None, Attribute="", Default=None):
 
 
 def prepare_dict_for_storage(dict_items, Attribute):
-    from base64 import b64encode
 
     if Attribute in dict_items:
-        dict_items[Attribute] = b64encode(str(dict_items[Attribute]).encode("utf-8"))
+        dict_items[Attribute] = base64.b64encode(str(dict_items[Attribute]).encode("utf-8"))
     dict_items["Version"] = 1
     return dict_items
 
@@ -220,7 +219,7 @@ def load_list_of_domoticz_widget(self, Devices):
             )
 
 
-def find_widget_unit_from_WidgetID(self, Devices, Widget_Idx):
+def find_widget_unit_from_WidgetID(self, Widget_Idx):
     """
     Return the Unit for a given Widget IDX, or None if not found.
 
@@ -707,7 +706,7 @@ def _device_touch_unit_api(self, Devices, DeviceId_, Unit_, now):
     self.log.logging("AbstractDz", "Debug",
                      f"_device_touch_unit_api: {DeviceId_} {Unit_}")
 
-    if _sanity_check_device_unit(self, Devices, DeviceId_, Unit_):
+    if not _device_unit_exists(Devices, DeviceId_, Unit_):
         return
 
     if _is_meter_widget(self, Devices, DeviceId_, Unit_):
@@ -850,8 +849,3 @@ def find_partially_opened_nValue(switch_type, sub_type, widget_type):
 def check_widget(switch_type, sub_type, widget_type):
     key = (switch_type, sub_type, widget_type)
     return DIMMABLE_WIDGETS.get(key, {}).get("Widget")
-
-
-def _sanity_check_device_unit(self, Devices, device_ieee, unit):
-    """Return True when the device/unit combination is absent (i.e. NOT safe to use)."""
-    return not _device_unit_exists(Devices, device_ieee, unit)
