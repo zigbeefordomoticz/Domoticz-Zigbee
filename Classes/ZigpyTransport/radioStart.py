@@ -341,9 +341,9 @@ def optional_configuration_setup(self, config, radio_conf, set_extendedPanId, se
             "%s" % (t.EUI64(t.uint64_t(set_extendedPanId).serialize()))
         )
 
-    if radio_conf and set_channel != 0:
+    if set_channel != 0:
         config[zigpy.config.CONF_NWK][zigpy.config.CONF_NWK_CHANNEL] = set_channel
-
+    
     if self.pluginconf.pluginConf.get("TXpower_set") is not None:
         config[zigpy.config.CONF_NWK][zigpy.config.CONF_NWK_TX_POWER] = int(
             self.pluginconf.pluginConf["TXpower_set"]
