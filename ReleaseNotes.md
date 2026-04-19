@@ -18,7 +18,7 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
-##.          - stable8.1.003 ( 2026.2)
+## .          - stable8.1.003 ( 2026.2)
 
 - [Technical] - Migrated plugin from legacy Domoticz framework to DomoticzEx (Extended) framework
 - [Technical] - Introduced ThreadSafeDeviceDict — thread-safe mapping for the device list
@@ -30,6 +30,7 @@ Release Numbering
 - [Technical] - Added move_channel API from zigpy radio library
 - [Technical] - CI expanded to test Python 3.11–3.14; added workflow_run trigger to security scan
 - [Technical] - Added 152-test suite for readAttributes.py and 50+ test files for decoders and transport layer
+- [Technical] - Allow full Cpython asyncio extension in multi-instance
 
 - [BugFixing] - Replaced unsafe eval() with ast.literal_eval()
 - [BugFixing] - Fixed loop iteration safety using snapshot copies
@@ -67,7 +68,7 @@ Release Numbering
 
 - [Technical] - Discontinue support of Zigate flash tools
 
-## Dec. 2025 - Stable8.1.001 
+## Dec. 2025 - Stable8.1.001
 
 - Technical version ISO Stable7 7.1.026, to prepare DomoticzEx and other features
 
