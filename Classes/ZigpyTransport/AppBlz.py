@@ -186,18 +186,33 @@ class App_blz(zigpy_blz.zigbee.application.ControllerApplication):
         pass
 
     
-    async def set_extended_pan_id(self,extended_pan_ip):
-        """Set the extended PAN ID for the network."""
+    async def set_extended_pan_id(self, extended_pan_ip):
+        """Set the extended PAN ID and re-form the network."""
         self.config[zigpy_conf.CONF_NWK][zigpy_conf.CONF_NWK_EXTENDED_PAN_ID] = extended_pan_ip
-        await self.startup(self.callBackFunction,self.callBackGetDevice,auto_form=True,force_form=True,log=self.log)
+        await self.startup(
+            self.statistics,
+            self.HardwareID,
+            self.pluginconf,
+            self.use_of_zigpy_persistent_db,
+            self.callBackFunction,
+            callBackUpdDevice=self.callBackUpdDevice,
+            callBackGetDevice=self.callBackGetDevice,
+            callBackBackup=self.callBackBackup,
+            callBackRestartPlugin=self.callBackRestartPlugin,
+            callBackHeartbeat=self.callBackHeartbeat,
+            captureRxFrame=self.captureRxFrame,
+            auto_form=True,
+            force_form=True,
+            log=self.log,
+            permit_to_join_timer=self.permit_to_join_timer,
+        )
 
 
-    async def set_channel(self,channel):
-        """Set the channel for the network."""
-        self.config[zigpy_conf.CONF_NWK][zigpy_conf.CONF_NWK_CHANNEL] = channel
-        await self.startup(self.callBackFunction,self.callBackGetDevice,auto_form=True,force_form=True,log=self.log)
+    async def set_channel(self, channel):
+        """Migrate the network to a new channel via zigpy channel migration."""
+        await self.move_network_to_channel(channel)
 
-    
+
     async def remove_ieee(self, ieee):
         await self.remove( ieee )
 

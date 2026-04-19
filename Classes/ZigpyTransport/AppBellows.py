@@ -215,10 +215,9 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         await super().form_network()
 
 
-    async def set_channel(self,channel):   # BE CAREFUL - NEW network formed 
-        self.config[bellows_conf.CONF_NWK][bellows_conf.CONF_NWK_CHANNEL] = channel
-        await self._ezsp.leaveNetwork()
-        await super().form_network()
+    async def set_channel(self, channel):
+        """Migrate the network to a new channel via zigpy channel migration."""
+        await self.move_network_to_channel(channel)
 
 
     async def remove_ieee(self, ieee):
