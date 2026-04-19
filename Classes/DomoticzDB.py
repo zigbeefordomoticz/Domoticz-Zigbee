@@ -33,7 +33,7 @@ from collections import OrderedDict
 # ----------------------
 # Configuration Constants
 # ----------------------
-CACHE_TIMEOUT = 863400  # seconds per API/device cache ( 863400 = 1 day - 60s ) - adjust as needed based on expected update frequency and performance requirements
+CACHE_TIMEOUT = 86340  # seconds per API/device cache ( 86340 = 1 day - 60s ) - adjust as needed based on expected update frequency and performance requirements
 GET_TIMEOUT = 5         # HTTP request timeout
 MAX_CACHE_SIZE = 16     # max number of global API cache entries
 TRACKED_ATTRIBUTES = {
