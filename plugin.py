@@ -367,9 +367,6 @@ class BasePlugin:
         else:
             Domoticz.Log("VIRTUAL_ENV is not set")
 
-        _current_python_version_major = sys.version_info.major
-        _current_python_version_minor = sys.version_info.minor
-
         Domoticz.Status(
             f"Running Python {sys.version_info.major}.{sys.version_info.minor}"
         )
@@ -497,10 +494,6 @@ class BasePlugin:
         self.log.logging( "Plugin", "Status", "Z4D is starting with %s-%s" % (
             self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"]), )
 
-        if ( _current_python_version_major , _current_python_version_minor) <= ( 3, 7):
-            self.log.logging( "Plugin", "Error", "** Please do consider upgrading to a more recent python3 version %s.%s is not supported anymore **" %(
-                _current_python_version_major , _current_python_version_minor))
-
         # Debuging information
         debuging_information(self, "Debug")
          
@@ -521,13 +514,16 @@ class BasePlugin:
         self.domoticzdb_Hardware = DomoticzDB_Hardware(self.domoticz_api, self.HardwareID)
         
         if (
-            self.zigbee_communication 
-            and self.zigbee_communication == "zigpy" 
-            and ( self.pluginconf.pluginConf["forceZigpy_noasyncio"] or self.domoticzdb_Hardware.is_multi_instance())
-            ):
-            # https://github.com/python/cpython/issues/91375
-            self.log.logging("Plugin", "Status", "Z4D Multi-instances detected. Enabling 'asyncio' workaround")
-            sys.modules["_asyncio"] = None
+            self.zigbee_communication == "zigpy"
+            and (self.pluginconf.pluginConf["forceZigpy_noasyncio"] or self.domoticzdb_Hardware.is_multi_instance())
+        ):
+            if sys.version_info < (3, 13):
+                # https://github.com/python/cpython/issues/91375
+                # Fixed in Python 3.13 via cpython/pull/104196 (freelist ported to module state)
+                self.log.logging("Plugin", "Status", "Z4D Multi-instances detected. Enabling 'asyncio' workaround")
+                sys.modules["_asyncio"] = None
+            else:
+                self.log.logging("Plugin", "Status", "Z4D Multi-instances detected. Python 3.13+ — using native C asyncio.")
 
         if "LogLevel" not in self.pluginParameters:
             log_level = self.domoticzdb_Hardware.get_loglevel_value()
