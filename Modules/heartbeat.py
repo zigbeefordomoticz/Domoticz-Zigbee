@@ -1034,7 +1034,7 @@ def check_and_reset_device_if_needed(self, Devices, NwkId):
     for WidgetEp, Widget_Idx, WidgetType in ClusterTypeList:
         
         if WidgetType in ( "Motion", "Vibration", SWITCH_SELECTORS):
-            device_unit = find_widget_unit_from_WidgetID(self, Devices, Widget_Idx )
+            device_unit = find_widget_unit_from_WidgetID(self, Widget_Idx )
             self.log.logging( "Heartbeat", "Debug", "Candidate for reseting %s %s %s %s %s" %(device_ieee, device_unit, NwkId, WidgetType, Widget_Idx))
             reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, NwkId, WidgetType, Widget_Idx, now)
 
