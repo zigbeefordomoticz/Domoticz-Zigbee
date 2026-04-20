@@ -76,6 +76,7 @@ from Modules.tuyaTS0601 import (ts0601_actuator,
                                 ts0601_extract_data_point_infos)
 from Modules.zigateConsts import (THERMOSTAT_LEVEL_2_MODE,
                                   THERMOSTAT_LEVEL_3_MODE)
+from Modules.zosungIR import zosung_e004_learn_mode
 
 # Matrix between Domoticz Type, Subtype, SwitchType and Plugin DeviceType
 # Type, Subtype, Switchtype
@@ -168,7 +169,8 @@ ACTIONATORS = [
     "PollingControl",
     "PollingControlV2",
     "KeypadFeedback",
-    "SOS"
+    "SOS",
+    "LearningIRCode"
 ]
 
 
@@ -306,6 +308,12 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
         self.log.logging("Command", "Status", "mgtCommand : Switch Off Child Lock %s/%s" % (Nwkid,EPout))
         update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         ts0601_curtain_accurate_calibration_cmd( self, Nwkid, EPout, 0x03, mode=1)
+        return
+
+    if DeviceType == "LearningIRCode" and model_name == "TS1201-ircode":
+        self.log.logging("Command", "Debug", "handle_command_off : Off for Tuya Learning IR Code")
+        zosung_e004_learn_mode(self, Nwkid, EPout, "Off")
+        update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         return
 
     if DeviceType == "KeypadLockout" and is_tst0601_data_points_defined:
@@ -577,8 +585,14 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
     if DeviceType == "KeypadLockout" and is_tst0601_data_points_defined:
         # Switch ChildLock
         self.log.logging("Command", "Status", "mgtCommand : Switch On ChildLock  %s/%s" % (Nwkid,EPout))
-        update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+        update_domoticz_widget(self, Devices, DeviceID, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         ts0601_actuator(self, Nwkid, "KeypadLockout", 1)
+        return
+
+    if DeviceType == "LearningIRCode" and model_name == "TS1201-ircode":
+        self.log.logging("Command", "Debug", "handle_command_on : On for Tuya Learning IR Code")
+        zosung_e004_learn_mode(self, Nwkid, EPout, "On")
+        update_domoticz_widget(self, Devices, DeviceID, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         return
 
     if DeviceType == "SwitchAlarm" and model_name == "TS0601-_TZE200_t1blo2bj":

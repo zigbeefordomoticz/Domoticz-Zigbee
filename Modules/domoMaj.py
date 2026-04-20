@@ -113,6 +113,12 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
     SignalLevel, BatteryLevel = RetreiveSignalLvlBattery(self, NwkId)
     self.log.logging("Widget", "Debug", "------> SignalLevel: %s , BatteryLevel: %s" % (SignalLevel, BatteryLevel), NwkId)
 
+    if WidgetType == "IRCodeText" and ClusterType == "IRCode" :
+        # This is a special case for IRCodeText widget. The value is directly the text to be displayed
+        sValue = value
+        self.log.logging("Widget", "Debug", "------> IRCodeText : %s" % sValue, NwkId)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
+
     if WidgetType == "LiquidLevel" and ClusterType == "LiquidLevel" and Attribute_ == "":
         # LiquidLevel
         self.log.logging("Widget", "Debug", "------> LiquidLevel : %s" % value, NwkId)

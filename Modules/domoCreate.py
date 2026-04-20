@@ -780,6 +780,11 @@ SIMPLE_WIDGET = {
     "Humi": {
         "widgetType": "Humidity"
     },
+    "IRCodeText": {
+        "Type": 243,
+        "Subtype": 19,
+        "Switchtype": 0,
+    },
     "KeypadText": {
         "Type": 243,
         "Subtype": 19,
@@ -925,6 +930,12 @@ SIMPLE_WIDGET = {
         "Subtype": 73,
         "Switchtype": 0
     },
+    "LearningIRCode": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0
+    },
+
     "OccupancySensing": {
         "Type": 244,
         "Subtype": 73,
