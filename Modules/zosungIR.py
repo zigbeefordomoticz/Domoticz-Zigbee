@@ -59,7 +59,7 @@ from Modules.zigateConsts import ZIGATE_EP
 
 ZOSUNG_IR_TRANSMIT_CLUSTER = "ed00"
 ZOSUNG_IR_CONTROL_CLUSTER = "e004"
-ZOSUNG_CHUNK_SIZE = 0x38  # max 56 bytes per chunk (matches zigbee-herdsman)
+ZOSUNG_CHUNK_SIZE = 0x38  # max 56 bytes per chunk
 
 
 # ─── State helpers ─────────────────────────────────────────────────────
@@ -188,7 +188,7 @@ def _ed00_cmd02_chunk_request(self, Devices, NwkId, srcEp, data_hex):
         NwkId, seq, position, maxlen), NwkId)
 
     state = _get_ir_state(self, NwkId)
-    tx_data = state.get("tx_data")
+    tx_data = base64.b64decode(state.get("tx_data")) if state.get("tx_data") else None
     if tx_data is None:
         self.log.logging("ZosungIR", "Log", "_ed00_cmd02_chunk_request - no tx_data pending for %s" % NwkId, NwkId)
         return
@@ -304,7 +304,7 @@ def _send_zcl_cluster_cmd(self, NwkId, ep, cluster, cmd_id, payload_bytes):
     raw_APS_request(
         self, NwkId, ep, cluster, "0104", zcl_payload,
         zigate_ep=ZIGATE_EP,
-        ackIsDisabled=is_ack_tobe_disabled(self, NwkId),
+        ackIsDisabled=False,  # always Force Ack for ZosungIR commands (device expects it and may retry if not received
     )
 
 
@@ -361,17 +361,17 @@ def zosung_ed00_send_ir_code(self, NwkId, ep, ir_code_b64):
     Args:
         ir_code_b64: base64-encoded IR payload string (as stored by learn mode).
     """
-    try:
-        ir_bytes = base64.b64decode(ir_code_b64)
 
+    state = _get_ir_state(self, NwkId)
+    state["tx_data"] = ir_code_b64
+    state["tx_seq"] = state.get("seq", 0)
+    state["seq"] = (state["tx_seq"] + 1) & 0xFFFF
+
+    try:
+        ir_bytes = base64.b64decode(state["tx_data"])
     except Exception as e:
         self.log.logging("ZosungIR", "Error", "zosung_ed00_send_ir_code - invalid base64 for NwkId %s: %s" % (NwkId, e), NwkId)
         return
-
-    state = _get_ir_state(self, NwkId)
-    state["tx_data"] = ir_bytes
-    state["tx_seq"] = state.get("seq", 0)
-    state["seq"] = (state["tx_seq"] + 1) & 0xFFFF
 
     length = len(ir_bytes)
     seq = state["tx_seq"]
