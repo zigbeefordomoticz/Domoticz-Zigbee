@@ -76,7 +76,7 @@ from Modules.tuyaTS0601 import (ts0601_actuator,
                                 ts0601_extract_data_point_infos)
 from Modules.zigateConsts import (THERMOSTAT_LEVEL_2_MODE,
                                   THERMOSTAT_LEVEL_3_MODE)
-from Modules.zosungIR import zosung_e004_learn_mode
+from Modules.zosungIR import zosung_e004_learn_mode, zosung_ed00_send_ir_code
 
 # Matrix between Domoticz Type, Subtype, SwitchType and Plugin DeviceType
 # Type, Subtype, Switchtype
@@ -170,7 +170,8 @@ ACTIONATORS = [
     "PollingControlV2",
     "KeypadFeedback",
     "SOS",
-    "LearningIRCode"
+    "LearningIRCode",
+    "SendIRcode",
 ]
 
 
@@ -781,6 +782,21 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
     is_tst0601_data_points_defined = ts0601_extract_data_point_infos( self, model_name)
 
     self.log.logging( "Command", "Debug", f"handle_command_setlevel : Set Level for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} Level: {Level} TS0601_DP: {is_tst0601_data_points_defined}", Nwkid, )
+
+    if DeviceType == "SendIRcode":
+        self.log.logging("Command", "Debug", "handle_command_setlevel : Set Level for Send IR Code: %s" % Nwkid)
+        ir_code_list = get_device_config_param(self, Nwkid, "IRCode")
+        if not ir_code_list:
+            self.log.logging("Command", "Error", "handle_command_setlevel : No IR Code defined for Device: %s" % Nwkid)
+            return
+        ir_code = ir_code_list.get(str(Level))
+        if not ir_code or ir_code == 'b64 learned IR code in base64':
+            self.log.logging("Command", "Error", "handle_command_setlevel : No IR Code defined for Level %s for Device: %s" % (Level, Nwkid))
+            return
+        self.log.logging("Command", "Debug", "handle_command_setlevel : Send IR Code for Level %s for Device: %s ir_code: %s" % (Level, Nwkid, ir_code))
+        zosung_ed00_send_ir_code(self, Nwkid, EPout, ir_code)
+        update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level) // 10, Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
+        return
 
     if DeviceType == "KeypadFeedback":
         # For Develco/Frient Intelligent Keypad, we get here what needs to be answer to the Get Panel Status from Peypad

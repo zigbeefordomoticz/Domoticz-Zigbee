@@ -19,9 +19,7 @@
 
 
 SWITCH_SELECTORS = {
-    "SwitchIRCode": {
-        "ForceUpdate": True,
-        "OffHidden": True,
+    "SendIRcode": {
         "SelectorStyle": 1,
         "00": (0, "00"),
         "01": (1, "10"),
