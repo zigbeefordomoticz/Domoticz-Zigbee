@@ -7,7 +7,6 @@ This module provides a non-blocking, threaded Python API client for interacting 
 the Domoticz JSON API. It includes:
 
 - DomoticzAPIClient: main client handling requests, caching, and authentication.
-- DomoticzDeviceCache: per-device caching with LRU eviction.
 - DomoticzDB_DeviceStatus: helpers for reading device attributes.
 - DomoticzDB_Preferences: access to Domoticz system preferences.
 - DomoticzDB_Hardware: access to Domoticz hardware settings.
@@ -34,9 +33,9 @@ from collections import OrderedDict
 # ----------------------
 # Configuration Constants
 # ----------------------
-CACHE_TIMEOUT = 3600         # seconds per API/device cache
-GET_TIMEOUT = 5              # HTTP request timeout
-MAX_CACHE_SIZE = 16          # max number of global API cache entries
+CACHE_TIMEOUT = 86340  # seconds per API/device cache ( 86340 = 1 day - 60s ) - adjust as needed based on expected update frequency and performance requirements
+GET_TIMEOUT = 5         # HTTP request timeout
+MAX_CACHE_SIZE = 16     # max number of global API cache entries
 TRACKED_ATTRIBUTES = {
     "AddjValue",
     "AddjValue2",
@@ -91,7 +90,7 @@ class DomoticzAPIClient:
 
         # Async worker thread
         self._stop_event = threading.Event()
-        self._queue = queue.Queue()
+        self._queue = queue.PriorityQueue()
         self._worker = threading.Thread(target=self._worker_loop, name="DomoticzAPI", daemon=False)
         self._worker.start()
 
@@ -102,18 +101,19 @@ class DomoticzAPIClient:
 
     def stop(self):
         """Stops the worker thread cleanly."""
-        self.logging("Status", "Zigbee: ++ DomoticzDB Api thread stop requrested")
+        
+        self.logging("Status", "Zigbee: ++ DomoticzDB Api thread stop requested")
         self._stop_event.set()
         try:
-            self._queue.put_nowait((None, None))
+            self._queue.put_nowait((0, None, None))   # sentinel with priority 0
         except Exception as er:
-            self.logging("Error", f"DomoticzDB Api thread  did not stop cleanly {er}")
-            pass
-        self._worker.join(timeout=2)
+            self.logging("Error", f"DomoticzDB Api thread did not stop cleanly {er}")
+        self._worker.join(timeout=6)   # > GET_TIMEOUT=5
         if self._worker.is_alive():
-            self.logging("Error", "DomoticzDB Api thread  did not stop cleanly")
+            self.logging("Error", "DomoticzDB Api thread did not stop cleanly")
         else:
             self.logging("Debug", "Zigbee: ++ DomoticzDB Api thread stopped.")
+
 
     def logging(self, level, msg):
         """Wrapper for logging through plugin logger."""
@@ -220,6 +220,28 @@ class DomoticzAPIClient:
         self._enqueue(query, cache_key, priority)
         return None
 
+    def get_blocking(self, query):
+        """
+        Perform a synchronous, blocking HTTP request and cache the result.
+
+        Used for data that must be available immediately (e.g. hardware settings,
+        preferences) where the enqueue/background-fetch mechanism cannot be used.
+
+        Args:
+            query (str): API query string.
+
+        Returns:
+            dict or None: Parsed JSON response or None on error.
+        """
+        cache_key = self._normalize_query(query)
+        url = self.url_ready + query
+        self.logging("Debug", f"get_blocking: fetching {url}")
+        data = self._do_request(url)
+        if data:
+            self._set_cache(cache_key, data)
+        return data
+
+
     def _enqueue(self, query, cache_key, priority=False):
         """
         Add query to worker queue if not already inflight.
@@ -229,6 +251,7 @@ class DomoticzAPIClient:
             cache_key (str): Normalized cache key.
             priority (bool): If True, place at front of queue.
         """
+
         self.logging("Debug", f"Enqueue request: {query} (cache_key={cache_key})")
         if self._stop_event.is_set():
             return
@@ -237,10 +260,8 @@ class DomoticzAPIClient:
                 return
             self._inflight.add(cache_key)
         try:
-            if priority:
-                self._queue.queue.appendleft((query, cache_key))
-            else:
-                self._queue.put((query, cache_key))
+            prio = 0 if priority else 1
+            self._queue.put((prio, query, cache_key))
         except Exception as e:
             self.logging("Debug", f"Enqueue request error: {e}")
             with self._inflight_lock:
@@ -253,7 +274,7 @@ class DomoticzAPIClient:
         """Background thread fetching API requests and updating caches."""
         while not self._stop_event.is_set():
             try:
-                query, cache_key = self._queue.get(timeout=0.5)
+                _prio, query, cache_key = self._queue.get(timeout=0.5)
             except queue.Empty:
                 continue
 
@@ -265,18 +286,12 @@ class DomoticzAPIClient:
                 url = self.url_ready + query
                 data = self._do_request(url)
                 self.logging("Debug", f"_worker_loop fetched: cache_key={cache_key} data={data}")
-                
+
                 if data:
                     self._set_cache(cache_key, data)
-
                     # Update per-device caches if relevant
-                    if "rid=" in query:
+                    if "rid=" in query or "result" in data:
                         # getdevices for One or a list of Id
-                        for cache in self._device_caches:
-                            cache.update_device_from_response(data)
-
-                    elif "result" in data:
-                        # getdevices for ALL
                         for cache in self._device_caches:
                             cache.update_device_from_response(data)
 
@@ -301,7 +316,7 @@ class DomoticzAPIClient:
         """
         ssl_context = None
         if url.lower().startswith("https") and not self.pluginconf.pluginConf.get("CheckSSLCertificateValidity", True):
-            self.logging("Debug", f"_do_request set ssl_context")
+            self.logging("Debug", "_do_request set ssl_context")
             ssl_context = ssl.create_default_context()
             ssl_context.check_hostname = False
             ssl_context.verify_mode = ssl.CERT_NONE
@@ -311,9 +326,9 @@ class DomoticzAPIClient:
             request = urllib.request.Request(url)
             if self.auth_header:
                 request.add_header("Authorization", f"Basic {self.auth_header}")
-                self.logging("Debug", f"_do_request Authorization set {self.auth_header}")
+                self.logging("Debug", "_do_request Authorization header set")
 
-            with urllib.request.urlopen(request, context=ssl_context, timeout=GET_TIMEOUT) as response:
+            with urllib.request.urlopen(request, context=ssl_context, timeout=GET_TIMEOUT) as response:  # nosec B310
                 return json.load(response)
 
         except (urllib.error.HTTPError, urllib.error.URLError, socket.timeout, json.JSONDecodeError) as e:
@@ -484,6 +499,7 @@ class DomoticzDB_DeviceStatus:
             device_cache (DomoticzDeviceCache): Reference to the device cache.
         """
         self.cache = device_cache
+        
 
     def retrieve_baro_adjustment(self, device_id):
         """Retrieve barometric adjustment (AddjValue2) for a device."""
@@ -516,8 +532,9 @@ class DomoticzDB_Preferences:
         self.load()
 
     def load(self):
-        """Fetch preferences from Domoticz."""
-        result = self.api.get("type=command&param=getsettings")
+        """Fetch preferences from Domoticz (blocking — must succeed before plugin continues)."""
+        result = self.api.get_blocking("type=command&param=getsettings")
+        
         if result:
             self.preferences = result
 
@@ -553,8 +570,8 @@ class DomoticzDB_Hardware:
         self.load()
 
     def load(self):
-        """Load hardware information from Domoticz."""
-        result = self.api.get("type=command&param=gethardware")
+        """Load hardware information from Domoticz (blocking — must succeed before plugin continues)."""
+        result = self.api.get_blocking("type=command&param=gethardware")
         if not result or "result" not in result:
             return
 
@@ -572,8 +589,11 @@ class DomoticzDB_Hardware:
         Returns:
             bool: True if more than one Zigate hardware exists.
         """
-        count = sum(
-            1 for x in self.hardware.values()
-            if "Zigate" in x.get("Extra", "")
-        )
-        return count > 1
+        _count = 0
+        for x in self.hardware.values():
+            if "Zigate" in x.get("Extra", ""):
+                self.api.logging("Log", f"Found Zigate instance: {x.get('Name', 'Unknown')} (idx={x.get('idx')})")
+                _count += 1
+        self.api.logging("Log", f"is_multi_instance: {_count} Zigate instances found" )
+        
+        return _count > 1
