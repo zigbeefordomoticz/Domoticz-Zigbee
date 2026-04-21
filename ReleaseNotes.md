@@ -18,6 +18,10 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
+## Apr. 2026 - stable8.1.003 (2026.2)
+
+- [Device] - Adding Universal smart IR remote control functionality for Moes UFO-R11. Provides learning IR Code capability and Sending IR Code.
+
 ## Apr. 2026 - stable8.1.002 ( 2026.1)
 
 - [Technical] - Better handling of python3 venv, and relying on VIRUAL_ENV
