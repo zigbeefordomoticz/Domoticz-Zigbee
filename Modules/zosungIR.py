@@ -6,6 +6,8 @@
 # This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
 # (C) 2015-2024
 #
+# # Initial authors: pipiche38
+#
 # SPDX-License-Identifier: GPL-3.0 license
 
 """
@@ -29,17 +31,24 @@
         Coord reconstructs buffer -> base64 -> MajDomoDevice (Text widget)
 
     Send flow  (coordinator -> device):
-        Coord        ->  Device   ed00 cmd00  announce IR payload length
+        Coord        ->  Device   ed00 cmd00  announce JSON payload length  (cmd=0x02)
         Device       ->  Coord    ed00 cmd01  ack
         Device       ->  Coord    ed00 cmd02  request chunk at pos=0
         Coord        ->  Device   ed00 cmd03  chunk data + sum-mod-256 crc
         ... repeat cmd02 / cmd03 until all sent ...
         Device       ->  Coord    ed00 cmd04  transfer complete
         Coord        ->  Device   ed00 cmd05  final ack
+        Device fires IR signal
+
+    Send payload format (JSON string, NOT raw bytes):
+        {"key_num":1,"delay":300,"key1":{"num":1,"freq":38000,"type":1,"key_code":"<base64>"}}
 
     Frame byte order: little-endian throughout (ZCL/Zigbee convention).
     msgpart is encoded as a ZCL OCTET_STR: length(uint8) + data bytes.
     msgpartcrc = sum(msgpart bytes) % 256.
+
+    Protocol reference: zigbee-herdsman-converters src/lib/zosung.ts
+        https://github.com/Koenkk/zigbee-herdsman-converters/blob/master/src/lib/zosung.ts
 
     Public API:
         zosung_ir_read_raw_aps()    called from tuyaReadRawAPS for ed00 / e004
@@ -53,7 +62,7 @@ import struct
 
 from Modules.basicOutputs import raw_APS_request
 from Modules.domoMaj import MajDomoDevice
-from Modules.tools import get_and_inc_ZCL_SQN, is_ack_tobe_disabled
+from Modules.tools import get_and_inc_ZCL_SQN
 from Modules.tuyaTools import store_tuya_attribute
 from Modules.zigateConsts import ZIGATE_EP
 
@@ -70,7 +79,7 @@ def _get_ir_state(self, nwkid):
         "rx_buffer": None,
         "rx_length": 0,
         "rx_seq": 0,
-        "tx_data": None,
+        "tx_data": None,   # bytes: JSON-wrapped IR payload during send
         "tx_seq": 0,
     })
 
@@ -96,7 +105,7 @@ def zosung_ir_read_raw_aps(self, Devices, NwkId, srcEp, ClusterID, MsgPayload):
     cmd = MsgPayload[4:6]
     data_hex = MsgPayload[6:]
 
-    self.log.logging("ZosungIR", "Log", "zosung_ir_read_raw_aps - NwkId: %s Ep: %s Cluster: %s Cmd: %s Data: %s" % (
+    self.log.logging("ZosungIR", "Debug", "zosung_ir_read_raw_aps - NwkId: %s Ep: %s Cluster: %s Cmd: %s Data: %s" % (
         NwkId, srcEp, ClusterID, cmd, data_hex), NwkId)
 
     if ClusterID == ZOSUNG_IR_CONTROL_CLUSTER:
@@ -129,7 +138,7 @@ def _handle_ed00_cmd(self, Devices, NwkId, srcEp, cmd, data_hex):
     if handler:
         handler(self, Devices, NwkId, srcEp, data_hex)
     else:
-        self.log.logging("ZosungIR", "Log", "_handle_ed00_cmd - unknown cmd: %s data: %s" % (cmd, data_hex), NwkId)
+        self.log.logging("ZosungIR", "Debug", "_handle_ed00_cmd - unknown cmd: %s data: %s" % (cmd, data_hex), NwkId)
 
 
 # ─── ed00 incoming command handlers ───────────────────────────────────────────────────
@@ -148,7 +157,7 @@ def _ed00_cmd00_init(self, Devices, NwkId, srcEp, data_hex):
     data_bytes = bytes.fromhex(data_hex[:32])
     seq, length, unk1, unk2, unk3, cmd_flag, unk4 = struct.unpack("<HIIHBBH", data_bytes)
 
-    self.log.logging("ZosungIR", "Log", "_ed00_cmd00_init - NwkId: %s seq:%04x length:%d cmd_flag:%02x" % (
+    self.log.logging("ZosungIR", "Debug", "_ed00_cmd00_init - NwkId: %s seq:%04x length:%d cmd_flag:%02x" % (
         NwkId, seq, length, cmd_flag), NwkId)
 
     store_tuya_attribute(self, NwkId, "ZosungIR_rx_seq", "%04x" % seq)
@@ -176,6 +185,7 @@ def _ed00_cmd02_chunk_request(self, Devices, NwkId, srcEp, data_hex):
     Device -> Coordinator: Chunk request (send mode).
     Fields (little-endian): seq(uint16), position(uint32), maxlen(uint8) -- 7 bytes.
     Coordinator responds with cmd03 carrying the requested chunk.
+    tx_data holds the JSON-encoded IR payload as raw bytes.
     """
     if len(data_hex) < 14:
         self.log.logging("ZosungIR", "Debug", "_ed00_cmd02_chunk_request - data too short: %s" % data_hex, NwkId)
@@ -188,9 +198,9 @@ def _ed00_cmd02_chunk_request(self, Devices, NwkId, srcEp, data_hex):
         NwkId, seq, position, maxlen), NwkId)
 
     state = _get_ir_state(self, NwkId)
-    tx_data = base64.b64decode(state.get("tx_data")) if state.get("tx_data") else None
-    if tx_data is None:
-        self.log.logging("ZosungIR", "Log", "_ed00_cmd02_chunk_request - no tx_data pending for %s" % NwkId, NwkId)
+    tx_data = state.get("tx_data")   # bytes: JSON payload, set by zosung_ed00_send_ir_code
+    if not tx_data:
+        self.log.logging("ZosungIR", "Debug", "_ed00_cmd02_chunk_request - no tx_data pending for %s" % NwkId, NwkId)
         return
 
     chunk_len = min(maxlen, ZOSUNG_CHUNK_SIZE)
@@ -227,10 +237,8 @@ def _ed00_cmd03_chunk(self, Devices, NwkId, srcEp, data_hex):
 
     computed_crc = _sum_crc(msgpart)
     if computed_crc != msgpartcrc:
-        self.log.logging("ZosungIR", "Log",
-            "_ed00_cmd03_chunk - CRC mismatch NwkId: %s seq:%04x pos:%d "
-            "computed:%02x received:%02x" % (
-                NwkId, seq, position, computed_crc, msgpartcrc), NwkId)
+        self.log.logging("ZosungIR", "Error", "_ed00_cmd03_chunk - CRC mismatch NwkId: %s seq:%04x pos:%d computed:%02x received:%02x" % ( 
+            NwkId, seq, position, computed_crc, msgpartcrc), NwkId)
         return
 
     self.log.logging("ZosungIR", "Debug", "_ed00_cmd03_chunk - NwkId: %s seq:%04x pos:%d len:%d crc:ok" % (
@@ -241,7 +249,7 @@ def _ed00_cmd03_chunk(self, Devices, NwkId, srcEp, data_hex):
     rx_length = state.get("rx_length", 0)
 
     if rx_buffer is None:
-        self.log.logging("ZosungIR", "Log", "_ed00_cmd03_chunk - no rx_buffer for %s, ignoring" % NwkId, NwkId)
+        self.log.logging("ZosungIR", "Debug", "_ed00_cmd03_chunk - no rx_buffer for %s, ignoring" % NwkId, NwkId)
         return
 
     end = position + len(msgpart)
@@ -257,12 +265,16 @@ def _ed00_cmd04_done(self, Devices, NwkId, srcEp, data_hex):
     """
     Device -> Coordinator: Transfer complete (send mode).
     Fields (little-endian): zero0(uint8), seq(uint16), zero1(uint16) -- 5 bytes.
-    Coordinator responds with cmd05 final ack.
+    Coordinator responds with cmd05 final ack and clears tx_data.
     """
     if len(data_hex) < 10:
         return
     seq = struct.unpack_from("<H", bytes.fromhex(data_hex[:10]), 1)[0]
     self.log.logging("ZosungIR", "Debug", "_ed00_cmd04_done - NwkId: %s seq:%04x" % (NwkId, seq), NwkId)
+
+    state = _get_ir_state(self, NwkId)
+    state["tx_data"] = None
+
     _send_ed00_cmd05_final(self, NwkId, srcEp, seq)
 
 
@@ -279,11 +291,11 @@ def _ed00_cmd05_final(self, Devices, NwkId, srcEp, data_hex):
     state = _get_ir_state(self, NwkId)
     rx_buffer = state.get("rx_buffer")
     if not rx_buffer:
-        self.log.logging("ZosungIR", "Log", "_ed00_cmd05_final - no rx_buffer for %s" % NwkId, NwkId)
+        self.log.logging("ZosungIR", "Debug", "_ed00_cmd05_final - no rx_buffer for %s" % NwkId, NwkId)
         return
 
     learned_code = base64.b64encode(bytes(rx_buffer)).decode("ascii")
-    self.log.logging("ZosungIR", "Log", "zosung IR Code received - NwkId: %s learned IR code len=%d '%s'" % (
+    self.log.logging("ZosungIR", "Status", "zosung IR Code received - NwkId: %s learned IR code len=%d '%s'" % (
         NwkId, len(learned_code), learned_code), NwkId)
 
     store_tuya_attribute(self, NwkId, "ZosungIR_learned_code", learned_code)
@@ -347,40 +359,55 @@ def zosung_e004_learn_mode(self, NwkId, ep, on_off=None):
     """
     Trigger IR learn mode: sends {"study": 0} JSON to cluster e004 cmd00.
     Call this before the user presses the IR remote button.
+    on_off="On"  -> start learning  {"study": 0}
+    on_off other -> stop  learning  {"study": 1}
     """
     study_mode = {"study": 0} if on_off == "On" else {"study": 1}
     data = json.dumps(study_mode, separators=(",", ":")).encode("utf-8")
-
     _send_zcl_cluster_cmd(self, NwkId, ep, ZOSUNG_IR_CONTROL_CLUSTER, "00", data)
 
 
 def zosung_ed00_send_ir_code(self, NwkId, ep, ir_code_b64):
     """
-    Send a stored IR code to the device.
+    Send a stored IR code to the device for playback.
+
+    The base64 IR code (as returned by learn mode) is wrapped in a JSON
+    envelope matching the format used by zigbee-herdsman-converters zosung.ts:
+        {"key_num":1,"delay":300,"key1":{"num":1,"freq":38000,"type":1,"key_code":"<b64>"}}
+
+    This JSON string (UTF-8 bytes) is then chunked and transferred via the
+    ed00 protocol with cmd=0x02 in the cmd00 header.
 
     Args:
         ir_code_b64: base64-encoded IR payload string (as stored by learn mode).
     """
+    ir_json = json.dumps({
+        "key_num": 1,
+        "delay": 300,
+        "key1": {
+            "num": 1,
+            "freq": 38000,
+            "type": 1,
+            "key_code": ir_code_b64,
+        },
+    }, separators=(",", ":"))
+    ir_bytes = ir_json.encode("utf-8")
 
     state = _get_ir_state(self, NwkId)
-    state["tx_data"] = ir_code_b64
+    state["tx_data"] = ir_bytes
     state["tx_seq"] = state.get("seq", 0)
     state["seq"] = (state["tx_seq"] + 1) & 0xFFFF
-
-    try:
-        ir_bytes = base64.b64decode(state["tx_data"])
-    except Exception as e:
-        self.log.logging("ZosungIR", "Error", "zosung_ed00_send_ir_code - invalid base64 for NwkId %s: %s" % (NwkId, e), NwkId)
-        return
 
     length = len(ir_bytes)
     seq = state["tx_seq"]
 
+    self.log.logging("ZosungIR", "Debug", "zosung_ed00_send_ir_code - NwkId: %s seq:%04x length:%d json:%s" % (
+        NwkId, seq, length, ir_json), NwkId)
+
     # cmd00: seq(2), length(4), unk1(4), unk2=0xe004(2), unk3=0x01(1), cmd=0x02(1), unk4(2) - little-endian
+    # cmd=0x02 matches zosung.ts; device will ack with cmd01 then request chunks via cmd02
     payload = struct.pack("<HIIHBBH", seq, length, 0, 0xe004, 0x01, 0x02, 0)
     _send_zcl_cluster_cmd(self, NwkId, ep, ZOSUNG_IR_TRANSMIT_CLUSTER, "00", payload)
-
-    self.log.logging("ZosungIR", "Log", "zosung_ed00_send_ir_code - NwkId: %s seq:%04x length:%d data:%s" % (NwkId, seq, length, ir_bytes.hex()), NwkId)
 
 
 # ─── CRC helper ──────────────────────────────────────────────────────────────────
