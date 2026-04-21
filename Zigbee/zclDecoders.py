@@ -200,6 +200,11 @@ def zcl_decoders(self, src_nwk_id, src_endpoint, target_ep, cluster_id, payload,
         send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
         return frame
 
+    if cluster_id in ["ed00", "e004"] and manufacturer_code is None:
+        # sozung IR device does this for every chunk of the IR code, no logging needed for these frames
+        self.log.logging("zclDecoder", "Debug", f"Frame with cluster_id {cluster_id} and manufacturer_code {manufacturer_code} will be handled by inRawAPS, no logging needed for this frame", src_nwk_id) 
+        return frame
+
     # Log unknown commands
     self.log.logging("zclDecoder", "Log",
                      f"Unknown Command: {command} NwkId: {src_nwk_id} Ep: {src_endpoint} Cluster: {cluster_id} "
