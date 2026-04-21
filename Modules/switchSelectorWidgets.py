@@ -18,8 +18,26 @@
 """
 
 
-
 SWITCH_SELECTORS = {
+    "SendIRcode": {
+        "SelectorStyle": 1,
+        "00": (0, "00"),
+        "01": (1, "10"),
+        "02": (2, "20"),
+        "03": (3, "30"),
+        "04": (4, "40"),
+        "05": (5, "50"),
+        "06": (6, "60"),
+        "07": (7, "70"),
+        "08": (8, "80"),
+        "09": (9, "90"),
+        "LevelNames": "Off|IR Code 1|IR Code 2|IR Code 3|IR Code 4|IR Code 5|IR Code 6|IR Code 7|IR Code 8|IR Code 9",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Code IR 1|Code IR 2|Code IR 3|Code IR 4|Code IR 5|Code IR 6|Code IR 7|Code IR 8|Code IR 9"
+            }
+        }
+    },
     "ACMode": {
         "00": (0, "00"),
         "03": (1, "10"),

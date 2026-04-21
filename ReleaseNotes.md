@@ -18,7 +18,8 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
-## .          - stable8.1.003 ( 2026.2)
+
+## .          - stable8.1.004 ( 2026.3)
 
 - [Technical] - Migrated plugin from legacy Domoticz framework to DomoticzEx (Extended) framework
 - [Technical] - Introduced ThreadSafeDeviceDict — thread-safe mapping for the device list
@@ -45,6 +46,10 @@ Release Numbering
 - [BugFixing] - Fixed widget notification handling under DomoticzEx
 
 - [Hardware] - Refactor Danfoss eTRV OEM device support
+
+## Apr. 2026 - stable8.1.003 (2026.2)
+
+- [Device] - Adding Universal smart IR remote control functionality for Moes UFO-R11. Provides learning IR Code capability and Sending IR Code.
 
 ## Apr. 2026 - stable8.1.002 ( 2026.1)
 

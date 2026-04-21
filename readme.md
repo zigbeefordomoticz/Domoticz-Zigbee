@@ -18,10 +18,14 @@
 - **Limit of 255 Widgets**: Domoticz devices (widgets) are capped at 255, requiring mains-powered Zigbee routers to extend the network mesh.
 
 ## Requirements
-- **Domoticz**: Version 2021.1 or higher.
-- **Python**: Version 3.8 or higher with the `python3-dev` package.
+- **Domoticz**: Version 2025.1 or higher.
+- **Python**: Version 3.11 or higher with the `python3-dev` package.
 - **Operating System**: Recommended for Linux (Raspberry Pi, Debian, Ubuntu). Windows support is not officially supported and may encounter issues.
 - **Zigbee Coordinator**: A supported Zigbee radio module (see [Coordinator Compatibility](#coordinator-compatibility)).
+
+## Limitations
+- Running **multiple instances** of the plugin when running Domoticz 2026 and python3.11 is buggy due to an issue in python3.11 ( https://github.com/domoticz/domoticz/issues/6763 )
+  We recommend you to switch to Python3.13 at least which doesn't have such issue.
 
 ## Documentation - Installation
 Everything is on our Wiki : <https://zigbeefordomoticz.github.io/wiki>
@@ -49,9 +53,9 @@ The community maintains a list of certified Zigbee Device Objects at [https://zi
 In theory, any Zigbee devices that fully comply with the Zigbee 3.0, Zigbee Home Automation, and Zigbee Light Link specifications set by the Zigbee Alliance should be technically compatible with this project. However, it's worth noting that certain hardware manufacturers may not consistently adhere to all the specified requirements, resulting in partial or non-functional device behavior without custom integrations. Nevertheless, developers often find solutions or workarounds for non-standard features to address these issues.
 
 ## Branches
-- **stable7**: Recommended for production use (version 7.1.xxx).
-- **develop7**: Ongoing development, parallel to stable7.
-- **wip-develop**: Experimental features (use with caution).
+- **stable7**: out of support (version 7.1.xxx).
+- **stable8**: Recommended for production use (version 8.1.xxx).
+
 
 ## Troubleshooting
 - Check the Domoticz log file for errors.

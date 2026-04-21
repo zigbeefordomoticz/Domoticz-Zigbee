@@ -26,7 +26,7 @@ from Modules.pollControl import receive_poll_cluster
 from Modules.schneider_wiser import schneiderReadRawAPS
 from Modules.tuya import tuyaReadRawAPS
 from Modules.tuyaTools import tuya_manufacturer_device
-
+from Modules.zosungIR import zosung_ir_read_raw_aps
 
 # Requires Zigate firmware > 3.1d
 CALLBACK_TABLE = {
@@ -67,10 +67,10 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
         self.log.logging( "inRawAPS", "Error", "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s Cmd: %s Data: %s not found in ListOfDevices !!" % (
             srcnwkid, srcep, cluster, ManufacturerCode, Command, Data), srcnwkid, )
         return
-    
+
     self.log.logging( "inRawAPS", "Debug", "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s Cmd: %s Data: %s" % (
         srcnwkid, srcep, cluster, ManufacturerCode, Command, Data), srcnwkid, )
-    
+
     model_name = self.ListOfDevices[srcnwkid].get("Model", "")
 
     if cluster == "0020":  # Poll Control ( Not implemented in firmware )
@@ -108,7 +108,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
     if cluster == "0501":  # IAS ACE
         handle_ias_ace_command( self, Devices, srcnwkid, srcep, Sqn, model_name, Command, Data )
         return
-        
+
     if cluster == "0300":  # Color Control
         if Command == "0a":  # Move to Color Temperature
             color_temp_mired = payload[8:10] + payload[6:8]
@@ -206,6 +206,17 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
 
     self.log.logging( "inRawAPS", "Debug", "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s manuf: %s manuf_name: %s Cmd: %s Data: %s" % (
         srcnwkid, srcep, cluster, ManufacturerCode, manuf, manuf_name, Command, Data), srcnwkid, )
+
+    if (
+        cluster in ["ed00", "e004"]
+        and manuf in {"1002"}
+        and model_name
+        in [
+            "TS1201-ircode",
+        ]
+    ):
+        zosung_ir_read_raw_aps(self, Devices, srcnwkid, srcep, cluster, payload)
+        return
 
     func = None
     if manuf in CALLBACK_TABLE:
