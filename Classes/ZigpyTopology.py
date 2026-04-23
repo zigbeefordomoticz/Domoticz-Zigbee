@@ -21,12 +21,13 @@ import zigpy.types as t
 ZIGPY_TOPOLOGY_REPORT_FILENAME = "Zigpy-Topology-"
 class ZigpyTopology:
     
-    def __init__(self, zigbee_communitation, PluginConf, ZigateComm, ListOfDevices, IEEE2NWK, Devices, HardwareID, log, pairing_in_progress):
+    def __init__(self, zigbee_communitation, PluginConf, ZigateComm, ListOfDevices, IEEE2NWK, DeviceConfig, Devices, HardwareID, log, pairing_in_progress):
         self.zigbee_communication = zigbee_communitation
         self.pluginconf = PluginConf
         self.ControllerLink = ZigateComm
         self.ListOfDevices = ListOfDevices
         self.IEEE2NWK = IEEE2NWK
+        self.DeviceConfig = DeviceConfig
         self.Devices = Devices
         self.HardwareID = HardwareID
         self.log = log

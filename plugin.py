@@ -1386,12 +1386,12 @@ def zigateInit_Phase3(self):
 
     if self.networkmap is None:
         self.networkmap = NetworkMap(
-            self.zigbee_communication ,self.pluginconf, self.ControllerLink, self.ListOfDevices, Devices, self.HardwareID, self.log, self.pairing_in_progress
+            self.zigbee_communication ,self.pluginconf, self.ControllerLink, self.ListOfDevices, self.DeviceConf, Devices, self.HardwareID, self.log, self.pairing_in_progress
         )
     
     if self.zigpy_topology is None:
         self.zigpy_topology = ZigpyTopology(
-            self.zigbee_communication ,self.pluginconf, self.ControllerLink, self.ListOfDevices, self.IEEE2NWK, Devices, self.HardwareID, self.log, self.pairing_in_progress
+            self.zigbee_communication ,self.pluginconf, self.ControllerLink, self.ListOfDevices, self.IEEE2NWK, self.DeviceConf, Devices, self.HardwareID, self.log, self.pairing_in_progress
         )
 
     if self.networkmap:

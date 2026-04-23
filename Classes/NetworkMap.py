@@ -43,7 +43,7 @@ from Zigbee.zdpCommands import zdp_NWK_address_request, zdp_nwk_lqi_request
 
 
 class NetworkMap:
-    def __init__(self, zigbee_communitation, PluginConf, ZigateComm, ListOfDevices, Devices, HardwareID, log, pairing_in_progress):
+    def __init__(self, zigbee_communitation, PluginConf, ZigateComm, ListOfDevices, DeviceConfig, Devices, HardwareID, log, pairing_in_progress):
         self.zigbee_communication = zigbee_communitation
         self.pluginconf = PluginConf
         self.ControllerLink = ZigateComm
@@ -53,6 +53,7 @@ class NetworkMap:
         self.log = log
         self.FirmwareVersion = None
         self.pairing_in_progress = pairing_in_progress
+        self.DeviceConfig = DeviceConfig
 
         self._NetworkMapPhase = 0
         self.LQIreqInProgress = []
