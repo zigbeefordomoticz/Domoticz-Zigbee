@@ -748,7 +748,8 @@ def timeout_widget_api(self, Devices, DeviceId_, timeout_value):
         if timeout_value == 1 and self.pluginconf.pluginConf["deviceOffWhenTimeOut"]:
             # Then we will switch off as per User setting
             for unit in Devices[ DeviceId_].Units:
-                _switch_off_widget_due_to_timedout(self, Devices, DeviceId_, unit)
+                _nValue, _sValue = domo_read_nValue_sValue(self, Devices, DeviceId_, unit)
+                _switch_off_widget_due_to_timedout(self, Devices, DeviceId_, unit, _nValue, _sValue)
     else:
         for unit in list(Devices):
             if Devices[ unit ].DeviceID == DeviceId_:
