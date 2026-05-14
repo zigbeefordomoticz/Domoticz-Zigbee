@@ -19,13 +19,17 @@ License: GPL-3.0
 GitHub: https://github.com/zigbeefordomoticz/Domoticz-Zigbee
 """
 
+
 import base64
+import gc
 import json
 import queue
 import socket
 import ssl
+import sys
 import threading
 import time
+import urllib.parse
 import urllib.parse
 import urllib.request
 from collections import OrderedDict
@@ -94,10 +98,12 @@ class DomoticzAPIClient:
         self._worker = threading.Thread(target=self._worker_loop, name="DomoticzAPI", daemon=False)
         self._worker.start()
 
-        # Per-device caches
+        # Per-device caches — guarded by _device_caches_lock
+        self._device_caches_lock = threading.Lock()
         self._device_caches = []
 
         self._parse_url()
+
 
     def stop(self):
         """Stops the worker thread cleanly."""
@@ -114,11 +120,59 @@ class DomoticzAPIClient:
         else:
             self.logging("Debug", "Zigbee: ++ DomoticzDB Api thread stopped.")
 
+        # Break the circular reference DomoticzAPIClient._device_caches <-> DomoticzDeviceCache.api
+        # so the garbage collector can reclaim both objects without waiting for a GC cycle.
+        with self._device_caches_lock:
+            self._device_caches.clear()
+
 
     def logging(self, level, msg):
         """Wrapper for logging through plugin logger."""
         if self.log:
             self.log.logging("DZapi", level, msg)
+
+
+    def dump_stats(self):
+        """
+        Log a diagnostic snapshot of all internal data-structure sizes.
+
+        Call this periodically (e.g. from the plugin heartbeat) to track
+        whether any structure is growing unexpectedly during a running session.
+        Summary lines are emitted at Log level (always written to the plugin
+        log file); detail lines are at Debug level.
+        """
+        with self._cache_lock:
+            cache_len = len(self._cache)
+            cache_keys = list(self._cache.keys())
+
+        with self._inflight_lock:
+            inflight_len = len(self._inflight)
+            inflight_items = list(self._inflight)
+
+        queue_len = self._queue.qsize()
+
+        with self._device_caches_lock:
+            num_caches = len(self._device_caches)
+            device_cache_stats = [c.dump_stats() for c in self._device_caches]
+
+        gc_counts = gc.get_count()
+
+        self.logging("Log", (
+            f"DomoticzDB stats | "
+            f"cache={cache_len}/{MAX_CACHE_SIZE} | "
+            f"inflight={inflight_len} | "
+            f"queue≈{queue_len} | "
+            f"device_caches={num_caches} | "
+            f"gc={gc_counts}"
+        ))
+        # Detail lines — only when Debug logging is active for the DZapi module
+        if cache_keys:
+            self.logging("Debug", f"  _cache keys: {cache_keys}")
+        if inflight_items:
+            self.logging("Debug", f"  _inflight:   {inflight_items}")
+        for stat in device_cache_stats:
+            self.logging("Log", f"  DeviceCache: {stat}")
+
 
     # ------------------------------
     # URL / Auth Helpers
@@ -279,7 +333,7 @@ class DomoticzAPIClient:
                 continue
 
             if query is None:
-                continue
+                break  # sentinel received — exit the loop
 
             self.logging("Debug", f"_worker_loop - key: {cache_key} query: {query}")
             try:
@@ -289,10 +343,12 @@ class DomoticzAPIClient:
 
                 if data:
                     self._set_cache(cache_key, data)
-                    # Update per-device caches if relevant
+                    # Update per-device caches for getdevices responses only
                     if "rid=" in query or "result" in data:
                         # getdevices for One or a list of Id
-                        for cache in self._device_caches:
+                        with self._device_caches_lock:
+                            caches = list(self._device_caches)
+                        for cache in caches:
                             cache.update_device_from_response(data)
 
             except Exception as e:
@@ -345,8 +401,9 @@ class DomoticzAPIClient:
         Args:
             device_cache (DomoticzDeviceCache): Device cache instance.
         """
-        if device_cache not in self._device_caches:
-            self._device_caches.append(device_cache)
+        with self._device_caches_lock:
+            if device_cache not in self._device_caches:
+                self._device_caches.append(device_cache)
         
 
 class DomoticzDeviceCache:
@@ -382,6 +439,25 @@ class DomoticzDeviceCache:
         self.api.logging("Debug", "Dumping Domoticz Cache")
         for x in self.devices:
             self.api.logging("Debug", f"devices {x} : {self.devices[x]}")
+
+    def dump_stats(self):
+        """Return a diagnostic string with sizes of internal structures (called by DomoticzAPIClient.dump_stats)."""
+        with self._lock:
+            num_devices = len(self.devices)
+            num_refresh = len(self._last_refresh)
+            oldest = min(self._last_refresh.values(), default=0)
+            newest = max(self._last_refresh.values(), default=0)
+        age_oldest = int(time.time() - oldest) if oldest else -1
+        age_newest = int(time.time() - newest) if newest else -1
+        approx_bytes = sys.getsizeof(self.devices) + sum(
+            sys.getsizeof(v) for v in self.devices.values()
+        ) + sys.getsizeof(self._last_refresh)
+        return (
+            f"devices={num_devices} entries | "
+            f"_last_refresh={num_refresh} entries | "
+            f"oldest_entry={age_oldest}s ago | newest_entry={age_newest}s ago | "
+            f"approx_size={approx_bytes} bytes"
+        )
 
     def refresh(self):
         """
@@ -450,10 +526,30 @@ class DomoticzDeviceCache:
             return
 
         devices = data["result"]
+        if not isinstance(devices, list):
+            return
         self.api.logging("Debug", f"{len(devices)} devices received")
 
         for d in devices:
             self._update_single_device(d)
+
+        # After a full-device load (no rid= filter) prune entries for deleted devices.
+        # Per-device refreshes return only one entry, so pruning there would be premature.
+        if len(devices) > 1:
+            self._prune_stale_devices()
+
+
+    def _prune_stale_devices(self):
+        """Remove devices not seen in two full cache cycles to prevent unbounded growth."""
+        cutoff = time.time() - (2 * CACHE_TIMEOUT)
+        with self._lock:
+            stale = [idx for idx, ts in self._last_refresh.items() if ts < cutoff]
+            for idx in stale:
+                self.devices.pop(idx, None)
+                self._last_refresh.pop(idx, None)
+        if stale:
+            self.api.logging("Debug", f"Pruned {len(stale)} stale device cache entries")
+
 
     def _update_single_device(self, d):
         """
