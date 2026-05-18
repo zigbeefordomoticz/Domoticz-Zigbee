@@ -30,7 +30,6 @@ import sys
 import threading
 import time
 import urllib.parse
-import urllib.parse
 import urllib.request
 from collections import OrderedDict
 
