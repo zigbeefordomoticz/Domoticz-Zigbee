@@ -238,24 +238,40 @@ class ZigpyTransport(object):
             return
         self.forwarder_queue.put(message)
 
+
     def get_device_ieee( self, nwkid):
         return self.app.get_device_ieee( nwkid )
+
 
     # TO be cleaned . This is to make the plugin working
     def update_ZiGate_HW_Version(self, version):
         return
 
+
     def update_ZiGate_Version(self, FirmwareVersion, FirmwareMajorVersion):
         return
+
 
     def pdm_lock_status(self):
         return False
 
+
     def get_writer_queue(self):
         return self.loadTransmit()
 
+
     def get_forwarder_queue(self):
         return self.forwarder_queue.qsize()
+
+    def dump_transport_stats(self):
+        """Log asyncio task count and semaphore state from the zigpy event loop.
+
+        Called from the main thread; schedules a coroutine in the zigpy loop so
+        that asyncio.all_tasks() is valid (it must be called from within the loop).
+        """
+        if self.zigpy_loop is None or self.zigpy_loop.is_closed():
+            return
+
 
     def loadTransmit(self):
         if self.writer_queue is None:
