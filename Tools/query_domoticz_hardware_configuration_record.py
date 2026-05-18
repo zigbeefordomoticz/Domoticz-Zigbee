@@ -2,32 +2,78 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import sqlite3
-import json
+import ast
 import base64
-from pathlib import Path
+import contextlib
+import json
+import sqlite3
+import zlib
 from datetime import datetime
+from pathlib import Path
 
 
-def safe_b64_decode(value: str):
-    """Try to decode Base64, return original string if it fails."""
+def decode_b64_payload(value: str, version: int):
+    """Decode a single plugin-stored base64 attribute using the given format version."""
     try:
-        # Fix missing padding if needed
-        missing = len(value) % 4
-        if missing:
-            value += "=" * (4 - missing)
+        raw = base64.b64decode(value)
+    except Exception as e:
+        raise ValueError(f"base64 decode failed: {e}") from e
 
-        decoded = base64.b64decode(value)
+    if version == 2:
         try:
-            return decoded.decode("utf-8", errors="replace")
-        except Exception:
-            return decoded  # Return raw bytes if not UTF-8
-    except Exception:
-        return value
+            raw = zlib.decompress(raw)
+        except zlib.error as e:
+            raise ValueError(f"zlib decompress failed: {e}") from e
+        try:
+            return json.loads(raw.decode("utf-8"))
+        except Exception as e:
+            raise ValueError(f"JSON decode failed: {e}") from e
+
+    # Version 1: uncompressed, stored as Python repr (str() output)
+    try:
+        decoded = raw.decode("utf-8")
+    except Exception as e:
+        raise ValueError(f"UTF-8 decode failed: {e}") from e
+
+    with contextlib.suppress(json.JSONDecodeError):
+        return json.loads(decoded)
+
+    try:
+        return ast.literal_eval(decoded)
+    except Exception as e:
+        raise ValueError(
+            f"neither JSON nor Python literal: {e}\nDecoded content was:\n{decoded}") from e
+
+
+def decode_plugin_config_entry(entry: dict) -> dict:
+    """
+    Decode all b64-* attributes in a single plugin config entry dict.
+
+    A plugin config entry has the shape:
+        {"Version": 1|2, "TimeStamp": ..., "b64-<attr>": "<encoded>", ...}
+
+    Each b64-* key is decoded using the Version stored in the same dict,
+    so Version 1 (uncompressed Python repr) and Version 2 (zlib + JSON) are
+    both handled correctly without guessing.
+    """
+    if not isinstance(entry, dict) or "Version" not in entry:
+        return entry
+
+    version = entry["Version"]
+    result = {}
+    for key, value in entry.items():
+        if key.startswith("b64-") and isinstance(value, str):
+            try:
+                result[key] = decode_b64_payload(value, version)
+            except Exception as e:
+                result[key] = f"<decode error: {e}>"
+        else:
+            result[key] = value
+    return result
 
 
 def format_timestamps(obj):
-    """Recursively convert any numeric TimeStamp fields to human-readable format."""
+    """Recursively convert numeric TimeStamp fields to human-readable format."""
     if isinstance(obj, dict):
         new_dict = {}
         for k, v in obj.items():
@@ -45,20 +91,8 @@ def format_timestamps(obj):
     return obj
 
 
-def recursive_b64_decode(obj):
-    """Recursively decode Base64 strings inside structures."""
-    if isinstance(obj, dict):
-        return {k: recursive_b64_decode(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [recursive_b64_decode(i) for i in obj]
-    elif isinstance(obj, str):
-        # Attempt Base64 decode
-        return safe_b64_decode(obj)
-    return obj
-
-
 def extract_json_entry(data: dict, entry_path: str):
-    """Extract specific JSON entry using dot-notation."""
+    """Extract a specific JSON entry using dot-notation."""
     keys = entry_path.split(".")
     current = data
     for key in keys:
@@ -91,7 +125,6 @@ def extract_configuration(db_path: Path, hardware_id: int, entry: str | None, de
         print(f"⚠️ Hardware ID {hardware_id} has an empty Configuration field.")
         return
 
-    # Decode JSON
     try:
         config_json = json.loads(config_text)
     except Exception:
@@ -99,7 +132,12 @@ def extract_configuration(db_path: Path, hardware_id: int, entry: str | None, de
         print(config_text)
         return
 
-    # Extract a specific entry if requested
+    # Decode b64 attributes before entry extraction so that dot-notation paths
+    # (e.g. "ListOfDevices.b64-devicelist") navigate into already-decoded data.
+    # Each top-level value is an independent plugin config entry with its own Version.
+    if decode_b64:
+        config_json = {k: decode_plugin_config_entry(v) for k, v in config_json.items()}
+
     if entry:
         result = extract_json_entry(config_json, entry)
         if result is None:
@@ -107,11 +145,6 @@ def extract_configuration(db_path: Path, hardware_id: int, entry: str | None, de
     else:
         result = config_json
 
-    # Optionally decode Base64 fields
-    if decode_b64:
-        result = recursive_b64_decode(result)
-
-    # Format timestamps by default
     result = format_timestamps(result)
 
     print(json.dumps(result, indent=4, ensure_ascii=False))
@@ -121,8 +154,8 @@ def main():
     parser = argparse.ArgumentParser(description="Extract Domoticz Hardware Configuration")
     parser.add_argument("--db", required=True, help="Path to Domoticz database (domoticz.db)")
     parser.add_argument("--id", required=True, type=int, help="Hardware ID")
-    parser.add_argument("--entry", help="Specific entry to extract (supports nested paths)")
-    parser.add_argument("--decode-b64", action="store_true", help="Decode Base64-encoded values automatically")
+    parser.add_argument("--entry", help="Specific entry to extract (supports dot-notation, e.g. ListOfDevices.b64-devicelist)")
+    parser.add_argument("--decode-b64", action="store_true", help="Decode Base64-encoded plugin attributes (version-aware)")
 
     args = parser.parse_args()
 

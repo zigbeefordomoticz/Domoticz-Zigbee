@@ -16,11 +16,13 @@
 """
 
 
+import ast
 import base64
 import contextlib
+import copy
 import json
 import time
-import ast
+import zlib
 
 #import DomoticzEx as Domoticz
 #DOMOTICZ_EXTENDED_API = True#
@@ -83,12 +85,12 @@ def setConfigItem(Key=None, Attribute="", Value=None):
     except Exception as inst:
         domoticz_error_api("setConfigItem - Domoticz.Configuration operation failed: '" + str(inst) + "'")
         return None
-    return Config
+    return True
 
 
 def getConfigItem(Key=None, Attribute="", Default=None):
     
-    domoticz_log_api("Loading %s - %s from Domoticz sqlite Db" %( Key, Attribute))
+    #domoticz_log_api("Loading %s - %s from Domoticz sqlite Db" %( Key, Attribute))
     
     if Default is None:
         Default = {}
@@ -109,12 +111,12 @@ def getConfigItem(Key=None, Attribute="", Default=None):
 
 
 def prepare_dict_for_storage(dict_items, Attribute):
-
-    from base64 import b64encode
+    dict_items = copy.deepcopy(dict_items)
 
     if Attribute in dict_items:
-        dict_items[Attribute] = b64encode(str(dict_items[Attribute]).encode("utf-8"))
-    dict_items["Version"] = 1
+        payload = json.dumps(dict_items[Attribute], ensure_ascii=False).encode("utf-8")
+        dict_items[Attribute] = base64.b64encode(zlib.compress(payload)).decode("ascii")
+    dict_items["Version"] = 2
     return dict_items
 
 
@@ -144,8 +146,9 @@ def repair_dict_after_load(b64_dict, Attribute):
         return b64_dict
 
     # Try decode safely
+    version = b64_dict.get("Version", 1)
     try:
-        b64_dict[Attribute] = decode_b64_payload(value, attribute_name=Attribute)
+        b64_dict[Attribute] = decode_b64_payload(value, attribute_name=Attribute, version=version)
 
     except Exception as e:
         domoticz_log_api(f"repair_dict_after_load - Failed to decode {Attribute}: {value} - {e}")
@@ -154,17 +157,31 @@ def repair_dict_after_load(b64_dict, Attribute):
     return b64_dict
 
 
-def decode_b64_payload(value, attribute_name=""):
+def decode_b64_payload(value, attribute_name="", version=1):
     try:
-        decoded = base64.b64decode(value).decode("utf-8")
+        raw = base64.b64decode(value)
     except Exception as e:
         raise ValueError(f"{attribute_name}: base64 decode failed: {e}") from e
 
-    # Try JSON first
+    if version == 2:
+        try:
+            raw = zlib.decompress(raw)
+        except zlib.error as e:
+            raise ValueError(f"{attribute_name}: zlib decompress failed: {e}") from e
+        try:
+            return json.loads(raw.decode("utf-8"))
+        except Exception as e:
+            raise ValueError(f"{attribute_name}: JSON decode failed: {e}") from e
+
+    # Version 1: uncompressed, stored as Python repr (str() output)
+    try:
+        decoded = raw.decode("utf-8")
+    except Exception as e:
+        raise ValueError(f"{attribute_name}: UTF-8 decode failed: {e}") from e
+
     with contextlib.suppress(json.JSONDecodeError):
         return json.loads(decoded)
 
-    # Try Python literal
     try:
         return ast.literal_eval(decoded)
     except Exception as e:
