@@ -1814,9 +1814,13 @@ async def _limit_concurrency(self, destination, sequence):
 
     try:
         try:
-            await asyncio.wait_for(semaphore.acquire(), timeout=SEMAPHORE_TIMEOUT)
+            # asyncio.timeout() (Python 3.11+) cancels the current task directly,
+            # avoiding the asyncio.wait_for internal-wrapper-task race that can
+            # silently consume a semaphore slot on timeout.
+            async with asyncio.timeout(SEMAPHORE_TIMEOUT):
+                await semaphore.acquire()
             acquired = True
-        except asyncio.TimeoutError:
+        except TimeoutError:
             self.log.logging(
                 "TransportZigpy", "Log",
                 f"Timeout waiting for concurrency slot for {nwkid}, request {sequence} skipped",
