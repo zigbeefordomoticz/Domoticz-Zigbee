@@ -1035,38 +1035,33 @@ class BasePlugin:
             if self.pluginconf.pluginConf.get("EnableTraceMalloc") and "tracemalloc" in sys.modules:
                 import tracemalloc
 
-                if tracemalloc.is_tracing():
-                    current_mem, peak_mem = tracemalloc.get_traced_memory()
+                current = tracemalloc.take_snapshot()  # assign first, before any logging, to get the most accurate snapshot possible
+
+                if self._tracemalloc_snapshot is not None:
+                    stats = current.compare_to(self._tracemalloc_snapshot, 'lineno')
+                    self.log.logging("Plugin", "Log", "EnableTraceMalloc: === Top 10 memory growth since last 5 minutes ===")
+                    for stat in stats[:10]:
+                        self.log.logging("Plugin", "Log", f"  EnableTraceMalloc: {str(stat)}")
+
+                    freed = [s for s in stats if s.size_diff < 0]
                     self.log.logging("Plugin", "Log",
-                        f"EnableTraceMalloc: === Traced memory: current={current_mem/1024:.1f} KB, peak={peak_mem/1024:.1f} KB ===")
+                        f"EnableTraceMalloc: Freed: {sum(s.size_diff for s in freed)/1024:.1f} KB across {len(freed)} locations")
 
-                    current = tracemalloc.take_snapshot()  # assign first
+                prev_snapshot = self._tracemalloc_snapshot   # save BEFORE overwriting
+                self._tracemalloc_snapshot = current
+                self._snapshot_count += 1
 
-                    if self._tracemalloc_snapshot is not None:
-                        stats = current.compare_to(self._tracemalloc_snapshot, 'lineno')
-                        self.log.logging("Plugin", "Log", "EnableTraceMalloc: === Top 10 memory growth since last 5 minutes ===")
-                        for stat in stats[:10]:
-                            self.log.logging("Plugin", "Log", f"  EnableTraceMalloc: {str(stat)}")
-
-                        stats_tb = current.compare_to(self._tracemalloc_snapshot, 'traceback')
-                        for stat in stats_tb[:5]:
-                            self.log.logging("Plugin", "Log", f"  EnableTraceMalloc: {str(stat)}")
-                            for line in stat.traceback.format():
-                                self.log.logging("Plugin", "Log", f"  EnableTraceMalloc:   {line}")
-
-                        freed = [s for s in stats if s.size_diff < 0]  # inside the guard
-                        self.log.logging("Plugin", "Log",
-                            f"EnableTraceMalloc: Freed: {sum(s.size_diff for s in freed)/1024:.1f} KB across {len(freed)} locations")
-
-                    self._tracemalloc_snapshot = current
-                    self._snapshot_count += 1  # increment before the modulo check
-
-                    if self._snapshot_count % 12 == 0:  # every hour
-                        abs_stats = current.statistics('lineno')
-                        self.log.logging("Plugin", "Log", "EnableTraceMalloc: === Top 10 absolute allocators ===")
-                        for stat in abs_stats[:10]:
-                            self.log.logging("Plugin", "Log", f"  EnableTraceMalloc: {str(stat)}")
-
+                if self._snapshot_count % 12 == 0 and prev_snapshot is not None:
+                    tm_filter = tracemalloc.Filter(False, tracemalloc.__file__)
+                    filtered_cur = current.filter_traces([tm_filter])
+                    filtered_prev = prev_snapshot.filter_traces([tm_filter])  # use saved prev, not self._tracemalloc_snapshot
+                    stats_tb = filtered_cur.compare_to(filtered_prev, 'traceback')
+                    self.log.logging("Plugin", "Log", "EnableTraceMalloc: === Top 5 traceback growth (hourly) ===")
+                    for stat in stats_tb[:5]:
+                        self.log.logging("Plugin", "Log", f"  EnableTraceMalloc: {str(stat)}")
+                        for line in stat.traceback.format():
+                            self.log.logging("Plugin", "Log", f"  EnableTraceMalloc:   {line}")
+    
         if (
             self.zigbee_communication == "zigpy" 
             and self.pluginconf.pluginConf["ZigpyTopologyReport"] 
