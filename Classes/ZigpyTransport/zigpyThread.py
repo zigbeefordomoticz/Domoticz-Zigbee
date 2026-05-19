@@ -671,6 +671,7 @@ async def _radio_startup(self, statistics, pluginconf, use_of_zigpy_persistent_d
             callBackHandleMessage=self.receiveData,
             callBackUpdDevice=self.ZigpyUpdDevice,
             callBackGetDevice=self.ZigpyGetDevice,
+            callBackGetAllDevices=self.ZigpyGetAllDevices,
             callBackBackup=self.ZigpyBackupAvailable,
             callBackRestartPlugin=self.restart_plugin,
             captureRxFrame=self.captureRxFrame,
