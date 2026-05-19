@@ -75,7 +75,7 @@ from Classes.ZigpyTransport.tools import handle_thread_error
 from Modules.macPrefix import DELAY_FOR_VERY_KEY
 
 ERROR_TASK_CREATION_FAILED = 0xB6
-SEMAPHORE_TIMEOUT = 240  # seconds
+SEMAPHORE_TIMEOUT = 30  # seconds
 REQUEST_TIMEOUT = 8   # This is a given time for the request to be sent
 WAITING_TIME_BETWEEN_REQUESTS = .100
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
@@ -171,9 +171,14 @@ def zigpy_thread_function(self):
     # ==========================
     # Start loop latency monitor
     # ==========================
+
+    # Always cancel any existing monitor, regardless of config
+    if hasattr(self, 'loop_latency_monitor') and self.loop_latency_monitor is not None:
+        self.loop_latency_monitor.cancel()
+        self.loop_latency_monitor = None
+
     if self.pluginconf.pluginConf.get("MonitorLoopLatency", False):
         async def monitor_loop_latency(interval=1.0, threshold=3.5):
-            import time
             try:
                 while True:
                     start = time.monotonic()
@@ -184,10 +189,9 @@ def zigpy_thread_function(self):
                     elif delay > threshold:
                         self.log.logging("TransportZigpy", "Log", f"Event loop blocked for {delay:.3f}s")
             except asyncio.CancelledError:
-                self.log.logging( "TransportZigpy", "Log", "Event loop monitoring stopped" )
+                self.log.logging("TransportZigpy", "Log", "Event loop monitoring stopped")
                 return
 
-        # Schedule monitor as a background task
         self.loop_latency_monitor = zigpy_loop.create_task(monitor_loop_latency())
 
     try:
