@@ -302,10 +302,18 @@ class ZigpyTransport(object):
             self._periodic_reset = now
             cleanup_unused_concurrency_state(self)
 
+        def _sem_locked(sem):
+            # asyncio.Semaphore.locked() iterates over _waiters deque which can be
+            # mutated by the event loop concurrently, raising RuntimeError.
+            try:
+                return sem.locked()
+            except RuntimeError:
+                return True  # conservative: treat as locked
+
         _queue = sum(
             self._currently_waiting_requests_list.get(device, 0) + 1
             for device in list(self._currently_waiting_requests_list)
-            if self._concurrent_requests_semaphores_list.get(device) and self._concurrent_requests_semaphores_list[device].locked()
+            if self._concurrent_requests_semaphores_list.get(device) and _sem_locked(self._concurrent_requests_semaphores_list[device])
         )
         
         return max(_queue - 1, 0) + self.writer_queue.qsize()
