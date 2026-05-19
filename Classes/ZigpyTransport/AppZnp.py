@@ -90,7 +90,8 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         network_info = self.state.network_info
         self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
 
-        self._preload_devices_from_plugin_db()
+        self.log.logging("TransportZigpy", "Status", "++ Preloading devices from plugin database")
+        Classes.ZigpyTransport.AppGeneric._preload_devices_from_plugin_db(self)
 
         # Trigger Version payload to plugin
         
@@ -123,10 +124,6 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
         self.log.logging("TransportZigpy", "Status", "++ ZNP Radio register any additional/specific Ep")
         await Classes.ZigpyTransport.AppGeneric.register_specific_endpoints(self)
-
-
-    def _preload_devices_from_plugin_db(self):
-        return Classes.ZigpyTransport.AppGeneric._preload_devices_from_plugin_db(self)
 
 
     def get_device(self, ieee=None, nwk=None):

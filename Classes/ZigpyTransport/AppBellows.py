@@ -89,7 +89,8 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         # await self.load_network_info( load_devices=False )   # load_devices shows nothing for now
         self.callBackFunction(build_plugin_8015_frame_content( self, self.state.network_info))
         
-        self._preload_devices_from_plugin_db()
+        self.log.logging("TransportZigpy", "Status", "++ Preloading devices from plugin database")
+        Classes.ZigpyTransport.AppGeneric._preload_devices_from_plugin_db(self)
 
         # Trigger Version payload to plugin
         try:
@@ -136,10 +137,6 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
     async def register_endpoints(self, endpoint=1):
         self.log.logging("TransportZigpy", "Status", "++ EZSP Radio register default Ep")
         await super().register_endpoints()
-
-
-    def _preload_devices_from_plugin_db(self):
-        return Classes.ZigpyTransport.AppGeneric._preload_devices_from_plugin_db(self)
 
 
     def get_device(self, ieee=None, nwk=None):

@@ -491,6 +491,7 @@ def _retrieve_previous_backup(self):
 
 def _preload_devices_from_plugin_db(self):
     if not hasattr(self, 'callBackGetAllDevices') or not self.callBackGetAllDevices:
+        LOGGER.error("callBackGetAllDevices is not defined")
         return
     devices = self.callBackGetAllDevices()
     loaded = 0
