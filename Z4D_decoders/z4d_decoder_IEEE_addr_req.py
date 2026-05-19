@@ -1,34 +1,59 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Implementation of Zigbee for Domoticz plugin.
+#
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 import struct
 
 from Modules.sendZigateCommand import raw_APS_request
 
-
 def Decode0041(self, Devices, MsgData, MsgLQI):
+
     self.log.logging('Input', 'Debug', 'Decode0041 - IEEE_addr_req: %s %s %s' % (MsgData, self.ControllerNWKID, self.ControllerIEEE))
-    
-    sqn = MsgData[:2]
-    srcNwkId = MsgData[2:6]
-    srcEp = MsgData[6:8]
-    nwkid = MsgData[8:12]
-    reqType = MsgData[12:14]
+
+    sqn        = MsgData[:2]
+    srcNwkId   = MsgData[2:6]
+    srcEp      = MsgData[6:8]
+    nwkid      = MsgData[8:12]
+    reqType    = MsgData[12:14]
     startIndex = MsgData[14:16]
+
     self.log.logging('Input', 'Debug', '      source req nwkid: %s' % srcNwkId)
     self.log.logging('Input', 'Debug', '      request NwkId    : %s' % nwkid)
     self.log.logging('Input', 'Debug', '      request Type    : %s' % reqType)
     self.log.logging('Input', 'Debug', '      request Idx     : %s' % startIndex)
+
     Cluster = '8001'
+
+    # Guard: controller must be fully initialised before we can answer
+    if not self.ControllerNWKID or not self.ControllerIEEE:
+        self.log.logging('Input', 'Error',
+            'Decode0041 - Controller not ready (NwkId=%s IEEE=%s), dropping request' % (
+                self.ControllerNWKID, self.ControllerIEEE))
+        return
+
     if nwkid == self.ControllerNWKID:
-        status = '00'
-        controller_ieee = '%016x' % struct.unpack('Q', struct.pack('>Q', int(self.ControllerIEEE, 16)))[0]
-        controller_nwkid = '%04x' % struct.unpack('H', struct.pack('>H', int(self.ControllerNWKID, 16)))[0]
+        status           = '00'
+        controller_ieee  = '%016x' % struct.unpack('Q', struct.pack('>Q', int(self.ControllerIEEE,    16)))[0]
+        controller_nwkid = '%04x'  % struct.unpack('H', struct.pack('>H', int(self.ControllerNWKID,  16)))[0]
         payload = sqn + status + controller_ieee + controller_nwkid + '00'
+
     elif nwkid in self.ListOfDevices:
-        status = '00'
-        device_ieee = '%016x' % struct.unpack('Q', struct.pack('>Q', int(self.ListOfDevices[nwkid]['IEEE'], 16)))[0]
-        device_nwkid = '%04x' % struct.unpack('H', struct.pack('>H', int(self.ControllerNWKID, 16)))[0]
+        status       = '00'
+        device_ieee  = '%016x' % struct.unpack('Q', struct.pack('>Q', int(self.ListOfDevices[nwkid]['IEEE'], 16)))[0]
+        device_nwkid = '%04x'  % struct.unpack('H', struct.pack('>H', int(nwkid, 16)))[0]  # fix: was ControllerNWKID
         payload = sqn + status + device_ieee + device_nwkid + '00'
+
     else:
-        status = '81'
+        status  = '81'
         payload = sqn + status + nwkid
+
     self.log.logging('Input', 'Debug', 'Decode0041 - response payload: %s' % payload)
     raw_APS_request(self, srcNwkId, '00', Cluster, '0000', payload, zigpyzqn=sqn, zigate_ep='00')
