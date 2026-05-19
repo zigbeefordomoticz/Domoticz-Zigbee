@@ -159,6 +159,7 @@ def zigpy_thread_function(self):
 
     # Create a new event loop for this thread
     zigpy_loop = asyncio.new_event_loop()
+    self.zigpy_loop = zigpy_loop
     asyncio.set_event_loop(zigpy_loop)
 
     # Enable debug mode if specified in configuration
