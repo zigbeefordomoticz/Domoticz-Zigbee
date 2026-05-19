@@ -115,6 +115,8 @@
 
 
 #import DomoticzEx as Domoticz
+#import tracemalloc
+
 import Domoticz
 
 try:
@@ -198,8 +200,6 @@ from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
 
-#import tracemalloc
-
 VERSION_FILENAME = ".hidden/VERSION"
 
 TEMPO_NETWORK = 2  # Start HB totrigget Network Status
@@ -223,6 +223,8 @@ class BasePlugin:
     enabled = False
 
     def __init__(self):
+
+        #self._tracemalloc_snapshot = None
 
         self.internet_available = None
         self.ListOfDevices = (
@@ -343,7 +345,7 @@ class BasePlugin:
         initialize_device_settings(self)
 
     def onStart(self):
-        #tracemalloc.start()
+        #tracemalloc.start(10)  # 10 = depth of stack frames to record
 
         mode6 = Parameters.get("Mode6", "0")
         if mode6.lstrip("-").isdigit():
@@ -1015,6 +1017,20 @@ class BasePlugin:
             self.log.loggingCleaningErrorHistory()
             zigate_get_time(self)
             #sendZigateCmd(self, "0017", "")
+
+        if self.domoticz_api and self.HeartbeatCount % (300 // HEARTBEAT) == 0:
+            self.domoticz_api.dump_stats()
+            self.ControllerLink.dump_transport_stats()
+
+            # --- tracemalloc snapshot comparison ---
+            #if tracemalloc.is_tracing():
+            #    current = tracemalloc.take_snapshot()
+            #    if self._tracemalloc_snapshot is not None:
+            #        stats = current.compare_to(self._tracemalloc_snapshot, 'lineno')
+            #        self.log.logging("Plugin", "Status", "=== Top 10 memory growth since last 5 minutes ===")
+            #        for stat in stats[:10]:
+            #            self.log.logging("Plugin", "Status", str(stat))
+            #    self._tracemalloc_snapshot = current
 
         if (
             self.zigbee_communication == "zigpy" 
