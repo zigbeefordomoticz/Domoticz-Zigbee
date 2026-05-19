@@ -224,7 +224,8 @@ class BasePlugin:
 
     def __init__(self):
 
-        #self._tracemalloc_snapshot = None
+        self._tracemalloc_snapshot = None
+        self._snapshot_count = 0
 
         self.internet_available = None
         self.ListOfDevices = (
@@ -644,7 +645,9 @@ class BasePlugin:
         for t in threading.enumerate():
             self.log.logging("Plugin", "Log", f"    - Thread {t.name}: alive={t.is_alive()}, ident={t.ident}, daemon={t.daemon}")
 
-        #tracemalloc.start(10)  # 10 = depth of stack frames to record
+        if self.pluginconf.pluginConf.get("EnableTraceMalloc"):
+            import tracemalloc
+            tracemalloc.start(25)  # 25 = depth of stack frames to record
 
 
     def onStop(self):
@@ -1019,20 +1022,47 @@ class BasePlugin:
             #sendZigateCmd(self, "0017", "")
 
         if self.domoticz_api and self.HeartbeatCount % (300 // HEARTBEAT) == 0:
+            # Tracing and Malloc trace stats can be very verbose, so we log them only every 5 minutes
             if self.pluginconf.pluginConf.get("DomoticzDB_Stats"):
                 self.domoticz_api.dump_stats()
+
             if self.pluginconf.pluginConf.get("ZigpyTransport_Stats"):
                 self.ControllerLink.dump_transport_stats()
 
             # --- tracemalloc snapshot comparison ---
-            #if tracemalloc.is_tracing():
-            #    current = tracemalloc.take_snapshot()
-            #    if self._tracemalloc_snapshot is not None:
-            #        stats = current.compare_to(self._tracemalloc_snapshot, 'lineno')
-            #        self.log.logging("Plugin", "Status", "=== Top 10 memory growth since last 5 minutes ===")
-            #        for stat in stats[:10]:
-            #            self.log.logging("Plugin", "Status", str(stat))
-            #    self._tracemalloc_snapshot = current
+            
+            if self.pluginconf.pluginConf.get("EnableTraceMalloc") and "tracemalloc" in sys.modules:
+                if tracemalloc.is_tracing():
+                    current_mem, peak_mem = tracemalloc.get_traced_memory()
+                    self.log.logging("Plugin", "Log",
+                        f"EnableTraceMalloc: === Traced memory: current={current_mem/1024:.1f} KB, peak={peak_mem/1024:.1f} KB ===")
+
+                    current = tracemalloc.take_snapshot()  # assign first
+
+                    if self._tracemalloc_snapshot is not None:
+                        stats = current.compare_to(self._tracemalloc_snapshot, 'lineno')
+                        self.log.logging("Plugin", "Log", "EnableTraceMalloc: === Top 10 memory growth since last 5 minutes ===")
+                        for stat in stats[:10]:
+                            self.log.logging("Plugin", "Log", f"  EnableTraceMalloc: {str(stat)}")
+
+                        stats_tb = current.compare_to(self._tracemalloc_snapshot, 'traceback')
+                        for stat in stats_tb[:5]:
+                            self.log.logging("Plugin", "Log", f"  EnableTraceMalloc: {str(stat)}")
+                            for line in stat.traceback.format():
+                                self.log.logging("Plugin", "Log", f"  EnableTraceMalloc:   {line}")
+
+                        freed = [s for s in stats if s.size_diff < 0]  # inside the guard
+                        self.log.logging("Plugin", "Log",
+                            f"EnableTraceMalloc: Freed: {sum(s.size_diff for s in freed)/1024:.1f} KB across {len(freed)} locations")
+
+                    self._tracemalloc_snapshot = current
+                    self._snapshot_count += 1  # increment before the modulo check
+
+                    if self._snapshot_count % 12 == 0:  # every hour
+                        abs_stats = current.statistics('lineno')
+                        self.log.logging("Plugin", "Log", "EnableTraceMalloc: === Top 10 absolute allocators ===")
+                        for stat in abs_stats[:10]:
+                            self.log.logging("Plugin", "Log", f"  EnableTraceMalloc: {str(stat)}")
 
         if (
             self.zigbee_communication == "zigpy" 

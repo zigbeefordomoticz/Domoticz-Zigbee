@@ -422,6 +422,7 @@ SETTINGS = {
             "EventLoopInstrumentation": {"type": "bool","default": 1,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "DomoticzDB_Stats": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "ZigpyTransport_Stats": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
+            "EnableTraceMalloc": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
         },
     },
     "Reserved": {
