@@ -846,11 +846,12 @@ class BasePlugin:
         result = []
         for nwk_str, info in self.ListOfDevices.items():
             ieee_str = info.get('IEEE')
+            self.log.logging("TransportZigpy", "Log", "zigpy_get_all_devices pre-populate( %s, %s)" %( ieee_str, nwk_str))
             if ieee_str:
                 try:
                     result.append((int(ieee_str, 16), int(nwk_str, 16)))
                 except (ValueError, TypeError):
-                    pass
+                    self.log.logging("TransportZigpy", "Error", "zigpy_get_all_devices pre-populate( %s, %s) failed !!" %( ieee_str, nwk_str))
         return result
 
 
