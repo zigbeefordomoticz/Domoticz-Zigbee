@@ -87,9 +87,6 @@ class App_blz(zigpy_blz.zigbee.application.ControllerApplication):
         network_info = self.state.network_info
         self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
         
-        self.log.logging("TransportZigpy", "Status", "++ Preloading devices from plugin database")
-        Classes.ZigpyTransport.AppGeneric._preload_devices_from_plugin_db(self)
-
         # Trigger Version payload to plugin
         
         version = self.state.node_info.version

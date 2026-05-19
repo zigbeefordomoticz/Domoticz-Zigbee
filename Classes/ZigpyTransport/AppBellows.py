@@ -89,9 +89,6 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         # await self.load_network_info( load_devices=False )   # load_devices shows nothing for now
         self.callBackFunction(build_plugin_8015_frame_content( self, self.state.network_info))
         
-        self.log.logging("TransportZigpy", "Status", "++ Preloading devices from plugin database")
-        Classes.ZigpyTransport.AppGeneric._preload_devices_from_plugin_db(self)
-
         # Trigger Version payload to plugin
         try:
             brd_manuf, brd_name, version = await self._ezsp.get_board_info()

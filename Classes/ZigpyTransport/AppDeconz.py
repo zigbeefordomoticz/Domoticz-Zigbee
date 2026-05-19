@@ -83,9 +83,6 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         await self.load_network_info( load_devices=True )
         network_info = self.state.network_info
 
-        self.log.logging("TransportZigpy", "Status", "++ Preloading devices from plugin database")
-        Classes.ZigpyTransport.AppGeneric._preload_devices_from_plugin_db(self)
-
         # deConz doesn't have such capabilities to provided list of paired devices.
         LOGGER.info("startup Network Info: %s" %str(network_info))
         self.callBackFunction(build_plugin_8015_frame_content( self, network_info))

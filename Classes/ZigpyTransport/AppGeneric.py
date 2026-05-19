@@ -323,6 +323,9 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
 
     if tx_power is not None:
         await self.set_tx_power(tx_power)
+        
+    # Preload devices from plugin DB before registering specific endpoints, so that the plugin device list is available during endpoint registration if needed (e.g. for deConz group membership restoration)
+    _preload_devices_from_plugin_db(self)
 
     self._persist_coordinator_model_strings_in_db()
 
@@ -330,7 +333,6 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     if self.config[zigpy_conf.CONF_TOPO_SCAN_ENABLED]:
         # Config specifies the period in minutes, not seconds
         self.topology.start_periodic_scans( period=(60 * self.config[zigpy.config.CONF_TOPO_SCAN_PERIOD]) )
-
 
 
 async def shutdown(self, *, db: bool = True) -> None:
@@ -490,9 +492,12 @@ def _retrieve_previous_backup(self):
    
 
 def _preload_devices_from_plugin_db(self):
+    LOGGER.info("Pre-loaded devices from plugin")
+
     if not hasattr(self, 'callBackGetAllDevices') or not self.callBackGetAllDevices:
         LOGGER.error("callBackGetAllDevices is not defined")
         return
+
     devices = self.callBackGetAllDevices()
     loaded = 0
     for ieee_int, nwk_int in devices:
@@ -500,6 +505,7 @@ def _preload_devices_from_plugin_db(self):
         if eui64 not in self.devices:
             self.add_device(eui64, nwk_int)
             loaded += 1
+
     LOGGER.info("Pre-loaded %d devices from plugin DB into zigpy device table", loaded)
 
 
