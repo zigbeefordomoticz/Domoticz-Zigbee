@@ -33,13 +33,14 @@ from Classes.ZigpyTransport.zigpyThread import (
 
 
 class ZigpyTransport(object):
-    def __init__(self, ControllerData, pluginParameters, pluginconf, F_out, zigpy_upd_device, zigpy_get_device, zigpy_backup_available, restart_plugin, log, statistics, hardwareid, radiomodule, serialPort, com_specifcs):
+    def __init__(self, ControllerData, pluginParameters, pluginconf, F_out, zigpy_upd_device, zigpy_get_device, zigpy_get_all_devices, zigpy_backup_available, restart_plugin, log, statistics, hardwareid, radiomodule, serialPort, com_specifcs):
         self.zigbee_communication = "zigpy"
         self.pluginParameters = pluginParameters
         self.pluginconf = pluginconf
         self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
         self.ZigpyUpdDevice = zigpy_upd_device
         self.ZigpyGetDevice = zigpy_get_device
+        self.ZigpyGetAllDevices = zigpy_get_all_devices
         self.ZigpyBackupAvailable = zigpy_backup_available
         self.restart_plugin = restart_plugin
         self.log = log
