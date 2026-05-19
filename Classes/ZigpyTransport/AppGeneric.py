@@ -832,109 +832,109 @@ def packet_received(self, packet: zigpy_t.ZigbeePacket) -> None:
         super(type(self), self).packet_received(packet)
 
  
-@measure_execution_time
-def packet_received(
-    self, 
-    packet: zigpy_t.ZigbeePacket
-    ) -> None:
-    """
-    Process an incoming Zigbee packet and route it to the plugin and/or zigpy.
-
-    Overrides ControllerApplication.packet_received() to implement
-    plugin-specific frame routing before (and sometimes instead of) passing
-    the packet to the upstream zigpy stack. Decorated with
-    @measure_execution_time.
-
-    Routing logic (in order):
-
-    1. If the sender is the coordinator ('0000') or the packet involves the
-       ZDO endpoint, the packet is forwarded to the upstream
-       packet_received() for zigpy's internal ZDO handling.
-
-    2. If cluster is 0x8036 (Mgmt_Permit_Join_rsp), a plugin 0x8014 frame is
-       built and delivered, the upstream is also notified, and the function
-       returns early.
-
-    3. If cluster is 0x8034 (Mgmt_Leave_rsp), a plugin 0x8047 frame is built
-       and delivered, the upstream is also notified, and the function
-       returns early.
-
-    4. For all other packets, a plugin 0x8002 frame is built from the message
-       payload and delivered via self.callBackFunction().
-
-    5. If the packet is a ZCL message (profile 0x0104) from a non-coordinator
-       device, the function returns early without calling the upstream, so
-       that the plugin (not zigpy) owns the ZCL response.
-
-    6. Otherwise the upstream packet_received() is called so zigpy can
-       process the packet normally.
-
-    All received frames are also written to the capture log via
-    write_capture_rx_frames() for debugging.
-
-    Args:
-        packet: The incoming ZigbeePacket as provided by the radio layer.
-    """
-    self.log.logging("TransportZigpy", "Debug", "packet_received %s" %(packet))
-
-    sender = packet.src.address.serialize()[::-1].hex()
-    addr_mode = int(packet.src.addr_mode) if packet.src.addr_mode is not None else None
-    profile = int(packet.profile_id) if packet.profile_id is not None else None
-    cluster = int(packet.cluster_id) if packet.cluster_id is not None else None
-    src_ep = int(packet.src_ep) if packet.src_ep is not None else None
-    dst_ep = int(packet.dst_ep) if packet.dst_ep is not None else None
-    source_route = packet.source_route
-
-    if source_route:
-        self.log.logging("trackReceivedRoute", "Log", f"packet_received from {sender} via {source_route}")
-
-    message = packet.data.serialize()
-    hex_message = binascii.hexlify(message).decode("utf-8")
-    dst_addressing = packet.dst.addr_mode if packet.dst else None
-    
-    self.log.logging("TransportZigpy", "Debug", "packet_received - %s %s %s %s %s %s %s %s" %(
-        packet.src, profile, cluster, src_ep, dst_ep, message, hex_message, dst_addressing))
-
-    write_capture_rx_frames( self, packet.src, profile, cluster, src_ep, dst_ep, message, hex_message, dst_addressing)
-
-    if sender == "0000" or ( zigpy.zdo.ZDO_ENDPOINT in (packet.src_ep, packet.dst_ep)): 
-        self.log.logging("TransportZigpy", "Debug", "packet_received from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
-            sender, profile, cluster, src_ep, dst_ep, hex_message))
-        super(type(self),self).packet_received(packet)
-
-    if cluster == 0x8036:
-        # This has been handle via on_zdo_mgmt_permitjoin_rsp()
-        self.log.logging("TransportZigpy", "Debug", "packet_received 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
-            sender, profile, cluster, src_ep, dst_ep, hex_message))
-        self.callBackFunction( build_plugin_8014_frame_content(self, sender, hex_message ) )
-        super(type(self),self).packet_received(packet)
-        return
-
-    if cluster == 0x8034:
-        # This has been handle via on_zdo_mgmt_leave_rsp()
-        self.log.logging("TransportZigpy", "Debug", "packet_received 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
-            sender, profile, cluster, src_ep, dst_ep, hex_message))
-        self.callBackFunction( build_plugin_8047_frame_content(self, sender, hex_message) )
-        super(type(self),self).packet_received(packet)
-        return
-
-    packet.lqi = 0x00 if packet.lqi is None else packet.lqi
-    profile = 0x0000 if src_ep == dst_ep == 0x00 else profile
-
-    if profile and cluster:
-        self.log.logging( "TransportZigpy", "Debug", "packet_received device: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" %( 
-            sender, profile, cluster, src_ep, dst_ep, hex_message, packet.lqi), )
-
-    plugin_frame = build_plugin_8002_frame_content(self, sender, profile, cluster, src_ep, dst_ep, message, packet.lqi, src_addrmode=addr_mode)
-    self.log.logging("TransportZigpy", "Debug", "packet_received Sender: %s frame for plugin: %s" % (sender, plugin_frame))
-    self.callBackFunction(plugin_frame)
-
-    if profile == 0x0104 and sender != "0000":
-        # ZCL Message sent by a device to the coordinator. 
-        # Leave the answer to the plugin and not zigpy layer
-        return
-
-    super(type(self),self).packet_received(packet)
+#@measure_execution_time
+#def packet_received(
+#    self, 
+#    packet: zigpy_t.ZigbeePacket
+#    ) -> None:
+#    """
+#    Process an incoming Zigbee packet and route it to the plugin and/or zigpy.
+#
+#    Overrides ControllerApplication.packet_received() to implement
+#    plugin-specific frame routing before (and sometimes instead of) passing
+#    the packet to the upstream zigpy stack. Decorated with
+#    @measure_execution_time.
+#
+#    Routing logic (in order):
+#
+#    1. If the sender is the coordinator ('0000') or the packet involves the
+#       ZDO endpoint, the packet is forwarded to the upstream
+#       packet_received() for zigpy's internal ZDO handling.
+#
+#    2. If cluster is 0x8036 (Mgmt_Permit_Join_rsp), a plugin 0x8014 frame is
+#       built and delivered, the upstream is also notified, and the function
+#       returns early.
+#
+#    3. If cluster is 0x8034 (Mgmt_Leave_rsp), a plugin 0x8047 frame is built
+#       and delivered, the upstream is also notified, and the function
+#       returns early.
+#
+#    4. For all other packets, a plugin 0x8002 frame is built from the message
+#       payload and delivered via self.callBackFunction().
+#
+#    5. If the packet is a ZCL message (profile 0x0104) from a non-coordinator
+#       device, the function returns early without calling the upstream, so
+#       that the plugin (not zigpy) owns the ZCL response.
+#
+#    6. Otherwise the upstream packet_received() is called so zigpy can
+#       process the packet normally.
+#
+#    All received frames are also written to the capture log via
+#    write_capture_rx_frames() for debugging.
+#
+#    Args:
+#        packet: The incoming ZigbeePacket as provided by the radio layer.
+#    """
+#    self.log.logging("TransportZigpy", "Debug", "packet_received %s" %(packet))
+#
+#    sender = packet.src.address.serialize()[::-1].hex()
+#    addr_mode = int(packet.src.addr_mode) if packet.src.addr_mode is not None else None
+#    profile = int(packet.profile_id) if packet.profile_id is not None else None
+#    cluster = int(packet.cluster_id) if packet.cluster_id is not None else None
+#    src_ep = int(packet.src_ep) if packet.src_ep is not None else None
+#    dst_ep = int(packet.dst_ep) if packet.dst_ep is not None else None
+#    source_route = packet.source_route
+#
+#    if source_route:
+#        self.log.logging("trackReceivedRoute", "Log", f"packet_received from {sender} via {source_route}")
+#
+#    message = packet.data.serialize()
+#    hex_message = binascii.hexlify(message).decode("utf-8")
+#    dst_addressing = packet.dst.addr_mode if packet.dst else None
+#    
+#    self.log.logging("TransportZigpy", "Debug", "packet_received - %s %s %s %s %s %s %s %s" %(
+#        packet.src, profile, cluster, src_ep, dst_ep, message, hex_message, dst_addressing))
+#
+#    write_capture_rx_frames( self, packet.src, profile, cluster, src_ep, dst_ep, message, hex_message, dst_addressing)
+#
+#    if sender == "0000" or ( zigpy.zdo.ZDO_ENDPOINT in (packet.src_ep, packet.dst_ep)): 
+#        self.log.logging("TransportZigpy", "Debug", "packet_received from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
+#            sender, profile, cluster, src_ep, dst_ep, hex_message))
+#        super(type(self),self).packet_received(packet)
+#
+#    if cluster == 0x8036:
+#        # This has been handle via on_zdo_mgmt_permitjoin_rsp()
+#        self.log.logging("TransportZigpy", "Debug", "packet_received 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
+#            sender, profile, cluster, src_ep, dst_ep, hex_message))
+#        self.callBackFunction( build_plugin_8014_frame_content(self, sender, hex_message ) )
+#        super(type(self),self).packet_received(packet)
+#        return
+#
+#    if cluster == 0x8034:
+#        # This has been handle via on_zdo_mgmt_leave_rsp()
+#        self.log.logging("TransportZigpy", "Debug", "packet_received 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
+#            sender, profile, cluster, src_ep, dst_ep, hex_message))
+#        self.callBackFunction( build_plugin_8047_frame_content(self, sender, hex_message) )
+#        super(type(self),self).packet_received(packet)
+#        return
+#
+#    packet.lqi = 0x00 if packet.lqi is None else packet.lqi
+#    profile = 0x0000 if src_ep == dst_ep == 0x00 else profile
+#
+#    if profile and cluster:
+#        self.log.logging( "TransportZigpy", "Debug", "packet_received device: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" %( 
+#            sender, profile, cluster, src_ep, dst_ep, hex_message, packet.lqi), )
+#
+#    plugin_frame = build_plugin_8002_frame_content(self, sender, profile, cluster, src_ep, dst_ep, message, packet.lqi, src_addrmode=addr_mode)
+#    self.log.logging("TransportZigpy", "Debug", "packet_received Sender: %s frame for plugin: %s" % (sender, plugin_frame))
+#    self.callBackFunction(plugin_frame)
+#
+#    if profile == 0x0104 and sender != "0000":
+#        # ZCL Message sent by a device to the coordinator. 
+#        # Leave the answer to the plugin and not zigpy layer
+#        return
+#
+#    super(type(self),self).packet_received(packet)
     
 
 def _update_nkdids_if_needed( self, ieee, new_nwkid ):
