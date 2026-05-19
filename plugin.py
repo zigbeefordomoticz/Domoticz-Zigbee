@@ -115,7 +115,6 @@
 
 
 #import DomoticzEx as Domoticz
-#import tracemalloc
 
 import Domoticz
 
@@ -208,9 +207,10 @@ TIMEDOUT_FIRMWARE = 5  # HB before request Firmware again
 TEMPO_START_ZIGATE = 1  # Nb HB before requesting a Start_Zigate
 
 STARTUP_TIMEOUT_DELAY_FOR_WARNING = 60
-STARTUP_TIMEOUT_DELAY_FOR_STOP = 120
-ZNP_STARTUP_TIMEOUT_DELAY_FOR_WARNING = 110
-ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP = 160
+ZNP_STARTUP_TIMEOUT_DELAY_FOR_WARNING = 120
+
+STARTUP_TIMEOUT_DELAY_FOR_STOP = 100
+ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP = 180
 
 ZIGPY_BACKENDS = {
     "ZigpyZNP":     ("znp",    "zigpy_znp",    "ZNP"),
@@ -218,6 +218,8 @@ ZIGPY_BACKENDS = {
     "ZigpyEZSP":    ("ezsp",   "bellows",      "EZSP"),
     "ZigpyBLZ":     ("blz",    "zigpy_blz",    "Bouffalo Lab Zigbee"),
 }
+
+TRACE_MALLOC_MAX_DEPTH = 25
 
 class BasePlugin:
     enabled = False
@@ -648,7 +650,7 @@ class BasePlugin:
         if self.pluginconf.pluginConf.get("EnableTraceMalloc"):
             import tracemalloc
             self.log.logging("Plugin", "Log", "EnableTraceMalloc is enabled, starting tracemalloc with a stack depth of 25")
-            tracemalloc.start(25)  # 25 = depth of stack frames to record
+            tracemalloc.start(TRACE_MALLOC_MAX_DEPTH)
 
 
     def onStop(self):
@@ -837,6 +839,19 @@ class BasePlugin:
 
     def zigpy_chk_upd_device(self, ieee, nwkid ):
         chk_and_update_IEEE_NWKID(self, nwkid, ieee)
+
+
+    def zigpy_get_all_devices(self):
+        """Return all known devices as (EUI64-int, NWK-int) pairs for pre-loading into zigpy."""
+        result = []
+        for nwk_str, info in self.ListOfDevices.items():
+            ieee_str = info.get('IEEE')
+            if ieee_str:
+                try:
+                    result.append((int(ieee_str, 16), int(nwk_str, 16)))
+                except (ValueError, TypeError):
+                    pass
+        return result
 
 
     def zigpy_get_device(self, ieee=None, nwkid=None):
@@ -1039,8 +1054,8 @@ class BasePlugin:
 
                 if self._tracemalloc_snapshot is not None:
                     stats = current.compare_to(self._tracemalloc_snapshot, 'lineno')
-                    self.log.logging("Plugin", "Log", "EnableTraceMalloc: === Top 10 memory growth since last 5 minutes ===")
-                    for stat in stats[:10]:
+                    self.log.logging("Plugin", "Log", f"EnableTraceMalloc: === Top {TRACE_MALLOC_MAX_DEPTH} memory growth since last 5 minutes ===")
+                    for stat in stats[:TRACE_MALLOC_MAX_DEPTH]:
                         self.log.logging("Plugin", "Log", f"  EnableTraceMalloc: {str(stat)}")
 
                     freed = [s for s in stats if s.size_diff < 0]
@@ -1177,6 +1192,7 @@ def _start_zigpy_backend(self, backend_key):
         self.processFrame,
         self.zigpy_chk_upd_device,
         self.zigpy_get_device,
+        self.zigpy_get_all_devices,
         self.zigpy_backup_available,
         self.restart_plugin,
         self.log,
@@ -1902,31 +1918,33 @@ def _coordinator_ready( self ):
     if self.transport == "None" or self.PDMready:
         return True
 
-    if (
-        (
-            ( self.transport == "ZigpyZNP" and self.internalHB > ZNP_STARTUP_TIMEOUT_DELAY_FOR_WARNING ) 
-            or ( self.transport != "ZigpyZNP" and self.internalHB > STARTUP_TIMEOUT_DELAY_FOR_WARNING ) 
-        ) 
-        and (self.internalHB % 10) == 0
-    ):
-        self.log.logging( "Plugin", "Error", "[%3s] I have hard time to get Coordinator Version. Most likely there is a communication issue" % (self.internalHB), )
-        
-    if (
-        ( self.transport == "ZigpyZNP" and self.internalHB > ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP )
-        or ( self.transport != "ZigpyZNP" and self.internalHB > STARTUP_TIMEOUT_DELAY_FOR_STOP) 
-    ):
+def _coordinator_ready(self):
+    self.log.logging("Plugin", "Debug", "_coordinator_ready transport: %s PDMready: %s" % (self.transport, self.PDMready))
+
+    if self.transport == "None" or self.PDMready:
+        return True
+
+    warning_threshold = (ZNP_STARTUP_TIMEOUT_DELAY_FOR_WARNING if self.transport == "ZigpyZNP" else STARTUP_TIMEOUT_DELAY_FOR_WARNING)
+    stop_threshold    = (ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP if self.transport == "ZigpyZNP" else STARTUP_TIMEOUT_DELAY_FOR_STOP)
+
+    if self.internalHB > warning_threshold and (self.internalHB % 10) == 0:
+        self.log.logging("Plugin", "Error",
+            "[%3s] Hard time getting Coordinator Version — likely a communication issue"
+            % self.internalHB)
+
+    if self.internalHB > stop_threshold:
         debuging_information(self, "Log")
-        # (#1371) we cannot stop the plugin as it will disable the hardware and generate side effect. So we will try for ever
+        # (#1371) Cannot stop plugin (would disable hardware), so retry indefinitely
         restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=Parameters["Mode5"])
+        return False  # ← explicit, avoids falling into the poll below
 
     if (self.internalHB % 10) == 0:
-        self.log.logging( "Plugin", "Debug", "[%s] PDMready: %s requesting Get version" % (self.internalHB, self.PDMready) )
+        self.log.logging("Plugin", "Debug",
+            "[%s] PDMready: %s — requesting firmware version" % (self.internalHB, self.PDMready))
         zigate_get_firmware_version(self)
-        #sendZigateCmd(self, "0010", "")
-        return False
-    
+
     return False
-    
+
     
 def _post_readiness_startup_completed( self ):
     if self.transport != "None" and (self.startZigateNeeded or not self.InitPhase1 or not self.InitPhase2):
