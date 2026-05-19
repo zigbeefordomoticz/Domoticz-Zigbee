@@ -345,7 +345,6 @@ class BasePlugin:
         initialize_device_settings(self)
 
     def onStart(self):
-        #tracemalloc.start(10)  # 10 = depth of stack frames to record
 
         mode6 = Parameters.get("Mode6", "0")
         if mode6.lstrip("-").isdigit():
@@ -645,6 +644,7 @@ class BasePlugin:
         for t in threading.enumerate():
             self.log.logging("Plugin", "Log", f"    - Thread {t.name}: alive={t.is_alive()}, ident={t.ident}, daemon={t.daemon}")
 
+        #tracemalloc.start(10)  # 10 = depth of stack frames to record
 
 
     def onStop(self):
@@ -1019,8 +1019,10 @@ class BasePlugin:
             #sendZigateCmd(self, "0017", "")
 
         if self.domoticz_api and self.HeartbeatCount % (300 // HEARTBEAT) == 0:
-            self.domoticz_api.dump_stats()
-            self.ControllerLink.dump_transport_stats()
+            if self.pluginconf.pluginConf.get("DomoticzDB_Stats"):
+                self.domoticz_api.dump_stats()
+            if self.pluginconf.pluginConf.get("ZigpyTransport_Stats"):
+                self.ControllerLink.dump_transport_stats()
 
             # --- tracemalloc snapshot comparison ---
             #if tracemalloc.is_tracing():
