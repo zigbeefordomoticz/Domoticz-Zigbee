@@ -75,7 +75,7 @@ from Classes.ZigpyTransport.tools import handle_thread_error
 from Modules.macPrefix import DELAY_FOR_VERY_KEY
 
 ERROR_TASK_CREATION_FAILED = 0xB6
-SEMAPHORE_TIMEOUT = 30  # seconds
+SEMAPHORE_TIMEOUT = 60  # seconds
 REQUEST_TIMEOUT = 8   # This is a given time for the request to be sent
 WAITING_TIME_BETWEEN_REQUESTS = .100
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
