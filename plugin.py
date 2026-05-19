@@ -647,6 +647,7 @@ class BasePlugin:
 
         if self.pluginconf.pluginConf.get("EnableTraceMalloc"):
             import tracemalloc
+            self.log.logging("Plugin", "Log", "EnableTraceMalloc is enabled, starting tracemalloc with a stack depth of 25")
             tracemalloc.start(25)  # 25 = depth of stack frames to record
 
 
