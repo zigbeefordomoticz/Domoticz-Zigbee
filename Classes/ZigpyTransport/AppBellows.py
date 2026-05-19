@@ -46,7 +46,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form, force_form=force_form)
 
 
-    async def startup(self, statistics, HardwareID, pluginconf, use_of_zigpy_persistent_db, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, callBackRestartPlugin=None, captureRxFrame=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+    async def startup(self, statistics, HardwareID, pluginconf, use_of_zigpy_persistent_db, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackGetAllDevices=None, callBackBackup=None, callBackRestartPlugin=None, captureRxFrame=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         """Starts a network, optionally forming one with random settings if necessary."""
  
         # If set to != 0 (default) extended PanId will be use when forming the network.
@@ -58,6 +58,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
         self.callBackUpdDevice = callBackUpdDevice
+        self.callBackGetAllDevices = callBackGetAllDevices
         self.callBackBackup = callBackBackup
         self.callBackRestartPlugin = callBackRestartPlugin
         self.HardwareID = HardwareID
@@ -88,6 +89,8 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         # await self.load_network_info( load_devices=False )   # load_devices shows nothing for now
         self.callBackFunction(build_plugin_8015_frame_content( self, self.state.network_info))
         
+        self._preload_devices_from_plugin_db()
+
         # Trigger Version payload to plugin
         try:
             brd_manuf, brd_name, version = await self._ezsp.get_board_info()
@@ -133,6 +136,10 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
     async def register_endpoints(self, endpoint=1):
         self.log.logging("TransportZigpy", "Status", "++ EZSP Radio register default Ep")
         await super().register_endpoints()
+
+
+    def _preload_devices_from_plugin_db(self):
+        return Classes.ZigpyTransport.AppGeneric._preload_devices_from_plugin_db(self)
 
 
     def get_device(self, ieee=None, nwk=None):

@@ -42,7 +42,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form, force_form=force_form)
 
 
-    async def startup(self, statistics, HardwareID, pluginconf, use_of_zigpy_persistent_db, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, callBackRestartPlugin=None, captureRxFrame=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+    async def startup(self, statistics, HardwareID, pluginconf, use_of_zigpy_persistent_db, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackGetAllDevices=None, callBackBackup=None, callBackRestartPlugin=None, captureRxFrame=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         """Starts a network, optionally forming one with random settings if necessary."""
 
         self.log = log
@@ -52,6 +52,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
         self.callBackUpdDevice = callBackUpdDevice
+        self.callBackGetAllDevices = callBackGetAllDevices
         self.callBackBackup = callBackBackup
         self.callBackRestartPlugin = callBackRestartPlugin
         self.HardwareID = HardwareID
@@ -81,6 +82,8 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         # This will allow the plugin if needed to update the IEEE -> NwkId
         await self.load_network_info( load_devices=True )
         network_info = self.state.network_info
+
+        self._preload_devices_from_plugin_db()
 
         # deConz doesn't have such capabilities to provided list of paired devices.
         LOGGER.info("startup Network Info: %s" %str(network_info))
@@ -118,8 +121,12 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
 
         LOGGER.info("Adding any additional and specific Endpoints ")
         await Classes.ZigpyTransport.AppGeneric.register_specific_endpoints(self)
-        
-        
+
+
+    def _preload_devices_from_plugin_db(self):
+        return Classes.ZigpyTransport.AppGeneric._preload_devices_from_plugin_db(self)
+
+
     def get_device(self, ieee=None, nwk=None):
         return Classes.ZigpyTransport.AppGeneric.get_device(self, ieee, nwk)
 

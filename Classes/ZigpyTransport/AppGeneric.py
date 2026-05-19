@@ -183,6 +183,14 @@ LOGGER = logging.getLogger(__name__)
 ENERGY_SCAN_WARN_THRESHOLD = 0.75 * 255
 GRACE_PERIOD_AFTER_START = 60  # 60 seconds of period after plugin start to allow NCP to recover
 
+# ---------------------------------------------------------------------------
+# Cluster constants (avoids magic numbers scattered through the method)
+# ---------------------------------------------------------------------------
+CLUSTER_MGMT_PERMIT_JOIN_RSP = 0x8036
+CLUSTER_MGMT_LEAVE_RSP       = 0x8034
+PROFILE_ZHA                  = 0x0104
+COORDINATOR_NWK              = "0000"
+
 
 async def _load_db(self) -> None:
     """
@@ -481,6 +489,19 @@ def _retrieve_previous_backup(self):
     return _retrieved_backup
    
 
+def _preload_devices_from_plugin_db(self):
+    if not hasattr(self, 'callBackGetAllDevices') or not self.callBackGetAllDevices:
+        return
+    devices = self.callBackGetAllDevices()
+    loaded = 0
+    for ieee_int, nwk_int in devices:
+        eui64 = zigpy_t.EUI64(zigpy_t.uint64_t(ieee_int).serialize())
+        if eui64 not in self.devices:
+            self.add_device(eui64, nwk_int)
+            loaded += 1
+    LOGGER.info("Pre-loaded %d devices from plugin DB into zigpy device table", loaded)
+
+
 def get_device(self, ieee=None, nwk=None):
     """
     Look up a zigpy Device by IEEE address or NWK address.
@@ -515,16 +536,19 @@ def get_device(self, ieee=None, nwk=None):
         _update_nkdids_if_needed(self, dev.ieee, dev.nwk )
 
     except KeyError:
-        # Not found in zigpy Db, let see if we can get it into the Plugin Db
+        # Not found in zigpy's device table.
+        # All known devices should have been pre-loaded at startup.
+        # If we still miss, log for diagnostics but do not call add_device()
+        # from inside frame-processing context — that can trigger listener
+        # registration side-effects in zigpy ≥ 1.2.
         if self.callBackGetDevice:
-            if nwk is not None:
-                nwk = nwk.serialize()[::-1].hex()
-            if ieee is not None:
-                ieee = "%016x" % zigpy_t.uint64_t.deserialize(ieee.serialize())[0]
-            zfd_dev = self.callBackGetDevice(ieee, nwk)
-            if zfd_dev is not None:
-                (nwk, ieee) = zfd_dev
-                dev = self.add_device(zigpy_t.EUI64(zigpy_t.uint64_t(ieee).serialize()),nwk)
+            _nwk = nwk.serialize()[::-1].hex() if nwk is not None else None
+            _ieee = "%016x" % zigpy_t.uint64_t.deserialize(ieee.serialize())[0] if ieee is not None else None
+            if self.callBackGetDevice(_ieee if ieee else None, _nwk if nwk else None) is not None:
+                LOGGER.warning(
+                    "get_device miss for a known plugin device ieee=%s nwk=%s — "
+                    "device was not pre-loaded at startup", _ieee, _nwk
+                )
 
     if dev is not None:
         return dev
@@ -676,7 +700,137 @@ def measure_execution_time(func):
                 self.log.logging("TransportZigpy", "Log", f"| (packet_received) | {t_elapse} | {packet.src.address.serialize()[::-1].hex()} | {packet.profile_id} | {packet.lqi} | {packet.rssi} |")
     return wrapper
 
-    
+
+
+
+# ---------------------------------------------------------------------------
+# Helper: unpack the fields we care about from a ZigbeePacket
+# ---------------------------------------------------------------------------
+def _unpack_packet(packet):
+    """Return a plain dict of the scalar fields used by the routing logic."""
+    return {
+        "sender":    packet.src.address.serialize()[::-1].hex(),
+        "addr_mode": int(packet.src.addr_mode) if packet.src.addr_mode is not None else None,
+        "profile":   int(packet.profile_id)    if packet.profile_id  is not None else None,
+        "cluster":   int(packet.cluster_id)    if packet.cluster_id  is not None else None,
+        "src_ep":    int(packet.src_ep)        if packet.src_ep      is not None else None,
+        "dst_ep":    int(packet.dst_ep)        if packet.dst_ep      is not None else None,
+        "source_route":   packet.source_route,
+        "dst_addressing": packet.dst.addr_mode if packet.dst else None,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Helper: build a human-readable summary for log lines
+# ---------------------------------------------------------------------------
+def _pkt_summary(f, hex_message):
+    return (
+        f"{f['sender']}  profile={f['profile']:04x}  cluster={f['cluster']:04x}"
+        f"  srcEp={f['src_ep']:02x}  dstEp={f['dst_ep']:02x}  msg={hex_message}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Helper: handle clusters that need both a plugin frame and upstream delivery
+# ---------------------------------------------------------------------------
+def _handle_zdo_cluster(self, cluster, sender, hex_message, packet):
+    """
+    Build the appropriate plugin frame for a ZDO-management cluster,
+    deliver it, forward to upstream, and return True so the caller
+    can exit early.
+    """
+    if cluster == CLUSTER_MGMT_PERMIT_JOIN_RSP:
+        frame = build_plugin_8014_frame_content(self, sender, hex_message)
+        tag   = "0x8036 (Mgmt_Permit_Join_rsp)"
+    elif cluster == CLUSTER_MGMT_LEAVE_RSP:
+        frame = build_plugin_8047_frame_content(self, sender, hex_message)
+        tag   = "0x8034 (Mgmt_Leave_rsp)"
+    else:
+        return False  # not a cluster we own here
+
+    self.log.logging("TransportZigpy", "Debug", f"packet_received {tag}: {hex_message}")
+    self.callBackFunction(frame)
+    super(type(self), self).packet_received(packet)
+    return True
+
+@measure_execution_time
+def packet_received(self, packet: zigpy_t.ZigbeePacket) -> None:
+    """
+    Process an incoming Zigbee packet and route it to the plugin and/or zigpy.
+
+    Overrides ControllerApplication.packet_received() to implement
+    plugin-specific frame routing before (and sometimes instead of) passing
+    the packet to the upstream zigpy stack.
+
+    Routing (in order):
+
+    1. Always write to capture log.
+    2. ZDO / coordinator packets → upstream only, then return.
+    3. Mgmt_Permit_Join_rsp (0x8036) → plugin 0x8014 + upstream, return.
+    4. Mgmt_Leave_rsp       (0x8034) → plugin 0x8047 + upstream, return.
+    5. All others            → plugin 0x8002 frame.
+       5a. ZCL (profile 0x0104) from a non-coordinator → plugin owns the
+           response; return without calling upstream.
+       5b. Everything else → also call upstream.
+    """
+    self.log.logging("TransportZigpy", "Debug", f"packet_received {packet}")
+
+    # ── 1. Unpack fields ────────────────────────────────────────────────────
+    f = _unpack_packet(packet)
+    message = packet.data.serialize()
+    hex_msg = binascii.hexlify(message).decode("utf-8")
+
+    if f["source_route"]:
+        self.log.logging( "trackReceivedRoute", "Log", f"packet_received from {f['sender']} via {f['source_route']}" )
+
+    self.log.logging(
+        "TransportZigpy", "Debug",
+        f"packet_received - src={f['sender']}  {f['profile']}  {f['cluster']}"
+        f"  srcEp={f['src_ep']}  dstEp={f['dst_ep']}  msg={hex_msg}"
+        f"  dst_addr_mode={f['dst_addressing']}"
+    )
+
+    write_capture_rx_frames( self, packet.src, f["profile"], f["cluster"], f["src_ep"], f["dst_ep"], message, hex_msg, f["dst_addressing"], )
+
+    upstream_called = False
+
+    # ── 2. ZDO / coordinator → upstream only
+    is_zdo = zigpy.zdo.ZDO_ENDPOINT in (packet.src_ep, packet.dst_ep)
+    if f["sender"] == COORDINATOR_NWK or is_zdo:
+        self.log.logging( "TransportZigpy", "Debug", f"packet_received from coordinator/ZDO: {_pkt_summary(f, hex_msg)}" )
+        super(type(self), self).packet_received(packet)
+        upstream_called = True
+
+    # ── 3 & 4. Management clusters → plugin frame + upstream
+    if _handle_zdo_cluster(self, f["cluster"], f["sender"], hex_msg, packet):
+        return
+
+    # ── 5. General device packet → plugin 0x8002 frame
+    packet.lqi = packet.lqi or 0x00
+    effective_profile = 0x0000 if (f["src_ep"] == f["dst_ep"] == 0x00) else f["profile"]
+
+    if effective_profile and f["cluster"]:
+        self.log.logging( "TransportZigpy", "Debug", f"packet_received device: {_pkt_summary(f, hex_msg)}  lqi={packet.lqi}" )
+
+    plugin_frame = build_plugin_8002_frame_content(
+        self, f["sender"],
+        effective_profile, f["cluster"],
+        f["src_ep"], f["dst_ep"],
+        message, packet.lqi,
+        src_addrmode=f["addr_mode"],
+    )
+    self.log.logging( "TransportZigpy", "Debug", f"packet_received Sender: {f['sender']} frame for plugin: {plugin_frame}" )
+    self.callBackFunction(plugin_frame)
+
+    # ── 5a. ZCL from a non-coordinator: plugin owns the ZCL response
+    if effective_profile == PROFILE_ZHA and f["sender"] != COORDINATOR_NWK:
+        return
+
+    # ── 5b. Let zigpy process everything else if not yet sent to upstream
+    if not upstream_called:
+        super(type(self), self).packet_received(packet)
+
+ 
 @measure_execution_time
 def packet_received(
     self, 
