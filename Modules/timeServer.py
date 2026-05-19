@@ -111,6 +111,12 @@ def calculate_dst_times(self):
 
     current_year = datetime.now().year
 
+    # Cache on the plugin instance — each Domoticz plugin instance gets its own
+    # copy, which avoids shared state when multiple instances run in the same process.
+    instance_cache = self.__dict__.setdefault("_dst_cache", {})
+    if current_year in instance_cache:
+        return instance_cache[current_year]
+
     # Find the DST start and end times for the current year
     dst_start = None
     dst_end = None
@@ -155,7 +161,9 @@ def calculate_dst_times(self):
     dst_start_utc = int(dst_start.timestamp())
     dst_end_utc = int(dst_end.timestamp())
 
-    return dst_start_utc, dst_end_utc, dst_shift
+    result = dst_start_utc, dst_end_utc, dst_shift
+    instance_cache[current_year] = result
+    return result
 
 
 def timeserver_multiple_read_attribute_request(self, Devices, nwkid, src_ep, dst_ep, sqn, cluster_id, manuf_specif, manuf_code, MsgData, nbAttribute):
@@ -197,26 +205,41 @@ def get_response_data_for_timer_attribute_request( self, nwkid, attribute):
     value = None
     status = "86"  # Default to unsupported attribute
 
-    now = datetime.now(timezone.utc)
+    if attribute == "0000":  # Time
+        now = datetime.now(timezone.utc)
+        value = f"{int((now - ZIGBEE_EPOCH).total_seconds()):08x}"
+        data_type = "e2"
+        status = "00"
 
-    attribute_map = {
-        "0000": {"value": f"{int((now - ZIGBEE_EPOCH).total_seconds()):08x}", "data_type": "e2", "status": "00"},  # Time
-        "0001": {"value": f"{0x07:02x}", "data_type": "18", "status": "00"},  # Time Status: Master, Synchronized, MasterZone
-        "0002": {
-            "value": f"{int(datetime.now().astimezone().utcoffset().total_seconds() if datetime.now().astimezone().utcoffset() else 0):08x}",
-            "data_type": "2b",
-            "status": "00",
-        },  # Timezone
-        "0003": {"value": f"{calculate_dst_times(self)[0]:08x}", "data_type": "23", "status": "00"},  # DST Start
-        "0004": {"value": f"{calculate_dst_times(self)[1]:08x}", "data_type": "23", "status": "00"},  # DST End
-        "0005": {"value": f"{calculate_dst_times(self)[2]:08x}", "data_type": "2b", "status": "00"},  # DST Shift
-        "0006": {"value": "00000000", "data_type": "23", "status": "00"},  # Standard Time
-    }
+    elif attribute == "0001":  # Time Status: Master, Synchronized, MasterZone
+        value = f"{0x07:02x}"
+        data_type = "18"
+        status = "00"
 
-    if attribute in attribute_map:
-        value = attribute_map[attribute]["value"]
-        data_type = attribute_map[attribute]["data_type"]
-        status = attribute_map[attribute]["status"]
+    elif attribute == "0002":  # Timezone offset
+        now_local = datetime.now().astimezone()
+        offset = now_local.utcoffset()
+        value = f"{int(offset.total_seconds() if offset else 0):08x}"
+        data_type = "2b"
+        status = "00"
+
+    elif attribute in ("0003", "0004", "0005"):  # DST Start / End / Shift
+        dst_start, dst_end, dst_shift = calculate_dst_times(self)
+        if attribute == "0003":
+            value = f"{dst_start:08x}"
+            data_type = "23"
+        elif attribute == "0004":
+            value = f"{dst_end:08x}"
+            data_type = "23"
+        else:
+            value = f"{dst_shift:08x}"
+            data_type = "2b"
+        status = "00"
+
+    elif attribute == "0006":  # Standard Time
+        value = "00000000"
+        data_type = "23"
+        status = "00"
 
     elif attribute == "0007":  # LocalTime
         self.log.logging(["TimeServer","Input"], "Debug", f"-->Local Time: {datetime.now()}")
