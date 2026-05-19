@@ -1032,6 +1032,8 @@ class BasePlugin:
             # --- tracemalloc snapshot comparison ---
             
             if self.pluginconf.pluginConf.get("EnableTraceMalloc") and "tracemalloc" in sys.modules:
+                import tracemalloc
+
                 if tracemalloc.is_tracing():
                     current_mem, peak_mem = tracemalloc.get_traced_memory()
                     self.log.logging("Plugin", "Log",
