@@ -490,25 +490,48 @@ def _retrieve_previous_backup(self):
     return _retrieved_backup
    
 
+def _dump_zigpy_devices(self):
+    """Log every device currently in the zigpy device table (ieee, nwk)."""
+    devices = list(self.devices.values())
+    LOGGER.warning("zigpy device table (%d entries):", len(devices))
+    for dev in devices:
+        LOGGER.warning("  ieee=%-20s  nwk=0x%04x", dev.ieee, dev.nwk)
+
+
 def _preload_devices_from_plugin_db(self):
-    LOGGER.info("Pre-loadeing devices from plugin")
+    LOGGER.info("Pre-loading devices from plugin DB")
 
     if not hasattr(self, 'callBackGetAllDevices') or not self.callBackGetAllDevices:
         LOGGER.error("callBackGetAllDevices is not defined")
         return
 
+    LOGGER.warning("zigpy device table BEFORE pre-load (%d entries):", len(self.devices))
+    _dump_zigpy_devices(self)
+
     devices = self.callBackGetAllDevices()
+    LOGGER.info("Plugin DB returned %d device(s) to pre-load", len(devices))
+
     loaded = 0
+    skipped = 0
     for ieee_int, nwk_int in devices:
         eui64 = zigpy_t.EUI64(zigpy_t.uint64_t(ieee_int).serialize())
+        LOGGER.warning("  processing ieee=%s (0x%016x)  nwk=0x%04x", eui64, ieee_int, nwk_int)
         if eui64 not in self.devices:
             self.add_device(eui64, nwk_int)
+            LOGGER.warning("    -> added to zigpy table")
             loaded += 1
         else:
             dev = self.devices[eui64]
-            LOGGER.warning( "Device with IEEE %s already exists (0x%x, 0x%04x) vs. (%s, %s)in zigpy db, skipping add_device()", eui64, ieee_int, nwk_int, dev.ieee, dev.nwk)
+            LOGGER.warning(
+                "Device with IEEE %s already exists (0x%x, 0x%04x) vs. (%s, 0x%04x) in zigpy db, skipping add_device()",
+                eui64, ieee_int, nwk_int, dev.ieee, dev.nwk,
+            )
+            skipped += 1
 
-    LOGGER.info("Pre-loaded %d devices from plugin DB into zigpy device table", loaded)
+    LOGGER.warning("Pre-load complete: %d added, %d skipped (already in zigpy table)", loaded, skipped)
+
+    LOGGER.warning("zigpy device table AFTER pre-load (%d entries):", len(self.devices))
+    _dump_zigpy_devices(self)
 
 
 def get_device(self, ieee=None, nwk=None):
