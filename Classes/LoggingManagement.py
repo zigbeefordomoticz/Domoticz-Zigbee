@@ -379,8 +379,12 @@ def _loggingStatus(self, thread_name, message, module, nwkid):
 
 
 def _loggingToFile(self, thread_name, message, module, nwkid):
+    # sanitize any binary payload before logging
+    message = message.hex() if isinstance(message, (bytes, bytearray)) else repr(message)
+
     if self.pluginconf.pluginConf["logThreadName"]:
         message = "[%17s] " % thread_name + "[%17s] " % module + "[%s]" % nwkid + message
+
     if self.pluginconf.pluginConf["enablePluginLogging"]:
         logging.info(message)
     else:
