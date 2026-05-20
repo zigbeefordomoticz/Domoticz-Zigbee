@@ -504,6 +504,9 @@ def _preload_devices_from_plugin_db(self):
         if eui64 not in self.devices:
             self.add_device(eui64, nwk_int)
             loaded += 1
+        else:
+            dev = self.devices[eui64]
+            LOGGER.warning( "Device with IEEE %s already exists (0x%x, 0x%04x) vs. (%s, %s)in zigpy db, skipping add_device()", eui64, ieee_int, nwk_int, dev.ieee, dev.nwk)
 
     LOGGER.info("Pre-loaded %d devices from plugin DB into zigpy device table", loaded)
 
