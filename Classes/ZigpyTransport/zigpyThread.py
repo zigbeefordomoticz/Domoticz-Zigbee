@@ -621,13 +621,13 @@ def optional_configuration_setup(self, config, radio_conf, set_extendedPanId, se
     config[zigpy.config.CONF_MAX_CONCURRENT_REQUESTS] = 4
 
     # Config Zigpy db. if not defined, there is no persistent Db.
-    if self.pluginconf.pluginConf.get("enableZigpyPersistentInFile"):
-        data_folder = Path( self.pluginconf.pluginConf["pluginData"] )
-        config[zigpy.config.CONF_DATABASE] = str(data_folder / ("zigpy_persistent_%02d.db"% self.hardwareid) )
-        config[zigpy.config.CONF_TOPO_SCAN_ENABLED] = bool( self.pluginconf.pluginConf["ZigpyAutoTopology"])
-        config[zigpy.config.CONF_TOPO_SCAN_PERIOD] = 12 * 60  # 12 Hours
+    #if self.pluginconf.pluginConf.get("enableZigpyPersistentInFile"):
+    #    data_folder = Path( self.pluginconf.pluginConf["pluginData"] )
+    #    config[zigpy.config.CONF_DATABASE] = str(data_folder / ("zigpy_persistent_%02d.db"% self.hardwareid) )
+    #    config[zigpy.config.CONF_TOPO_SCAN_ENABLED] = bool( self.pluginconf.pluginConf["ZigpyAutoTopology"])
+    #    config[zigpy.config.CONF_TOPO_SCAN_PERIOD] = 12 * 60  # 12 Hours
 
-    elif self.pluginconf.pluginConf.get("enableZigpyPersistentInMemory"):
+    if self.pluginconf.pluginConf.get("enableZigpyPersistentInMemory"):
         config[zigpy.config.CONF_DATABASE] = ":memory:"
         config[zigpy.config.CONF_TOPO_SCAN_ENABLED] = bool( self.pluginconf.pluginConf["ZigpyAutoTopology"])
         config[zigpy.config.CONF_TOPO_SCAN_PERIOD] = 12 * 60  # 12 Hours
