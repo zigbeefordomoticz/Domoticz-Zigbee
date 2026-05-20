@@ -311,15 +311,14 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     max_tx_power = await self._get_effective_maximum_tx_power()
     self.log.logging("TransportZigpy", "Status", f"Effective TxPower: {tx_power}, Max TxPower: {max_tx_power}")
 
-    if max_tx_power is not None and tx_power is not None:
-        if tx_power > max_tx_power:
-            LOGGER.warning(
-                "Requested TX power %0.2f dBm exceeds maximum %0.2f dBm for"
-                " regulatory domain, limiting",
-                tx_power,
-                max_tx_power,
-            )
-            tx_power = max_tx_power
+    if max_tx_power is not None and tx_power is not None and tx_power > max_tx_power:
+        LOGGER.warning(
+            "Requested TX power %0.2f dBm exceeds maximum %0.2f dBm for"
+            " regulatory domain, limiting",
+            tx_power,
+            max_tx_power,
+        )
+        tx_power = max_tx_power
 
     if tx_power is not None:
         await self.set_tx_power(tx_power)
@@ -492,7 +491,7 @@ def _retrieve_previous_backup(self):
    
 
 def _preload_devices_from_plugin_db(self):
-    LOGGER.info("Pre-loaded devices from plugin")
+    LOGGER.info("Pre-loadeing devices from plugin")
 
     if not hasattr(self, 'callBackGetAllDevices') or not self.callBackGetAllDevices:
         LOGGER.error("callBackGetAllDevices is not defined")
@@ -519,9 +518,7 @@ def get_device(self, ieee=None, nwk=None):
        _update_nkdids_if_needed() to ensure the plugin database is in sync
        with zigpy's view of the device's NWK address.
     2. On KeyError (device not in zigpy's database), falls back to
-       self.callBackGetDevice() to query the plugin database. If found,
-       registers the device in zigpy via add_device() so future lookups
-       succeed without the fallback.
+       self.callBackGetDevice() to query the plugin database. 
 
     Args:
         ieee: The IEEE (EUI64) address of the device, or None.
