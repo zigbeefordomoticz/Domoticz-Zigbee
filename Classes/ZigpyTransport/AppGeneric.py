@@ -493,9 +493,9 @@ def _retrieve_previous_backup(self):
 def _dump_zigpy_devices(self):
     """Log every device currently in the zigpy device table (ieee, nwk)."""
     devices = list(self.devices.values())
-    LOGGER.warning("zigpy device table (%d entries):", len(devices))
+    LOGGER.info("zigpy device table (%d entries):", len(devices))
     for dev in devices:
-        LOGGER.warning("  ieee=%-20s  nwk=0x%04x", dev.ieee, dev.nwk)
+        LOGGER.info("  ieee=%-20s  nwk=0x%04x", dev.ieee, dev.nwk)
 
 
 def _preload_devices_from_plugin_db(self):
@@ -505,7 +505,7 @@ def _preload_devices_from_plugin_db(self):
         LOGGER.error("callBackGetAllDevices is not defined")
         return
 
-    LOGGER.warning("zigpy device table BEFORE pre-load (%d entries):", len(self.devices))
+    LOGGER.info("zigpy device table BEFORE pre-load (%d entries):", len(self.devices))
     _dump_zigpy_devices(self)
 
     devices = self.callBackGetAllDevices()
@@ -515,10 +515,10 @@ def _preload_devices_from_plugin_db(self):
     skipped = 0
     for ieee_int, nwk_int in devices:
         eui64 = zigpy_t.EUI64(zigpy_t.uint64_t(ieee_int).serialize())
-        LOGGER.warning("  processing ieee=%s (0x%016x)  nwk=0x%04x", eui64, ieee_int, nwk_int)
+        LOGGER.info("  processing ieee=%s (0x%016x)  nwk=0x%04x", eui64, ieee_int, nwk_int)
         if eui64 not in self.devices:
             self.add_device(eui64, nwk_int)
-            LOGGER.warning("    -> added to zigpy table")
+            LOGGER.info("    -> added to zigpy table")
             loaded += 1
         else:
             dev = self.devices[eui64]
@@ -528,9 +528,9 @@ def _preload_devices_from_plugin_db(self):
             )
             skipped += 1
 
-    LOGGER.warning("Pre-load complete: %d added, %d skipped (already in zigpy table)", loaded, skipped)
+    LOGGER.info("Pre-load complete: %d added, %d skipped (already in zigpy table)", loaded, skipped)
 
-    LOGGER.warning("zigpy device table AFTER pre-load (%d entries):", len(self.devices))
+    LOGGER.info("zigpy device table AFTER pre-load (%d entries):", len(self.devices))
     _dump_zigpy_devices(self)
 
 
