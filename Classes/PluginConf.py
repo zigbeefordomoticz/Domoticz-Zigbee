@@ -288,7 +288,7 @@ SETTINGS = {
             "Pluzzy": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "PollControl": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Profalux": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
-            "ZigpyDefaultLoggingInfo": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": False }, 
+            "ZigpyDefaultLoggingInfo": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False }, 
             "Python/aiosqlite": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True }, 
             "Python/zigpy": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True }, 
             "Python/zigpy-appdb": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True }, 
