@@ -228,6 +228,7 @@ class BasePlugin:
 
         self._tracemalloc_snapshot = None
         self._snapshot_count = 0
+        self._snapshot_enabled = False
 
         self.internet_available = None
         self.ListOfDevices = (
@@ -647,10 +648,6 @@ class BasePlugin:
         for t in threading.enumerate():
             self.log.logging("Plugin", "Log", f"    - Thread {t.name}: alive={t.is_alive()}, ident={t.ident}, daemon={t.daemon}")
 
-        if self.pluginconf.pluginConf.get("EnableTraceMalloc"):
-            import tracemalloc
-            self.log.logging("Plugin", "Log", "EnableTraceMalloc is enabled, starting tracemalloc with a stack depth of 25")
-            tracemalloc.start(TRACE_MALLOC_MAX_DEPTH)
 
 
     def onStop(self):
@@ -1038,7 +1035,7 @@ class BasePlugin:
             zigate_get_time(self)
             #sendZigateCmd(self, "0017", "")
 
-        if self.domoticz_api and self.HeartbeatCount % (300 // HEARTBEAT) == 0:
+        if self.domoticz_api and self.ControllerLink and self.HeartbeatCount % (300 // HEARTBEAT) == 0:
             # Tracing and Malloc trace stats can be very verbose, so we log them only every 5 minutes
             if self.pluginconf.pluginConf.get("DomoticzDB_Stats"):
                 self.domoticz_api.dump_stats()
@@ -1048,7 +1045,7 @@ class BasePlugin:
 
             # --- tracemalloc snapshot comparison ---
             
-            if self.pluginconf.pluginConf.get("EnableTraceMalloc") and "tracemalloc" in sys.modules:
+            if self._snapshot_enabled and self.pluginconf.pluginConf.get("EnableTraceMalloc") and "tracemalloc" in sys.modules:
                 import tracemalloc
 
                 current = tracemalloc.take_snapshot()  # assign first, before any logging, to get the most accurate snapshot possible
@@ -1160,6 +1157,7 @@ def start_zigbee_transport(self ):
         self.log.logging("Plugin", "Error", "Unknown Transport comunication protocol : %s" % str(self.transport))
         self.onStop()
         return
+
 
 def _start_zigpy_backend(self, backend_key):
 
@@ -1502,6 +1500,13 @@ def zigateInit_Phase3(self):
 
     if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
         matomo_plugin_analytics_infos(self)
+        
+    if self.pluginconf.pluginConf.get("EnableTraceMalloc"):
+        import tracemalloc
+        self.log.logging("Plugin", "Log", "EnableTraceMalloc is enabled, starting tracemalloc with a stack depth of 25")
+        tracemalloc.start(TRACE_MALLOC_MAX_DEPTH)
+        self._snapshot_enabled = True
+
 
 
 def start_GrpManagement(self, homefolder):
