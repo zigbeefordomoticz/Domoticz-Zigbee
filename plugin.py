@@ -213,10 +213,10 @@ STARTUP_TIMEOUT_DELAY_FOR_STOP = 100
 ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP = 180
 
 ZIGPY_BACKENDS = {
-    "ZigpyZNP":     ("znp",    "zigpy_znp",    "ZNP"),
-    "ZigpydeCONZ":  ("deCONZ", "zigpy_deconz", "deConz"),
-    "ZigpyEZSP":    ("ezsp",   "bellows",      "EZSP"),
-    "ZigpyBLZ":     ("blz",    "zigpy_blz",    "Bouffalo Lab Zigbee"),
+    "ZigpyZNP": ("znp", "zigpy_znp", "ZNP"),
+    "ZigpydeCONZ": ("deCONZ", "zigpy_deconz", "deConz"),
+    "ZigpyEZSP": ("ezsp", "bellows", "EZSP"),
+    "ZigpyBLZ": ("blz", "zigpy_blz", "Bouffalo Lab Zigbee"),
 }
 
 TRACE_MALLOC_MAX_DEPTH = 25
@@ -843,7 +843,7 @@ class BasePlugin:
         result = []
         for nwk_str, info in self.ListOfDevices.items():
             ieee_str = info.get('IEEE')
-            self.log.logging("TransportZigpy", "Debug", "zigpy_get_all_devices pre-populate( %s, %s)" %( ieee_str, nwk_str))
+            self.log.logging("TransportZigpy", "Log", "zigpy_get_all_devices pre-populate( %s, %s)" %( ieee_str, nwk_str))
             if ieee_str:
                 try:
                     result.append((int(ieee_str, 16), int(nwk_str, 16)))
@@ -1044,7 +1044,6 @@ class BasePlugin:
                 self.ControllerLink.dump_transport_stats()
 
             # --- tracemalloc snapshot comparison ---
-            
             if self._snapshot_enabled and self.pluginconf.pluginConf.get("EnableTraceMalloc") and "tracemalloc" in sys.modules:
                 import tracemalloc
 
@@ -1057,8 +1056,7 @@ class BasePlugin:
                         self.log.logging("Plugin", "Log", f"  EnableTraceMalloc: {str(stat)}")
 
                     freed = [s for s in stats if s.size_diff < 0]
-                    self.log.logging("Plugin", "Log",
-                        f"EnableTraceMalloc: Freed: {sum(s.size_diff for s in freed)/1024:.1f} KB across {len(freed)} locations")
+                    self.log.logging("Plugin", "Log", f"EnableTraceMalloc: Freed: {sum(s.size_diff for s in freed) / 1024:.1f} KB across {len(freed)} locations")
 
                 prev_snapshot = self._tracemalloc_snapshot   # save BEFORE overwriting
                 self._tracemalloc_snapshot = current
@@ -1919,11 +1917,6 @@ def _check_plugin_version( self ):
             self.pluginParameters["FirmwareUpdate"] = True
 
 
-def _coordinator_ready( self ):
-    self.log.logging( "Plugin", "Debug", "_coordinator_ready transport: %s PDMready: %s" %(self.transport, self.PDMready)) 
-    if self.transport == "None" or self.PDMready:
-        return True
-
 def _coordinator_ready(self):
     self.log.logging("Plugin", "Debug", "_coordinator_ready transport: %s PDMready: %s" % (self.transport, self.PDMready))
 
@@ -1931,12 +1924,10 @@ def _coordinator_ready(self):
         return True
 
     warning_threshold = (ZNP_STARTUP_TIMEOUT_DELAY_FOR_WARNING if self.transport == "ZigpyZNP" else STARTUP_TIMEOUT_DELAY_FOR_WARNING)
-    stop_threshold    = (ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP if self.transport == "ZigpyZNP" else STARTUP_TIMEOUT_DELAY_FOR_STOP)
+    stop_threshold = (ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP if self.transport == "ZigpyZNP" else STARTUP_TIMEOUT_DELAY_FOR_STOP)
 
     if self.internalHB > warning_threshold and (self.internalHB % 10) == 0:
-        self.log.logging("Plugin", "Error",
-            "[%3s] Hard time getting Coordinator Version — likely a communication issue"
-            % self.internalHB)
+        self.log.logging("Plugin", "Error", "[%3s] Hard time getting Coordinator Version — likely a communication issue" % self.internalHB)
 
     if self.internalHB > stop_threshold:
         debuging_information(self, "Log")
@@ -1945,8 +1936,7 @@ def _coordinator_ready(self):
         return False  # ← explicit, avoids falling into the poll below
 
     if (self.internalHB % 10) == 0:
-        self.log.logging("Plugin", "Debug",
-            "[%s] PDMready: %s — requesting firmware version" % (self.internalHB, self.PDMready))
+        self.log.logging("Plugin", "Debug", "[%s] PDMready: %s — requesting firmware version" % (self.internalHB, self.PDMready))
         zigate_get_firmware_version(self)
 
     return False
