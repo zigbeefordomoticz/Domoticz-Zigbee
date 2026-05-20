@@ -93,7 +93,7 @@ class ZigpyTransport(object):
         self.manual_interference_scan_task = None   # Store topology task when manual started
 
         self.loop_latency_monitor = None   # Manage the Event loop latency monitoring if enabled
-        self.use_of_zigpy_persistent_db = self.pluginconf.pluginConf["enableZigpyPersistentInFile"] or self.pluginconf.pluginConf["enableZigpyPersistentInMemory"]
+        self.use_of_zigpy_persistent_db = self.pluginconf.pluginConf.get("enableZigpyPersistentInFile") or self.pluginconf.pluginConf.get("enableZigpyPersistentInMemory")
 
    
     def open_cie_connection(self):
