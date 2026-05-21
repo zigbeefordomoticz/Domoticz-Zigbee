@@ -212,7 +212,7 @@ ZNP_STARTUP_TIMEOUT_DELAY_FOR_WARNING = 120
 STARTUP_TIMEOUT_DELAY_FOR_STOP = 100
 ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP = 180
 
-PLUGIN_STATISTICS_PERIOD = 60  # In seconds, period for plugin statistics logging
+PLUGIN_STATISTICS_PERIOD = 300  # In seconds, period for plugin statistics logging
 
 ZIGPY_BACKENDS = {
     "ZigpyZNP": ("znp", "zigpy_znp", "ZNP"),
