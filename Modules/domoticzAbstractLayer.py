@@ -73,6 +73,9 @@ def setConfigItem(Key=None, Attribute="", Value=None):
         # There is an issue that Configuration doesn't allow None value in dictionary !
         # Replace none value to 'null'
         Value = prepare_dict_for_storage(Value, Attribute)
+        if Value is None:
+            domoticz_error_api("setConfigItem - prepare_dict_for_storage/deepcopy failed after 3 attempts, skipping write")
+            return None
 
     try:
         Config = Domoticz.Configuration()
@@ -111,7 +114,12 @@ def getConfigItem(Key=None, Attribute="", Default=None):
 
 
 def prepare_dict_for_storage(dict_items, Attribute):
-    dict_items = copy.deepcopy(dict_items)
+    for _ in range(3):
+        with contextlib.suppress(RuntimeError, ValueError, TypeError):
+            dict_items = copy.deepcopy(dict_items)
+            break
+    else:
+        return None
 
     if Attribute in dict_items:
         payload = json.dumps(dict_items[Attribute], ensure_ascii=False).encode("utf-8")
