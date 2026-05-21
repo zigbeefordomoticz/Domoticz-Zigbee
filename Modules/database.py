@@ -496,11 +496,11 @@ def _write_DeviceList_json(self):
 def _write_DeviceList_Domoticz(self):
     """Store device list in Domoticz plugin configuration.
 
-    Makes a copy of the device list and stores it along with a timestamp
-    in the Domoticz plugin configuration storage. Returns the result of
-    the setConfigItem call.
+    Retries up to 3 times on concurrent-modification errors before giving up.
+    Returns None on failure so the caller falls back to the txt-file path.
     """
     ListOfDevices_for_save = self.ListOfDevices.copy()
+
     self.log.logging("Database", "Log", f"Plugin Database flushed on Domoticz {len(self.ListOfDevices)} records")
     return setConfigItem( Key="ListOfDevices", Attribute="b64-devicelist", Value={"TimeStamp": time.time(), "b64-devicelist": ListOfDevices_for_save} )
 
