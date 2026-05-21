@@ -212,6 +212,8 @@ ZNP_STARTUP_TIMEOUT_DELAY_FOR_WARNING = 120
 STARTUP_TIMEOUT_DELAY_FOR_STOP = 100
 ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP = 180
 
+PLUGIN_STATISTICS_PERIOD = 60  # In seconds, period for plugin statistics logging
+
 ZIGPY_BACKENDS = {
     "ZigpyZNP": ("znp", "zigpy_znp", "ZNP"),
     "ZigpydeCONZ": ("deCONZ", "zigpy_deconz", "deConz"),
@@ -1033,46 +1035,10 @@ class BasePlugin:
         if self.HeartbeatCount % (3600 // HEARTBEAT) == 0:
             self.log.loggingCleaningErrorHistory()
             zigate_get_time(self)
-            #sendZigateCmd(self, "0017", "")
 
-        if self.domoticz_api and self.ControllerLink and self.HeartbeatCount % (300 // HEARTBEAT) == 0:
-            # Tracing and Malloc trace stats can be very verbose, so we log them only every 5 minutes
-            if self.pluginconf.pluginConf.get("DomoticzDB_Stats"):
-                self.domoticz_api.dump_stats()
+        if self.HeartbeatCount % (PLUGIN_STATISTICS_PERIOD // HEARTBEAT) == 0:
+            _plugin_statistics(self)
 
-            if self.pluginconf.pluginConf.get("ZigpyTransport_Stats"):
-                self.ControllerLink.dump_transport_stats()
-
-            # --- tracemalloc snapshot comparison ---
-            if self._snapshot_enabled and self.pluginconf.pluginConf.get("EnableTraceMalloc") and "tracemalloc" in sys.modules:
-                import tracemalloc
-
-                current = tracemalloc.take_snapshot()  # assign first, before any logging, to get the most accurate snapshot possible
-
-                if self._tracemalloc_snapshot is not None:
-                    stats = current.compare_to(self._tracemalloc_snapshot, 'lineno')
-                    self.log.logging("Plugin", "Log", f"EnableTraceMalloc: === Top {TRACE_MALLOC_MAX_DEPTH} memory growth since last 5 minutes ===")
-                    for stat in stats[:TRACE_MALLOC_MAX_DEPTH]:
-                        self.log.logging("Plugin", "Log", f"  EnableTraceMalloc: {str(stat)}")
-
-                    freed = [s for s in stats if s.size_diff < 0]
-                    self.log.logging("Plugin", "Log", f"EnableTraceMalloc: Freed: {sum(s.size_diff for s in freed) / 1024:.1f} KB across {len(freed)} locations")
-
-                prev_snapshot = self._tracemalloc_snapshot   # save BEFORE overwriting
-                self._tracemalloc_snapshot = current
-                self._snapshot_count += 1
-
-                if self._snapshot_count % 12 == 0 and prev_snapshot is not None:
-                    tm_filter = tracemalloc.Filter(False, tracemalloc.__file__)
-                    filtered_cur = current.filter_traces([tm_filter])
-                    filtered_prev = prev_snapshot.filter_traces([tm_filter])  # use saved prev, not self._tracemalloc_snapshot
-                    stats_tb = filtered_cur.compare_to(filtered_prev, 'traceback')
-                    self.log.logging("Plugin", "Log", "EnableTraceMalloc: === Top 5 traceback growth (hourly) ===")
-                    for stat in stats_tb[:5]:
-                        self.log.logging("Plugin", "Log", f"  EnableTraceMalloc: {str(stat)}")
-                        for line in stat.traceback.format():
-                            self.log.logging("Plugin", "Log", f"  EnableTraceMalloc:   {line}")
-    
         if (
             self.zigbee_communication == "zigpy" 
             and self.pluginconf.pluginConf["ZigpyTopologyReport"] 
@@ -1090,7 +1056,51 @@ class BasePlugin:
         self.domoticz_device_cache.refresh_device( Unit)
         
         
-        
+def _plugin_statistics(self):
+    if self.domoticz_api and self.pluginconf.pluginConf.get("DomoticzDB_Stats"):
+        self.domoticz_api.dump_stats()
+
+    if self.ControllerLink and self.pluginconf.pluginConf.get("ZigpyTransport_Stats"):
+        self.ControllerLink.dump_transport_stats()
+
+    # --- tracemalloc snapshot comparison ---
+    if self._snapshot_enabled and self.pluginconf.pluginConf.get("EnableTraceMalloc") and "tracemalloc" in sys.modules:
+        _tracemalloc_analysis(self)
+
+
+def _tracemalloc_analysis(self):
+    import tracemalloc
+
+    current = tracemalloc.take_snapshot()  # assign first, before any logging, to get the most accurate snapshot possible
+
+    if self._tracemalloc_snapshot is not None:
+        stats = current.compare_to(self._tracemalloc_snapshot, 'lineno')
+        self.log.logging("Plugin", "Log", f"EnableTraceMalloc: === Top {TRACE_MALLOC_MAX_DEPTH} memory growth since last 5 minutes ===")
+        for stat in stats[:TRACE_MALLOC_MAX_DEPTH]:
+            self.log.logging("Plugin", "Log", f"  EnableTraceMalloc: {str(stat)}")
+
+        freed = [s for s in stats if s.size_diff < 0]
+        self.log.logging("Plugin", "Log", f"EnableTraceMalloc: Freed: {sum(s.size_diff for s in freed) / 1024:.1f} KB across {len(freed)} locations")
+
+    prev_snapshot = self._tracemalloc_snapshot   # save BEFORE overwriting
+    self._tracemalloc_snapshot = current
+    self._snapshot_count += 1
+
+    if self._snapshot_count % 12 == 0 and prev_snapshot is not None:
+        _hourly_tracemalloc_analysis(self, tracemalloc, current, prev_snapshot)
+
+
+def _hourly_tracemalloc_analysis(self, tracemalloc, current, prev_snapshot):
+    tm_filter = tracemalloc.Filter(False, tracemalloc.__file__)
+    filtered_cur = current.filter_traces([tm_filter])
+    filtered_prev = prev_snapshot.filter_traces([tm_filter])  # use saved prev, not self._tracemalloc_snapshot
+    stats_tb = filtered_cur.compare_to(filtered_prev, 'traceback')
+    self.log.logging("Plugin", "Log", "EnableTraceMalloc: === Top 5 traceback growth (hourly) ===")
+    for stat in stats_tb[:5]:
+        self.log.logging("Plugin", "Log", f"  EnableTraceMalloc: {str(stat)}")
+        for line in stat.traceback.format():
+            self.log.logging("Plugin", "Log", f"  EnableTraceMalloc:   {line}")
+
         
 def _onConnect_status_error(self, Status, Description):
     self.log.logging("Plugin", "Error", "Failed to connect (" + str(Status) + ")")
