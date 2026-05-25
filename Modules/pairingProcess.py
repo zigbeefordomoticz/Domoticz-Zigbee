@@ -260,6 +260,7 @@ def request_next_Ep(self, Nwkid):
 
     # if Config file exist, check the official list of EPs for this model, 
     # and if we have some EPs which are not in the official list, let's skip them
+    official_eps = None
     if device_model not in ( {}, "") and device_model in self.DeviceConf and "Ep" in self.DeviceConf[device_model]:
         official_eps = self.DeviceConf[device_model]["Ep"].keys()
 
@@ -274,15 +275,15 @@ def request_next_Ep(self, Nwkid):
         if is_fake_ep(self, Nwkid, ep):
             continue
 
-        if ep not in official_eps:
+        if official_eps and ep not in official_eps:
             self.log.logging("Pairing", "Debug", "[-] NEW OBJECT: %s Ep %s skipped (Not in official list of EP for this model)" % (Nwkid, ep))
             continue
 
-        if ep in SKIP_EPS:
+        if SKIP_EPS and ep in SKIP_EPS:
             self.log.logging("Pairing", "Debug", "[-] NEW OBJECT: %s Ep %s skipped (SKIP_EP)" % (Nwkid, ep))
             continue
 
-        if ep in blacklisted_eps:
+        if blacklisted_eps and ep in blacklisted_eps:
             self.log.logging("Pairing", "Debug", "[-] NEW OBJECT: %s Ep %s skipped (BlackListEP)" % (Nwkid, ep))
             continue
 
