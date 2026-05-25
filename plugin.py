@@ -855,26 +855,28 @@ class BasePlugin:
 
 
     def zigpy_get_device(self, ieee=None, nwkid=None):
-        # allow to inter-connect zigpy world and plugin
-        self.log.logging("TransportZigpy", "Debug", "zigpy_get_device( %s, %s)" %( ieee, nwkid))
+        self.log.logging("TransportZigpy", "Debug", f"zigpy_get_device({ieee}, {nwkid})")
 
-        sieee = ieee
-        snwkid = nwkid
-        
-        if nwkid and nwkid not in self.ListOfDevices and ieee and ieee in self.IEEE2NWK:
-            # Most likely we have a new Nwkid, let see if we can reconnect
+        orig_ieee, orig_nwkid = ieee, nwkid
+
+        if nwkid and nwkid not in self.ListOfDevices and self.IEEE2NWK.get(ieee):
             lookupForIEEE(self, nwkid, reconnect=True)
 
-        if nwkid and nwkid in self.ListOfDevices and 'IEEE' in self.ListOfDevices[ nwkid ]:
-            ieee = self.ListOfDevices[ nwkid ]['IEEE']
-        elif ieee and ieee in self.IEEE2NWK:
-            nwkid = self.IEEE2NWK[ ieee ]
-        else:
-            self.log.logging("TransportZigpy", "Debug", "zigpy_get_device( %s(%s), %s(%s)) NOT FOUND" %( sieee, type(sieee), snwkid, type(snwkid) ))
+        if nwkid and self.ListOfDevices.get(nwkid, {}).get("Status") == "Leave":
+            self.log.logging("TransportZigpy", "Debug", f"zigpy_get_device({ieee}, {nwkid}) device in Leave status, treating as not found")
             return None
 
-        self.log.logging("TransportZigpy", "Debug", "zigpy_get_device( %s, %s returns %04x %016x" %( sieee, snwkid, int(nwkid,16), int(ieee,16) ))
-        return int(nwkid,16) ,int(ieee,16)
+        if ieee_val := self.ListOfDevices.get(nwkid, {}).get("IEEE"):
+            ieee = ieee_val
+        elif nwkid_val := self.IEEE2NWK.get(ieee):
+            nwkid = nwkid_val
+        else:
+            self.log.logging("TransportZigpy", "Debug", f"zigpy_get_device({orig_ieee}({type(orig_ieee).__name__}), {orig_nwkid}({type(orig_nwkid).__name__})) NOT FOUND")
+            return None
+
+        result = int(nwkid, 16), int(ieee, 16)
+        self.log.logging("TransportZigpy", "Debug", f"zigpy_get_device({orig_ieee}, {orig_nwkid}) returns {result[0]:04x} {result[1]:016x}")
+        return result
 
 
     def zigpy_backup_available(self, backups):
