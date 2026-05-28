@@ -18,6 +18,19 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
+## May 2026 - stable8.1.005 (2026.4)
+
+- [Technical] - Fix memory leaks (zigpy based)
+- [Technical] - CPython race condition in asyncio.wait_for + Semaphore.acquire() (primary cause)
+- [Technical] - DomoticzDB circular reference and thread-safety issues
+- [Technical] - Fix crash in timeout_widget_api() Extended API 
+- [Technical] - Add _device_caches_lock (threading.Lock) to protect _device_caches list from concurrent access
+- [Technical] - Fix sentinel handling
+- [Technical] - Add _prune_stale_devices() called after every full getdevices refresh
+- [Technical] - rebuild IEEE2NWK when loading from Domoticz
+- [Technical] - Code refactoring of packet_received()
+
+
 ## Apr. 2026 - stable8.1.004 (2026.3)
 
 - [Issue] - Hotfix for #1943, problem occuring with Zigate (not supported anymore)
