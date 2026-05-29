@@ -156,9 +156,15 @@ async def start_zigpy_task(self, channel, extended_pan_id):
 # Radio initialisation
 # ---------------------------------------------------------------------------
 
-async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db,
-                      radiomodule, serialPort, auto_form=False,
-                      set_channel=0, set_extendedPanId=0):
+async def radio_start(
+    self, statistics, 
+    pluginconf, 
+    use_of_zigpy_persistent_db,
+    radiomodule, 
+    serialPort, 
+    auto_form=False,
+    set_channel=0, 
+    set_extendedPanId=0):
     """
     Instantiates the radio-specific App object, applies configuration, and
     calls _radio_startup to bring the network up.
@@ -168,10 +174,10 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db,
     serial_specifics = self._serialPort_communication_specifics or {}
 
     _RADIO_REGISTRY = {
-        "ezsp":   ("bellows.config",       "Classes.ZigpyTransport.AppBellows.App_bellows", ezsp_configuration_setup),
-        "znp":    ("zigpy_znp.config",     "Classes.ZigpyTransport.AppZnp.App_znp",         znp_configuration_setup),
-        "deCONZ": ("zigpy_deconz.config",  "Classes.ZigpyTransport.AppDeconz.App_deconz",   deconz_configuration_setup),
-        "blz":    (None,                   "Classes.ZigpyTransport.AppBlz.App_blz",          blz_configuration_setup),
+        "ezsp": ("bellows.config", "Classes.ZigpyTransport.AppBellows.App_bellows", ezsp_configuration_setup),
+        "znp": ("zigpy_znp.config", "Classes.ZigpyTransport.AppZnp.App_znp", znp_configuration_setup),
+        "deCONZ": ("zigpy_deconz.config", "Classes.ZigpyTransport.AppDeconz.App_deconz", deconz_configuration_setup),
+        "blz": (None, "Classes.ZigpyTransport.AppBlz.App_blz", blz_configuration_setup),
     }
 
     entry = _RADIO_REGISTRY.get(radiomodule)
@@ -246,14 +252,14 @@ def ezsp_configuration_setup(self, bellows_conf, serialPort, serial_specifics):
 
     config = {
         zigpy.config.CONF_DEVICE: {
-            zigpy.config.CONF_DEVICE_PATH:         serialPort,
-            zigpy.config.CONF_DEVICE_BAUDRATE:     serial_specifics.get("Baudrate", 115200),
+            zigpy.config.CONF_DEVICE_PATH: serialPort,
+            zigpy.config.CONF_DEVICE_BAUDRATE: serial_specifics.get("Baudrate", 115200),
             zigpy.config.CONF_DEVICE_FLOW_CONTROL: flow_control,
         },
         zigpy.config.CONF_NWK: {},
-        bellows_conf.CONF_EZSP_CONFIG:    {},
-        bellows_conf.CONF_EZSP_POLICIES:  {},
-        zigpy.config.CONF_OTA:            {},
+        bellows_conf.CONF_EZSP_CONFIG: {},
+        bellows_conf.CONF_EZSP_POLICIES: {},
+        zigpy.config.CONF_OTA: {},
         "handle_unknown_devices": True,
     }
 
@@ -283,13 +289,13 @@ def znp_configuration_setup(self, znp_conf, serialPort, serial_specifics):
     """Returns the configuration dict for a ZNP (TI CC2531 / CC2652) coordinator."""
     config = {
         zigpy.config.CONF_DEVICE: {
-            zigpy.config.CONF_DEVICE_PATH:         serialPort,
-            zigpy.config.CONF_DEVICE_BAUDRATE:     serial_specifics.get("Baudrate", 115200),
+            zigpy.config.CONF_DEVICE_PATH: serialPort,
+            zigpy.config.CONF_DEVICE_BAUDRATE: serial_specifics.get("Baudrate", 115200),
             zigpy.config.CONF_DEVICE_FLOW_CONTROL: serial_specifics.get("FlowControl", None),
         },
-        zigpy.config.CONF_NWK:          {},
-        znp_conf.CONF_ZNP_CONFIG:       {},
-        zigpy.config.CONF_OTA:          {},
+        zigpy.config.CONF_NWK: {},
+        znp_conf.CONF_ZNP_CONFIG: {},
+        zigpy.config.CONF_OTA: {},
     }
 
     if self.pluginconf.pluginConf.get("TXpower_set") is not None:
@@ -307,8 +313,8 @@ def deconz_configuration_setup(self, deconz_conf, serialPort, serial_specifics):
     """Returns the configuration dict for a deCONZ (Dresden Elektronik) coordinator."""
     return {
         zigpy.config.CONF_DEVICE: {
-            zigpy.config.CONF_DEVICE_PATH:         serialPort,
-            zigpy.config.CONF_DEVICE_BAUDRATE:     serial_specifics.get("Baudrate", 115200),
+            zigpy.config.CONF_DEVICE_PATH: serialPort,
+            zigpy.config.CONF_DEVICE_BAUDRATE: serial_specifics.get("Baudrate", 115200),
             zigpy.config.CONF_DEVICE_FLOW_CONTROL: serial_specifics.get("FlowControl", None),
         },
         zigpy.config.CONF_NWK: {},
@@ -320,8 +326,8 @@ def blz_configuration_setup(self, blz_conf, serialPort, serial_specifics):
     """Returns the configuration dict for a BLZ coordinator (default baudrate 2 Mbps)."""
     return {
         zigpy.config.CONF_DEVICE: {
-            zigpy.config.CONF_DEVICE_PATH:         serialPort,
-            zigpy.config.CONF_DEVICE_BAUDRATE:     serial_specifics.get("Baudrate", 2000000),
+            zigpy.config.CONF_DEVICE_PATH: serialPort,
+            zigpy.config.CONF_DEVICE_BAUDRATE: serial_specifics.get("Baudrate", 2000000),
             zigpy.config.CONF_DEVICE_FLOW_CONTROL: serial_specifics.get("FlowControl", None),
         },
         zigpy.config.CONF_NWK: {},
@@ -387,8 +393,13 @@ def optional_configuration_setup(self, config, radio_conf, set_extendedPanId, se
 # Post-instantiation startup
 # ---------------------------------------------------------------------------
 
-async def _radio_startup(self, statistics, pluginconf, use_of_zigpy_persistent_db,
-                         new_network, radiomodule):
+async def _radio_startup(
+    self, 
+    statistics, 
+    pluginconf, 
+    use_of_zigpy_persistent_db,
+    new_network, 
+    radiomodule):
     """
     Calls app.startup(), builds network frames, and injects supervisor refs.
 
@@ -409,6 +420,7 @@ async def _radio_startup(self, statistics, pluginconf, use_of_zigpy_persistent_d
             callBackHandleMessage=self.receiveData,
             callBackUpdDevice=self.ZigpyUpdDevice,
             callBackGetDevice=self.ZigpyGetDevice,
+            callBackGetAllDevices=self.ZigpyGetAllDevices,
             callBackBackup=self.ZigpyBackupAvailable,
             callBackRestartPlugin=self.restart_plugin,
             callBackHeartbeat=lambda: _transport_heartbeat(self),
