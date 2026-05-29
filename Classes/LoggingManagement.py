@@ -389,10 +389,7 @@ def _logging_status(self, thread_name, message, module, nwkid):
     domoticz_status_api(message)
 
 
-def _loggingToFile(self, thread_name, message, module, nwkid):
-    # sanitize any binary payload before logging
-    message = message.hex() if isinstance(message, (bytes, bytearray)) else repr(message)
-
+def _logging_to_plugin_log(self, thread_name, message, module, nwkid):
     if self.pluginconf.pluginConf["logThreadName"]:
         message = "[%17s] " % thread_name + "[%17s] " % module + "[%s]" % nwkid + message
 

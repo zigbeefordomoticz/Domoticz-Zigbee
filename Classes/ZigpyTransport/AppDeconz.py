@@ -42,7 +42,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form, force_form=force_form)
 
 
-    async def startup(self, statistics, HardwareID, pluginconf, use_of_zigpy_persistent_db, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackGetAllDevices=None, callBackBackup=None, callBackRestartPlugin=None, captureRxFrame=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+    async def startup(self, statistics, HardwareID, pluginconf, use_of_zigpy_persistent_db, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackGetAllDevices=None, callBackBackup=None, callBackRestartPlugin=None, callBackHeartbeat=None, captureRxFrame=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         """Starts a network, optionally forming one with random settings if necessary."""
 
         self.log = log
