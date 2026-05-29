@@ -13,7 +13,7 @@
 
 import json
 import time
-
+from collections import deque
 from Modules.domoticzAbstractLayer import (domoticz_error_api,
                                            domoticz_log_api,
                                            domoticz_status_api)
@@ -52,7 +52,7 @@ class TransportStatistics:
         self._max_reading_thread_timing = self._cumul_reading_thread_timing = self._cnt_reading_thread_timing = self._average_reading_thread_timing = 0
         self._max_reading_zigpy_timing = self._cumul_reading_zigpy_timing = self._cnt_reading_zigpy_timing = self._average_reading_zigpy_timing = 0
         self._start = int(time.time())
-        self.TrendStats = []
+        self.TrendStats = deque(maxlen=MAX_TREND_STAT_TABLE)
         self.pluginconf = pluginconf
         self.log = log
         self.zigbee_communication = zigbee_communication
@@ -151,10 +151,6 @@ class TransportStatistics:
 
         # Append new data point
         self.TrendStats.append({"_TS": TimeStamp, "Rxps": Rxps, "Txps": Txps, "Load": self._Load})
-
-        # Keep only the last MAX_TREND_STAT_TABLE entries
-        if len(self.TrendStats) > MAX_TREND_STAT_TABLE:
-            self.TrendStats = self.TrendStats[-MAX_TREND_STAT_TABLE:]  # Efficient slicing
 
 
     def reTx(self):

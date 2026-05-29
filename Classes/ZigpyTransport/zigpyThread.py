@@ -29,16 +29,30 @@ Public entry points consumed by Transport.py:
     cleanup_unused_concurrency_state(self)   # re-exported from zigpySend
 """
 
+import time
+from threading import Thread
 import asyncio
 import random
 import sys
-import time
-from threading import Thread
 
 from Classes.ZigpyTransport.supervisor import _cleanup, _supervisor
 from Classes.ZigpyTransport.zigpySend import \
     cleanup_unused_concurrency_state  # noqa: F401  (re-export for Transport.py)
 
+from Classes.ZigpyTransport.plugin_encoders import (
+    build_plugin_0302_frame_content, build_plugin_8009_frame_content,
+    build_plugin_8011_frame_content,
+    build_plugin_8043_frame_list_node_descriptor,
+    build_plugin_8045_frame_list_controller_ep)
+from Classes.ZigpyTransport.tools import handle_thread_error
+from Modules.macPrefix import DELAY_FOR_VERY_KEY
+
+ERROR_TASK_CREATION_FAILED = 0xB6
+SEMAPHORE_TIMEOUT = 60  # seconds
+REQUEST_TIMEOUT = 8   # This is a given time for the request to be sent
+WAITING_TIME_BETWEEN_REQUESTS = .100
+MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
+VERIFY_KEY_DELAY = 6
 
 # ---------------------------------------------------------------------------
 # Thread lifecycle
@@ -147,13 +161,56 @@ def zigpy_thread_function(self):
 
     time.sleep(random.uniform(0.5, 3.5))  # nosec
 
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    self.zigpy_loop = loop
+    # Create a new event loop for this thread
+    zigpy_loop = asyncio.new_event_loop()
+    self.zigpy_loop = zigpy_loop
+    asyncio.set_event_loop(zigpy_loop)
 
-    loop.create_task(_supervisor(self))
+    # Enable debug mode if specified in configuration
+    if self.pluginconf.pluginConf.get("EventLoopInstrumentation", False):
+        zigpy_loop.set_debug(True)
+
+    self.log.logging("TransportZigpy", "Debug", f"zigpyThread EventLoop: {zigpy_loop}")
+
+    # ==========================
+    # Start loop latency monitor
+    # ==========================
+
+    # Always cancel any existing monitor, regardless of config
+    if hasattr(self, 'loop_latency_monitor') and self.loop_latency_monitor is not None:
+        self.loop_latency_monitor.cancel()
+        self.loop_latency_monitor = None
+
+    if self.pluginconf.pluginConf.get("MonitorLoopLatency", False):
+        async def monitor_loop_latency(interval=1.0, threshold=3.5):
+            try:
+                while True:
+                    start = time.monotonic()
+                    await asyncio.sleep(interval)
+                    delay = time.monotonic() - start - interval
+                    if delay > 5:
+                        self.log.logging("TransportZigpy", "Error", f"Event loop blocked for {delay:.3f}s")
+                    elif delay > threshold:
+                        self.log.logging("TransportZigpy", "Log", f"Event loop blocked for {delay:.3f}s")
+            except asyncio.CancelledError:
+                self.log.logging("TransportZigpy", "Log", "Event loop monitoring stopped")
+                return
+
+        self.loop_latency_monitor = zigpy_loop.create_task(monitor_loop_latency())
 
     try:
         loop.run_forever()
     finally:
-        _cleanup(self, loop)
+        # Ensure the event loop is closed
+        # Stop the Event Loop Monitoring if enabled
+        #if self.loop_latency_monitor:
+        #    self.loop_latency_monitor.cancel()
+
+        if not zigpy_loop.is_closed():
+            zigpy_loop.close()
+            self.log.logging("TransportZigpy", "Log", "Event loop closed successfully in zigpy_thread.")
+        else:
+            self.log.logging("TransportZigpy", "Log", "Event loop was already closed in zigpy_thread.")
+            
+        self.log.logging("TransportZigpy", "Log", "++ Zigpy thread stopped. [2/3]")
+

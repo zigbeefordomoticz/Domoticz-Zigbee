@@ -196,8 +196,6 @@ from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
 
-#import tracemalloc
-
 VERSION_FILENAME = ".hidden/VERSION"
 MIN_PYTHON = (3, 11)
 
@@ -207,21 +205,30 @@ TIMEDOUT_FIRMWARE = 5  # HB before request Firmware again
 TEMPO_START_ZIGATE = 1  # Nb HB before requesting a Start_Zigate
 
 STARTUP_TIMEOUT_DELAY_FOR_WARNING = 60
-STARTUP_TIMEOUT_DELAY_FOR_STOP = 120
-ZNP_STARTUP_TIMEOUT_DELAY_FOR_WARNING = 110
-ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP = 160
+ZNP_STARTUP_TIMEOUT_DELAY_FOR_WARNING = 120
+
+STARTUP_TIMEOUT_DELAY_FOR_STOP = 100
+ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP = 180
+
+PLUGIN_STATISTICS_PERIOD = 300  # In seconds, period for plugin statistics logging
 
 ZIGPY_BACKENDS = {
-    "ZigpyZNP":     ("znp",    "zigpy_znp",    "ZNP"),
-    "ZigpydeCONZ":  ("deCONZ", "zigpy_deconz", "deConz"),
-    "ZigpyEZSP":    ("ezsp",   "bellows",      "EZSP"),
-    "ZigpyBLZ":     ("blz",    "zigpy_blz",    "Bouffalo Lab Zigbee"),
+    "ZigpyZNP": ("znp", "zigpy_znp", "ZNP"),
+    "ZigpydeCONZ": ("deCONZ", "zigpy_deconz", "deConz"),
+    "ZigpyEZSP": ("ezsp", "bellows", "EZSP"),
+    "ZigpyBLZ": ("blz", "zigpy_blz", "Bouffalo Lab Zigbee"),
 }
+
+TRACE_MALLOC_MAX_DEPTH = 25
 
 class BasePlugin:
     enabled = False
 
     def __init__(self):
+
+        self._tracemalloc_snapshot = None
+        self._snapshot_count = 0
+        self._snapshot_enabled = False
 
         self.internet_available = None
         
@@ -344,7 +351,6 @@ class BasePlugin:
         initialize_device_settings(self)
 
     def onStart(self):
-        #tracemalloc.start()
 
         mode6 = Parameters.get("Mode6", "0")
         if mode6.lstrip("-").isdigit():
@@ -820,27 +826,43 @@ class BasePlugin:
         chk_and_update_IEEE_NWKID(self, nwkid, ieee)
 
 
-    def zigpy_get_device(self, ieee=None, nwkid=None):
-        # allow to inter-connect zigpy world and plugin
-        self.log.logging("TransportZigpy", "Debug", "zigpy_get_device( %s, %s)" %( ieee, nwkid))
+    def zigpy_get_all_devices(self):
+        """Return all known devices as (EUI64-int, NWK-int) pairs for pre-loading into zigpy."""
+        result = []
+        for nwk_str, info in self.ListOfDevices.items():
+            ieee_str = info.get('IEEE')
+            self.log.logging("TransportZigpy", "Debug", "zigpy_get_all_devices pre-populate( %s, %s)" %( ieee_str, nwk_str))
+            if ieee_str:
+                try:
+                    result.append((int(ieee_str, 16), int(nwk_str, 16)))
+                except (ValueError, TypeError):
+                    self.log.logging("TransportZigpy", "Error", "zigpy_get_all_devices pre-populate( %s, %s) failed !!" %( ieee_str, nwk_str))
+        return result
 
-        sieee = ieee
-        snwkid = nwkid
-        
-        if nwkid and nwkid not in self.ListOfDevices and ieee and ieee in self.IEEE2NWK:
-            # Most likely we have a new Nwkid, let see if we can reconnect
+
+    def zigpy_get_device(self, ieee=None, nwkid=None):
+        self.log.logging("TransportZigpy", "Debug", f"zigpy_get_device({ieee}, {nwkid})")
+
+        orig_ieee, orig_nwkid = ieee, nwkid
+
+        if nwkid and nwkid not in self.ListOfDevices and self.IEEE2NWK.get(ieee):
             lookupForIEEE(self, nwkid, reconnect=True)
 
-        if nwkid and nwkid in self.ListOfDevices and 'IEEE' in self.ListOfDevices[ nwkid ]:
-            ieee = self.ListOfDevices[ nwkid ]['IEEE']
-        elif ieee and ieee in self.IEEE2NWK:
-            nwkid = self.IEEE2NWK[ ieee ]
-        else:
-            self.log.logging("TransportZigpy", "Debug", "zigpy_get_device( %s(%s), %s(%s)) NOT FOUND" %( sieee, type(sieee), snwkid, type(snwkid) ))
+        if nwkid and self.ListOfDevices.get(nwkid, {}).get("Status") == "Leave":
+            self.log.logging("TransportZigpy", "Debug", f"zigpy_get_device({ieee}, {nwkid}) device in Leave status, treating as not found")
             return None
 
-        self.log.logging("TransportZigpy", "Debug", "zigpy_get_device( %s, %s returns %04x %016x" %( sieee, snwkid, int(nwkid,16), int(ieee,16) ))
-        return int(nwkid,16) ,int(ieee,16)
+        if ieee_val := self.ListOfDevices.get(nwkid, {}).get("IEEE"):
+            ieee = ieee_val
+        elif nwkid_val := self.IEEE2NWK.get(ieee):
+            nwkid = nwkid_val
+        else:
+            self.log.logging("TransportZigpy", "Debug", f"zigpy_get_device({orig_ieee}({type(orig_ieee).__name__}), {orig_nwkid}({type(orig_nwkid).__name__})) NOT FOUND")
+            return None
+
+        result = int(nwkid, 16), int(ieee, 16)
+        self.log.logging("TransportZigpy", "Debug", f"zigpy_get_device({orig_ieee}, {orig_nwkid}) returns {result[0]:04x} {result[1]:016x}")
+        return result
 
 
     def zigpy_backup_available(self, backups):
@@ -998,7 +1020,9 @@ class BasePlugin:
         if self.HeartbeatCount % (3600 // HEARTBEAT) == 0:
             self.log.loggingCleaningErrorHistory()
             zigate_get_time(self)
-            #sendZigateCmd(self, "0017", "")
+
+        if self.HeartbeatCount % (PLUGIN_STATISTICS_PERIOD // HEARTBEAT) == 0:
+            _plugin_statistics(self)
 
         if (
             self.zigbee_communication == "zigpy" 
@@ -1081,6 +1105,7 @@ def start_zigbee_transport(self ):
         self.onStop()
         return
 
+
 def _start_zigpy_backend(self, backend_key):
 
     radio_lib, zigpy_module, label = ZIGPY_BACKENDS[backend_key]
@@ -1113,6 +1138,7 @@ def _start_zigpy_backend(self, backend_key):
         self.processFrame,
         self.zigpy_chk_upd_device,
         self.zigpy_get_device,
+        self.zigpy_get_all_devices,
         self.zigpy_backup_available,
         self.restart_plugin,
         self.log,
@@ -1368,12 +1394,12 @@ def zigateInit_Phase3(self):
 
     if self.networkmap is None:
         self.networkmap = NetworkMap(
-            self.zigbee_communication ,self.pluginconf, self.ControllerLink, self.ListOfDevices, Devices, self.HardwareID, self.log, self.pairing_in_progress
+            self.zigbee_communication ,self.pluginconf, self.ControllerLink, self.ListOfDevices, self.DeviceConf, Devices, self.HardwareID, self.log, self.pairing_in_progress
         )
     
     if self.zigpy_topology is None:
         self.zigpy_topology = ZigpyTopology(
-            self.zigbee_communication ,self.pluginconf, self.ControllerLink, self.ListOfDevices, self.IEEE2NWK, Devices, self.HardwareID, self.log, self.pairing_in_progress
+            self.zigbee_communication ,self.pluginconf, self.ControllerLink, self.ListOfDevices, self.IEEE2NWK, self.DeviceConf, Devices, self.HardwareID, self.log, self.pairing_in_progress
         )
 
     if self.networkmap:
@@ -1422,8 +1448,11 @@ def zigateInit_Phase3(self):
     if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
         matomo_plugin_analytics_infos(self)
         
-    self.log.logging("Plugin", "Status", "Z4D with Domoticz 'Extended Framework' started")
-    
+    if self.pluginconf.pluginConf.get("EnableTraceMalloc"):
+        import tracemalloc
+        self.log.logging("Plugin", "Log", "EnableTraceMalloc is enabled, starting tracemalloc with a stack depth of 25")
+        tracemalloc.start(TRACE_MALLOC_MAX_DEPTH)
+        self._snapshot_enabled = True
 
 
 def start_GrpManagement(self, homefolder):
@@ -1832,36 +1861,30 @@ def _check_plugin_version( self ):
             self.pluginParameters["FirmwareUpdate"] = True
 
 
-def _coordinator_ready( self ):
-    self.log.logging( "Plugin", "Debug", "_coordinator_ready transport: %s PDMready: %s" %(self.transport, self.PDMready)) 
+def _coordinator_ready(self):
+    self.log.logging("Plugin", "Debug", "_coordinator_ready transport: %s PDMready: %s" % (self.transport, self.PDMready))
+
     if self.transport == "None" or self.PDMready:
         return True
 
-    if (
-        (
-            ( self.transport == "ZigpyZNP" and self.internalHB > ZNP_STARTUP_TIMEOUT_DELAY_FOR_WARNING ) 
-            or ( self.transport != "ZigpyZNP" and self.internalHB > STARTUP_TIMEOUT_DELAY_FOR_WARNING ) 
-        ) 
-        and (self.internalHB % 10) == 0
-    ):
-        self.log.logging( "Plugin", "Error", "[%3s] I have hard time to get Coordinator Version. Most likely there is a communication issue" % (self.internalHB), )
-        
-    if (
-        ( self.transport == "ZigpyZNP" and self.internalHB > ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP )
-        or ( self.transport != "ZigpyZNP" and self.internalHB > STARTUP_TIMEOUT_DELAY_FOR_STOP) 
-    ):
+    warning_threshold = (ZNP_STARTUP_TIMEOUT_DELAY_FOR_WARNING if self.transport == "ZigpyZNP" else STARTUP_TIMEOUT_DELAY_FOR_WARNING)
+    stop_threshold = (ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP if self.transport == "ZigpyZNP" else STARTUP_TIMEOUT_DELAY_FOR_STOP)
+
+    if self.internalHB > warning_threshold and (self.internalHB % 10) == 0:
+        self.log.logging("Plugin", "Error", "[%3s] Hard time getting Coordinator Version — likely a communication issue" % self.internalHB)
+
+    if self.internalHB > stop_threshold:
         debuging_information(self, "Log")
-        # (#1371) we cannot stop the plugin as it will disable the hardware and generate side effect. So we will try for ever
+        # (#1371) Cannot stop plugin (would disable hardware), so retry indefinitely
         restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=Parameters["Mode5"])
+        return False  # ← explicit, avoids falling into the poll below
 
     if (self.internalHB % 10) == 0:
-        self.log.logging( "Plugin", "Debug", "[%s] PDMready: %s requesting Get version" % (self.internalHB, self.PDMready) )
+        self.log.logging("Plugin", "Debug", "[%s] PDMready: %s — requesting firmware version" % (self.internalHB, self.PDMready))
         zigate_get_firmware_version(self)
-        #sendZigateCmd(self, "0010", "")
-        return False
-    
+
     return False
-    
+
     
 def _post_readiness_startup_completed( self ):
     if self.transport != "None" and (self.startZigateNeeded or not self.InitPhase1 or not self.InitPhase2):

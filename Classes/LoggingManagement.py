@@ -42,7 +42,6 @@ Constants:
     THREAD_GROUP            Mapping of logical thread group names to thread name patterns
 """
 
-import ast
 import itertools
 import inspect
 import json
@@ -370,8 +369,9 @@ def enqueue_logging( self, thread_id, module, logType, message, nwkid, context )
             str(logType),
             str(message),
             str(nwkid),
-            str(context),
+            context,
         ]
+
         self.logging_queue.put(logging_tuple)
     else:
         domoticz_log_api("%s" % message)
@@ -389,7 +389,10 @@ def _logging_status(self, thread_name, message, module, nwkid):
     domoticz_status_api(message)
 
 
-def _logging_to_plugin_log(self, thread_name, message, module, nwkid):
+def _loggingToFile(self, thread_name, message, module, nwkid):
+    # sanitize any binary payload before logging
+    message = message.hex() if isinstance(message, (bytes, bytearray)) else repr(message)
+
     if self.pluginconf.pluginConf["logThreadName"]:
         message = "[%17s] " % thread_name + "[%17s] " % module + "[%s]" % nwkid + message
 
@@ -521,14 +524,11 @@ def loggingBuildContext(self, thread_name, module, message, nwkid, context=None)
 
 def loggingWriteErrorHistory(self):
     _pluginlogs = Path( self.pluginconf.pluginConf["pluginLogs"] )
-    jsonLogHistory = _pluginlogs / ( LOG_ERROR_HISTORY + "%02d.json" % self.HardwareID) 
-    
+    jsonLogHistory = _pluginlogs / ( LOG_ERROR_HISTORY + "%02d.json" % self.HardwareID)
     try:
         with open(jsonLogHistory, "w", encoding="utf-8") as json_file:
             json.dump(dict(self.LogErrorHistory), json_file)
             json_file.write("\n")
-    except OSError as e:
-        domoticz_error_api("Hops ! Unable to write LogErrorHistory error: %s log: %s" % (e, self.LogErrorHistory))
     except Exception as e:
         domoticz_error_api("Hops ! Unable to write LogErrorHistory error: %s log: %s" % (e, self.LogErrorHistory))
 
@@ -573,16 +573,8 @@ def process_logging_event( self, logging_tuple):
     if self.reload_debug_settings:
         self.zigpy_login()
 
-    try:
-        context = ast.literal_eval(context)
-    except (ValueError, SyntaxError) as err:
-        _catch_error_event(self, context, logging_tuple, err)
-        return
-    except Exception as err:
-        _catch_error_event(self, context,logging_tuple, err )
-        return
+    thread_name = thread_name + " " + thread_id
 
-    thread_name=thread_name + " " + thread_id
     if logType == "Error":
         loggingError(self, thread_name, message, module, nwkid, context)
 

@@ -19,8 +19,10 @@
 import ast
 import base64
 import contextlib
+import copy
 import json
 import time
+import zlib
 
 import DomoticzEx as Domoticz
 
@@ -94,6 +96,9 @@ def setConfigItem(Key=None, Attribute="", Value=None):
 
     if isinstance(Value, dict):
         Value = prepare_dict_for_storage(Value, Attribute)
+        if Value is None:
+            domoticz_error_api("setConfigItem - prepare_dict_for_storage/deepcopy failed after 3 attempts, skipping write")
+            return None
 
     try:
         Config = Domoticz.Configuration()
@@ -107,12 +112,13 @@ def setConfigItem(Key=None, Attribute="", Value=None):
             "setConfigItem - Domoticz.Configuration operation failed: '" + str(inst) + "'"
         )
         return None
-    return Config
+    return True
 
 
 def getConfigItem(Key=None, Attribute="", Default=None):
-    domoticz_log_api("Loading %s - %s from Domoticz sqlite Db" % (Key, Attribute))
-
+    
+    #domoticz_log_api("Loading %s - %s from Domoticz sqlite Db" %( Key, Attribute))
+    
     if Default is None:
         Default = {}
     Value = Default
@@ -130,10 +136,17 @@ def getConfigItem(Key=None, Attribute="", Default=None):
 
 
 def prepare_dict_for_storage(dict_items, Attribute):
+    for _ in range(3):
+        with contextlib.suppress(RuntimeError, ValueError, TypeError):
+            dict_items = copy.deepcopy(dict_items)
+            break
+    else:
+        return None
 
     if Attribute in dict_items:
-        dict_items[Attribute] = base64.b64encode(str(dict_items[Attribute]).encode("utf-8"))
-    dict_items["Version"] = 1
+        payload = json.dumps(dict_items[Attribute], ensure_ascii=False).encode("utf-8")
+        dict_items[Attribute] = base64.b64encode(zlib.compress(payload)).decode("ascii")
+    dict_items["Version"] = 2
     return dict_items
 
 
@@ -159,8 +172,11 @@ def repair_dict_after_load(b64_dict, Attribute):
         )
         return b64_dict
 
+    # Try decode safely
+    version = b64_dict.get("Version", 1)
     try:
-        b64_dict[Attribute] = decode_b64_payload(value, attribute_name=Attribute)
+        b64_dict[Attribute] = decode_b64_payload(value, attribute_name=Attribute, version=version)
+
     except Exception as e:
         domoticz_log_api(f"repair_dict_after_load - Failed to decode {Attribute}: {value} - {e}")
         return {}
@@ -168,11 +184,27 @@ def repair_dict_after_load(b64_dict, Attribute):
     return b64_dict
 
 
-def decode_b64_payload(value, attribute_name=""):
+def decode_b64_payload(value, attribute_name="", version=1):
     try:
-        decoded = base64.b64decode(value).decode("utf-8")
+        raw = base64.b64decode(value)
     except Exception as e:
         raise ValueError(f"{attribute_name}: base64 decode failed: {e}") from e
+
+    if version == 2:
+        try:
+            raw = zlib.decompress(raw)
+        except zlib.error as e:
+            raise ValueError(f"{attribute_name}: zlib decompress failed: {e}") from e
+        try:
+            return json.loads(raw.decode("utf-8"))
+        except Exception as e:
+            raise ValueError(f"{attribute_name}: JSON decode failed: {e}") from e
+
+    # Version 1: uncompressed, stored as Python repr (str() output)
+    try:
+        decoded = raw.decode("utf-8")
+    except Exception as e:
+        raise ValueError(f"{attribute_name}: UTF-8 decode failed: {e}") from e
 
     with contextlib.suppress(json.JSONDecodeError):
         return json.loads(decoded)
@@ -734,9 +766,15 @@ def _device_touch_unit_api(self, Devices, DeviceId_, Unit_, now):
 
 
 def timeout_widget_api(self, Devices, DeviceId_, timeout_value):
-    """Apply TimedOut flag to all widgets of a device."""
-    self.log.logging("AbstractDz", "Debug",
-                     f"timeout_widget_api: {DeviceId_}")
+    """ TimedOut all Device Widgets """
+    self.log.logging("AbstractDz", "Debug", f"timeout_widget_api: {DeviceId_}")
+    
+    Devices[ DeviceId_].TimedOut = timeout_value
+    if timeout_value == 1 and self.pluginconf.pluginConf["deviceOffWhenTimeOut"]:
+        # Then we will switch off as per User setting
+        for unit in Devices[ DeviceId_].Units:
+            _nValue, _sValue = domo_read_nValue_sValue(self, Devices, DeviceId_, unit)
+            _switch_off_widget_due_to_timedout(self, Devices, DeviceId_, unit, _nValue, _sValue)
 
     if not _device_exists(Devices, DeviceId_):
         return

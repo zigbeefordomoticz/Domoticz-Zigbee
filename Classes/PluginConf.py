@@ -423,9 +423,12 @@ SETTINGS = {
             "DropBadAnnoucement": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "expJsonDatabase": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "TryFindingIeeeOfUnknownNwkid": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
-            "enableZigpyPersistentInFile": {"type": "bool","default": 0,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
+            #"enableZigpyPersistentInFile": {"type": "bool","default": 0,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "enableZigpyPersistentInMemory": {"type": "bool","default": 1,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "EventLoopInstrumentation": {"type": "bool","default": 1,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
+            "DomoticzDB_Stats": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "ZigpyTransport_Stats": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "EnableTraceMalloc": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
         },
     },
     "Reserved": {

@@ -45,11 +45,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form, force_form=force_form)
 
 
-    async def startup(self, statistics, HardwareID, pluginconf, use_of_zigpy_persistent_db,
-                  callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None,
-                  callBackBackup=None, callBackRestartPlugin=None, callBackHeartbeat=None,
-                  captureRxFrame=None, auto_form=False, force_form=False, log=None,
-                  permit_to_join_timer=None):
+    async def startup(self, statistics, HardwareID, pluginconf, use_of_zigpy_persistent_db, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackGetAllDevices=None, callBackBackup=None, callBackRestartPlugin=None, captureRxFrame=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         """Starts a network, optionally forming one with random settings if necessary."""
 
         # If set to != 0 (default) extended PanId will be use when forming the network.
@@ -61,6 +57,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.callBackFunction = callBackHandleMessage
         self.callBackUpdDevice = callBackUpdDevice
         self.callBackGetDevice = callBackGetDevice
+        self.callBackGetAllDevices = callBackGetAllDevices
         self.callBackBackup = callBackBackup
         self.callBackRestartPlugin = callBackRestartPlugin
         self.callBackHeartbeat = callBackHeartbeat
@@ -93,7 +90,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         await self.load_network_info( load_devices=True )
         network_info = self.state.network_info
         self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
-        
+
         # Trigger Version payload to plugin
         
         version = self.state.node_info.version
@@ -130,7 +127,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.log.logging("TransportZigpy", "Status", "++ ZNP Radio register any additional/specific Ep")
         await Classes.ZigpyTransport.AppGeneric.register_specific_endpoints(self)
 
-        
+
     def get_device(self, ieee=None, nwk=None):
         return Classes.ZigpyTransport.AppGeneric.get_device(self, ieee, nwk)
 

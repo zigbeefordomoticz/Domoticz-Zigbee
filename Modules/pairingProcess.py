@@ -246,33 +246,62 @@ def interview_state_8045(self, NWKID, RIA=None, status=None):
 
 
 def request_next_Ep(self, Nwkid):
-    if "ReqEpv2" not in self.ListOfDevices[Nwkid]:
-        self.ListOfDevices[Nwkid]["ReqEpv2"] = {}
-        
-    for iterEp in list(self.ListOfDevices[Nwkid]["Ep"]):
-        if is_fake_ep(self, Nwkid, iterEp):
+    if Nwkid not in self.ListOfDevices:
+        return True
+
+    device = self.ListOfDevices[Nwkid]
+    device.setdefault("ReqEpv2", {})
+
+    device_model = device.get("Model", "")
+    ep_dict = device.get("Ep", {})
+    epv2_dict = device.get("Epv2", {})
+    req_epv2 = device["ReqEpv2"]
+    now = time.time()
+
+    # if Config file exist, check the official list of EPs for this model, 
+    # and if we have some EPs which are not in the official list, let's skip them
+    official_eps = None
+    if device_model not in ( {}, "") and device_model in self.DeviceConf and "Ep" in self.DeviceConf[device_model]:
+        official_eps = self.DeviceConf[device_model]["Ep"].keys()
+
+    # Blacklisted endpoints from device config (e.g. DeviceConf entry)
+    # 
+    blacklisted_eps = get_deviceconf_parameter_value(self, device_model, "BlackListEP")
+
+    SKIP_EPS = {"f2"}  # Green Power endpoint, always skipped
+
+    for ep in list(ep_dict):
+
+        if is_fake_ep(self, Nwkid, ep):
             continue
 
-        # Skip Green Zigbee EndPoint
-        if iterEp == 'f2':
-            continue
-        
-        if iterEp in self.ListOfDevices[Nwkid]["Epv2"] and self.ListOfDevices[Nwkid]["Ep"][ iterEp ] not in ( "", {}):
-            continue
-        
-        if iterEp in self.ListOfDevices[Nwkid]["ReqEpv2"] and self.ListOfDevices[Nwkid]["ReqEpv2"][ iterEp ] < ( time.time() + 120 ):
+        if official_eps and ep not in official_eps:
+            self.log.logging("Pairing", "Debug", "[-] NEW OBJECT: %s Ep %s skipped (Not in official list of EP for this model)" % (Nwkid, ep))
             continue
 
-        # Let's request only 1 Ep, in order wait for the response and then request the next one
-        self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" % ("-", Nwkid, iterEp))
-        self.ListOfDevices[Nwkid]["ReqEpv2"][ iterEp ] = time.time()
-        zdp_simple_descriptor_request(self, Nwkid, iterEp)
+        if SKIP_EPS and ep in SKIP_EPS:
+            self.log.logging("Pairing", "Debug", "[-] NEW OBJECT: %s Ep %s skipped (SKIP_EP)" % (Nwkid, ep))
+            continue
+
+        if blacklisted_eps and ep in blacklisted_eps:
+            self.log.logging("Pairing", "Debug", "[-] NEW OBJECT: %s Ep %s skipped (BlackListEP)" % (Nwkid, ep))
+            continue
+
+        # Already have a valid descriptor
+        if ep in epv2_dict and ep_dict[ep] not in ("", {}):
+            continue
+
+        # Requested recently — wait before retrying
+        if req_epv2.get(ep, 0) > now - 120:
+            continue
+
+        # Issue the request for this one endpoint and wait for the response
+        self.log.logging("Pairing", "Status", "[-] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" % (Nwkid, ep))
+        req_epv2[ep] = now
+        zdp_simple_descriptor_request(self, Nwkid, ep)
         return False
-        
-    # We have been all Ep, and so nothing else to do
 
-    return True
-
+    return True  # All endpoints processed
    
 def interview_timeout(self, Devices, NWKID, RIA, status):
     self.log.logging( "Pairing", "Debug", "interview_timeout - NWKID: %s, Status: %s, RIA: %s," % ( NWKID, status, RIA, ), )

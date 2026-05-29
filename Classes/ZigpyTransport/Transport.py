@@ -14,6 +14,7 @@
 # Author: pipiche38
 #
 
+import asyncio
 import json
 import threading
 import time
@@ -32,13 +33,14 @@ from Classes.ZigpyTransport.zigpyThread import (
 
 
 class ZigpyTransport(object):
-    def __init__(self, ControllerData, pluginParameters, pluginconf, F_out, zigpy_upd_device, zigpy_get_device, zigpy_backup_available, restart_plugin, log, statistics, hardwareid, radiomodule, serialPort, com_specifcs):
+    def __init__(self, ControllerData, pluginParameters, pluginconf, F_out, zigpy_upd_device, zigpy_get_device, zigpy_get_all_devices, zigpy_backup_available, restart_plugin, log, statistics, hardwareid, radiomodule, serialPort, com_specifcs):
         self.zigbee_communication = "zigpy"
         self.pluginParameters = pluginParameters
         self.pluginconf = pluginconf
         self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
         self.ZigpyUpdDevice = zigpy_upd_device
         self.ZigpyGetDevice = zigpy_get_device
+        self.ZigpyGetAllDevices = zigpy_get_all_devices
         self.ZigpyBackupAvailable = zigpy_backup_available
         self.restart_plugin = restart_plugin
         self.log = log
@@ -104,7 +106,7 @@ class ZigpyTransport(object):
         self.manual_interference_scan_task = None   # Store topology task when manual started
 
         self.loop_latency_monitor = None   # Manage the Event loop latency monitoring if enabled
-        self.use_of_zigpy_persistent_db = self.pluginconf.pluginConf["enableZigpyPersistentInFile"] or self.pluginconf.pluginConf["enableZigpyPersistentInMemory"]
+        self.use_of_zigpy_persistent_db = self.pluginconf.pluginConf.get("enableZigpyPersistentInFile") or self.pluginconf.pluginConf.get("enableZigpyPersistentInMemory")
 
    
     def open_cie_connection(self):
@@ -251,24 +253,58 @@ class ZigpyTransport(object):
             return
         self.forwarder_queue.put(message)
 
+
     def get_device_ieee( self, nwkid):
         return self.app.get_device_ieee( nwkid )
+
 
     # TO be cleaned . This is to make the plugin working
     def update_ZiGate_HW_Version(self, version):
         return
 
+
     def update_ZiGate_Version(self, FirmwareVersion, FirmwareMajorVersion):
         return
+
 
     def pdm_lock_status(self):
         return False
 
+
     def get_writer_queue(self):
         return self.loadTransmit()
 
+
     def get_forwarder_queue(self):
         return self.forwarder_queue.qsize()
+
+    def dump_transport_stats(self):
+        """Log asyncio task count and semaphore state from the zigpy event loop.
+
+        Called from the main thread; schedules a coroutine in the zigpy loop so
+        that asyncio.all_tasks() is valid (it must be called from within the loop).
+        """
+        if self.zigpy_loop is None or self.zigpy_loop.is_closed():
+            return
+
+        async def _log_stats():
+            all_tasks = asyncio.all_tasks()
+            named = [(t.get_name(), t.done()) for t in all_tasks]
+            pending = [n for n, done in named if not done]
+            locked_sems = {
+                ieee: waiting
+                for ieee, waiting in self._currently_waiting_requests_list.items()
+                if waiting > 0
+            }
+            self.log.logging(
+                "TransportZigpy", "Log",
+                f"ZigpyTransport stats | asyncio_tasks={len(all_tasks)} "
+                f"(pending={len(pending)}) | "
+                f"writer_queue≈{self.writer_queue.qsize() if self.writer_queue else 'n/a'} | "
+                f"devices_with_queued_reqs={locked_sems}"
+            )
+
+        asyncio.run_coroutine_threadsafe(_log_stats(), self.zigpy_loop)
 
     def loadTransmit(self):
         if self.writer_queue is None:
@@ -280,10 +316,18 @@ class ZigpyTransport(object):
             self._periodic_reset = now
             cleanup_unused_concurrency_state(self)
 
+        def _sem_locked(sem):
+            # asyncio.Semaphore.locked() iterates over _waiters deque which can be
+            # mutated by the event loop concurrently, raising RuntimeError.
+            try:
+                return sem.locked()
+            except RuntimeError:
+                return True  # conservative: treat as locked
+
         _queue = sum(
             self._currently_waiting_requests_list.get(device, 0) + 1
             for device in list(self._currently_waiting_requests_list)
-            if self._concurrent_requests_semaphores_list.get(device) and self._concurrent_requests_semaphores_list[device].locked()
+            if self._concurrent_requests_semaphores_list.get(device) and _sem_locked(self._concurrent_requests_semaphores_list[device])
         )
         
         return max(_queue - 1, 0) + self.writer_queue.qsize()

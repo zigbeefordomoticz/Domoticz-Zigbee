@@ -174,22 +174,33 @@ def LoadDeviceList(self):
 
     # This can be enabled only with Domoticz version 2021.1 build 1395 and above, otherwise big memory leak
     use_domoticz_db = self.pluginconf.pluginConf.get("useDomoticzDb")
+
     plugin_data = Path(self.pluginconf.pluginConf["pluginData"])
     device_name = self.DeviceListName
     device_list_txt_filename = plugin_data/ device_name
     
     if use_domoticz_db:
         # We try to load from Domoticz Db
-        ListOfDevices_from_Domoticz, domoticz_db_saving_time = retreive_device_list_from_domoticz(self)
-        can_use_domoticz_db = is_domoticz_recent(self, domoticz_db_saving_time, device_list_txt_filename)
-        self.log.logging( "Database", "Debug", f"Database from Dz is recent: {can_use_domoticz_db} Loading from Domoticz Db" )
+        ListOfDevices_from_Domoticz, domoticz_db_saving_time, version = retreive_device_list_from_domoticz(self)
+        
+        if ListOfDevices_from_Domoticz is not None:
+            can_use_domoticz_db = is_domoticz_recent(self, domoticz_db_saving_time, device_list_txt_filename)
+
         if can_use_domoticz_db:
+            self.log.logging( "Database", "Log", "Database from Domoticz is more recent, loading from Domoticz Db" )
+            
             self.ListOfDevices = ListOfDevices_from_Domoticz
             res = "Success"
             self.DeviceListSize = len(self.ListOfDevices)
-            self.log.logging("Database", "Status", "Z4D loads %s entries from Domoticz" % (self.DeviceListSize))
+            self.log.logging("Database", "Status", "Z4D loads %s entries from Domoticz (version %s)" % (self.DeviceListSize, version))
         
-    if not use_domoticz_db or ListOfDevices_from_Domoticz is None or not can_use_domoticz_db:
+            # Need to populate IEEE2NWK mapping for later use
+            for nwk_id, device in self.ListOfDevices.items():
+                ieee = device.get("IEEE")
+                if ieee:
+                    self.IEEE2NWK[ieee] = nwk_id
+
+    if not can_use_domoticz_db:
         # Loading from TXT file (Legacy)
         self.ListOfDevices = {}
         if os.path.isfile(device_list_txt_filename):
@@ -338,19 +349,26 @@ def retreive_device_list_from_domoticz(self):
         tuple: (devices_dict, timestamp) where devices_dict contains device
         entries filtered to only include known attributes used by the plugin
     """
-    list_devices_from_domoticz = getConfigItem(Key="ListOfDevices", Attribute="b64-devicelist")
-    list_devices_from_domoticz = list_devices_from_domoticz.get("b64-devicelist",{})
-    if not isinstance(list_devices_from_domoticz, dict):
-        list_devices_from_domoticz = {}
+    domoticz_configuration_record = getConfigItem(Key="ListOfDevices", Attribute="b64-devicelist")
 
-    dz_timestamp = list_devices_from_domoticz.get("TimeStamp",0) if list_devices_from_domoticz else 0
+    list_devices_from_domoticz = domoticz_configuration_record.get("b64-devicelist",{})
+    if not isinstance(list_devices_from_domoticz, dict):
+        self.log.logging(
+            "Database",
+            "Debug",
+            f"Retrieved device list is not a dictionary. {list_devices_from_domoticz} with type {type(list_devices_from_domoticz)}. Initializing empty device list.",
+        )
+        return ({}, 0, 1)
+
+    dz_timestamp = domoticz_configuration_record.get("TimeStamp",0) if list_devices_from_domoticz else 0
     human_date = time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp))
 
+    version = domoticz_configuration_record.get("Version", 1)
+    
     self.log.logging(
         "Database",
         "Debug",
-        f"Plugin data found on DZ with date {human_date} — "
-        f"Load from Dz: {len(list_devices_from_domoticz)} {list_devices_from_domoticz}"
+        f"Plugin data found on DZ with date {human_date} — version {version} Load from Dz: {len(list_devices_from_domoticz)} entries {list_devices_from_domoticz}"
     )
     allowed = set(MANDATORY_ATTRIBUTES) | set(MANUFACTURER_ATTRIBUTES) | set(BUILD_ATTRIBUTES)
 
@@ -363,7 +381,7 @@ def retreive_device_list_from_domoticz(self):
                                  f"xxx Removing attribute: {key} for {device_id}")
                 attrs.pop(key)
 
-    return (list_devices_from_domoticz, dz_timestamp)
+    return (list_devices_from_domoticz, dz_timestamp, version)
 
 
 def is_domoticz_recent(self, dz_timestamp, device_list_txt_filename):
@@ -380,8 +398,8 @@ def is_domoticz_recent(self, dz_timestamp, device_list_txt_filename):
     if os.path.isfile(device_list_txt_filename):
         txt_timestamp = os.path.getmtime(device_list_txt_filename)
 
-    self.log.logging("Database", "Log", "%s timestamp is %s" % (device_list_txt_filename, txt_timestamp))
-    if dz_timestamp > txt_timestamp:
+    self.log.logging("Database", "Log", "%s timestamp is %s versus Dz: %s" % (device_list_txt_filename, txt_timestamp, dz_timestamp))
+    if dz_timestamp >= txt_timestamp:
         self.log.logging("Database", "Log", "Dz is more recent than Txt Dz: %s Txt: %s" % (dz_timestamp, txt_timestamp))
         return True
     return False
@@ -525,6 +543,7 @@ def _sanitize_devices(devices):
 
     return sanitize(devices)
 
+
 def _flatten_deques(obj):
     if isinstance(obj, deque):
         return list(obj)
@@ -651,6 +670,7 @@ def checkDevices2LOD(self, Devices):
         self.ListOfDevices[nwkid]["ConsistencyCheck"] = ""
         if self.ListOfDevices[nwkid].get("Status") == "inDB":
             self.ListOfDevices[nwkid]["ConsistencyCheck"] = next(("ok" for dev in Devices if Devices[dev].DeviceID == self.ListOfDevices[nwkid]["IEEE"]), "not in DZ")
+
 
 def checkListOfDevice2Devices(self, Devices):
     """Verify Domoticz widgets map to known plugin devices.
