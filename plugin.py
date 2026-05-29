@@ -1041,6 +1041,87 @@ class BasePlugin:
         self.domoticz_device_cache.refresh_device( device_idx)
 
 
+def _plugin_statistics(self):
+    if self.domoticz_api and self.pluginconf.pluginConf.get("DomoticzDB_Stats"):
+        self.domoticz_api.dump_stats()
+
+    if self.ControllerLink and self.pluginconf.pluginConf.get("ZigpyTransport_Stats"):
+        self.ControllerLink.dump_transport_stats()
+
+    # --- tracemalloc snapshot comparison ---
+    if self._snapshot_enabled and self.pluginconf.pluginConf.get("EnableTraceMalloc") and "tracemalloc" in sys.modules:
+        _tracemalloc_analysis(self)
+
+
+def _tracemalloc_analysis(self):
+    import tracemalloc
+
+    current = tracemalloc.take_snapshot()  # assign first, before any logging, to get the most accurate snapshot possible
+
+    if self._tracemalloc_snapshot is not None:
+        stats = current.compare_to(self._tracemalloc_snapshot, 'lineno')
+        self.log.logging("Plugin", "Log", f"EnableTraceMalloc: === Top {TRACE_MALLOC_MAX_DEPTH} memory growth since last 5 minutes ===")
+        for stat in stats[:TRACE_MALLOC_MAX_DEPTH]:
+            self.log.logging("Plugin", "Log", f"  EnableTraceMalloc: {str(stat)}")
+
+        freed = [s for s in stats if s.size_diff < 0]
+        self.log.logging("Plugin", "Log", f"EnableTraceMalloc: Freed: {sum(s.size_diff for s in freed) / 1024:.1f} KB across {len(freed)} locations")
+
+    prev_snapshot = self._tracemalloc_snapshot   # save BEFORE overwriting
+    self._tracemalloc_snapshot = current
+    self._snapshot_count += 1
+
+    if self._snapshot_count % 12 == 0 and prev_snapshot is not None:
+        _hourly_tracemalloc_analysis(self, tracemalloc, current, prev_snapshot)
+
+
+def _hourly_tracemalloc_analysis(self, tracemalloc, current, prev_snapshot):
+    tm_filter = tracemalloc.Filter(False, tracemalloc.__file__)
+    filtered_cur = current.filter_traces([tm_filter])
+    filtered_prev = prev_snapshot.filter_traces([tm_filter])  # use saved prev, not self._tracemalloc_snapshot
+    stats_tb = filtered_cur.compare_to(filtered_prev, 'traceback')
+    self.log.logging("Plugin", "Log", "EnableTraceMalloc: === Top 5 traceback growth (hourly) ===")
+    for stat in stats_tb[:5]:
+        self.log.logging("Plugin", "Log", f"  EnableTraceMalloc: {str(stat)}")
+        for line in stat.traceback.format():
+            self.log.logging("Plugin", "Log", f"  EnableTraceMalloc:   {line}")
+
+        
+def parse_mode2_serial_com_specifics(mode2):
+    """
+    Parse the Mode2 string to extract Serial Mode, Baudrate, and Flow Control.
+
+    Args:
+        mode2 (str): The Mode2 string to parse.
+
+    Returns:
+        dict: A dictionary containing 'SerialMode', 'Baudrate', and 'FlowControl'.
+    """
+    # Default values
+    result = {
+    }
+    
+    # Split the Mode2 string by commas
+    parts = mode2.split(",")
+
+    # Extract SerialMode (always the first part)
+    if len(parts) > 0:
+        result["SerialMode"] = parts[0]
+
+    # Extract Baudrate (if present, it's the second part)
+    if len(parts) > 1:
+        try:
+            result["Baudrate"] = int(parts[1])  # Convert to integer
+        except ValueError:
+            result["Baudrate"] = None
+
+    # Extract FlowControl (if present, it's the third part)
+    if len(parts) > 2:
+        result["FlowControl"] = parts[2]
+
+    return result
+
+
 def _onConnect_status_error(self, Status, Description):
     self.log.logging("Plugin", "Error", "Failed to connect (" + str(Status) + ")")
     self.log.logging("Plugin", "Debug", "Failed to connect (" + str(Status) + ") with error: " + Description)
