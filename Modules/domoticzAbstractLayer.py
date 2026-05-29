@@ -112,7 +112,7 @@ def setConfigItem(Key=None, Attribute="", Value=None):
             "setConfigItem - Domoticz.Configuration operation failed: '" + str(inst) + "'"
         )
         return None
-    return True
+    return Config
 
 
 def getConfigItem(Key=None, Attribute="", Default=None):
@@ -769,13 +769,6 @@ def timeout_widget_api(self, Devices, DeviceId_, timeout_value):
     """ TimedOut all Device Widgets """
     self.log.logging("AbstractDz", "Debug", f"timeout_widget_api: {DeviceId_}")
     
-    Devices[ DeviceId_].TimedOut = timeout_value
-    if timeout_value == 1 and self.pluginconf.pluginConf["deviceOffWhenTimeOut"]:
-        # Then we will switch off as per User setting
-        for unit in Devices[ DeviceId_].Units:
-            _nValue, _sValue = domo_read_nValue_sValue(self, Devices, DeviceId_, unit)
-            _switch_off_widget_due_to_timedout(self, Devices, DeviceId_, unit, _nValue, _sValue)
-
     if not _device_exists(Devices, DeviceId_):
         return
 

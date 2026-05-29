@@ -197,14 +197,14 @@ class TestPrepareAndRepairDict(unittest.TestCase):
         data = {"payload": {"key": "val"}, "other": 42}
         result = domo.prepare_dict_for_storage(data.copy(), "payload")
         self.assertIn("Version", result)
-        self.assertEqual(result["Version"], 1)
-        # Value must be base64-encoded bytes
-        self.assertIsInstance(result["payload"], bytes)
+        self.assertEqual(result["Version"], 2)
+        # Value must be a base64-encoded string (zlib+b64 encoding)
+        self.assertIsInstance(result["payload"], str)
 
     def test_prepare_adds_version_even_without_attribute(self):
         data = {"something": 1}
         result = domo.prepare_dict_for_storage(data.copy(), "nonexistent")
-        self.assertEqual(result["Version"], 1)
+        self.assertEqual(result["Version"], 2)
 
     def test_repair_empty_string_returns_empty_dict(self):
         self.assertEqual(domo.repair_dict_after_load("", "attr"), {})
