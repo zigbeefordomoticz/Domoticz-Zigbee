@@ -209,9 +209,11 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             permit_to_join_timer=self.permit_to_join_timer,
         )
 
+
     async def set_channel(self, channel):
         """Migrate the network to a new channel via zigpy channel migration."""
         await self.move_network_to_channel(channel)
+
 
     async def remove_ieee(self, ieee):
         await self.remove( ieee )
