@@ -235,6 +235,7 @@ async def zigpy_request(
     use_ieee: bool = False,
     extended_timeout: bool = False,
     priority: bool = t.PacketPriority.NORMAL,
+    force_route_discovery: bool = False,
 ) -> tuple:
     """
     Submits a unicast Zigbee packet via app.send_packet.
@@ -266,8 +267,12 @@ async def zigpy_request(
     )
 
     tx_options = t.TransmitOptions.NONE
+
     if not ack_is_disable:
         tx_options |= t.TransmitOptions.ACK
+
+    if force_route_discovery:
+        tx_options |= t.TransmitOptions.FORCE_ROUTE_DISCOVERY
 
     try:
         await self.app.send_packet(
