@@ -784,8 +784,6 @@ def measure_execution_time(func):
     return wrapper
 
 
-
-
 # ---------------------------------------------------------------------------
 # Helper: unpack the fields we care about from a ZigbeePacket
 # ---------------------------------------------------------------------------
@@ -835,6 +833,7 @@ def _handle_zdo_cluster(self, cluster, sender, hex_message, packet):
     self.callBackFunction(frame)
     super(type(self), self).packet_received(packet)
     return True
+
 
 @measure_execution_time
 def packet_received(self, packet: zigpy_t.ZigbeePacket) -> None:
