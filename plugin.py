@@ -497,7 +497,7 @@ class BasePlugin:
             self.log.openLogFile()
 
         # We can use from now the self.log.logging()
-        self.log.logging( "Plugin", "Status", "Z4D is starting with %s-%s" % (
+        self.log.logging( "Plugin", "Status", "Z4D is starting with %s-%s and using DomoticzEx !" % (
             self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"]), )
 
         # Debuging information
