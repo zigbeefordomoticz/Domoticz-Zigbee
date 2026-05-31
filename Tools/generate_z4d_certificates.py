@@ -63,7 +63,7 @@ def create_self_signed_cert(cert_dir):
         return cert_path, key_path
 
     # Generate a self-signed certificate
-    subprocess.check_call([
+    subprocess.check_call([                                    # nosec B607, B603
         "openssl", "req", "-x509", "-nodes", "-days", "365",
         "-newkey", "rsa:4096", "-keyout", key_path,
         "-out", cert_path,

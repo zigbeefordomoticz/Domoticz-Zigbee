@@ -17,8 +17,6 @@
 """
 
 from Modules.basicOutputs import read_attribute
-from Modules.zigateConsts import ZIGATE_EP
-
 from Modules.domoticzAbstractLayer import (domo_check_unit,
                                            domo_read_Device_Idx,
                                            domo_read_nValue_sValue,
@@ -33,9 +31,10 @@ from Modules.domoTools import (RetreiveSignalLvlBattery,
                                update_domoticz_widget)
 from Modules.linky import linky_tarif_color, linky_tarif_color_ntarf
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
-from Modules.tools import (get_deviceconf_parameter_value, str_round, get_device_config_param,
+from Modules.tools import (get_device_config_param,
+                           get_deviceconf_parameter_value, str_round,
                            zigpy_plugin_sanity_check)
-from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
+from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL, ZIGATE_EP
 from Modules.zlinky import (ZLINK_CONF_MODEL, get_instant_power,
                             get_notification_day_color, get_tarif_color,
                             zlinky_sum_all_indexes)
@@ -880,7 +879,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         if WidgetType == "Humi":
             NewSvalue = "%s" % humi_status
             self.log.logging(["Widget", "Humidity"], "Debug", "------>  Humi update: %s - %s" % (value, NewSvalue))
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, value, NewSvalue, BatteryLevel, SignalLevel)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, int(value), NewSvalue, BatteryLevel, SignalLevel)
 
         elif WidgetType == "Temp+Hum":
             NewSvalue = f"{current_temp};{value};{humi_status}"
@@ -1727,7 +1726,7 @@ def is_time_to_domo_update(self, NwkId, Ep):
 def retreive_device_unit( self, Devices, NwkId, Ep, device_id_ieee, ClusterId, Widget_Idx ):
     """ Retreive the Device Unit from the Plugin Database (ClusterType information), then check that unit exists in the Domoticz Devices """
 
-    device_unit = find_widget_unit_from_WidgetID(self, Devices, Widget_Idx )
+    device_unit = find_widget_unit_from_WidgetID(self, Widget_Idx )
     
     if device_unit is None:
         self.log.logging( "Widget", "Error", "Device %s not found !!!" % Widget_Idx, NwkId)

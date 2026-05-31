@@ -23,9 +23,10 @@ import shutil
 import string
 import struct
 import time
+from collections import deque
 from typing import Optional
 
-from Modules.database import WriteDeviceList
+from Modules.database import DATABASE_VERSION, WriteDeviceList
 from Modules.domoticzAbstractLayer import domo_read_Device_Idx, domo_read_Name
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.zigateConsts import HEARTBEAT
@@ -299,23 +300,23 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
             return found
 
         # We found IEEE, let's get the Short Address
-        exitsingNwkId = self.IEEE2NWK[lookupIEEE]
-        if exitsingNwkId == lookupNwkId:
+        existing_nwkid = self.IEEE2NWK[lookupIEEE]
+        if existing_nwkid == lookupNwkId:
             # Everything fine, we have found it
             # and this is the same ShortId as the one existing
             return True
 
-        if exitsingNwkId not in self.ListOfDevices:
+        if existing_nwkid not in self.ListOfDevices:
             # Should not happen
             # We have an entry in IEEE2NWK, but no corresponding
             # in ListOfDevices !!
             # Let's cleanup
             del self.IEEE2NWK[lookupIEEE]
             self.log.logging("PluginTools", "Error", "DeviceExist - Found inconsistency ! Not Device %s not found, while looking for %s (%s)" % (
-                exitsingNwkId, lookupIEEE, lookupNwkId))
+                existing_nwkid, lookupIEEE, lookupNwkId))
             return False
 
-        if 'Status' not in self.ListOfDevices[ exitsingNwkId ]:
+        if 'Status' not in self.ListOfDevices[ existing_nwkid ]:
             # Should not happen
             # That seems not correct
             # We might have to do some cleanup here !
@@ -323,12 +324,12 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
             # Delete the entry in IEEE2NWK as it will be recreated in Decode004d
             del self.IEEE2NWK[ lookupIEEE ]
             # Delete the all Data Structure
-            del self.ListOfDevices[ exitsingNwkId ]
+            del self.ListOfDevices[ existing_nwkid ]
             self.log.logging("PluginTools", "Error", "DeviceExist - Found inconsistency ! Not 'Status' attribute for Device %s, while looking for %s (%s)" % (
-                exitsingNwkId, lookupIEEE, lookupNwkId))
+                existing_nwkid, lookupIEEE, lookupNwkId))
             return False
 
-        if self.ListOfDevices[exitsingNwkId]["Status"] in ("004d", "0045", "0043", "8045", "8043", "UNKNOWN", "UNKNOW", ):
+        if self.ListOfDevices[existing_nwkid]["Status"] in ("004d", "0045", "0043", "8045", "8043", "UNKNOWN", "UNKNOW", ):
             # We are in the discovery/provisioning process,
             # and the device got a new Short Id
             # we need to restart from the beginning and remove all existing datastructures.
@@ -337,18 +338,18 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
             # Delete the entry in IEEE2NWK as it will be recreated in Decode004d
             del self.IEEE2NWK[lookupIEEE]
             # Delete the all Data Structure
-            del self.ListOfDevices[exitsingNwkId]
+            del self.ListOfDevices[existing_nwkid]
             self.log.logging("PluginTools", "Status", "DeviceExist - Device %s changed its ShortId: from %s to %s during provisioning. Restarting !" % (
-                lookupIEEE, exitsingNwkId, lookupNwkId))
+                lookupIEEE, existing_nwkid, lookupNwkId))
             return False
 
         # At that stage, we have found an entry for the IEEE, but doesn't match
         # the coming Short Address lookupNwkId.
         # Most likely , device has changed its NwkId
         found = True
-        reconnectNWkDevice(self, lookupNwkId, lookupIEEE, exitsingNwkId)
+        reconnectNWkDevice(self, lookupNwkId, lookupIEEE, existing_nwkid)
 
-        self.adminWidgets.updateNotificationWidget( Devices, "Reconnect %s %s with %s" % (lookupNwkId, lookupIEEE, exitsingNwkId))
+        self.adminWidgets.updateNotificationWidget( Devices, "Reconnect %s %s with %s" % (lookupNwkId, lookupIEEE, existing_nwkid))
 
     return found
 
@@ -429,7 +430,7 @@ def removeDeviceInList(self, Devices, IEEE, Unit):
     nwkid = self.IEEE2NWK[IEEE]
     ID = domo_read_Device_Idx(self, Devices, IEEE, Unit,)
     widget_name = domo_read_Name( self, Devices, IEEE, Unit, )
-    if ( "ClusterTye" in self.ListOfDevices[nwkid] ):  
+    if ( "ClusterType" in self.ListOfDevices[nwkid] ): 
         # We are in the old fasho V. 3.0.x Where ClusterType has been migrated from Domoticz
         if str(ID) in self.ListOfDevices[nwkid]["ClusterType"]:
             del self.ListOfDevices[nwkid]["ClusterType"][ID]  # Let's remove that entry
@@ -488,7 +489,7 @@ def initDeviceInList(self, Nwkid):
         return
 
     default_device = {
-        "Version": "3",
+        "Version": DATABASE_VERSION,
         "ZDeviceName": "",
         "Status": "004d",
         "SQN": "",
@@ -632,27 +633,19 @@ def is_duplicate_sqn(self, MsgDataShAddr, MsgDataSQN):
 
 
 def updLQI(self, key, LQI):
-    # Ensure the device exists
-    if key not in self.ListOfDevices:
+    device = self.ListOfDevices.get(key)
+    if not device:
         return
 
-    if ( LQI == "00" or not is_hex(LQI) ):
+    if LQI == "00" or not is_hex(LQI):
         return
 
-    # Convert LQI from hex to integer
     lqi_value = int(LQI, 16)
 
-    # Update LQI value directly
-    self.ListOfDevices[key]["LQI"] = lqi_value
+    device["LQI"] = lqi_value
 
-    # Initialize RollingLQI list if it doesn't exist
-    self.ListOfDevices[key].setdefault("RollingLQI", [])
-
-    # Add LQI to RollingLQI list
-    self.ListOfDevices[key]["RollingLQI"].append(lqi_value)
-
-    # Keep RollingLQI list size at most 10 elements
-    self.ListOfDevices[key]["RollingLQI"] = self.ListOfDevices[key]["RollingLQI"][-10:]
+    rolling = device.setdefault("RollingLQI", deque(maxlen=10))
+    rolling.append(lqi_value)
 
 
 def upd_RSSI(self, nwkid, rssi_value):
@@ -789,25 +782,76 @@ def rgb_to_xy(rgb):
 
 
 def xy_to_rgb(x, y, brightness=1):
+    """
+    Convert CIE 1931 xy chromaticity coordinates to RGB values.
 
+    This function converts color values from the CIE 1931 color space (x, y)
+    into standard sRGB values, applying a brightness scaling factor and
+    gamma correction.
+
+    The conversion follows a standard matrix transformation from XYZ to RGB,
+    followed by sRGB gamma correction.
+
+    Args:
+        x (float): The x chromaticity coordinate (0.0 - 1.0).
+        y (float): The y chromaticity coordinate (0.0 - 1.0).
+        brightness (float, optional): Brightness scaling factor applied to Y.
+            Typically ranges from 0.0 (off) to 1.0 (full brightness).
+            Defaults to 1.
+
+    Returns:
+        dict: A dictionary containing RGB values scaled to 0–255 range:
+            {
+                "r": float,  # Red channel
+                "g": float,  # Green channel
+                "b": float   # Blue channel
+            }
+
+    Notes:
+        - If y is zero, the function may be undefined; behavior should be
+          handled by the caller.
+        - Values may temporarily fall outside the [0, 1] range during
+          conversion and are expected to be clamped externally if needed.
+        - Output is gamma-corrected to sRGB standard.
+
+    Example:
+        >>> xy_to_rgb(0.5, 0.4, brightness=0.8)
+        {'r': 123.45, 'g': 200.12, 'b': 98.76}
+    """
     x = float(x)
     y = float(y)
+
+    if y == 0:
+        return {"r": 0, "g": 0, "b": 0}
+
     z = 1.0 - x - y
 
     Y = brightness
     X = (Y / y) * x
     Z = (Y / y) * z
 
+    # Convert to linear RGB
     r = X * 1.656492 - Y * 0.354851 - Z * 0.255038
     g = -X * 0.707196 + Y * 1.655397 + Z * 0.036152
     b = X * 0.051713 - Y * 0.121364 + Z * 1.011530
 
-    r = 12.92 * r if r <= 0.0031308 else (1.0 + 0.055) * pow(r, (1.0 / 2.4)) - 0.055
-    g = 12.92 * g if g <= 0.0031308 else (1.0 + 0.055) * pow(g, (1.0 / 2.4)) - 0.055
-    b = 12.92 * b if b <= 0.0031308 else (1.0 + 0.055) * pow(b, (1.0 / 2.4)) - 0.055
+    def gamma_correct(c):
+        return 12.92 * c if c <= 0.0031308 else 1.055 * (c ** (1.0 / 2.4)) - 0.055
 
-    return {"r": round(r * 255, 3), "g": round(g * 255, 3), "b": round(b * 255, 3)}
+    r = gamma_correct(r)
+    g = gamma_correct(g)
+    b = gamma_correct(b)
 
+    # Clamp to [0, 1]
+    r = max(0, min(r, 1))
+    g = max(0, min(g, 1))
+    b = max(0, min(b, 1))
+
+    return {
+        "r": round(r * 255, 3),
+        "g": round(g * 255, 3),
+        "b": round(b * 255, 3),
+    }
 
 def rgb_to_hsl(rgb):
     """ convert rgb tuple to hls tuple """
@@ -1121,7 +1165,7 @@ def lookupForParentDevice(self, nwkid=None, ieee=None):
     if ieee and nwkid is None:
         if ieee not in self.IEEE2NWK:
             return
-        nwkid = self.IEEE2NWK[nwkid]
+        nwkid = self.IEEE2NWK[ieee]
 
     if mainPoweredDevice(self, nwkid):
         return ieee
@@ -1197,8 +1241,9 @@ def store_battery_voltage_time_stamp( self, MsgSrcAddr):
 def checkValidValue(self, MsgSrcAddr, AttType, Data ):
     if int(AttType, 16) == 0xE2 and Data == "ffffffff":
         return False
-    return self.ListOfDevices[MsgSrcAddr][ "Model" ] != "lumi.airmonitor.acn01" or Data not in ["8000", "0000"]
 
+    model = self.ListOfDevices.get(MsgSrcAddr, {}).get("Model")
+    return not (model == "lumi.airmonitor.acn01" and Data in {"8000", "0000"})
 
 def getAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID):
     """
@@ -1396,15 +1441,14 @@ def get_cluster_attribute_value( self, key, endpoint, clusterId, AttributeId):
     Returns:
         The attribute value if found, else None.
     """
-    if (
-        key not in self.ListOfDevices
-        or "Ep" not in self.ListOfDevices[key]
-        or endpoint not in self.ListOfDevices[key]["Ep"]
-        or clusterId not in self.ListOfDevices[key]["Ep"][ endpoint ]
-        or AttributeId not in self.ListOfDevices[key]["Ep"][ endpoint ][ clusterId ]
-    ):
-        return None
-    return self.ListOfDevices[key]["Ep"][ endpoint ][ clusterId ][ AttributeId]
+    return (
+        self.ListOfDevices
+            .get(key, {})
+            .get("Ep", {})
+            .get(endpoint, {})
+            .get(clusterId, {})
+            .get(AttributeId)
+    )
 
 
 # Functions to manage Device Attributes infos ( ConfigureReporting)

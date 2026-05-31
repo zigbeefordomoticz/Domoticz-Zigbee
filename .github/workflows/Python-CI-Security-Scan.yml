@@ -2,13 +2,17 @@ name: Python CI & Security Scan
 
 on:
   push:
-    branches: ["*"]
+    branches: ["**"]
     paths:
       - "**/*.py"
   pull_request:
-    branches: ["*"]
+    branches: ["**"]
     paths:
       - "**/*.py"
+  workflow_run:
+    workflows: ["Tests"]
+    types:
+      - completed
   schedule:
     - cron: '44 10 * * 6'  # Weekly run for CodeQL
 
@@ -18,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.11, 3.12]  # Multi-version testing
+        python-version: [3.11, 3.12, 3.13, 3.14]  # Multi-version testing
       fail-fast: false
 
     steps:

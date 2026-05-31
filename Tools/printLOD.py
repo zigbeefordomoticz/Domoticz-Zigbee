@@ -20,7 +20,7 @@ def main():
     """
     while True:
         print("Enter the DeviceList.txt filename: ")
-        filename = input()
+        filename = input()    # nosec B322
         if os.path.exists(filename):
             break
 

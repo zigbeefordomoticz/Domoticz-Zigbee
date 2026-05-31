@@ -26,9 +26,13 @@ from Modules.basicOutputs import (identifySend, read_attribute,
                                   send_zigatecmd_zcl_noack)
 from Modules.macPrefix import DEVELCO_PREFIX, OWON_PREFIX, casaiaPrefix
 from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_CASAIA,
+                                       PREFIX_MACADDR_DEVELCO,
                                        PREFIX_MACADDR_IKEA_TRADFRI,
+                                       PREFIX_MACADDR_LEGRAND,
+                                       PREFIX_MACADDR_LIVOLO,
                                        PREFIX_MACADDR_OPPLE,
                                        PREFIX_MACADDR_TUYA,
+                                       PREFIX_MACADDR_WIZER_HOME,
                                        PREFIX_MACADDR_XIAOMI, TUYA_MANUF_CODE,
                                        is_tuya_magic_packet_required)
 from Modules.tools import (check_datastruct, get_device_config_param,
@@ -88,31 +92,63 @@ ATTRIBUTES = {
     "ff42": [ ],  # GammaTronique TIC Meter
 }
 
+def get_max_read_attributes(self, nwkid=None):
+    """
+    Return the maximum number of attributes to read per request for a given Zigbee device.
 
+    Priority order:
+        1. Pairing mode
+        2. Device-specific configuration (highest priority)
+        3. Manufacturer override (based on IEEE prefix)
+        4. Plugin default (safest fallback)
+    """
 
-def get_max_read_attribute_value( self, nwkid=None):
+    # --- Device details ---
+    device = self.ListOfDevices.get(nwkid, {})
+    ieee = device.get("IEEE", "")
+    prefix = ieee[:PREFIX_MAC_LEN]
+
+    # --- Pairing safety: always use the plugin default while pairing ---
+    if device.get("PairingInProgress"):
+        return get_device_config_param(self, nwkid, "ReadAttributeChunkWhenPairing") or 3
+
+    # --- Plugin default (fallback) ---
+    plugin_default_chunk = self.pluginconf.pluginConf.get("ReadAttributeChunk") or 3
     
-    # This is about Read Configuration Reporting from a device
-    read_configuration_report_chunk = get_device_config_param( self, nwkid, "ReadAttributeChunk")
+    # --- If there is an explicit per-device config, it takes precedence ---
+    device_chunk = get_device_config_param(self, nwkid, "ReadAttributeChunk")
+    if device_chunk is not None:
+        self.log.logging( ["ReadAttributes", "ReadAttributeMaxAttributes"], "Debug", f"get_max_read_attributes({nwkid}) 'per-device config' => {device_chunk}", nwkid=nwkid, )
+        return device_chunk
 
-    if "PairingInProgress" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["PairingInProgress"]:
-        read_configuration_report_chunk = self.pluginconf.pluginConf["ReadAttributeChunk"]
+    # Start with plugin default; may be overridden below
+    final_chunk = plugin_default_chunk
 
-    if read_configuration_report_chunk and 'IEEE' in self.ListOfDevices[ nwkid ]:
-            if self.ListOfDevices[nwkid]['IEEE'][:PREFIX_MAC_LEN] in PREFIX_MACADDR_IKEA_TRADFRI:
-                maxReadAttributesByRequest = self.pluginconf.pluginConf["ReadAttributeChunk"]
+    # Manufacturer-specific overrides (only used when no device_chunk)
+    MANUFACTURER_CHUNK_OVERRIDE = {
+        PREFIX_MACADDR_IKEA_TRADFRI: lambda d: d,      # use plugin default
+        PREFIX_MACADDR_TUYA: lambda d: 4,              # Tuya -> 4
+        PREFIX_MACADDR_LIVOLO: lambda d: 3,            # Livolo -> 3
+        PREFIX_MACADDR_LEGRAND: lambda d: d,           # Legrand -> plugin default
+        PREFIX_MACADDR_WIZER_HOME: lambda d: d,        # Wiser/Schneider -> plugin default
+        PREFIX_MACADDR_DEVELCO: lambda d: min(d, 12),  # Develco -> min(default,12)
+        PREFIX_MACADDR_CASAIA: lambda d: min(d, 8),    # Owon -> min(default,8)
+    }
 
-            elif self.ListOfDevices[nwkid]['IEEE'][:PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:
-                read_configuration_report_chunk = 6
+    for prefix_set, compute_func in MANUFACTURER_CHUNK_OVERRIDE.items():
+        if prefix in prefix_set:
+            final_chunk = compute_func(plugin_default_chunk)
+            break
 
-    self.log.logging("ReadAttributes", "Debug", "get_max_read_attribute_value( %s ) => %s" %( nwkid, read_configuration_report_chunk) , nwkid=nwkid)
+    # --- Step 5: Logging and return ---
+    self.log.logging( ["ReadAttributes", "ReadAttributeMaxAttributes"], "Debug", f"get_max_read_attributes({nwkid}) => {final_chunk}/{plugin_default_chunk}", nwkid=nwkid, )
 
-    return read_configuration_report_chunk or self.pluginconf.pluginConf["ReadAttributeChunk"]
+    return final_chunk
 
 
 def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec="00", manufacturer="0000", ackIsDisabled=True, checkTime=True, forceLen=False, maxReadAttributesByRequest=None):
 
-    maxReadAttributesByRequest = maxReadAttributesByRequest or get_max_read_attribute_value( self, addr )
+    maxReadAttributesByRequest = maxReadAttributesByRequest or get_max_read_attributes( self, addr )
 
     if forceLen:
         normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec, manufacturer, ackIsDisabled, force=True) 
@@ -133,7 +169,7 @@ def read_manufacturer_specific_attributes(self, nwkid, ep_out, cluster):
         self.log.logging("ReadAttributes", "Debug", f"Request Manuf.Specific Attributes for cluster {cluster} for {nwkid} {ep_out} {attributes_str}", nwkid=nwkid)
 
         # Perform the Request
-        ReadAttributeReq( self, nwkid, ZIGATE_EP, ep_out, "0201", manufacturer_attributes, manufacturer_spec="01", manufacturer=manufacturer_code, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), checkTime=False, )
+        ReadAttributeReq( self, nwkid, ZIGATE_EP, ep_out, cluster, manufacturer_attributes, manufacturer_spec="01", manufacturer=manufacturer_code, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), checkTime=False, )
 
 
 def split_list(list_in, wanted_parts=1):
@@ -606,7 +642,7 @@ def ReadAttributeRequest_0002(self, key, force_disable_ack=None):
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0002 - Key: %s " % key, nwkid=key)
 
     # Device Temperature
-    ListOfEp = getListOfEpForCluster(self, key, "0001")
+    ListOfEp = getListOfEpForCluster(self, key, "0002")
     for EPout in ListOfEp:
         listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "0002"):
@@ -869,7 +905,7 @@ def ReadAttributeRequest_0102_0008(self, key):
 def ReadAttributeRequest_0201(self, key):
     # Thermostat
 
-    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0201 - Key: %s " % key, nwkid=key)
+    self.log.logging(["ReadAttributes", "Danfoss"], "Debug", "ReadAttributeRequest_0201 - Key: %s " % key, nwkid=key)
     _model_name = self.ListOfDevices[key].get("Model","")
     manufacturer = self.ListOfDevices[key].get("Manufacturer")
     manufacturer_name = self.ListOfDevices[key].get("Manufacturer Name")
@@ -921,11 +957,11 @@ def ReadAttributeRequest_0201(self, key):
             attribute_list = appt_generic_list
 
         if attribute_list:
-            self.log.logging( "ReadAttributes", "Debug", "Request Thermostat via Read Attribute request %s/%s " % (key, ep_out) + " ".join("0x{:04x}".format(num) for num in attribute_list), nwkid=key, )
+            self.log.logging( ["ReadAttributes", "Danfoss"], "Debug", "Request Thermostat via Read Attribute request %s/%s " % (key, ep_out) + " ".join("0x{:04x}".format(num) for num in attribute_list), nwkid=key, )
             ReadAttributeReq( self, key, ZIGATE_EP, ep_out, "0201", attribute_list, ackIsDisabled=is_ack_tobe_disabled(self, key), checkTime=False, )
 
         if attr_spec_list:
-            self.log.logging( "ReadAttributes", "Debug", "Request Thermostat via Read Attribute request Manuf Specific %s/%s " % (key, ep_out) + " ".join("0x{:04x}".format(num) for num in attr_spec_list), nwkid=key, )
+            self.log.logging( ["ReadAttributes", "Danfoss"], "Debug", "Request Thermostat via Read Attribute request Manuf Specific %s/%s " % (key, ep_out) + " ".join("0x{:04x}".format(num) for num in attr_spec_list), nwkid=key, )
             ReadAttributeReq( self, key, ZIGATE_EP, ep_out, "0201", attr_spec_list, manufacturer_spec="01", manufacturer=manufacturer_code, ackIsDisabled=is_ack_tobe_disabled(self, key), checkTime=False, )
 
         read_manufacturer_specific_attributes(self, key, ep_out, "0201")
@@ -974,7 +1010,7 @@ def ReadAttributeRequest_0201_0012(self, nwkid):
     """ Request attribute 0x0012 (Occupied Setpoint)"""
 
     self.log.logging(
-        "ReadAttributes", "Debug",
+        ["ReadAttributes", "Danfoss"], "Debug",
         f"ReadAttributeRequest_0201_0012 / 0x0011 - Key: {nwkid}",
         nwkid=nwkid
     )
@@ -1351,7 +1387,7 @@ def ReadAttributeRequest_0702(self, key):
             self.log.logging(
                 "ReadAttributes",
                 "Debug",
-                "Request Metering info  via Read Attribute request Manuf Specific %s/%s %s" % (key, EPout, str(listAttributes)),
+                "Request Metering info  via Read Attribute request Manuf Specific %s/%s %s" % (key, EPout, str(listAttrSpecific)),
                 nwkid=key,
             )
             ReadAttributeReq(

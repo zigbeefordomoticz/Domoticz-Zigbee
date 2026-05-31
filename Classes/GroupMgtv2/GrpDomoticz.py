@@ -16,7 +16,7 @@ from Classes.GroupMgtv2.GrpCommands import (set_hue_saturation,
                                             set_kelvin_color, set_rgb_color)
 from Classes.GroupMgtv2.GrpDatabase import update_due_to_nwk_id_change
 from Modules.domoticzAbstractLayer import (
-    FreeUnit, domo_create_api, domo_delete_widget, domo_read_Name,
+    domo_create_api, domo_delete_widget, domo_read_Name,
     domo_read_nValue_sValue, domo_read_SwitchType_SubType_Type,
     domo_update_api, domo_update_name, domo_update_SwitchType_SubType_Type,
     find_first_unit_widget_from_deviceID)
@@ -78,6 +78,8 @@ CLUSTER_MAPPING = {
     "VenetianInverted": "0102",
 }
 
+DEFAULT_GROUP_UNIT = 1  # As of 8.1.003, DomoticzEx, all groups will be using Unit 1 at creation (only legacy will rely on Unit)
+
 def create_domoticz_group_device(self, GroupName, GroupId):
     """ Create Device for just created group in Domoticz. """
     
@@ -94,11 +96,10 @@ def create_domoticz_group_device(self, GroupName, GroupId):
     Type_, Subtype_, SwitchType_ = best_group_widget(self, GroupId)
     self.ListOfGroups[GroupId]['TypeName'] = get_typename(self, Type_, Subtype_, SwitchType_)
 
-    unit = FreeUnit(self, self.Devices, GroupId, 1)
-    idx = domo_create_api(self, self.Devices, GroupId, unit, GroupName, Type_=Type_, Subtype_=Subtype_, Switchtype_=SwitchType_, widgetOptions=None, Image=None)
-    self.logging("Debug", "createDomoticzGroupDevice - Unit: %s" % unit)
+    idx = domo_create_api(self, self.Devices, GroupId, DEFAULT_GROUP_UNIT, GroupName, Type_=Type_, Subtype_=Subtype_, Switchtype_=SwitchType_, widgetOptions=None, Image=None)
+    self.logging("Debug", "createDomoticzGroupDevice - Unit: %s" % DEFAULT_GROUP_UNIT)
     if idx == -1:
-        self.logging("Error", f"createDomoticzGroupDevice - failed to create Group device. {GroupName} with unit {unit}")
+        self.logging("Error", f"createDomoticzGroupDevice - failed to create Group device. {GroupName} with unit {DEFAULT_GROUP_UNIT}")
         return
 
     self.ListOfGroups[GroupId]["WidgetType"] = idx
@@ -149,7 +150,7 @@ def update_domoticz_group_device_widget(self, GroupId):
 
     unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
     if unit is None:
-        self.logging( "Debug", f"update_domoticz_group_device_widget_name - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}" )
+        self.logging( "Debug", f"update_domoticz_group_device_widget - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}" )
         LookForGroupAndCreateIfNeeded(self, GroupId)
         return
 
@@ -320,7 +321,7 @@ def update_domoticz_group_device(self, GroupId):
 
     unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
     if unit is None:
-        self.logging( "Debug", f"update_domoticz_group_device_widget_name - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}" )
+        self.logging( "Debug", f"update_domoticz_group_device - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}" )
         LookForGroupAndCreateIfNeeded(self, GroupId)
         return
 
@@ -494,7 +495,7 @@ def remove_domoticz_group_device(self, GroupId):
 
     unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
     if unit is None and GroupId in self.ListOfGroups:
-        self.logging( "Debug", f"update_domoticz_group_device_widget_name - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}" )
+        self.logging( "Debug", f"remove_domoticz_group_device - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}" )
         return
     domo_delete_widget( self, self.Devices, GroupId, unit)
 
@@ -762,7 +763,7 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         # Update Device
         nValue = 1
         sValue = str(Level)
-        domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue, Color=Color_), 
+        domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue, Color=Color_)
 
     # Request to force ReadAttribute to each devices part of that group
     resetDevicesHearttBeat(self, GrpId)

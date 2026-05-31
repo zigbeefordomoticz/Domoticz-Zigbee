@@ -31,6 +31,7 @@ import ast
 import json
 import os.path
 import time
+from collections import deque
 from pathlib import Path
 from typing import Dict
 
@@ -45,7 +46,7 @@ from Modules.pluginModels import check_found_plugin_model
 from Modules.tuyaConst import TUYA_MANUFACTURER_NAME
 from Modules.zlinky import update_zlinky_device_model_if_needed
 
-
+DATABASE_VERSION = 4
 
 CIE_ATTRIBUTES = {
     "Version", 
@@ -315,9 +316,15 @@ def loadTxtDatabase(self, dbName):
                 continue
             try:
                 dlVal = eval(val)  # nosec B307
+
             except (SyntaxError, NameError, TypeError, ZeroDivisionError):
                 self.log.logging("Database", "Error", "LoadDeviceList failed on %s" % val)
                 continue
+
+            except Exception as e:
+                self.log.logging("Database", "Error", f"LoadDeviceList unexpected error on {val} : {str(e)}")
+                continue
+
             self.log.logging("Database", "Debug", "LoadDeviceList - " + str(key) + " => dlVal " + str(dlVal), key)
             if not dlVal.get("Version"):
                 if key == "0000":  # Bug fixed in later version
@@ -325,8 +332,8 @@ def loadTxtDatabase(self, dbName):
                 self.log.logging("Database", "Error", "LoadDeviceList - entry " + key + " not loaded - not Version 3 - " + str(dlVal))
                 res = "Failed"
                 continue
-            if dlVal["Version"] != "3":
-                self.log.logging("Database", "Error", "LoadDeviceList - entry " + key + " not loaded - not Version 3 - " + str(dlVal))
+            if int(dlVal["Version"]) > int(DATABASE_VERSION):
+                self.log.logging("Database", "Error", f"LoadDeviceList - entry {key} not loaded - not Version {DATABASE_VERSION} or below\n" + str(dlVal))
                 res = "Failed"
                 continue
             else:
@@ -450,25 +457,27 @@ def _write_DeviceList_txt(self):
     _count = 0
     try:
         self.log.logging("Database", "Debug", "Write %s = %s" % (_DeviceListFileName, str(self.ListOfDevices)))
-        with open(_DeviceListFileName, "wt", encoding='utf-8') as file:
-            for key in self.ListOfDevices:
+
+        with open(_DeviceListFileName, "wt", encoding="utf-8") as file:
+            for key, value in self.ListOfDevices.items():
                 try:
-                    file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
+                    safe_value = _flatten_deques(value)  # converts deque -> list
+                    file.write(f"{key} : {repr(safe_value)}\n")
                     _count += 1
-                except UnicodeEncodeError:
-                    self.log.logging( "Database", "Error", "UnicodeEncodeError while while saving %s : %s on file" %( 
-                        key, self.ListOfDevices[key]))
+
+                except (TypeError, ValueError) as e:
+                    self.log.logging( "Database", "Error", f"Error while saving {key}: {e}" )
                     continue
-                except ValueError:
-                    self.log.logging( "Database", "Error", "ValueError while saving %s : %s on file" %( 
-                        key, self.ListOfDevices[key]))
+                
+                except OSError as e:
+                    self.log.logging( "Database", "Error", f"IO error while writing plugin database {_DeviceListFileName}: {e}" )
                     continue
-                except IOError:
-                    self.log.logging( "Database", "Error", "IOError while writing to plugin Database %s" % _DeviceListFileName)
-                    continue
+        
         self.log.logging("Database", "Debug", "WriteDeviceList - flush Plugin db to %s" % _DeviceListFileName)
+
     except FileNotFoundError:
         self.log.logging( "Database", "Error", "WriteDeviceList - File not found >%s<" %_DeviceListFileName)
+
     except IOError:
         self.log.logging( "Database", "Error", "Error while Writing plugin Database %s" % _DeviceListFileName)
     
@@ -494,15 +503,58 @@ def _write_DeviceList_json(self):
 
 
 def _write_DeviceList_Domoticz(self):
-    """Store device list in Domoticz plugin configuration.
-
-    Retries up to 3 times on concurrent-modification errors before giving up.
-    Returns None on failure so the caller falls back to the txt-file path.
     """
-    ListOfDevices_for_save = self.ListOfDevices.copy()
+    Store device list in Domoticz plugin configuration.
 
-    self.log.logging("Database", "Log", f"Plugin Database flushed on Domoticz {len(self.ListOfDevices)} records")
-    return setConfigItem( Key="ListOfDevices", Attribute="b64-devicelist", Value={"TimeStamp": time.time(), "b64-devicelist": ListOfDevices_for_save} )
+    Creates a JSON-safe snapshot of the device list and stores it
+    with a timestamp in Domoticz plugin configuration storage.
+    """
+
+    ListOfDevices_for_save = _flatten_deques(self.ListOfDevices)
+
+    self.log.logging(
+        "Database",
+        "Log",
+        f"Plugin Database flushed on Domoticz {len(self.ListOfDevices)} records"
+    )
+
+    return setConfigItem(
+        Key="ListOfDevices",
+        Attribute="b64-devicelist",
+        Value={
+            "TimeStamp": time.time(),
+            "b64-devicelist": ListOfDevices_for_save
+        }
+    )
+
+
+def _sanitize_devices(devices):
+    """
+    Convert ListOfDevices into JSON-serializable structure.
+    """
+    def sanitize(value):
+        if isinstance(value, deque):
+            return list(value)
+        if isinstance(value, dict):
+            return {k: sanitize(v) for k, v in value.items()}
+        if isinstance(value, list):
+            return [sanitize(v) for v in value]
+        return value
+
+    return sanitize(devices)
+
+
+def _flatten_deques(obj):
+    if isinstance(obj, deque):
+        return list(obj)
+
+    if isinstance(obj, dict):
+        return {k: _flatten_deques(v) for k, v in obj.items()}
+
+    if isinstance(obj, list):
+        return [_flatten_deques(v) for v in obj]
+
+    return obj
 
 
 def importDeviceConf(self):
@@ -618,6 +670,7 @@ def checkDevices2LOD(self, Devices):
         self.ListOfDevices[nwkid]["ConsistencyCheck"] = ""
         if self.ListOfDevices[nwkid].get("Status") == "inDB":
             self.ListOfDevices[nwkid]["ConsistencyCheck"] = next(("ok" for dev in Devices if Devices[dev].DeviceID == self.ListOfDevices[nwkid]["IEEE"]), "not in DZ")
+
 
 def checkListOfDevice2Devices(self, Devices):
     """Verify Domoticz widgets map to known plugin devices.

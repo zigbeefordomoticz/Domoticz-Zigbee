@@ -4,14 +4,14 @@
 # Implementation of Zigbee for Domoticz plugin.
 #
 # This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
-# (C) 2015-2024
+# (C) 2015-2026
 #
 # Initial authors: zaraki673 & pipiche38
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
 """
-<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="8.1" shared="false">
+<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="8.1" shared="false" externallink="https://zigbeefordomoticz.github.io/wiki/en-eng/">
     <description>
         <h1> Plugin Zigbee for domoticz</h1><br/>
             <br/><h2> Informations</h2><br/>
@@ -114,13 +114,10 @@
 """
 
 
-#import DomoticzEx as Domoticz
-
-import Domoticz
+import DomoticzEx as Domoticz
 
 try:
-    #from DomoticzEx import Devices, Images, Parameters, Settings
-    from Domoticz import Devices, Images, Parameters, Settings
+    from DomoticzEx import Devices, Images, Parameters, Settings
 except ImportError:
     pass
 
@@ -137,8 +134,9 @@ import z4d_certified_devices
 
 from Classes.AdminWidgets import AdminWidgets
 from Classes.ConfigureReporting import ConfigureReporting
-from Classes.DomoticzDB import (DomoticzAPIClient, DomoticzDB_DeviceStatus,DomoticzDeviceCache,
-                                DomoticzDB_Hardware, DomoticzDB_Preferences)
+from Classes.DomoticzDB import (DomoticzAPIClient, DomoticzDB_DeviceStatus,
+                                DomoticzDB_Hardware, DomoticzDB_Preferences,
+                                DomoticzDeviceCache)
 from Classes.GroupMgtv2.GroupManagement import GroupsManagement
 from Classes.IAS import IAS_Zone_Management
 from Classes.LoggingManagement import LoggingManagement
@@ -146,6 +144,7 @@ from Classes.NetworkEnergy import NetworkEnergy
 from Classes.NetworkMap import NetworkMap
 from Classes.OTA import OTAManagement
 from Classes.PluginConf import PluginConf
+from Classes.ThreadSafeDeviceDict import ThreadSafeDeviceDict
 from Classes.TransportStats import TransportStatistics
 from Classes.WebServer.WebServer import WebServer
 from Classes.ZigpyTopology import ZigpyTopology
@@ -161,11 +160,9 @@ from Modules.command import domoticz_command
 from Modules.database import (LoadDeviceList, WriteDeviceList,
                               checkDevices2LOD, checkListOfDevice2Devices,
                               import_local_device_conf)
-from Modules.domoticzAbstractLayer import (domo_read_Name,
-                                           find_legacy_DeviceID_from_unit,
-                                           how_many_legacy_slot_available,
-                                           is_domoticz_extended,
-                                           load_list_of_domoticz_widget)
+from Modules.domoticzAbstractLayer import (
+    domo_read_Name, load_list_of_domoticz_widget,
+    retrieve_widgetid_from_deviceId_unit)
 from Modules.heartbeat import processListOfDevices
 from Modules.input import zigbee_receive_message
 from Modules.matomo_request import (matomo_coordinator_initialisation,
@@ -200,6 +197,7 @@ from Modules.zigpyBackup import handle_zigpy_backup
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
 
 VERSION_FILENAME = ".hidden/VERSION"
+MIN_PYTHON = (3, 11)
 
 TEMPO_NETWORK = 2  # Start HB totrigget Network Status
 TIMEDOUT_START = 10  # Timeoud for the all startup
@@ -233,16 +231,18 @@ class BasePlugin:
         self._snapshot_enabled = False
 
         self.internet_available = None
-        self.ListOfDevices = (
-            {}
-        )  # {DevicesAddresse : { status : status_de_detection, data : {ep list ou autres en fonctions du status}}, DevicesAddresse : ...}
-        self.DiscoveryDevices = {}  # Used to collect pairing information
-        self.IEEE2NWK = {}
-        self.ControllerData = {}
+        
         self.DeviceConf = {}  # Store DeviceConf.txt, all known devices configuration
         self.ModelManufMapping = {}
         self.readZclClusters = {}
-        self.ListOfDomoticzWidget = {}
+        self.pluginconf = None  # PlugConf object / all configuration parameters
+
+        self.ListOfDomoticzWidget = ThreadSafeDeviceDict()
+        self.ListOfDevices = ThreadSafeDeviceDict()
+        self.IEEE2NWK = ThreadSafeDeviceDict()
+
+        self.DiscoveryDevices = {}  # Used to collect pairing information
+        self.ControllerData = {}
 
         # Objects from Classe
         self.configureReporting = None
@@ -257,7 +257,7 @@ class BasePlugin:
         self.domoticzdb_Hardware = None  # Object allowing direct access to Domoticz DB Hardware
         self.domoticzdb_Preferences = None  # Object allowing direct access to Domoticz DB Preferences
         self.adminWidgets = None  # Manage AdminWidgets object
-        self.pluginconf = None  # PlugConf object / all configuration parameters
+        
         self.OTA = None
         self.statistics = None
         self.iaszonemgt = None  # Object to manage IAS Zone
@@ -357,7 +357,7 @@ class BasePlugin:
             Domoticz.Status( f"Enabling Debug Log Level: {mode6}")
             Domoticz.Debugging(int(mode6))
 
-        Domoticz.Status( "Welcome to Zigbee for Domoticz (Z4D) plugin. (c)pipiche38 - 2018 - 2025")
+        Domoticz.Status( "Welcome to Zigbee for Domoticz (Z4D) plugin. (c)pipiche38 - 2018 - 2026")
 
         # Print PYTHONPATH if set
         pythonpath = os.getenv('PYTHONPATH')
@@ -373,17 +373,16 @@ class BasePlugin:
         else:
             Domoticz.Log("VIRTUAL_ENV is not set")
 
-        _current_python_version_major = sys.version_info.major
-        _current_python_version_minor = sys.version_info.minor
+        Domoticz.Status(
+            f"Running Python {sys.version_info.major}.{sys.version_info.minor}"
+        )
+        if not check_python_version():
+            Domoticz.Error(
+                f"Z4D requires Python {MIN_PYTHON[0]}.{MIN_PYTHON[1]}, found {sys.version_info.major}.{sys.version_info.minor}"
+            )
+            self.onStop()
+            return
 
-        Domoticz.Status( "Z4D requires python3.11 or above and you are running %s.%s" %(
-            _current_python_version_major, _current_python_version_minor))
-    
-        #if sys.version_info < (3, 11):
-        #    Domoticz.Error("Z4D requires Python 3.11+, found %d.%d" % (
-        #        sys.version_info.major, sys.version_info.minor))
-        #    self.onStop()
-        #    return
 
         if Parameters["Mode1"] == "V1" and Parameters["Mode2"] in ( "USB", "DIN", "PI", "Wifi", ):
             self.transport = Parameters["Mode2"]
@@ -404,7 +403,7 @@ class BasePlugin:
         else:
             Domoticz.Error(
                 "Please cross-check the plugin starting parameters Mode1: %s Mode2: %s and make sure you have restarted Domoticz after updating the plugin"
-                % (Parameters["Mode1"] == "V1", Parameters["Mode2"])
+                % (Parameters["Mode1"], Parameters["Mode2"])
             )
             self.onStop()
             return
@@ -415,6 +414,7 @@ class BasePlugin:
         ):
             Domoticz.Error("Please cross-check the Domoticz Hardware setting for the plugin instance. >%s< You must set the API base URL" %Parameters["Mode5"])
             self.onStop()
+            return
 
         # Set plugin heartbeat to 1s
         Domoticz.Heartbeat(1)
@@ -497,12 +497,8 @@ class BasePlugin:
             self.log.openLogFile()
 
         # We can use from now the self.log.logging()
-        self.log.logging( "Plugin", "Status", "Z4D is starting with %s-%s" % (
+        self.log.logging( "Plugin", "Status", "Z4D is starting with %s-%s and using DomoticzEx !" % (
             self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"]), )
-
-        if ( _current_python_version_major , _current_python_version_minor) <= ( 3, 7):
-            self.log.logging( "Plugin", "Error", "** Please do consider upgrading to a more recent python3 version %s.%s is not supported anymore **" %(
-                _current_python_version_major , _current_python_version_minor))
 
         # Debuging information
         debuging_information(self, "Debug")
@@ -524,13 +520,16 @@ class BasePlugin:
         self.domoticzdb_Hardware = DomoticzDB_Hardware(self.domoticz_api, self.HardwareID)
         
         if (
-            self.zigbee_communication 
-            and self.zigbee_communication == "zigpy" 
-            and ( self.pluginconf.pluginConf["forceZigpy_noasyncio"] or self.domoticzdb_Hardware.is_multi_instance())
-            ):
-            # https://github.com/python/cpython/issues/91375
-            self.log.logging("Plugin", "Status", "Z4D Multi-instances detected. Enabling 'asyncio' workaround")
-            sys.modules["_asyncio"] = None
+            self.zigbee_communication == "zigpy"
+            and (self.pluginconf.pluginConf["forceZigpy_noasyncio"] or self.domoticzdb_Hardware.is_multi_instance())
+        ):
+            if sys.version_info < (3, 13):
+                # https://github.com/python/cpython/issues/91375
+                # Fixed in Python 3.13 via cpython/pull/104196 (freelist ported to module state)
+                self.log.logging("Plugin", "Status", "Z4D Multi-instances detected. Enabling 'asyncio' workaround")
+                sys.modules["_asyncio"] = None
+            else:
+                self.log.logging("Plugin", "Status", "Z4D Multi-instances detected. Python 3.13+ — using native C asyncio.")
 
         if "LogLevel" not in self.pluginParameters:
             log_level = self.domoticzdb_Hardware.get_loglevel_value()
@@ -633,15 +632,7 @@ class BasePlugin:
             else:
                 self.log.logging( "Plugin", "Error", "WebServer disabled du to Parameter Mode4 set to %s" % Parameters["Mode4"] )
 
-        if is_domoticz_extended():
-            framework_status = "Extended Framework"
-        else:
-            framework_status = "legacy Framework"
-            free_slots = how_many_legacy_slot_available(Devices)
-            usage_percentage = round(((255 - free_slots) / 255) * 100, 1)
-            self.log.logging("Plugin", "Status", f"Z4D Widgets usage is at {usage_percentage}% ({free_slots} units free)")
-
-        self.log.logging("Plugin", "Status", f"Z4D started with Domoticz {framework_status}")
+        self.log.logging("Plugin", "Status", f"Z4D starting with Domoticz 'Extended Framework'")
 
         self.busy = False
 
@@ -649,7 +640,6 @@ class BasePlugin:
         self.log.logging("Plugin", "Log", "Active threads after onStart():")
         for t in threading.enumerate():
             self.log.logging("Plugin", "Log", f"    - Thread {t.name}: alive={t.is_alive()}, ident={t.ident}, daemon={t.daemon}")
-
 
 
     def onStop(self):
@@ -734,16 +724,13 @@ class BasePlugin:
             self.adminWidgets.updateStatusWidget(Devices, "No Communication")
 
 
-    def onDeviceRemoved(self, Unit):
-        # def onDeviceRemoved(self, DeviceID, Unit):
+    def onDeviceRemoved(self, DeviceID, Unit):
         if not self.ControllerIEEE:
             self.log.logging( "Plugin", "Error", "onDeviceRemoved - too early, coordinator and plugin initialisation not completed", )
+            return
 
         if self.log:
-            self.log.logging("Plugin", "Debug", "onDeviceRemoved called")
-
-        if not is_domoticz_extended():
-            DeviceID = find_legacy_DeviceID_from_unit(self, Devices, Unit)
+            self.log.logging("Plugin", "Log", "onDeviceRemoved called")
 
         device_name = domo_read_Name( self, Devices, DeviceID, Unit, )
         
@@ -767,13 +754,12 @@ class BasePlugin:
                 self.log.logging( "Plugin", "Status", f"Request device {device_name} -> {DeviceID} to be removed from coordinator" )
 
             self.log.logging("Plugin", "Debug", f"ListOfDevices :After REMOVE {self.ListOfDevices}")
-            load_list_of_domoticz_widget(self, Devices)
-            return
-
-        if self.groupmgt and DeviceID in self.groupmgt.ListOfGroups:
+  
+        elif self.groupmgt and DeviceID in self.groupmgt.ListOfGroups:
             self.log.logging("Plugin", "Status", f"Request device {DeviceID} to be remove from Group(s)")
             self.groupmgt.FullRemoveOfGroup(Unit, DeviceID)
 
+        load_list_of_domoticz_widget(self, Devices)
 
     def onConnect(self, Connection, Status, Description):
 
@@ -893,17 +879,14 @@ class BasePlugin:
 
         restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=Parameters["Mode5"])
 
-    #def onCommand(self, DeviceID, Unit, Command, Level, Color):
-    def onCommand(self, Unit, Command, Level, Color):
-        if (  self.ControllerLink is None or not self.VersionNewFashion or self.pluginconf is None or not self.log ):
-            self.log.logging( "Command", "Log", "onCommand - Not yet ready, plugin not fully started, we drop the command")
+    def onCommand(self, DeviceID, Unit, Command, Level, Color):
+        if (  self.ControllerLink is None or not self.VersionNewFashion or self.pluginconf is None ):
+            if self.log:
+                self.log.logging( "Command", "Log", "onCommand - Not yet ready, plugin not fully started, we drop the command")
             return
 
         self.log.logging( "Command", "Debug", "onCommand - unit: %s, command: %s, level: %s, color: %s" % (Unit, Command, Level, Color) )
 
-        if not is_domoticz_extended():
-            DeviceID = find_legacy_DeviceID_from_unit(self, Devices, Unit)
-        
         # Let's check if this is End Node, or Group related.
         if DeviceID in self.IEEE2NWK:
             # Command belongs to a end node
@@ -1053,11 +1036,11 @@ class BasePlugin:
         return True
 
 
-    def onDeviceModified(self, Unit):
-        # DeviceID, Unit
-        self.domoticz_device_cache.refresh_device( Unit)
-        
-        
+    def onDeviceModified(self, DeviceId, Unit):
+        device_idx = retrieve_widgetid_from_deviceId_unit(self, Devices, DeviceId, Unit)
+        self.domoticz_device_cache.refresh_device( device_idx)
+
+
 def _plugin_statistics(self):
     if self.domoticz_api and self.pluginconf.pluginConf.get("DomoticzDB_Stats"):
         self.domoticz_api.dump_stats()
@@ -1104,6 +1087,41 @@ def _hourly_tracemalloc_analysis(self, tracemalloc, current, prev_snapshot):
             self.log.logging("Plugin", "Log", f"  EnableTraceMalloc:   {line}")
 
         
+def parse_mode2_serial_com_specifics(mode2):
+    """
+    Parse the Mode2 string to extract Serial Mode, Baudrate, and Flow Control.
+
+    Args:
+        mode2 (str): The Mode2 string to parse.
+
+    Returns:
+        dict: A dictionary containing 'SerialMode', 'Baudrate', and 'FlowControl'.
+    """
+    # Default values
+    result = {
+    }
+    
+    # Split the Mode2 string by commas
+    parts = mode2.split(",")
+
+    # Extract SerialMode (always the first part)
+    if len(parts) > 0:
+        result["SerialMode"] = parts[0]
+
+    # Extract Baudrate (if present, it's the second part)
+    if len(parts) > 1:
+        try:
+            result["Baudrate"] = int(parts[1])  # Convert to integer
+        except ValueError:
+            result["Baudrate"] = None
+
+    # Extract FlowControl (if present, it's the third part)
+    if len(parts) > 2:
+        result["FlowControl"] = parts[2]
+
+    return result
+
+
 def _onConnect_status_error(self, Status, Description):
     self.log.logging("Plugin", "Error", "Failed to connect (" + str(Status) + ")")
     self.log.logging("Plugin", "Debug", "Failed to connect (" + str(Status) + ") with error: " + Description)
@@ -1518,7 +1536,6 @@ def zigateInit_Phase3(self):
         self._snapshot_enabled = True
 
 
-
 def start_GrpManagement(self, homefolder):
     
     self.groupmgt = GroupsManagement(
@@ -1744,11 +1761,9 @@ def onStop():
     _plugin.onStop()
 
 
-#def onDeviceRemoved(DeviceID, Unit):
-def onDeviceRemoved( Unit):
+def onDeviceRemoved(DeviceID, Unit):
     global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
-    #_plugin.onDeviceRemoved(DeviceID, Unit)
-    _plugin.onDeviceRemoved( Unit)
+    _plugin.onDeviceRemoved(DeviceID, Unit)
 
 
 def onConnect(Connection, Status, Description):
@@ -1761,11 +1776,9 @@ def onMessage(Connection, Data):
     _plugin.onMessage(Connection, Data)
 
 
-#def onCommand(DeviceID, Unit, Command, Level, Color):
-def onCommand(Unit, Command, Level, Color):
+def onCommand(DeviceID, Unit, Command, Level, Color):
     global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
-    #_plugin.onCommand(DeviceID, Unit, Command, Level, Color)
-    _plugin.onCommand( Unit, Command, Level, Color)
+    _plugin.onCommand(DeviceID, Unit, Command, Level, Color)
 
 
 def onDisconnect(Connection):
@@ -1778,9 +1791,9 @@ def onHeartbeat():
     _plugin.onHeartbeat()
 
 
-def onDeviceModified( Unit):
+def onDeviceModified( DeviceID, Unit):
     global _plugin  # pylint: disable=global-variable-not-assigned # noqa: F824
-    _plugin.onDeviceModified(Unit )
+    _plugin.onDeviceModified(DeviceID, Unit )
 
 
 # Generic helper functions
@@ -1981,3 +1994,6 @@ def _post_readiness_startup_completed( self ):
             return False
         
     return True
+
+def check_python_version(min_version=MIN_PYTHON):
+    return sys.version_info >= min_version

@@ -18,14 +18,16 @@ Parameters not define in the PluginConf.txt file will be set to their default va
 
 """
 
+import ast
 import json
 import os.path
 import time
 from pathlib import Path
 
-import Domoticz
+import DomoticzEx as Domoticz
+
 from Modules.domoticzAbstractLayer import getConfigItem, setConfigItem
-from Modules.tools import is_domoticz_db_available, is_hex
+from Modules.tools import is_hex
 
 SETTINGS = {
     "Services": {
@@ -106,7 +108,8 @@ SETTINGS = {
             "ConfigureReportingChunk": { "type": "int", "default": 3, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "AqaraOppleBulbMode": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "reenforcementWiser": { "type": "int", "default": 300, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
-            "ReadAttributeChunk": { "type": "int", "default": 3, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
+            "ReadAttributeChunk": { "type": "int", "default": 10, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
+            "ReadAttributeChunkWhenPairing": { "type": "int", "default": 3, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "ZiGateConfigureReporting": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,"ZigpyRadio": ""},
             "bindingDelay": {"type": "int","default": 0.75,"current": None,"restart": 0,"hidden": False,"Advanced": True},
             "pairingCommandsDelay": {"type": "int","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True},
@@ -310,7 +313,9 @@ SETTINGS = {
             "Python/Classes-ZigpyTransport-AppGeneric": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
 
             "ReadAttributes": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "ReadAttributeMaxAttributes": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "StopProcess": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+
             "Schneider": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Sonoff": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Sunricher": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
@@ -341,6 +346,7 @@ SETTINGS = {
             "TransportTcpip": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "TransportWrter": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "TransportZigpy": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "TransportZigpyStack": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Tuya": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Tuya0601": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "TuyaTS011F": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
@@ -622,139 +628,6 @@ def load_settings(self):
         Domoticz.Status( "Z4D Loaded pluginconf from Domoticz Db: %s" % len(self.pluginConf))
     else:
         Domoticz.Status( "Z4D Loaded pluginconf from Json File: %s" % len(self.pluginConf))
-
-
-def _load_oldfashon(self, homedir, hardwareid):
-    """
-    Locate and import legacy plugin configuration files.
-
-    This internal method searches for a legacy `PluginConf.txt` file within the
-    plugin configuration directory and imports it into the current configuration
-    structure using `_import_oldfashon_param()`.
-
-    The search order supports backward compatibility with multiple naming
-    patterns derived from the `hardwareid`, such as:
-      - PluginConf-<hardwareid:02d>.txt
-      - PluginConf-<hardwareid:2d>.txt
-      - PluginConf.txt
-
-    If no legacy file is found, a default configuration file is created by
-    calling `self.write_Settings()`.
-
-    Parameters
-    ----------
-    homedir : str or Path
-        Base directory for the plugin home. Currently unused but may be
-        required for compatibility with earlier versions.
-    hardwareid : int
-        The numeric hardware identifier used to locate a matching configuration
-        file (e.g., `PluginConf-01.txt`).
-
-    Side Effects
-    -------------
-    - Reads and parses legacy configuration files if present.
-    - Updates `self.pluginConf["filename"]` with the resolved file path.
-    - May modify `self.pluginConf` contents through `_import_oldfashon_param()`.
-    - Creates a default settings file if none exists.
-
-    """
-    # Locate legacy PluginConf file (supporting multiple naming variants)
-    _filename = Path(self.pluginConf["pluginConfig"]) / ("PluginConf-%02d.txt" % hardwareid)
-    if not os.path.isfile(_filename):
-        _filename = Path(self.pluginConf["pluginConfig"]) / ("PluginConf-%2d.txt" % hardwareid)
-        if not os.path.isfile(_filename):
-            _filename = Path(self.pluginConf["pluginConfig"]) / "PluginConf.txt"
-            if not os.path.isfile(_filename):
-                self.write_Settings()
-                self.pluginConf["filename"] = str(_filename)
-                return
-
-    # Read legacy configuration file content
-    temp_pluginconf_data = ""
-    if not os.path.isfile(_filename):
-        return
-
-    with open(_filename, "r") as myPluginConfFile:
-        temp_pluginconf_data += myPluginConfFile.read().replace("\n", "")
-
-    # Record filename and import data
-    self.pluginConf["filename"] = str(_filename)
-    _import_oldfashon_param(self, temp_pluginconf_data, self.pluginConf["filename"])
-
-
-def _import_oldfashon_param(self, temp_pluginconf_data, filename):
-    """
-    Import and convert legacy plugin configuration data.
-
-    This internal method loads old-format configuration data (previously stored
-    as a Python dictionary literal) and converts it into the structured format
-    expected by the current plugin version. It parses the raw configuration
-    text using `eval()`, then normalizes each parameter according to its type
-    definition in the global `SETTINGS` dictionary.
-
-    The method logs detailed errors when parsing or type conversion fails, and
-    falls back to default parameter values when needed.
-
-    Parameters
-    ----------
-    temp_pluginconf_data : str
-        Raw text content of the legacy configuration file, expected to represent
-        a Python dictionary (e.g., "{'param1': 'value1', 'param2': 42}").
-    filename : str
-        Name or path of the file being imported, used for logging purposes.
-
-    Side Effects
-    -------------
-    - Updates `self.pluginConf` in place with imported or default values.
-    - Calls `self.write_Settings()` after import completion.
-    - Logs errors and warnings via `Domoticz.Error()`.
-
-    Notes
-    -----
-    - This method is intended for backward compatibility only and should not be
-      used for new configuration files.
-    - The function uses `eval()` to parse legacy data; in modern code, prefer
-      `json.loads()` for safer deserialization.
-    - The method validates parameter types according to `SETTINGS` definitions:
-        * `"hex"` values are converted from hexadecimal string to int.
-        * `"int"` and `"bool"` values are cast from string digits.
-        * `"path"` and `"str"` are assigned directly.
-
-    """
-    try:
-        plugin_conf_dict = eval(temp_pluginconf_data)  # nosec B307
-    except SyntaxError:
-        Domoticz.Error("Syntax Error in %s, all plugin parameters set to default" % filename)
-    except (NameError, TypeError, ZeroDivisionError):
-        Domoticz.Error("Error while importing %s, all plugin parameters set to default" % filename)
-    else:
-        for theme in SETTINGS:
-            for param in SETTINGS[theme]["param"]:
-                if plugin_conf_dict.get(param):
-                    if SETTINGS[theme]["param"][param]["type"] == "hex":
-                        if is_hex(plugin_conf_dict.get(param)):
-                            self.pluginConf[param] = int(plugin_conf_dict[param], 16)
-                        else:
-                            Domoticz.Error(
-                                "Wrong parameter type for %s, keeping default %s"
-                                % (param, self.pluginConf[param]["default"])
-                            )
-                            self.pluginConf[param] = self.pluginConf[param]["default"]
-
-                    elif SETTINGS[theme]["param"][param]["type"] in ("bool", "int"):
-                        if plugin_conf_dict.get(param).isdigit():
-                            self.pluginConf[param] = int(plugin_conf_dict[param])
-                        else:
-                            Domoticz.Error(
-                                "Wrong parameter type for %s, keeping default %s"
-                                % (param, self.pluginConf[param]["default"])
-                            )
-                            self.pluginConf[param] = self.pluginConf[param]["default"]
-
-                    elif SETTINGS[theme]["param"][param]["type"] in ("path", "str"):
-                        self.pluginConf[param] = plugin_conf_dict[param]
-
-    self.write_Settings()
 
 
 def _path_check(self):
