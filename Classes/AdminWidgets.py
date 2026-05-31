@@ -35,7 +35,6 @@ Z4D_DEVICEID_ADMIN_WIDGET_TXT = "Z4D Administration"
 Z4D_DEVICEID_STATUS_WIDGET_TXT = "Z4D Status"
 Z4D_DEVICEID_TXT_WIDGET_TXT = "Z4D Notifications"
 
-
 ADMIN_WIDGET_PREFIXES = {
     DEVICEID_ADMIN_WIDGET,
     DEVICEID_STATUS_WIDGET,
@@ -132,6 +131,7 @@ class AdminWidgets:
         z4d_prefix: str,
     ) -> Tuple[Optional[str], Optional[int]]:
 
+        #domoticz_log_api("_resolve_deviceid called with legacy_prefix=%s, z4d_prefix=%s" % (legacy_prefix, z4d_prefix)) 
         suffix_padded = f"{self.HardwareID:02d}"
         suffix_raw = "%02s" %self.HardwareID
 
@@ -142,7 +142,9 @@ class AdminWidgets:
 
         # Search for legacy name at 1st
         for legacy_id in legacy_ids:
+            #domoticz_log_api("_resolve_deviceid checking legacy_id: %s" % legacy_id)
             if is_device_ieee_in_domoticz_db(self, Devices, legacy_id):
+                #domoticz_log_api("_resolve_deviceid found legacy_id: %s" % legacy_id)
                 unit = find_first_unit_widget_from_deviceID(self, Devices, legacy_id)
                 if unit is not None:
                     return legacy_id, unit
@@ -150,7 +152,9 @@ class AdminWidgets:
         # If not found let look for new 
         z4d_id = z4d_prefix + suffix_padded
 
+        #domoticz_log_api("_resolve_deviceid checking z4d_id: %s" % z4d_id)
         if is_device_ieee_in_domoticz_db(self, Devices, z4d_id):
+            #domoticz_log_api("_resolve_deviceid found z4d_id: %s" % z4d_id)
             unit = find_first_unit_widget_from_deviceID(self, Devices, z4d_id)
 
             if unit:
@@ -165,17 +169,23 @@ class AdminWidgets:
         """
         Create the Administration selector widget if missing.
         """
+        #domoticz_log_api("createAdminWidget.")
+        
         deviceid, unit = self._resolve_deviceid(
             Devices,
             DEVICEID_ADMIN_WIDGET,
             Z4D_DEVICEID_ADMIN_WIDGET,
         )
+        #domoticz_log_api("createAdminWidget - _resolve_deviceid returned: deviceid=%s, unit=%s" % (deviceid, unit))
+        
         if unit:
             return  # already exists under one of the two naming conventions
         
         new_deviceid = Z4D_DEVICEID_ADMIN_WIDGET + f"{self.HardwareID:02d}"
         widget_name = Z4D_DEVICEID_ADMIN_WIDGET_TXT + f" {self.HardwareID:02d}"
         free_unit = retreive_free_unit_for_widget(self, Devices, new_deviceid, nbunit_=1)
+        
+        #domoticz_log_api("createAdminWidget - Creating new widget: %s"% new_deviceid)
 
         ID: int = domo_create_api(
             self,
@@ -200,17 +210,22 @@ class AdminWidgets:
         """
         Create the Status widget (243.22).
         """
+        #domoticz_log_api("createStatusWidget.")
+        
         deviceid, unit = self._resolve_deviceid(
             Devices,
             DEVICEID_STATUS_WIDGET,
             Z4D_DEVICEID_STATUS_WIDGET,
         )
+        #domoticz_log_api("createStatusWidget - _resolve_deviceid returned: deviceid=%s, unit=%s" % (deviceid, unit))   
         if unit:
             return
 
         new_deviceid = Z4D_DEVICEID_STATUS_WIDGET + f"{self.HardwareID:02d}"
         widget_name = Z4D_DEVICEID_STATUS_WIDGET_TXT + f" {self.HardwareID:02d}"
         free_unit = retreive_free_unit_for_widget(self, Devices, new_deviceid, nbunit_=1)
+
+        #domoticz_log_api("createStatusWidget - Creating new widget: %s" % new_deviceid)
 
         ID: int = domo_create_api(
             self, Devices, new_deviceid, free_unit, widget_name,
@@ -226,11 +241,14 @@ class AdminWidgets:
 
     def createNotificationWidget(self, Devices: Dict[int, Any]) -> None:
         """Create the Notification text widget (Type 243.19) if it does not already exist."""
+        #domoticz_log_api("createNotificationWidget.")
+
         deviceid, unit = self._resolve_deviceid(
             Devices,
             DEVICEID_TXT_WIDGET,
             Z4D_DEVICEID_TXT_WIDGET,
         )
+        #domoticz_log_api("createNotificationWidget - _resolve_deviceid returned: deviceid=%s, unit=%s" % (deviceid, unit)) 
         if unit:
             return
 
@@ -238,6 +256,7 @@ class AdminWidgets:
         widget_name = Z4D_DEVICEID_TXT_WIDGET_TXT + f" {self.HardwareID:02d}"
         free_unit = retreive_free_unit_for_widget(self, Devices, new_deviceid, nbunit_=1)
 
+        #domoticz_log_api("createNotificationWidget - Creating new widget: %s" % new_deviceid)
         ID: int = domo_create_api(
             self, Devices, new_deviceid, free_unit, widget_name,
             Type_=243, Subtype_=19, Switchtype_=0,
