@@ -738,7 +738,7 @@ def configure_zigpy_blz_loggers(self, mode="info"):
 def _configure_debug_mode(self, config_name, config_function):
     """ if debug_flag set to True, or ConfigName parameter set to True, enable python module logging"""
     
-    domoticz_log_api( f"_configure_debug_mode - {config_name}")
+    #domoticz_log_api( f"_configure_debug_mode - {config_name}")
    
     if self.pluginconf.pluginConf[config_name]:
         return config_function(self, "debug")
