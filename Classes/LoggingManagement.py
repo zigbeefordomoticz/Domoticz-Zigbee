@@ -62,6 +62,8 @@ from Modules.domoticzAbstractLayer import (domoticz_error_api,
 
 LOG_ERROR_HISTORY = "PluginZigbee_log_error_history_"
 LOG_FILE = "PluginZigbee_"
+_plugin_file_logger = logging.getLogger("Z4D.plugin")
+
 LOG_MAX_ERRORS_PER_SESSION = 20
 LOG_MAX_SESSIONS = 5
 LOG_RETENTION_SECONDS = 7 * 24 * 3600  # 7 days
@@ -237,8 +239,13 @@ class LoggingManagement:
         # Remove any existing handlers on the root logger to avoid the ASCII fallback
         root_logger = logging.getLogger()
         root_logger.handlers.clear()
-        root_logger.setLevel(logging.DEBUG)
-        root_logger.addHandler(handler)
+        root_logger.setLevel(logging.WARNING)  # Default level, can be overridden by zigpy loggers configuration
+        
+        _plugin_file_logger.handlers.clear()
+        _plugin_file_logger.setLevel(logging.DEBUG)
+        _plugin_file_logger.propagate = False
+        _plugin_file_logger.addHandler(handler)
+        
 
         _log_mode = self.pluginconf.pluginConf.get("PluginLogMode")
         if _log_mode in (0o640, 0o644):
@@ -383,7 +390,7 @@ def _logging_status(self, thread_name, message, module, nwkid):
 
     if self.pluginconf.pluginConf["enablePluginLogging"]:
         # Log to plugin log file
-        logging.info(message)
+        _plugin_file_logger.info(message)
 
     # Log to Domoticz status
     domoticz_status_api(message)
@@ -395,7 +402,7 @@ def _logging_to_plugin_log(self, thread_name, message, module, nwkid):
 
     if self.pluginconf.pluginConf["enablePluginLogging"]:
         # Log to plugin log file
-        logging.info(message)
+        _plugin_file_logger.info(message)
     else:
         # Log to Domoticz log
         domoticz_log_api(message)
@@ -430,7 +437,7 @@ def loggingError(self, thread_name, message, module, nwkid, context):
 
     # Log to file
     if self.pluginconf.pluginConf["enablePluginLogging"]:
-        logging.error(" [%17s] " % thread_name + "[%17s] " %module + message)
+        _plugin_file_logger.error(" [%17s] " % thread_name + "[%17s] " %module + message)
 
     # Log empty
     if not self.LogErrorHistory or "LastLog" not in self.LogErrorHistory:
@@ -531,7 +538,7 @@ def loggingWriteErrorHistory(self):
 
 
 def start_logging_thread(self):
-    #domoticz_log_api("start_logging_thread")
+    domoticz_log_api("start_logging_thread")
     if self.logging_thread:
         domoticz_error_api("start_logging_thread - Looks like logging_thread already started !!!")
         return
@@ -544,7 +551,7 @@ def start_logging_thread(self):
 
 def logging_thread(self):
 
-    #domoticz_log_api("logging_thread - listening")
+    domoticz_log_api("logging_thread - listening")
     while self.logging_running:
         # We loop until self.logging_running is set to False,
         # which indicate plugin shutdown
@@ -600,7 +607,7 @@ def _catch_error_event(self, context,logging_tuple, err ):
 
 
 def configure_loggers(self, logger_names, mode):
-    #domoticz_log_api( f"configure_loggers - {logger_names} {mode}")
+    domoticz_log_api( f"configure_loggers - {logger_names} {mode}")
     if mode == "debug":
         _set_logging_level = logging.DEBUG
     elif mode == "warning":
@@ -612,20 +619,21 @@ def configure_loggers(self, logger_names, mode):
         _set_logging_level = logging.INFO
         
     for logger_name in logger_names:
-        #domoticz_log_api( f"     - {logger_name} {_set_logging_level}")
+        domoticz_log_api( f"     - {logger_name} {_set_logging_level}")
         logging.getLogger(logger_name).setLevel(_set_logging_level)
         
 
 # Loggers configurations
 def configure_zigpy_loggers(self, mode="info"):
     """ Configure Logging level for zigpy """
-    #domoticz_log_api( f"configure_zigpy_loggers - {mode}")
+    domoticz_log_api( f"configure_zigpy_loggers - {mode}")
     if mode == self.debugZigpy:
         return
     self.debugZigpy = mode
 
     logger_names = [
         "aiosqlite",
+        "serial_asyncio",
         "zigpy.appdb", "zigpy.application", "zigpy.backups", "zigpy.device",
         "zigpy.endpoint", "zigpy.group", "zigpy.listeners", "zigpy.state", "zigpy.topology",
         "zigpy.util",
@@ -641,14 +649,18 @@ def configure_zigpy_loggers(self, mode="info"):
 
 def configure_zigpy_znp_loggers(self, mode="info"):
     """ Configure Logging level for zigpy-znp """
-    #domoticz_log_api( f"configure_zigpy_znp_loggers - {mode}")
+    domoticz_log_api( f"configure_zigpy_znp_loggers - {mode}")
     if mode == self.debugZNP:
         return
     self.debugZNP = mode
 
     logger_names = [
         "AppZnp",
-        "zigpy_znp", 
+        "zigpy_znp",
+        "zigpy_znp.uart",
+        "zigpy_znp.znp",
+        "zigpy_znp.znp.uart",
+        "zigpy_znp.znp.znp",
         "zigpy_znp.zigbee", 
         "zigpy_znp.zigbee.application", 
         "zigpy_znp.zigbee.device", 
@@ -659,7 +671,7 @@ def configure_zigpy_znp_loggers(self, mode="info"):
 
 def configure_zigpy_ezsp_loggers(self, mode="info"):
     """ Configure Logging level for bellows """
-    #domoticz_log_api( f"configure_zigpy_ezsp_loggers - {mode}")
+    domoticz_log_api( f"configure_zigpy_ezsp_loggers - {mode}")
     if mode == self.debugEZSP:
         return
     self.debugEZSP = mode
@@ -678,7 +690,7 @@ def configure_zigpy_ezsp_loggers(self, mode="info"):
 
 def configure_zigpy_zigate_loggers(self, mode="info"):
     """ Configure Logging level for zigpy-zigate """
-    #domoticz_log_api( f"configure_zigpy_zigate_loggers - {mode}")
+    domoticz_log_api( f"configure_zigpy_zigate_loggers - {mode}")
     if mode == self.debugZigate:
         return
 
@@ -693,7 +705,7 @@ def configure_zigpy_zigate_loggers(self, mode="info"):
 
 def configure_zigpy_deconz_loggers(self, mode="info"):
     """ Configure Logging level for zigpy-deconz """
-    #domoticz_log_api( "configure_zigpy_deconz_loggers")
+    domoticz_log_api( "configure_zigpy_deconz_loggers")
     if mode == self.debugdeconz:
         return
     self.debugdeconz = mode
@@ -707,7 +719,7 @@ def configure_zigpy_deconz_loggers(self, mode="info"):
 
 def configure_zigpy_blz_loggers(self, mode="info"):
     """ Configure Logging level for Blz """
-    #domoticz_log_api( f"configure_zigpy_blz_loggers - {mode}")
+    domoticz_log_api( f"configure_zigpy_blz_loggers - {mode}")
     if mode == self.debugBLZ:
         return
     self.debugBLZ = mode
@@ -726,7 +738,7 @@ def configure_zigpy_blz_loggers(self, mode="info"):
 def _configure_debug_mode(self, config_name, config_function):
     """ if debug_flag set to True, or ConfigName parameter set to True, enable python module logging"""
     
-    #domoticz_log_api( f"_configure_debug_mode - {config_name}")
+    domoticz_log_api( f"_configure_debug_mode - {config_name}")
    
     if self.pluginconf.pluginConf[config_name]:
         return config_function(self, "debug")
