@@ -62,7 +62,6 @@ from Modules.domoticzAbstractLayer import (domoticz_error_api,
 
 LOG_ERROR_HISTORY = "PluginZigbee_log_error_history_"
 LOG_FILE = "PluginZigbee_"
-_plugin_file_logger = logging.getLogger("Z4D.plugin")
 
 LOG_MAX_ERRORS_PER_SESSION = 20
 LOG_MAX_SESSIONS = 5
@@ -143,6 +142,7 @@ class LoggingManagement:
         self._thread_filter = set()
         self.reload_debug_settings = True
 
+        self._plugin_file_logger = logging.getLogger("Z4D.plugin.%s" % self.HardwareID)
         start_logging_thread(self)
 
         # Thread log filter configuration
@@ -241,10 +241,10 @@ class LoggingManagement:
         root_logger.handlers.clear()
         root_logger.setLevel(logging.WARNING)  # Default level, can be overridden by zigpy loggers configuration
         
-        _plugin_file_logger.handlers.clear()
-        _plugin_file_logger.setLevel(logging.DEBUG)
-        _plugin_file_logger.propagate = False
-        _plugin_file_logger.addHandler(handler)
+        self._plugin_file_logger.handlers.clear()
+        self._plugin_file_logger.setLevel(logging.DEBUG)
+        self._plugin_file_logger.propagate = False
+        self._plugin_file_logger.addHandler(handler)
         
 
         _log_mode = self.pluginconf.pluginConf.get("PluginLogMode")
@@ -390,7 +390,7 @@ def _logging_status(self, thread_name, message, module, nwkid):
 
     if self.pluginconf.pluginConf["enablePluginLogging"]:
         # Log to plugin log file
-        _plugin_file_logger.info(message)
+        self._plugin_file_logger.info(message)
 
     # Log to Domoticz status
     domoticz_status_api(message)
@@ -402,7 +402,7 @@ def _logging_to_plugin_log(self, thread_name, message, module, nwkid):
 
     if self.pluginconf.pluginConf["enablePluginLogging"]:
         # Log to plugin log file
-        _plugin_file_logger.info(message)
+        self._plugin_file_logger.info(message)
     else:
         # Log to Domoticz log
         domoticz_log_api(message)
@@ -437,7 +437,7 @@ def loggingError(self, thread_name, message, module, nwkid, context):
 
     # Log to file
     if self.pluginconf.pluginConf["enablePluginLogging"]:
-        _plugin_file_logger.error(" [%17s] " % thread_name + "[%17s] " %module + message)
+        self._plugin_file_logger.error(" [%17s] " % thread_name + "[%17s] " %module + message)
 
     # Log empty
     if not self.LogErrorHistory or "LastLog" not in self.LogErrorHistory:
