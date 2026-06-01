@@ -76,8 +76,8 @@ async def worker_loop(self):
                                  f"Unexpected error in worker_loop: {e}")
 
     finally:
-        self.log.logging(["TransportZigpy", "StopProcess"], "Debug",
-                         "TransportZigpy - Exiting loop and cleaning up resources.")
+        self.log.logging(["TransportZigpy", "StopProcess"], "Status",
+                         "++ Zigpy transport stopped. [2/3]")
 
 
 async def process_incoming_command(self, command_to_send):
