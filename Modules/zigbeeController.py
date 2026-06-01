@@ -13,7 +13,7 @@
 
 from Zigbee.zdpCommands import (zdp_active_endpoint_request,
                                 zdp_simple_descriptor_request)
-from Modules.database import DATABASE_VERSION
+from Modules.database import PLUGIN_DATABASE_RECORD_VERSION
 
 
 def initLODZigate(self, nwkid, ieee):
@@ -21,7 +21,7 @@ def initLODZigate(self, nwkid, ieee):
     self.log.logging("Input", "Status", "Initialize Zigate Data Structure %s %s" % (nwkid, ieee))
     self.IEEE2NWK[ieee] = nwkid
     self.ListOfDevices[nwkid] = {
-        'Version': DATABASE_VERSION,
+        'Version': PLUGIN_DATABASE_RECORD_VERSION,
         'ZDeviceName': 'Zigbee Coordinator',
         "IEEE": ieee,
         "Ep": {},

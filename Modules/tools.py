@@ -26,7 +26,7 @@ import time
 from collections import deque
 from typing import Optional
 
-from Modules.database import DATABASE_VERSION, WriteDeviceList
+from Modules.database import PLUGIN_DATABASE_RECORD_VERSION, WriteDeviceList
 from Modules.domoticzAbstractLayer import domo_read_Device_Idx, domo_read_Name
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.zigateConsts import HEARTBEAT
@@ -489,7 +489,7 @@ def initDeviceInList(self, Nwkid):
         return
 
     default_device = {
-        "Version": DATABASE_VERSION,
+        "Version": PLUGIN_DATABASE_RECORD_VERSION,
         "ZDeviceName": "",
         "Status": "004d",
         "SQN": "",
