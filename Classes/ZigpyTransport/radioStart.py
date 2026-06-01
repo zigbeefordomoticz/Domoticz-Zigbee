@@ -33,7 +33,8 @@ import importlib
 import queue
 import traceback
 from pathlib import Path
-
+import os
+import glob
 import zigpy.config
 import zigpy.types as t
 
@@ -47,6 +48,9 @@ def _transport_heartbeat(transport) -> None:
     """Update supervisor liveness timestamp from the coordinator watchdog tick."""
     if getattr(transport, 'zigpy_loop', None) is not None:
         transport._last_heartbeat = transport.zigpy_loop.time()
+
+MAX_STARTUP_RETRIES = 3
+STARTUP_RETRY_DELAY = 5  # seconds
 
 
 # ---------------------------------------------------------------------------
@@ -231,6 +235,9 @@ async def radio_start(
             self.log.logging("TransportZigpy", "Error",
                              "++ Error loading Zigpy Persistent Db: %s" % e)
 
+    if _check_serial_port_locked(serialPort, self.log):
+        return
+
     try:
         await _radio_startup(self, statistics, pluginconf,
                              use_of_zigpy_persistent_db, new_network, radiomodule)
@@ -411,28 +418,45 @@ async def _radio_startup(
                          "Error at startup - self.app not initialized")
         return
 
-    try:
-        await self.app.startup(
-            self.statistics,
-            self.hardwareid,
-            pluginconf,
-            use_of_zigpy_persistent_db,
-            callBackHandleMessage=self.receiveData,
-            callBackUpdDevice=self.ZigpyUpdDevice,
-            callBackGetDevice=self.ZigpyGetDevice,
-            callBackGetAllDevices=self.ZigpyGetAllDevices,
-            callBackBackup=self.ZigpyBackupAvailable,
-            callBackRestartPlugin=self.restart_plugin,
-            callBackHeartbeat=lambda: _transport_heartbeat(self),
-            captureRxFrame=self.captureRxFrame,
-            auto_form=True,
-            force_form=new_network,
-            log=self.log,
-            permit_to_join_timer=self.permit_to_join_timer,
-        )
-    except Exception as e:
-        self.log.logging("TransportZigpy", "Error", "Error at startup %s" % e)
-        return
+    for attempt in range(1, MAX_STARTUP_RETRIES + 1):
+        try:
+            self.log.logging("TransportZigpy", "Debug", "Startup attempt %d/%d" % (attempt, MAX_STARTUP_RETRIES))
+            await self.app.startup(
+                self.statistics,
+                self.hardwareid,
+                pluginconf,
+                use_of_zigpy_persistent_db,
+                callBackHandleMessage=self.receiveData,
+                callBackUpdDevice=self.ZigpyUpdDevice,
+                callBackGetDevice=self.ZigpyGetDevice,
+                callBackGetAllDevices=self.ZigpyGetAllDevices,
+                callBackBackup=self.ZigpyBackupAvailable,
+                callBackRestartPlugin=self.restart_plugin,
+                callBackHeartbeat=lambda: _transport_heartbeat(self),
+                captureRxFrame=self.captureRxFrame,
+                auto_form=True,
+                force_form=new_network,
+                log=self.log,
+                permit_to_join_timer=self.permit_to_join_timer,
+            )
+            break  # success, exit the retry loop
+    
+        except Exception as e:
+            self.log.logging(
+                "TransportZigpy", "Error",
+                "Error at startup %s - %s\n%s" % (type(e).__name__, e, traceback.format_exc())
+            )
+            if attempt < MAX_STARTUP_RETRIES:
+                self.log.logging("TransportZigpy", "Status",
+                    "Retrying startup in %ds..." % STARTUP_RETRY_DELAY)
+                await asyncio.sleep(STARTUP_RETRY_DELAY)
+            else:
+                self.log.logging("TransportZigpy", "Error", "All startup attempts failed, giving up")
+                tasks = asyncio.all_tasks()
+                task_info = [(t.get_name(), t.get_coro().__qualname__) for t in tasks if not t.done()]
+                self.log.logging("TransportZigpy", "Debug",
+                    "Running asyncio tasks at startup failure: %s" % task_info)
+                return
 
     if new_network:
         self.log.logging("TransportZigpy", "Status", "++ Assuming new network formed")
@@ -542,3 +566,39 @@ def _import_class(dotted_path: str):
     module_path, class_name = dotted_path.rsplit(".", 1)
     module = importlib.import_module(module_path)
     return getattr(module, class_name)
+
+
+def _check_serial_port_locked(port_path, log):
+    """Check if a serial port is held open by another process (Linux only).
+    Skipped for TCP/socket connections (e.g. 'socket://...', 'tcp://...').
+    """
+    # Only meaningful for local device paths
+    if not port_path.startswith("/dev/"):
+        log.logging("TransportZigpy", "Debug",
+            "Serial port lock check skipped for non-device path: %s" % port_path)
+        return False
+
+    try:
+        # Check /proc/*/fd for open file descriptors pointing to this device
+        real_path = os.path.realpath(port_path)
+        holders = []
+        for fd_link in glob.glob("/proc/*/fd/*"):
+            try:
+                if os.path.realpath(fd_link) == real_path:
+                    parts = fd_link.split("/")
+                    pid = parts[2]
+                    try:
+                        with open(f"/proc/{pid}/comm") as f:
+                            comm = f.read().strip()
+                    except Exception:
+                        comm = "unknown"
+                    holders.append((pid, comm))
+            except OSError:
+                continue
+        if holders:
+            log.logging("TransportZigpy", "Error", "Serial port %s is held by: %s" % (port_path, holders))
+            return True
+        return False
+    except Exception as ex:
+        log.logging("TransportZigpy", "Debug", "Serial port lock check failed: %s" % ex)
+        return False
