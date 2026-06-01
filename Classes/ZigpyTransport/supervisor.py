@@ -337,6 +337,26 @@ async def _run_zigbee_stack(self):
 
     self._shutdown_event.set()
 
+    # On an intentional stop, let zigbee_task run its own app.shutdown() rather
+    # than force-cancelling it. The task is already signalled to stop (zigpy_running=False
+    # + STOP sentinel from stop_zigpy_thread), so it should exit quickly.
+    # Force-cancel only if it hangs past the timeout.
+    if self._zigpy_stop_requested and zigbee_task in pending:
+        pending = set(pending)
+        pending.discard(zigbee_task)
+        self.log.logging(
+            "TransportZigpyStack", "Debug",
+            "_run_zigbee_stack: clean stop — waiting up to 30s for zigbee_task to finish app.shutdown()"
+        )
+        done2, still_pending = await asyncio.wait({zigbee_task}, timeout=30.0)
+        if still_pending:
+            self.log.logging(
+                "TransportZigpyStack", "Debug",
+                "_run_zigbee_stack: zigbee_task did not finish within 30s, force-cancelling"
+            )
+            zigbee_task.cancel()
+            await asyncio.gather(zigbee_task, return_exceptions=True)
+
     for task in pending:
         task.cancel()
     await asyncio.gather(*pending, return_exceptions=True)
