@@ -43,6 +43,10 @@ DIMMABLE_WIDGETS = {
 
 DELAY_BETWEEN_TOUCH = 120
 
+CURRENT_DOMOTICZ_STORAGE_VERSION = 2
+# Version 1: uncompressed, stored as Python repr (str() output)
+# Version 2: compressed with zlib, stored as base64-encoded JSON string (more robust and future-proof)
+
 
 # ---------------------------------------------------------------------------
 # Internal helpers
@@ -146,7 +150,7 @@ def prepare_dict_for_storage(dict_items, Attribute):
     if Attribute in dict_items:
         payload = json.dumps(dict_items[Attribute], ensure_ascii=False).encode("utf-8")
         dict_items[Attribute] = base64.b64encode(zlib.compress(payload)).decode("ascii")
-    dict_items["Version"] = 2
+    dict_items["Version"] = CURRENT_DOMOTICZ_STORAGE_VERSION
     return dict_items
 
 
