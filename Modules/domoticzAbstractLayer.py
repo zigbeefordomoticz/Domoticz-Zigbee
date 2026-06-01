@@ -306,6 +306,26 @@ def find_first_unit_widget_from_deviceID(self, Devices, DeviceID):
     return next(iter(units), None)
 
 
+def _get_available_units(self, Devices, DeviceId) -> set:
+    """Return the set of already-allocated unit numbers for DeviceId."""
+    if _device_exists(Devices, DeviceId):
+        return set(Devices[DeviceId].Units.keys())
+    return set()
+
+def get_unit_counts(self, Devices, DeviceId) -> dict:
+    """
+    Return allocated and free unit counts for DeviceId.
+
+    Units are numbered 1–254 (254 slots total).
+    Returns: {"allocated": int, "free": int}
+    """
+    available_units = _get_available_units(self, Devices, DeviceId)
+    allocated = len(available_units)
+    return {
+        "allocated": allocated,
+        "free": 254 - allocated,
+    }
+
 
 def retreive_free_unit_for_widget(self, Devices, DeviceId, nbunit_=1):
     """

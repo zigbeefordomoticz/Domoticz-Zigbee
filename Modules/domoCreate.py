@@ -16,7 +16,7 @@
 """
 
 
-from Modules.domoticzAbstractLayer import retreive_free_unit_for_widget, domo_create_api
+from Modules.domoticzAbstractLayer import retreive_free_unit_for_widget, domo_create_api, get_unit_counts
 from Modules.domoTools import (GetType, subtypeRGB_FromProfile_Device_IDs,
                                subtypeRGB_FromProfile_Device_IDs_onEp2,
                                update_domoticz_widget)
@@ -143,8 +143,11 @@ def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None
     """
 
     unit = retreive_free_unit_for_widget(self, Devices, ieee)
-    self.log.logging("WidgetCreation", "Debug", "createDomoticzWidget - unit: %s" % unit, nwkid)
+    if unit is None:
+        self.log.logging("WidgetCreation", "Error", "Domoticz widget creation failed. No available unit for device %s. Cannot create widget." % ieee)
+        return None
 
+    self.log.logging("WidgetCreation", "Debug", "createDomoticzWidget - unit: %s" % unit, nwkid)
     self.log.logging( "WidgetCreation", "Debug", "--- cType: %s widgetType: %s Type: %s Subtype: %s SwitchType: %s widgetOption: %s Image: %s ForceCluster: %s" % (
         cType, widgetType, Type_, Subtype_, Switchtype_, widgetOptions, Image, ForceClusterType), nwkid, )
 
@@ -308,6 +311,8 @@ def CreateDomoDevice(self, Devices, NWKID):
     DeviceID_IEEE = self.ListOfDevices[NWKID].get("IEEE", "")
     model_name = self.ListOfDevices[NWKID].get("Model", "")
 
+    self.log.logging("WidgetCreation", "Debug", f"CreateDomoDevice - Starting creation of Domoticz Device for NWKID: {NWKID} IEEE: {DeviceID_IEEE} Model: {model_name}")
+
     # When Type is at Global level, then we create all Type against the 1st EP
     # If Type needs to be associated to EP, then it must be at EP level and nothing at Global level
     GlobalEP = False
@@ -319,15 +324,15 @@ def CreateDomoDevice(self, Devices, NWKID):
         # Use "type" at level EndPoint if existe
         self.log.logging("WidgetCreation", "Debug", "CreateDomoDevice - Process EP : %s GlobalEP: %s GlobalType: %s" %( 
             Ep, GlobalEP, str(GlobalType)), NWKID)
-   
+
         if GlobalEP:
             # We have created already the Devices (as GlobalEP is set)
             break
-        
+
         Type, GlobalEP, GlobalType = extract_key_infos( self, NWKID, Ep, GlobalEP, GlobalType)
         self.log.logging("WidgetCreation", "Debug", "CreateDomoDevice - Type: >%s< GlobalEp: >%s< GlobalType: >%s<" %( 
             Type, GlobalEP, str(GlobalType)), NWKID)
-        
+
         if Type is None or Type in ( "", {} ):
             continue
 
@@ -342,6 +347,15 @@ def CreateDomoDevice(self, Devices, NWKID):
             Type = cleanup_widget_Type(Type)
 
         self.log.logging("WidgetCreation", "Debug", "CreateDomoDevice - Creating devices based on Type: %s" % Type, NWKID)
+
+        # Prior to start the Creation of the Widget, let's check that we have enought Unit available in Domoticz, 
+        # to allocate all the required widgets for this device/ep
+        nb_occupied_units = get_unit_counts(self, Devices, DeviceID_IEEE)["allocated"]
+        self.log.logging("WidgetCreation", "Debug", f"CreateDomoDevice - Device {DeviceID_IEEE} has already {nb_occupied_units} units occupied in Domoticz", NWKID)
+
+        if ( nb_occupied_units + len(Type)) >= 254:  # Domoticz has a limit of 254 devices per hardware
+            self.log.logging("WidgetCreation", "Error", f"Domoticz Widget Creation Failed - No available unit for device {DeviceID_IEEE}. ", NWKID)
+            return
 
         if "ClusterType" not in self.ListOfDevices[NWKID]["Ep"][Ep]:
             self.ListOfDevices[NWKID]["Ep"][Ep]["ClusterType"] = {}
