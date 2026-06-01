@@ -165,9 +165,47 @@ def zigpy_thread_function(self):
     asyncio.set_event_loop(loop)
     self.zigpy_loop = loop
 
+    # Enable debug mode if specified in configuration
+    if self.pluginconf.pluginConf.get("EventLoopInstrumentation", False):
+        self.zigpy_loop.set_debug(True)
+
     loop.create_task(_supervisor(self))
+
+    if self.pluginconf.pluginConf.get("MonitorLoopLatency", False):
+        loop_latency_monitoring(self)
 
     try:
         loop.run_forever()
     finally:
         _cleanup(self, loop)
+
+
+def loop_latency_monitoring(self):
+    """
+    Monitors the latency of the event loop and logs warnings if it exceeds a threshold.
+
+    This function should be scheduled to run periodically (e.g., every 10 seconds) to check
+    the responsiveness of the event loop. If the latency exceeds a predefined threshold,
+    a warning is logged to help identify potential performance issues in the Zigbee stack.
+    """
+    # Implementation of latency monitoring would go here
+        # Always cancel any existing monitor, regardless of config
+    if hasattr(self, 'loop_latency_monitor') and self.loop_latency_monitor is not None:
+        self.loop_latency_monitor.cancel()
+        self.loop_latency_monitor = None
+
+    async def monitor_loop_latency(interval=1.0, threshold=3.5):
+        try:
+            while True:
+                start = time.monotonic()
+                await asyncio.sleep(interval)
+                delay = time.monotonic() - start - interval
+                if delay > 5:
+                    self.log.logging("TransportZigpy", "Error", f"Event loop blocked for {delay:.3f}s")
+                elif delay > threshold:
+                    self.log.logging("TransportZigpy", "Log", f"Event loop blocked for {delay:.3f}s")
+        except asyncio.CancelledError:
+            self.log.logging("TransportZigpy", "Log", "Event loop monitoring stopped")
+            return
+
+    self.loop_latency_monitor = self.zigpy_loop.create_task(monitor_loop_latency())
