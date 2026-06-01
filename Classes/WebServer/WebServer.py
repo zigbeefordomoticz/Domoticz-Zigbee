@@ -66,12 +66,15 @@ MIMETYPES = {
     "woff": "application/x-font-woff",
 }
 
+# Helper for a more defensive encoder that also catches other non-serializable 
+# types that might crop up (sets, bytes, numpy types, etc.)
 class ZigbeeJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, (deque, set, frozenset)):
             return list(obj)
         return obj.hex() if isinstance(obj, bytes) else super().default(obj)
-    
+
+
 class WebServer(object):
 
     from Classes.WebServer.com import (onConnect, onDisconnect, onStop,
