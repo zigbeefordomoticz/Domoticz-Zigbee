@@ -16,6 +16,7 @@ import os
 import os.path
 import platform
 import time
+from collections import deque
 
 from Classes.PluginConf import SETTINGS
 from Classes.WebServer.headerResponse import (prepResponseMessage,
@@ -65,7 +66,12 @@ MIMETYPES = {
     "woff": "application/x-font-woff",
 }
 
-
+class ZigbeeJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (deque, set, frozenset)):
+            return list(obj)
+        return obj.hex() if isinstance(obj, bytes) else super().default(obj)
+    
 class WebServer(object):
 
     from Classes.WebServer.com import (onConnect, onDisconnect, onStop,
@@ -1204,7 +1210,8 @@ class WebServer(object):
                     entry = dict(self.ListOfDevices[item])
                     entry["NwkID"] = item
                     zdev_lst.append(entry)
-                _response["Data"] = json.dumps(zdev_lst, sort_keys=False)
+                #_response["Data"] = json.dumps(zdev_lst, sort_keys=False)
+                _response["Data"] = json.dumps(zdev_lst, sort_keys=False, cls=ZigbeeJSONEncoder)
             elif len(parameters) == 1:
                 device_infos = {
                     "PluginInfos": get_plugin_parameters(self, filter=True),
@@ -1217,6 +1224,7 @@ class WebServer(object):
                     device_infos["Device"] = self.ListOfDevices[self.IEEE2NWK[parameters[0]]]
 
                 _response["Data"] = json.dumps(device_infos, sort_keys=False)
+                _response["Data"] = json.dumps(device_infos, sort_keys=False, cls=ZigbeeJSONEncoder)
 
         return _response
 
