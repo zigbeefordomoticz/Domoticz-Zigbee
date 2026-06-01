@@ -1231,6 +1231,25 @@ class WebServer(object):
 
         return _response
 
+    def rest_IEEE2NWK_raw(self, verb, data, parameters):
+        """Return the IEEE2NWK dict in raw format (no conversion) for debug purposes."""
+
+        response = prepResponseMessage(self, setupHeadersResponse())
+        response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if verb != "GET" or not self.IEEE2NWK:
+            return response
+
+        if not parameters:
+            response["Data"] = json.dumps(
+                [{"IEEE": ieee, "NWK": self.IEEE2NWK[ieee]} for ieee in self.IEEE2NWK],
+                sort_keys=False,
+                cls=ZigbeeJSONEncoder,
+            )
+
+        return response
+
+
     def rest_change_channel(self, verb, data, parameters):
         domoticz_log_api("rest_change_channel - %s %s" % (verb, data))
         _response = prepResponseMessage(self, setupHeadersResponse())
