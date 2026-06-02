@@ -459,13 +459,22 @@ def connection_lost(self, exc: Exception) -> None:
             LOGGER.warning("+ Connection to the radio was lost, give time for recover ...")
             return
 
-        connection_lost_error( self, "NCP reset due to exceeded maximum ACK timeout count, plugin restart required" )
+        connection_lost_error( self, "NCP reset due to exceeded maximum ACK timeout count, plugin restart might be required" )
 
     elif isinstance(exc, (serial.serialutil.SerialException, asyncio.CancelledError)):
-        connection_lost_error( self, "Connection to coordinator lost, SerialError or CancelledError, plugin restart required" )
+        connection_lost_error( self, "Connection to coordinator lost, SerialError or CancelledError, plugin restart might be required" )
+
+
+    elif isinstance(exc, OSError):
+        # With the new serialx lib we get different exceptions when the serial port is disconnected or in use by another process, so let's catch OSError as well
+        connection_lost_error( self, "Connection to coordinator lost, OSError (device disconnected or in use by another process), plugin restart might be required" )
+
 
     elif isinstance(exc, (TimeoutError, asyncio.TimeoutError)):
-        connection_lost_error( self, "Connection to coordinator lost, TimeOut, plugin restart required" )
+        connection_lost_error( self, "Connection to coordinator lost, TimeOut, plugin restart might be required" )
+
+    else:
+        connection_lost_error(self, "Unexpected error type in connection_lost: %s %r, plugin restart might be required", type(exc), exc)
 
 
 def connection_lost_error(self, message: str) -> None:
