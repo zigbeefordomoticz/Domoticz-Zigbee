@@ -239,12 +239,13 @@ class LoggingManagement:
         # Remove any existing handlers on the root logger to avoid the ASCII fallback
         root_logger = logging.getLogger()
         root_logger.handlers.clear()
-        root_logger.setLevel(logging.WARNING)  # Default level, can be overridden by zigpy loggers configuration
         
+        root_logger.setLevel(logging.WARNING)  # Default level, can be overridden by zigpy loggers configuration
+        root_logger.addHandler(handler)
+
         self._plugin_file_logger.handlers.clear()
         self._plugin_file_logger.setLevel(logging.DEBUG)
-        self._plugin_file_logger.propagate = False
-        self._plugin_file_logger.addHandler(handler)
+        self._plugin_file_logger.propagate = True
         
 
         _log_mode = self.pluginconf.pluginConf.get("PluginLogMode")
