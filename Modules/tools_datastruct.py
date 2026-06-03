@@ -267,12 +267,11 @@ def reset_cluster_datastruct(self, DeviceAttribute, key, endpoint, clusterId):
         del self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId]
 
 
-def reset_datastruct(self, DeviceAttribute, key):
-    if key not in self.ListOfDevices:
+def reset_device_attribute(self, Nwkid: str, attribute: str) -> None:
+    """Reset a device attribute to an empty dict, no-op if device or attribute unknown."""
+    if Nwkid not in self.ListOfDevices:
         return
-    if DeviceAttribute in self.ListOfDevices[key]:
-        del self.ListOfDevices[key][DeviceAttribute]
-    self.ListOfDevices[key][DeviceAttribute] = {}
+    self.ListOfDevices[Nwkid][attribute] = {}
 
 
 def clean_old_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId):
