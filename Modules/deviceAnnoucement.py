@@ -32,7 +32,7 @@ from Modules.pairingProcess import (handle_device_specific_needs,
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.readAttributes import ReadAttributeRequest_0000_for_tuya
 from Modules.tools import (DeviceExist, IEEEExist, decodeMacCapa,
-                           initDeviceInList, mainPoweredDevice, timeStamped)
+                           initialize_device_record, mainPoweredDevice, timeStamped)
 from Modules.tuyaConst import TUYA_eTRV_MODEL
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTRV import tuya_eTRV_registration
@@ -379,7 +379,7 @@ def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, 
         return
 
     # 2- Create the Data Structutre
-    initDeviceInList(self, NwkId)
+    initialize_device_record(self, NwkId)
     self.log.logging([ "DeviceAnnoucement", "Pairing"], "Debug", "Decode004d - Looks like it is a new device sent by Zigate")
     self.pairing_in_progress = True
     self.ListOfDevices[NwkId]["MacCapa"] = MsgMacCapa

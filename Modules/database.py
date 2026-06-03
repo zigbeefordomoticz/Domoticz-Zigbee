@@ -211,7 +211,7 @@ def LoadDeviceList(self):
 
         self.log.logging("Database", "Status", "Z4D loads %s entries from %s" % (len(self.ListOfDevices), device_list_txt_filename))
 
-        self.log.logging("Database", "Debug", "LoadDeviceList - DeviceList filename : %s" % device_list_txt_filename)
+        self.log.logging("Database", "Status", "Creating a versioned backup of %s" % device_list_txt_filename)
         Modules.tools.helper_versionFile(device_list_txt_filename, self.pluginconf.pluginConf["numDeviceListVersion"])
 
         # Keep the Size of the DeviceList in order to check changes
@@ -431,6 +431,8 @@ def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
     if self.pluginconf.pluginConf["expJsonDatabase"]:
         _write_DeviceList_json(self)
 
+    # 1st we write the text file as it is the legacy format and we want to be sure to have it updated even if Domoticz Db write fails for some reason. 
+    # We will have always a backup of the database in the text file. Finally as by default we read the most recent between Domoticz Db and text file.
     _write_DeviceList_txt(self)
 
     use_domoticz_db = self.pluginconf.pluginConf.get("useDomoticzDb")
@@ -771,7 +773,7 @@ def CheckDeviceList(self, key, val):
     if key == "0000":
         self.ListOfDevices[key] = {"Status": ""}
     else:
-        Modules.tools.initDeviceInList(self, key)
+        Modules.tools.initialize_device_record(self, key)
 
     self.ListOfDevices[key]["RIA"] = "10"
 

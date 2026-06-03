@@ -6,64 +6,69 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 """Device lifecycle helpers extracted from tools.py"""
+import copy
 
 from Modules.database import PLUGIN_DATABASE_RECORD_VERSION, WriteDeviceList
 from Modules.domoticzAbstractLayer import domo_read_Device_Idx, domo_read_Name
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 
 
-def initDeviceInList(self, Nwkid):
+DEFAULT_DEVICE_SETUP = {
+    "Version": PLUGIN_DATABASE_RECORD_VERSION,
+    "ZDeviceName": "",
+    "Status": "004d",
+    "SQN": "",
+    "Ep": {},
+    "Heartbeat": "0",
+    "RIA": "0",
+    "LQI": {},
+    "Battery": {},
+    "Model": "",
+    "ForceAckCommands": [],
+    "MacCapa": {},
+    "IEEE": {},
+    "Type": {},
+    "ProfileID": {},
+    "ZDeviceID": {},
+    "App Version": "",
+    "Attributes List": {},
+    "DeviceType": "",
+    "HW Version": "",
+    "Last Cmds": [],
+    "LogicalType": "",
+    "Manufacturer": "",
+    "Manufacturer Name": "",
+    "NbEp": "",
+    "PowerSource": "",
+    "ReadAttributes": {},
+    "ReceiveOnIdle": "",
+    "Stack Version": "",
+    "Stamp": {},
+    "ZCL Version": "",
+    "Health": "",
+}
+
+
+def initialize_device_record(self, nwkid: str) -> None:
     """
     Initialize a new entry in the ListOfDevices for the given Nwkid.
 
     This sets up a default structure for a Zigbee device if it does not
-    already exist in the device list and the Nwkid is valid (non-empty).
+    already exist in the device list and the nwkid is valid (non-empty).
 
     Parameters:
-        Nwkid (str): The network ID (short address) of the device.
+        nwkid (str): The network ID (short address) of the device.
 
     Returns:
         None
     """
-    if Nwkid in self.ListOfDevices or not Nwkid:
+    if not nwkid:
+        return
+    
+    if nwkid in self.ListOfDevices:
         return
 
-    default_device = {
-        "Version": PLUGIN_DATABASE_RECORD_VERSION,
-        "ZDeviceName": "",
-        "Status": "004d",
-        "SQN": "",
-        "Ep": {},
-        "Heartbeat": "0",
-        "RIA": "0",
-        "LQI": {},
-        "Battery": {},
-        "Model": "",
-        "ForceAckCommands": [],
-        "MacCapa": {},
-        "IEEE": {},
-        "Type": {},
-        "ProfileID": {},
-        "ZDeviceID": {},
-        "App Version": "",
-        "Attributes List": {},
-        "DeviceType": "",
-        "HW Version": "",
-        "Last Cmds": [],
-        "LogicalType": "",
-        "Manufacturer": "",
-        "Manufacturer Name": "",
-        "NbEp": "",
-        "PowerSource": "",
-        "ReadAttributes": {},
-        "ReceiveOnIdle": "",
-        "Stack Version": "",
-        "Stamp": {},
-        "ZCL Version": "",
-        "Health": "",
-    }
-
-    self.ListOfDevices[Nwkid] = default_device.copy()
+    self.ListOfDevices[nwkid] = copy.deepcopy(DEFAULT_DEVICE_SETUP)
 
 
 def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
