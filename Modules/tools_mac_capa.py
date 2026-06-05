@@ -152,7 +152,7 @@ def full_function_device(self, nwkid):
         return True
     
     # Zigpy is considering end devices as reduced function devices and that are Receiving on idle
-    main_powered_device = bool( get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid].get("ModelName", ""), "MainPowered") )
+    main_powered_device = bool( get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid].get("Model", ""), "MainPowered") )
     is_full_function_device = main_powered_device or "Full-Function Device" in self.ListOfDevices[nwkid].get("Capability", [])
     
     self.log.logging( "outRawAPS", "Debug", "Device %s is reduced function device: %s" % (nwkid, is_full_function_device), nwkid)
@@ -167,7 +167,7 @@ def device_listening_on_iddle(self, nwkid):
         return True
 
     # Zigpy is considering end devices as reduced function devices and that are Receiving on idle
-    received_when_idle = bool( get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid].get("ModelName", ""), "ReceiveOnIdle") )
+    received_when_idle = bool( get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid].get("Model", ""), "ReceiveOnIdle") )
     reduced_function_device = received_when_idle or "Reduced-Function Device" in self.ListOfDevices[nwkid].get("Capability", [])
 
     self.log.logging( "outRawAPS", "Debug", "Device %s is reduced function device: %s" % (nwkid, reduced_function_device), nwkid)
