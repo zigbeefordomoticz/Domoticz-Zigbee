@@ -71,7 +71,7 @@ def initialize_device_record(self, nwkid: str) -> None:
     self.ListOfDevices[nwkid] = copy.deepcopy(DEFAULT_DEVICE_SETUP)
 
 
-def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
+def remap_device_nwkid(self, new_NwkId: str, IEEE: str, old_NwkId: str) -> bool:
     # We got a new Network ID for an existing IEEE. So just re-connect.
     # - mapping the information to the new new_NwkId
     if old_NwkId not in self.ListOfDevices:
@@ -80,7 +80,7 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
         return True
 
     if new_NwkId == "0000" or old_NwkId == "0000":
-        self.log.logging("PluginTools", "Log", "reconnectNWkDevice - Looks like we have an IEEE matching a Coordinator nwkid , this is not possible by definition New: %s Old: %s IEEE: %s !!!" % (
+        self.log.logging("PluginTools", "Log", "remap_device_nwkid - Looks like we have an IEEE matching a Coordinator nwkid , this is not possible by definition New: %s Old: %s IEEE: %s !!!" % (
             new_NwkId, old_NwkId, IEEE))
         return False
     
@@ -91,8 +91,8 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
         devName = self.ListOfDevices[new_NwkId]["ZDeviceName"]
 
     # MostLikely exitsingKey(the old NetworkID) is not needed any more
-    if removeNwkInList(self, old_NwkId) is None:
-        self.log.logging("PluginTools", "Error", "reconnectNWkDevice - something went wrong in the reconnect New NwkId: %s Old NwkId: %s IEEE: %s" % (
+    if drop_stale_nwkid(self, old_NwkId) is None:
+        self.log.logging("PluginTools", "Error", "remap_device_nwkid - something went wrong in the reconnect New NwkId: %s Old NwkId: %s IEEE: %s" % (
             new_NwkId, old_NwkId, IEEE))
 
     if self.groupmgt:
@@ -103,8 +103,8 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
     if self.ListOfDevices[new_NwkId]["Status"] in ( "Leave", ):
         self.ListOfDevices[new_NwkId]["Status"] = "inDB"
         self.ListOfDevices[new_NwkId]["Heartbeat"] = "0"
-        self.log.logging("PluginTools", "Status", "reconnectNWkDevice - Update Status from %s to 'inDB' for NetworkID : %s" % (
-            self.ListOfDevices[new_NwkId]["Status"], new_NwkId))
+        self.log.logging("PluginTools", "Status", "remap_device_nwkid - Update Status from %s to 'inDB' for NetworkID : %s" % (
+            self.ListOfDevices[new_NwkId]["PreviousStatus"], new_NwkId))
 
     # We will also reset ReadAttributes
     if self.pluginconf.pluginConf["enableReadAttributes"]:
@@ -119,74 +119,86 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
     return True
 
 
-def removeNwkInList(self, NWKID):
-    # Sanity check
-    safe = None
-    if "IEEE" in self.ListOfDevices[NWKID]:
-        for x in list(self.ListOfDevices.keys()):
-            if x == NWKID:
-                continue
-            if "IEEE" in self.ListOfDevices[x] and self.ListOfDevices[x]["IEEE"] == self.ListOfDevices[NWKID]["IEEE"]:
-                safe = x
-                break
+def drop_stale_nwkid(self, nwkid: str) -> str | None:
+    """Remove nwkid from ListOfDevices only if its IEEE is reachable via another entry.
+    
+    Returns the surviving nwkid, or None if removal was unsafe.
+    """
+    device = self.ListOfDevices.get(nwkid)
+    if not device:
+        return None
+    
+    ieee = device.get("IEEE")
+    if not ieee:
+        return None
 
-    if safe:
-        del self.ListOfDevices[NWKID]
-    return safe
+    surviving = next(
+        (x for x in self.ListOfDevices
+         if x != nwkid and self.ListOfDevices[x].get("IEEE") == ieee),
+        None
+    )
+
+    if surviving:
+        del self.ListOfDevices[nwkid]
+    
+    return surviving
 
 
-def removeDeviceInList(self, Devices, IEEE, Unit):
-    # Most likely call when a Device is removed from Domoticz
-    # This is a tricky one, as you might have several Domoticz devices attached to this IoT and so you must remove only the corredpoing part.
-    # Must seach in the NwkID dictionnary and remove only the corresponding device entry in the ClusterType.
-    # In case there is no more ClusterType , then the full entry can be removed
-
+def unregister_domoticz_widget(self, Devices, IEEE: str, Unit: int) -> bool:
+    """Remove a Domoticz widget binding from a device's ClusterType.
+    
+    If no widget bindings remain on the device, mark it as 'Removed'.
+    Returns True if the device was fully removed, False otherwise.
+    """
     if IEEE not in self.IEEE2NWK:
-        return
+        return False
 
     nwkid = self.IEEE2NWK[IEEE]
-    ID = domo_read_Device_Idx(self, Devices, IEEE, Unit,)
-    widget_name = domo_read_Name( self, Devices, IEEE, Unit, )
-    if ( "ClusterType" in self.ListOfDevices[nwkid] ): 
-        # We are in the old fasho V. 3.0.x Where ClusterType has been migrated from Domoticz
-        if str(ID) in self.ListOfDevices[nwkid]["ClusterType"]:
-            del self.ListOfDevices[nwkid]["ClusterType"][ID]  # Let's remove that entry
-            self.log.logging("PluginTools", "Log", "removeDeviceInList - removing : %s in %s" % (ID, str(self.ListOfDevices[nwkid]["ClusterType"])))
-            
+    device = self.ListOfDevices.get(nwkid)
+    if not device:
+        return False
+
+    widget_id = str(domo_read_Device_Idx(self, Devices, IEEE, Unit))
+    widget_name = domo_read_Name(self, Devices, IEEE, Unit)
+
+    # Legacy v3.0.x: global ClusterType (not per-endpoint)
+    if "ClusterType" in device:
+        if widget_id in device["ClusterType"]:
+            del device["ClusterType"][widget_id]
+            self.log.logging("PluginTools", "Log",
+                "unregister_domoticz_widget - removed widget %s from global ClusterType: %s"
+                % (widget_id, device["ClusterType"]))
+
+    # Current: per-endpoint ClusterType
     else:
-        for tmpEp in list(self.ListOfDevices[nwkid]["Ep"].keys()):
-            # Search this DeviceID in ClusterType
-            if (
-                "ClusterType" in self.ListOfDevices[nwkid]["Ep"][tmpEp]
-                and str(ID) in self.ListOfDevices[nwkid]["Ep"][tmpEp]["ClusterType"]
-            ):
-                del self.ListOfDevices[nwkid]["Ep"][tmpEp]["ClusterType"][str(ID)]
-                self.log.logging("PluginTools", "Log", "removeDeviceInList - removing : %s with Ep: %s in - %s" % (
-                    ID, tmpEp, str(self.ListOfDevices[nwkid]["Ep"][tmpEp]["ClusterType"])) )
+        for ep in list(device.get("Ep", {}).keys()):
+            ct = device["Ep"][ep].get("ClusterType", {})
+            if widget_id in ct:
+                del ct[widget_id]
+                self.log.logging("PluginTools", "Log",
+                    "unregister_domoticz_widget - removed widget %s from Ep %s ClusterType: %s"
+                    % (widget_id, ep, ct))
 
-    # Finaly let's see if there is any Devices left in this .
-    emptyCT = True
-    if "ClusterType" in self.ListOfDevices[nwkid]:  # Empty or Doesn't exist
-        self.log.logging("PluginTools", "Log", "removeDeviceInList - existing Global 'ClusterTpe'")
-        if self.ListOfDevices[nwkid]["ClusterType"] != {}:
-            emptyCT = False
-    for tmpEp in list(self.ListOfDevices[nwkid]["Ep"].keys()):
-        if "ClusterType" in self.ListOfDevices[nwkid]["Ep"][tmpEp]:
-            self.log.logging("PluginTools", "Log", "removeDeviceInList - existing Ep 'ClusterTpe'")
-            if self.ListOfDevices[nwkid]["Ep"][tmpEp]["ClusterType"] != {}:
-                emptyCT = False
-
-    if emptyCT:
-        #del self.ListOfDevices[key]
-        #del self.IEEE2NWK[IEEE]
-        self.ListOfDevices[nwkid]["Status"] = "Removed"
-
-        self.adminWidgets.updateNotificationWidget(
-            Devices, "Device fully removed %s with IEEE: %s" % (widget_name, IEEE)
+    # Check if any widget bindings remain across all ClusterTypes
+    def _has_bindings() -> bool:
+        if device.get("ClusterType"):
+            return True
+        return any(
+            device["Ep"][ep].get("ClusterType")
+            for ep in device.get("Ep", {})
         )
-        self.log.logging("PluginTools", "Status", "Device %s with IEEE: %s fully removed from the system." % (widget_name, IEEE))
-        return True
-    return False
+
+    if _has_bindings():
+        return False
+
+    # No bindings left — mark device as fully removed
+    device["Status"] = "Removed"
+    self.adminWidgets.updateNotificationWidget(
+        Devices, "Device fully removed %s with IEEE: %s" % (widget_name, IEEE)
+    )
+    self.log.logging("PluginTools", "Status",
+        "Device %s with IEEE: %s fully removed from the system." % (widget_name, IEEE))
+    return True
 
 
 def chk_and_update_IEEE_NWKID(self, nwkid, ieee):
@@ -203,7 +215,7 @@ def chk_and_update_IEEE_NWKID(self, nwkid, ieee):
 
     old_nwkid = self.IEEE2NWK[ ieee ]
     self.log.logging("PluginTools", "Log", "chk_and_update_IEEE_NWKID - update %s %s -> %s" %(ieee, old_nwkid, nwkid))
-    reconnectNWkDevice(self, nwkid, ieee, old_nwkid)
+    remap_device_nwkid(self, nwkid, ieee, old_nwkid)
 
 
 def try_to_reconnect_via_neighbours(self, old_nwkid):
@@ -234,7 +246,7 @@ def try_to_reconnect_via_neighbours(self, old_nwkid):
                 if item[x]["_IEEE"] == ieee:
                     new_nwkid = x
                     if new_nwkid != old_nwkid:
-                        reconnectNWkDevice(self, new_nwkid, ieee, old_nwkid)
+                        remap_device_nwkid(self, new_nwkid, ieee, old_nwkid)
                         self.log.logging("PluginTools", "Log", "try_to_reconnect_via_neighbours found %s as replacement of %s" % (new_nwkid, old_nwkid))
                     return new_nwkid
 
@@ -256,7 +268,7 @@ def zigpy_plugin_sanity_check(self, nwkid):
             self.ListOfDevices[nwkid]["Heartbeat"] = "0"
         return True
     # we have a disconnect as IEEE is not pointing to the right nwkid
-    return reconnectNWkDevice(self, nwkid, ieee, self.IEEE2NWK[ ieee ])
+    return remap_device_nwkid(self, nwkid, ieee, self.IEEE2NWK[ ieee ])
 
 
 def loggingMessages(self, msgtype, sAddr=None, ieee=None, LQI=None, SQN=None):

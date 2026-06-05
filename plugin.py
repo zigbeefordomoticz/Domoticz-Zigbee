@@ -184,7 +184,7 @@ from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
 from Modules.tools import (build_list_of_device_model,
                            chk_and_update_IEEE_NWKID, lookupForIEEE,
-                           night_shift_jobs, removeDeviceInList)
+                           night_shift_jobs, unregister_domoticz_widget)
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_get_firmware_version,
@@ -739,7 +739,7 @@ class BasePlugin:
             NwkId = self.IEEE2NWK[DeviceID]
 
             self.log.logging("Plugin", "Status", f"Removing Device {DeviceID} {device_name} in progress")
-            fullyremoved = removeDeviceInList(self, Devices, DeviceID, Unit)
+            fullyremoved = unregister_domoticz_widget(self, Devices, DeviceID, Unit)
 
             # We might have to remove also the Device from Groups
             if fullyremoved:

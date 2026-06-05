@@ -59,9 +59,9 @@ from Modules.tools_device_lifecycle import (  # noqa: F401
     is_bind_ep,
     is_fake_ep,
     loggingMessages,
-    reconnectNWkDevice,
-    removeDeviceInList,
-    removeNwkInList,
+    remap_device_nwkid,
+    unregister_domoticz_widget,
+    drop_stale_nwkid,
     try_to_reconnect_via_neighbours,
     zigpy_plugin_sanity_check,
 )

@@ -43,7 +43,7 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
         True if object found
         False if not found
     """
-    from Modules.tools_device_lifecycle import reconnectNWkDevice
+    from Modules.tools_device_lifecycle import remap_device_nwkid
 
     ieee_from_nwkid = None
 
@@ -122,7 +122,7 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
         # the coming Short Address lookupNwkId.
         # Most likely , device has changed its NwkId
         found = True
-        reconnectNWkDevice(self, lookupNwkId, lookupIEEE, existing_nwkid)
+        remap_device_nwkid(self, lookupNwkId, lookupIEEE, existing_nwkid)
 
         self.adminWidgets.updateNotificationWidget( Devices, "Reconnect %s %s with %s" % (lookupNwkId, lookupIEEE, existing_nwkid))
 
@@ -134,7 +134,7 @@ def lookupForIEEE(self, nwkid, reconnect=False):
     # Purpose of this function is to search a Nwkid in the Neighbours table and find an IEEE
     # This is used when receiving a message from an unknown device !
     # """
-    from Modules.tools_device_lifecycle import reconnectNWkDevice
+    from Modules.tools_device_lifecycle import remap_device_nwkid
 
     for key in list(self.ListOfDevices.keys()):
         if "Neighbours" not in self.ListOfDevices[key]:
@@ -161,7 +161,7 @@ def lookupForIEEE(self, nwkid, reconnect=False):
                 continue
 
             if reconnect:
-                reconnectNWkDevice(self, nwkid, ieee, old_NwkId)
+                remap_device_nwkid(self, nwkid, ieee, old_NwkId)
                 self.log.logging("PluginTools", "Status", "lookupForIEEE found a matching IEEE: %s in the Router Neighbours %s with Nwkid: %s (old Nwkid was %s)" %(
                     ieee, key, nwkid, old_NwkId))
             return ieee

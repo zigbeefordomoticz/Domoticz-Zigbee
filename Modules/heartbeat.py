@@ -63,7 +63,7 @@ from Modules.tools import (ReArrangeMacCapaBasedOnModel, deviceconf_device,
                            get_device_nickname, get_deviceconf_parameter_value,
                            getAttributeValue, getListOfEpForCluster, is_hex,
                            is_time_to_perform_work, mainPoweredDevice,
-                           night_shift_jobs, removeNwkInList)
+                           night_shift_jobs, drop_stale_nwkid)
 from Modules.tuya import tuya_polling
 from Modules.tuyaTRV import tuya_switch_online
 from Modules.zb_tables_management import mgmt_rtg, mgtm_binding
@@ -968,7 +968,7 @@ def processListOfDevices(self, Devices):
                             self.ListOfDevices[NwkId]["IEEE"], NwkId) )
                         del self.IEEE2NWK[self.ListOfDevices[NwkId]["IEEE"]]
                     self.log.logging( "Heartbeat", "Status", "processListOfDevices - Removing the entry %s from ListOfDevice" % (NwkId))
-                    removeNwkInList(self, NwkId)
+                    drop_stale_nwkid(self, NwkId)
 
         elif status not in ("inDB", "UNKNOW", "erasePDM"):
             # Discovery process 0x004d -> 0x0042 -> 0x8042 -> 0w0045 -> 0x8045 -> 0x0043 -> 0x8043
