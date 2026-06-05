@@ -54,7 +54,7 @@ from Modules.tools_device_lookup import (  # noqa: F401
 
 # Device lifecycle
 from Modules.tools_device_lifecycle import (  # noqa: F401
-    chk_and_update_IEEE_NWKID,
+    reconcile_ieee_nwkid,
     initialize_device_record,
     is_bind_ep,
     is_fake_ep,

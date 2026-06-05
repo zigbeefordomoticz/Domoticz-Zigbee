@@ -201,22 +201,38 @@ def unregister_domoticz_widget(self, Devices, IEEE: str, Unit: int) -> bool:
     return True
 
 
-def chk_and_update_IEEE_NWKID(self, nwkid, ieee):
-    if ieee in self.IEEE2NWK and nwkid in self.ListOfDevices:
-        return
+def reconcile_ieee_nwkid(self, nwkid: str, ieee: str) -> None:
+    """Detect and correct a NWK ID change for a known IEEE address.
+    
+    Called when an IEEE is seen under a new NWK ID. Guards against
+    coordinator address, unknown IEEE, and already-consistent state
+    before delegating to remap_device_nwkid.
+    """
+    # Already consistent — IEEE and NWK ID both known and matching
+    if ieee in self.IEEE2NWK and self.IEEE2NWK[ieee] == nwkid and nwkid in self.ListOfDevices:
+        return  # Fully consistent, nothing to do
+
+    # New NWK ID already exists in the device list — nothing to remap
     if nwkid in self.ListOfDevices:
         return
-    if self.ControllerIEEE and self.ControllerIEEE == ieee:
-        return
+
+    # Never remap the coordinator
     if nwkid == "0000":
         return
+
+    # Never remap if this IEEE belongs to the controller
+    if self.ControllerIEEE and self.ControllerIEEE == ieee:
+        return
+
+    # IEEE unknown — nothing to remap from
     if ieee not in self.IEEE2NWK:
         return
 
-    old_nwkid = self.IEEE2NWK[ ieee ]
-    self.log.logging("PluginTools", "Log", "chk_and_update_IEEE_NWKID - update %s %s -> %s" %(ieee, old_nwkid, nwkid))
+    old_nwkid = self.IEEE2NWK[ieee]
+    self.log.logging("PluginTools", "Log",
+        "reconcile_ieee_nwkid - NWK ID changed for IEEE %s: %s → %s"
+        % (ieee, old_nwkid, nwkid))
     remap_device_nwkid(self, nwkid, ieee, old_nwkid)
-
 
 def try_to_reconnect_via_neighbours(self, old_nwkid):
     

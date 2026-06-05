@@ -183,7 +183,7 @@ from Modules.readZclClusters import load_zcl_cluster
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
 from Modules.tools import (build_list_of_device_model,
-                           chk_and_update_IEEE_NWKID, lookupForIEEE,
+                           reconcile_ieee_nwkid, lookupForIEEE,
                            night_shift_jobs, unregister_domoticz_widget)
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import (zigate_erase_eeprom,
@@ -823,7 +823,7 @@ class BasePlugin:
 
 
     def zigpy_chk_upd_device(self, ieee, nwkid ):
-        chk_and_update_IEEE_NWKID(self, nwkid, ieee)
+        reconcile_ieee_nwkid(self, nwkid, ieee)
 
 
     def zigpy_get_all_devices(self):
