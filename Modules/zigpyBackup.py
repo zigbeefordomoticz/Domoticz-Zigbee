@@ -29,7 +29,7 @@ def handle_zigpy_backup(self, backup):
     self.log.logging("TransportZigpy", "Debug", "Backups: %s" %backup)
 
     if os.path.exists(_coordinator_backup):
-        Modules.tools.helper_versionFile(_coordinator_backup, self.pluginconf.pluginConf["numDeviceListVersion"])
+        Modules.tools.rotate_file_versions(_coordinator_backup, self.pluginconf.pluginConf["numDeviceListVersion"])
 
     try:
         with open(_coordinator_backup, "wt") as file:
