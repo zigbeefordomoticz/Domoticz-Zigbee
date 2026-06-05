@@ -167,8 +167,7 @@ from Modules.tools_model import (  # noqa: F401
 
 # File/utility helpers
 from Modules.tools_files import (  # noqa: F401
-    helper_copyfile,
-    helper_versionFile,
+    rotate_file_versions,
     how_many_devices,
     night_shift_jobs,
     print_stack,

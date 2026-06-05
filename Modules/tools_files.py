@@ -7,76 +7,74 @@
 
 """File/utility helpers extracted from tools.py"""
 
+
+import contextlib
 import datetime
 import os.path
 import shutil
+from pathlib import Path
 
 
-def helper_copyfile(source, dest, move=True):
-    """
-    Copy or move a file from source to destination.
 
-    If `move` is True, the source file is moved. Otherwise, it is copied.
-    If the shutil operation fails (e.g., for non-binary-safe files), it falls back to line-by-line copying in text mode.
+def _safe_file_transfer(source: str, dest: str, move: bool = True) -> None:
+    """Move or copy a file with a text-mode fallback for resilience.
 
-    Args:
-        source (str): Path to the source file.
-        dest (str): Destination file path.
-        move (bool): Whether to move (True) or copy (False) the file.
-
-    Returns:
-        None
-    """
-    try:
-        if move:
-            shutil.move(source, dest)
-        else:
-            shutil.copy(source, dest)
-
-    except Exception as e:
-        # Fallback in case shutil fails (e.g., special file types or permissions)
-        try:
-            with open(source, "r", encoding="utf-8") as src, open(dest, "wt", encoding="utf-8") as dst:
-                for line in src:
-                    dst.write(line)
-        except Exception as fallback_error:
-            raise RuntimeError(f"Failed to copy {source} to {dest}: {fallback_error}") from e
-
-
-def helper_versionFile(source, nbversion):
-    """
-    Maintain a versioned backup of a file.
-
-    This function creates versioned copies of the given file, like `file-01`, `file-02`, ..., up to `file-nbversion`.
-    Each call shifts the previous versions up by one (e.g., `file-02` becomes `file-03`, etc.).
-    The most recent copy is always `file-01`.
+    Attempts a binary-safe shutil move/copy first. If that fails,
+    falls back to line-by-line UTF-8 text copy.
 
     Args:
-        source (str): The path of the file to version.
-        nbversion (int): Number of versions to keep. If 0, does nothing.
+        source: Path to the source file.
+        dest:   Destination file path.
+        move:   If True (default), move the file; otherwise copy it.
 
-    Returns:
-        None
+    Raises:
+        RuntimeError: If both the shutil operation and the fallback fail.
     """
-    source = str(source)
-
-    if nbversion == 0:
+    with contextlib.suppress(Exception):
+        shutil.move(source, dest) if move else shutil.copy(source, dest)
         return
 
-    if nbversion == 1:
-        helper_copyfile(source, f"{source}-01")
-    else:
-        # Shift existing versions up by 1
-        for version in range(nbversion - 1, 0, -1):
-            file_old = f"{source}-{version:02d}"
-            if not os.path.isfile(file_old):
-                continue
+    try:
+        with open(source, "r", encoding="utf-8") as src, \
+             open(dest, "w", encoding="utf-8") as dst:
+            dst.writelines(src)
+    except Exception as fallback_error:
+        raise RuntimeError(
+            f"safe_file_transfer failed: {source!r} → {dest!r}: {fallback_error}"
+        ) from fallback_error
 
-            file_new = f"{source}-{version + 1:02d}"
-            helper_copyfile(file_old, file_new)
 
-        # Create or update version 01
-        helper_copyfile(source, f"{source}-01", move=False)
+def rotate_file_versions(source: str | Path, nb_versions: int) -> None:
+    """Maintain a rotating set of versioned file backups.
+
+    Shifts existing versions up by one (e.g. -02 → -03), then copies
+    the source to -01. The oldest version beyond nb_versions is discarded.
+
+    Args:
+        source:      Path to the file to version.
+        nb_versions: Number of versions to keep. No-op if 0.
+
+    Example:
+        rotate_file_versions("/data/myfile.db", 3)
+        # Creates: myfile.db-01  (fresh copy)
+        #          myfile.db-02  (previous -01)
+        #          myfile.db-03  (previous -02)
+    """
+    source = Path(source)
+
+    if nb_versions == 0:
+        return
+
+    # Shift existing versions up: -02 → -03, -01 → -02
+    for version in range(nb_versions - 1, 0, -1):
+        file_old = Path(f"{source}-{version:02d}")
+        if not file_old.is_file():
+            continue
+        file_new = Path(f"{source}-{version + 1:02d}")
+        _safe_file_transfer(str(file_old), str(file_new), move=True)
+
+    # Slot -01 always gets a fresh copy of the source
+    _safe_file_transfer(str(source), f"{source}-01", move=False)
 
 
 def night_shift_jobs( self ):

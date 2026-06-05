@@ -211,11 +211,12 @@ def LoadDeviceList(self):
 
         self.log.logging("Database", "Status", "Z4D loads %s entries from %s" % (len(self.ListOfDevices), device_list_txt_filename))
 
-        self.log.logging("Database", "Status", "Creating a versioned backup of %s" % device_list_txt_filename)
-        Modules.tools.helper_versionFile(device_list_txt_filename, self.pluginconf.pluginConf["numDeviceListVersion"])
 
         # Keep the Size of the DeviceList in order to check changes
         self.DeviceListSize = os.path.getsize(device_list_txt_filename)
+        
+    self.log.logging("Database", "Status", "Creating a versioned backup of %s" % device_list_txt_filename)
+    Modules.tools.rotate_file_versions(device_list_txt_filename, self.pluginconf.pluginConf["numDeviceListVersion"])
 
     cleanup_table_entries( self)
 
