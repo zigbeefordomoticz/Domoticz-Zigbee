@@ -61,7 +61,7 @@ If **any box cannot be checked**, stop and reassess.
 **Purpose:** Full-featured Zigbee integration for Domoticz using `zigpy` + multiple radio backends.
 
 - Production-grade, long-running, and stateful
-- Supports multiple coordinators: ZiGate, ZNP, EZSP, deCONZ
+- Supports multiple coordinators: ZNP, EZSP, deCONZ (ZiGate: best-effort only, not actively supported)
 - Handles hundreds of certified devices via JSON configs
 
 ---
@@ -85,7 +85,7 @@ Domoticz (host)
 ## 🔌 Zigbee Stack & Dependencies
 
 - `zigpy` core
-- Radio libraries: `zigpy-znp`, `bellows`, `deconz`, `zigpy-zigate`
+- Radio libraries: `zigpy-znp`, `bellows`, `deconz` (zigpy-zigate: best-effort only)
 - Async-first event model (critical for stability)
 
 🚫 DO NOT:
@@ -176,5 +176,6 @@ Domoticz (host)
 - Make small, targeted changes
 - Respect existing async patterns
 - Preserve long-term stability
+
 
 
