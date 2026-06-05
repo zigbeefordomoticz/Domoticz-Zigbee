@@ -286,29 +286,45 @@ def zigpy_plugin_sanity_check(self, nwkid):
     # we have a disconnect as IEEE is not pointing to the right nwkid
     return remap_device_nwkid(self, nwkid, ieee, self.IEEE2NWK[ ieee ])
 
+def loggingMessages(
+    self,
+    msgtype: str,
+    sAddr: str | None = None,
+    ieee: str | None = None,
+    LQI: str | None = None,
+    SQN: str | None = None,
+) -> None:
+    """Log a formatted device activity line, gated by enableStructuredDeviceTrace and debugMatchId.
 
-def loggingMessages(self, msgtype, sAddr=None, ieee=None, LQI=None, SQN=None):
+    Requires at least one of sAddr or ieee to identify the device.
+    LQI and SQN are expected as hex strings (e.g. '0x1F', '42').
+    """
+    if not self.pluginconf.pluginConf.get("enableStructuredDeviceTrace"):
+        return
 
-    if not self.pluginconf.pluginConf["logFORMAT"]:
-        return
-    if sAddr == ieee and sAddr is None:
-        return
-    _debugMatchId = self.pluginconf.pluginConf["debugMatchId"].lower()
-    if sAddr is None:
-        sAddr = self.IEEE2NWK[ieee] if ieee in self.IEEE2NWK else ""
-    if ieee is None:
-        ieee = self.ListOfDevices[sAddr]["IEEE"] if sAddr in self.ListOfDevices else ""
-    if _debugMatchId not in ["ffff", sAddr]:
-        # If not matching _debugMatchId
+    # Resolve missing address from the other
+    if sAddr is None and ieee in self.IEEE2NWK:
+        sAddr = self.IEEE2NWK.get(ieee, "")
+    if ieee is None and sAddr in self.ListOfDevices:
+        ieee = self.ListOfDevices[sAddr].get("IEEE", "") if sAddr in self.ListOfDevices else ""
+
+    _debug_match = self.pluginconf.pluginConf["MatchingNwkId"].lower()
+    if _debug_match not in ("ffff", sAddr):
         return
 
     zdevname = ""
-    if sAddr in self.ListOfDevices and "ZDeviceName" in self.ListOfDevices[sAddr]:
-        zdevname = self.ListOfDevices[sAddr]["ZDeviceName"]
+    if sAddr in self.ListOfDevices:
+        zdevname = self.ListOfDevices[sAddr].get("ZDeviceName", "")
 
-    self.log.logging("PluginTools", "Log", "Device activity for | %4s | %14s | %4s | %16s | %3s | 0x%02s |" % (
-        msgtype, zdevname, sAddr, ieee, int(LQI, 16), SQN) )
+    lqi_int = int(LQI, 16) if LQI else 0
+    sqn_str = SQN or ""
 
+    self.log.logging(
+        "PluginTools", "Log",
+        "Device activity for | %4s | %16s | %4s | %16s | %3d | 0x%02s |"
+        % (msgtype, zdevname, sAddr, ieee, lqi_int, sqn_str)
+    )
+    
 
 def _get_device_conf(self, nwkid: str) -> dict | None:
     """Return the DeviceConf entry for a device, or None if unavailable."""

@@ -375,7 +375,7 @@ SETTINGS = {
             "inRawAPS": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "iasSettings": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "logDeviceUpdate": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": False },
-            "logFORMAT": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": True, "Advanced": True },
+            "enableStructuredDeviceTrace": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "logThreadName": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False },
             "loggingBackupCount": { "type": "int", "default": 7, "current": None, "restart": 1, "hidden": False, "Advanced": False },
             "loggingMaxMegaBytes": { "type": "int", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": False },
