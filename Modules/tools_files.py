@@ -135,20 +135,3 @@ def how_many_devices(self):
 
     return routers, enddevices
 
-
-def is_domoticz_db_available(self):
-    #  Domoticz 2021.1 build 13495
-
-    if not self.VersionNewFashion:
-        self.log.logging("PluginTools", "Debug", "is_domoticz_db_available: %s due to Fashion" % False)
-        return False
-
-    if self.DomoticzMajor < 2021:
-        self.log.logging("PluginTools", "Debug", "is_domoticz_db_available: %s due to Major" % False)
-        return False
-
-    if self.DomoticzMajor == 2021 and self.DomoticzMinor < 1:
-        self.log.logging("PluginTools", "Debug", "is_domoticz_db_available: %s due to Minor" % False)
-        return False
-
-    return True
