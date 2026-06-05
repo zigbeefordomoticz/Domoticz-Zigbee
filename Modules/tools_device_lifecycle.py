@@ -282,20 +282,31 @@ def loggingMessages(self, msgtype, sAddr=None, ieee=None, LQI=None, SQN=None):
         msgtype, zdevname, sAddr, ieee, int(LQI, 16), SQN) )
 
 
-def is_fake_ep( self, nwkid, ep):
+def _get_device_conf(self, nwkid: str) -> dict | None:
+    """Return the DeviceConf entry for a device, or None if unavailable."""
+    device = self.ListOfDevices.get(nwkid)
+    if not device:
+        return None
+    model = device.get("Model")
+    return self.DeviceConf.get(model) if model else None
+
+
+def is_fake_ep(self, nwkid: str, ep: str) -> bool:
+    """Return True if the endpoint is declared as a FakeEp in DeviceConf."""
+    conf = _get_device_conf(self, nwkid)
+    if conf is None:
+        return False
+    fake_eps = conf.get("FakeEp")
+    return fake_eps is not None and ep in fake_eps
+
+
+def is_bind_ep(self, nwkid: str, ep: str) -> bool:
+    """Return True if the endpoint is allowed for binding.
     
-    return (
-        "Model" in self.ListOfDevices[nwkid]
-        and self.ListOfDevices[nwkid]["Model"] in self.DeviceConf
-        and "FakeEp" in self.DeviceConf[self.ListOfDevices[nwkid]["Model"]]
-        and ep in self.DeviceConf[self.ListOfDevices[nwkid]["Model"]]["FakeEp"]
-    )
-
-
-def is_bind_ep( self, nwkid, ep):
-    return (
-        "Model" not in self.ListOfDevices[nwkid]
-        or self.ListOfDevices[nwkid]["Model"] not in self.DeviceConf
-        or "bindEp" not in self.DeviceConf[self.ListOfDevices[nwkid]["Model"]]
-        or ep in self.DeviceConf[self.ListOfDevices[nwkid]["Model"]]["bindEp"]
-    )
+    Defaults to True when no bindEp restriction is configured.
+    """
+    conf = _get_device_conf(self, nwkid)
+    if conf is None:
+        return True  # No config → no restriction
+    bind_eps = conf.get("bindEp")
+    return bind_eps is None or ep in bind_eps
