@@ -145,20 +145,6 @@ def mainPoweredDevice(self, nwkid):
     return mainPower
 
 
-def device_listening_on_iddle(self, nwkid):
-    from Modules.tools_model import get_deviceconf_parameter_value
-    
-    if nwkid not in self.ListOfDevices:
-        return True
-    
-    # Zigpy is considering end devices as reduced function devices and that are Receiving on idle
-    received_when_idle = bool( get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid].get("ModelName", ""), "ReceiveOnIdle") )
-    reduced_function_device = received_when_idle or "Reduced-Function Device" in self.ListOfDevices[nwkid].get("Capability", [])
-    
-    self.log.logging( "outRawAPS", "Debug", "Device %s is reduced function device: %s" % (nwkid, reduced_function_device), nwkid)
-    
-    return reduced_function_device
-
 def full_function_device(self, nwkid):
     from Modules.tools_model import get_deviceconf_parameter_value
     
@@ -173,12 +159,26 @@ def full_function_device(self, nwkid):
     
     return is_full_function_device
 
+def device_listening_on_iddle(self, nwkid):
+
+    from Modules.tools_model import get_deviceconf_parameter_value
+
+    if nwkid not in self.ListOfDevices:
+        return True
+
+    # Zigpy is considering end devices as reduced function devices and that are Receiving on idle
+    received_when_idle = bool( get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid].get("ModelName", ""), "ReceiveOnIdle") )
+    reduced_function_device = received_when_idle or "Reduced-Function Device" in self.ListOfDevices[nwkid].get("Capability", [])
+
+    self.log.logging( "outRawAPS", "Debug", "Device %s is reduced function device: %s" % (nwkid, reduced_function_device), nwkid)
+
+    return reduced_function_device
+
 
 def is_ack_tobe_disabled(self, nwkid):
     """Determine if ACK should be disabled for the given device."""
     
     device = self.ListOfDevices.get(nwkid)
-    
     if not device:
         return False
 
