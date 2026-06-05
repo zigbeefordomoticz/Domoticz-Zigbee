@@ -29,35 +29,6 @@ def deviceconf_device(self, nwkid):
     return self.DeviceConf[model] if model and model in self.DeviceConf else {}
 
 
-def getListofClusterbyModel(self, Model, InOut):
-    """
-    Provide the list of clusters attached to Ep In
-    """
-    listofCluster = []
-    if InOut == "" or InOut is None:
-        return listofCluster
-    if InOut not in ["Epin", "Epout"]:
-        self.log.logging("PluginTools", "Error", "getListofClusterbyModel - Argument error : " + Model + " " + InOut)
-        return ""
-
-    if Model in self.DeviceConf and InOut in self.DeviceConf[Model]:
-        for ep in list(self.DeviceConf[Model][InOut].keys()):
-            seen = ""
-            for cluster in sorted(self.DeviceConf[Model][InOut][ep]):
-                if cluster in ("ClusterType", "Type", "ColorMode", seen):
-                    continue
-                listofCluster.append(cluster)
-                seen = cluster
-    return listofCluster
-
-
-def getListofInClusterbyModel(self, Model):
-    return getListofClusterbyModel(self, Model, "Epin")
-
-
-def getListofOutClusterbyModel(self, Model):
-    return getListofClusterbyModel(self, Model, "Epout")
-
 
 def getListofType(self, widget_type):
     """

@@ -161,9 +161,6 @@ from Modules.tools_model import (  # noqa: F401
     deviceconf_device,
     get_device_nickname,
     get_deviceconf_parameter_value,
-    getListofClusterbyModel,
-    getListofInClusterbyModel,
-    getListofOutClusterbyModel,
     getListofType,
     unknown_device_model,
 )
