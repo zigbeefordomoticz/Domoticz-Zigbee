@@ -211,11 +211,12 @@ def LoadDeviceList(self):
 
         self.log.logging("Database", "Status", "Z4D loads %s entries from %s" % (len(self.ListOfDevices), device_list_txt_filename))
 
-        self.log.logging("Database", "Debug", "LoadDeviceList - DeviceList filename : %s" % device_list_txt_filename)
-        Modules.tools.helper_versionFile(device_list_txt_filename, self.pluginconf.pluginConf["numDeviceListVersion"])
 
         # Keep the Size of the DeviceList in order to check changes
         self.DeviceListSize = os.path.getsize(device_list_txt_filename)
+        
+    self.log.logging("Database", "Status", "Creating a versioned backup of %s" % device_list_txt_filename)
+    Modules.tools.rotate_file_versions(device_list_txt_filename, self.pluginconf.pluginConf["numDeviceListVersion"])
 
     cleanup_table_entries( self)
 
@@ -250,18 +251,18 @@ def LoadDeviceList(self):
 
         if self.pluginconf.pluginConf["resetReadAttributes"]:
             self.log.logging("Database", "Log", "ReadAttributeReq - Reset ReadAttributes data %s" % addr)
-            Modules.tools.reset_datastruct(self, "ReadAttributes", addr)
+            Modules.tools.reset_device_attribute(self, "ReadAttributes", addr)
 
         if self.pluginconf.pluginConf["resetConfigureReporting"]:
             self.log.logging("Database", "Log", "Reset ConfigureReporting data %s" % addr)
-            Modules.tools.reset_datastruct(self, STORE_CONFIGURE_REPORTING, addr)
-            Modules.tools.reset_datastruct(self, STORE_READ_CONFIGURE_REPORTING, addr)
+            Modules.tools.reset_device_attribute(self, STORE_CONFIGURE_REPORTING, addr)
+            Modules.tools.reset_device_attribute(self, STORE_READ_CONFIGURE_REPORTING, addr)
             
         if ( 
             STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[ addr ] 
             and "Request" in self.ListOfDevices[ addr ][STORE_READ_CONFIGURE_REPORTING]
         ):
-            Modules.tools.reset_datastruct(self, STORE_READ_CONFIGURE_REPORTING, addr)
+            Modules.tools.reset_device_attribute(self, STORE_READ_CONFIGURE_REPORTING, addr)
 
         if (
             "Param" in self.ListOfDevices[addr] 
@@ -431,6 +432,8 @@ def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
     if self.pluginconf.pluginConf["expJsonDatabase"]:
         _write_DeviceList_json(self)
 
+    # 1st we write the text file as it is the legacy format and we want to be sure to have it updated even if Domoticz Db write fails for some reason. 
+    # We will have always a backup of the database in the text file. Finally as by default we read the most recent between Domoticz Db and text file.
     _write_DeviceList_txt(self)
 
     use_domoticz_db = self.pluginconf.pluginConf.get("useDomoticzDb")
@@ -771,7 +774,7 @@ def CheckDeviceList(self, key, val):
     if key == "0000":
         self.ListOfDevices[key] = {"Status": ""}
     else:
-        Modules.tools.initDeviceInList(self, key)
+        Modules.tools.initialize_device_record(self, key)
 
     self.ListOfDevices[key]["RIA"] = "10"
 
