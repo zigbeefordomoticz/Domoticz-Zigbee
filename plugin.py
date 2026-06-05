@@ -152,10 +152,10 @@ from Modules.basicOutputs import (ZigatePermitToJoin, leaveRequest,
                                   setExtendedPANID, setTimeServer,
                                   start_Zigate, zigateBlueLed)
 from Modules.casaia import restart_plugin_reset_ModuleIRCode
-from Modules.checkingUpdate import (check_plugin_version_against_dns,
-                                    is_internet_available,
-                                    is_plugin_update_available,
-                                    is_zigate_firmware_available)
+from Modules.checkingUpdate import (is_internet_available,
+                                    initialize_version_checker,
+                                    start_version_check_worker,
+                                    stop_version_check_worker)
 from Modules.command import domoticz_command
 from Modules.database import (LoadDeviceList, WriteDeviceList,
                               checkDevices2LOD, checkListOfDevice2Devices,
@@ -349,6 +349,8 @@ class BasePlugin:
         
         self.device_settings = {}
         initialize_device_settings(self)
+        
+        initialize_version_checker(self)
 
     def onStart(self):
 
@@ -636,6 +638,14 @@ class BasePlugin:
 
         self.busy = False
 
+        if self.internet_available and self.pluginconf.pluginConf["internetAccess"]:
+            start_version_check_worker(
+                self,
+                self.zigbee_communication,
+                self.pluginParameters["PluginBranch"],
+                self.FirmwareMajorVersion,
+            )
+
         # Log running threads. We should have only the main thread (MainThread)
         self.log.logging("Plugin", "Log", "Active threads after onStart():")
         for t in threading.enumerate():
@@ -656,6 +666,10 @@ class BasePlugin:
             self.log.logging("Plugin", "Log", "onStop called")
         else:
             Domoticz.Log("onStop()")
+
+        # Stop the DNS version-check worker and wait for it to exit.
+        # Non-daemon threads must complete before the embedded interpreter tears down.
+        stop_version_check_worker(self, timeout=10)
 
         # Log running threads. We should have only the main thread (MainThread)
         if self.pluginconf and self.log:
@@ -710,6 +724,7 @@ class BasePlugin:
         if self.pluginconf and self.log:
             self.log.logging(["Transport", "StopProcess"], "Log", "onStop called, shuting down LoggingManagement thread")
             self.log.closeLogFile()
+
 
         # Log running threads. We should have only the main thread (MainThread)
         Domoticz.Log("Remaining active threads:")
@@ -966,11 +981,7 @@ class BasePlugin:
             zigateInit_Phase3(self)
             return
 
-        # Checking Version
-        if self.internet_available:
-            _check_plugin_version( self )
-
-            if self.pluginconf.pluginConf["MatomoOptIn"] and self.HeartbeatCount % ( (9 * 3600) // HEARTBEAT) == 0:
+        if self.pluginconf.pluginConf["MatomoOptIn"] and self.HeartbeatCount % ( (9 * 3600) // HEARTBEAT) == 0:
                 matomo_plugin_analytics_infos(self)
 
         if self.transport == "None":
@@ -1912,34 +1923,6 @@ def _trigger_coordinator_backup( self ):
         and self.ControllerLink
     ):
         self.ControllerLink.sendData( "COORDINATOR-BACKUP", {})
-
-
-def _check_plugin_version( self ):
-    self.pluginParameters["TimeStamp"] = int(time.time())
-    if self.transport != "None" and self.pluginconf.pluginConf["internetAccess"] and (
-        self.pluginParameters["available"] is None or self.HeartbeatCount % (12 * 3600 // HEARTBEAT) == 0
-    ):
-        (
-            self.pluginParameters["available"],
-            self.pluginParameters["available-firmMajor"],
-            self.pluginParameters["available-firmMinor"],
-        ) = check_plugin_version_against_dns(self, self.zigbee_communication, self.pluginParameters["PluginBranch"], self.FirmwareMajorVersion)
-        self.pluginParameters["FirmwareUpdate"] = False
-        self.pluginParameters["PluginUpdate"] = False
-
-        if is_plugin_update_available(self, self.pluginParameters["PluginVersion"], self.pluginParameters["available"]):
-            self.log.logging("Plugin", "Status", "Z4D found a recent plugin version (%s) on gitHub. You are on (%s) ***" %(
-                self.pluginParameters["available"], self.pluginParameters["PluginVersion"] ))
-            self.pluginParameters["PluginUpdate"] = True
-        if is_zigate_firmware_available(
-            self,
-            self.FirmwareMajorVersion,
-            self.FirmwareVersion,
-            self.pluginParameters["available-firmMajor"],
-            self.pluginParameters["available-firmMinor"],
-        ):
-            self.log.logging("Plugin", "Status", "Z4D found a newer Zigate Firmware version")
-            self.pluginParameters["FirmwareUpdate"] = True
 
 
 def _coordinator_ready(self):
