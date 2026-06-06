@@ -41,9 +41,10 @@ ZLINKY_MODE = {
 
 ZLINKY_UPGRADE_PATHS = { 
     "ZLinky_TIC": (
-    "ZLinky_TIC-historique-mono", "ZLinky_TIC-historique-tri",
-    "ZLinky_TIC-standard-mono", "ZLinky_TIC-standard-mono-prod",
-    "ZLinky_TIC-standard-tri", "ZLinky_TIC-standard-tri-prod"),
+        "ZLinky_TIC-historique-mono", "ZLinky_TIC-historique-tri",
+        "ZLinky_TIC-standard-mono", "ZLinky_TIC-standard-mono-prod",
+        "ZLinky_TIC-standard-tri", "ZLinky_TIC-standard-tri-prod"
+    ),
     "ZLinky_TIC-historique-mono": ( "ZLinky_TIC-standard-mono", "ZLinky_TIC-standard-mono-prod"),
     "ZLinky_TIC-historique-tri": ( "ZLinky_TIC-standard-tri", "ZLinky_TIC-standard-tri-prod" ),
     "ZLinky_TIC-standard-mono-prod": (),
@@ -211,6 +212,8 @@ def get_OPTARIF(self, nwkid):
         elif op_tarifaire.startswith("EJP"):
             base_tarifaire = "EJP"  # Treat any EJPx as EJP
         elif op_tarifaire.startswith("HC ") or op_tarifaire.startswith("HP "):
+            base_tarifaire = "HC SEM ET HC WE"
+        elif op_tarifaire.startswith("HCHP"):
             base_tarifaire = "HC SEM ET HC WE"
         else:
             base_tarifaire = op_tarifaire
