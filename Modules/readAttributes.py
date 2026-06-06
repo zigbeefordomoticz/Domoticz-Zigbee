@@ -1516,9 +1516,18 @@ def ReadAttributeReq_Scheduled_ZLinky(self, nwkid):
     }
 
     ep_out = "01"
+
+    # Check if we already have the OPTARIF attribute to know which attribute we need to read for the color, if not request it for next time
+    raw_optarif = get_OPTARIF(self, nwkid) or ""
+    optarif = str(raw_optarif)[:2] if isinstance(raw_optarif, str) else ""
+
+    if optarif not in { "BA", "HC", "HE", "EJ", "BB" }:
+        self.log.logging(["ReadAttributes", "ZLinky"], "Log", f"ReadAttribute_ZLinkyIndex: {nwkid} unknown OPTARIF '{optarif}', Reading OPTARIF attribute to try to get it for next time",nwkid=nwkid)
+        # Request missing OPTARIF attribute to try to get it for next time
+        ReadAttributeReq(self, nwkid, ZIGATE_EP, ep_out, "ff66", [0x0000], ackIsDisabled=False)
+
     for cluster in WORK_TO_BE_DONE:
-        self.log.logging(["ReadAttributes", "ZLinky"], "Debug", "ReadAttributeReq_Scheduled_ZLinky: %s cluster %s attribute: %s" %( 
-            nwkid, cluster, WORK_TO_BE_DONE[ cluster ]), nwkid=nwkid)
+        self.log.logging(["ReadAttributes", "ZLinky"], "Debug", "ReadAttributeReq_Scheduled_ZLinky: %s cluster %s attribute: %s" %( nwkid, cluster, WORK_TO_BE_DONE[ cluster ]), nwkid=nwkid)
         ReadAttributeReq(self, nwkid, ZIGATE_EP, ep_out, cluster, WORK_TO_BE_DONE[ cluster ], ackIsDisabled=False)
 
 
@@ -1529,48 +1538,55 @@ def ReadAttributeReq_Scheduled_linky_mode(self, nwkid):
 
 
 def ReadAttributeRequest_0702_ZLinky_TIC(self, key):
-    # The list of Attributes could be based on the Contract
     EPout = "01"
 
-    tarif = None
-    listAttributes = [0x0020, 0x0100, 0x0102, 0x0104, 0x0106, 0x0108, 0x10A]
-    if "ff66" in self.ListOfDevices[key]["Ep"]["01"] and "0000" in self.ListOfDevices[key]["Ep"]["01"]["ff66"]:
-        if self.ListOfDevices[key]["Ep"]["01"]["ff66"]["0000"] not in ("", {}):
-            tarif = self.ListOfDevices[key]["Ep"]["01"]["ff66"]["0000"]
-
-        if "BASE" in tarif:
-            listAttributes = [0x0020, 0x0100]
-        elif "HC" in tarif:
-            listAttributes = [0x0020, 0x0100, 0x0102]
-        elif "EJP" in tarif:
-            listAttributes = [0x0020, 0x0100, 0x0102]
-        else:
-            listAttributes = [0x0020, 0x0100, 0x0102, 0x0104, 0x0106, 0x0108, 0x10A]
-
-    self.log.logging(["ReadAttributes", "ZLinky"], "Debug", "Request ZLinky infos on 0x0702 cluster: " + key + " EPout = " + EPout, nwkid=key)
-    ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled=False)
-
-
-def ReadAttribute_ZLinkyIndex( self, nwkid ):
-    # This can be used as a backup if the reporting do not work
-
-    INDEX_ATTRIBUTES = {
-        "BA": [ 0x0100 ],
-        "HC": [ 0x0100, 0x0102],
-        "HE": [ 0x0100, 0x0102],  # In standard mode we get "HEURES PLEINES"
-        "EJ": [ 0x0100, 0x0102],
-        "BB": [ 0x0100, 0x0102, 0x014, 0x016, 0x0108, 0x010a]
+    TARIF_ATTRIBUTES = {
+        "BA": [0x0020, 0x0100],
+        "HC": [0x0020, 0x0100, 0x0102],
+        "EJ": [0x0020, 0x0100, 0x0102],
     }
+    DEFAULT_ATTRIBUTES = [0x0020, 0x0100, 0x0102, 0x0104, 0x0106, 0x0108, 0x010A]
 
+    tarif = (
+        self.ListOfDevices[key]["Ep"]["01"]
+        .get("ff66", {})
+        .get("0000", "")
+    )
+
+    # Find the first matching tarif prefix, fallback to default
+    list_attributes = next(
+        (attrs for prefix, attrs in TARIF_ATTRIBUTES.items() if prefix in tarif),
+        DEFAULT_ATTRIBUTES,
+    )
+
+    self.log.logging(["ReadAttributes", "ZLinky"], "Debug", f"Request ZLinky infos on 0x0702 cluster: {key} EPout = {EPout}", nwkid=key)
+    ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0702", list_attributes, ackIsDisabled=False)
+
+
+def ReadAttribute_ZLinkyIndex(self, nwkid):
+    INDEX_ATTRIBUTES = {
+        "BA": [0x0100],
+        "HC": [0x0100, 0x0102],
+        "HE": [0x0100, 0x0102],
+        "EJ": [0x0100, 0x0102],
+        "BB": [0x0100, 0x0102, 0x0104, 0x0106, 0x0108, 0x010A],
+    }
     EPout = "01"
-    self.log.logging(["ReadAttributes", "ZLinky"], "Debug", "ReadAttribute_ZLinkyIndex: " + nwkid + " EPout = " + EPout, nwkid=nwkid)
-    optarif = get_OPTARIF( self, nwkid)[:2]
-    self.log.logging(["ReadAttributes", "ZLinky"], "Debug", "ReadAttribute_ZLinkyIndex: %s Cluster: %s Attributes: %s Optarif: %s" %(
-        nwkid, "0702", INDEX_ATTRIBUTES[ optarif ], optarif), nwkid=nwkid)
-    if optarif in INDEX_ATTRIBUTES:
-        ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, "0702", INDEX_ATTRIBUTES[ optarif ], ackIsDisabled=False)
     
-    
+    raw_optarif = get_OPTARIF(self, nwkid) or ""
+    optarif = str(raw_optarif)[:2] if isinstance(raw_optarif, str) else ""
+
+    if optarif not in INDEX_ATTRIBUTES:
+        self.log.logging(["ReadAttributes", "ZLinky"], "Log", f"ReadAttribute_ZLinkyIndex: {nwkid} unknown OPTARIF '{optarif}', Reading OPTARIF attribute to try to get it for next time", nwkid=nwkid)
+        # Request missing OPTARIF attribute to try to get it for next time
+        ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, "ff66", [0x0000], ackIsDisabled=False)
+        return
+
+    list_attributes = INDEX_ATTRIBUTES[optarif]
+    self.log.logging(["ReadAttributes", "ZLinky"], "Debug", f"ReadAttribute_ZLinkyIndex: {nwkid} Cluster: 0702 Attributes: {list_attributes} Optarif: {optarif}", nwkid=nwkid)
+    ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, "0702", list_attributes, ackIsDisabled=False)
+
+
 def ReadAttributeRequest_0702_PC321(self, key):
     
     # Cluster 0x0702 Metering / Specific 0x0000
