@@ -1496,6 +1496,12 @@ def ReadAttributeReq_ZLinky(self, nwkid):
         ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, cluster, listAttributes, ackIsDisabled=False)
 
 
+def read_attribute_zlinky_optarif(self, nwkid):
+    EPout = "01"
+    self.log.logging(["ReadAttributes", "ZLinky"], "Debug", "read_attribute_zlinky_optarif: " + nwkid + " EPout = " + EPout, nwkid=nwkid)
+    ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, "ff66", [0x0000, 0x0200, 0x0201], ackIsDisabled=False)
+
+
 def ReadAttributeReq_Scheduled_ZLinky(self, nwkid):
     # - La couleur du jour est déterminée au fur et à mesure de l'année et est diffusée par Edf la veille vers 12h.
     # - Une journée Tempo commence à 6h du matin jusqu'au lendemain même heure.
@@ -1519,12 +1525,12 @@ def ReadAttributeReq_Scheduled_ZLinky(self, nwkid):
 
     # Check if we already have the OPTARIF attribute to know which attribute we need to read for the color, if not request it for next time
     raw_optarif = get_OPTARIF(self, nwkid) or ""
-    optarif = str(raw_optarif)[:2] if isinstance(raw_optarif, str) else ""
+    optarif = str(raw_optarif)[:2]
 
-    if optarif not in { "BA", "HC", "HE", "EJ", "BB" }:
+    if optarif is None or optarif not in { "BA", "HC", "HE", "EJ", "BB" }:
         self.log.logging(["ReadAttributes", "ZLinky"], "Log", f"ReadAttribute_ZLinkyIndex: {nwkid} unknown OPTARIF '{optarif}', Reading OPTARIF attribute to try to get it for next time",nwkid=nwkid)
         # Request missing OPTARIF attribute to try to get it for next time
-        ReadAttributeReq(self, nwkid, ZIGATE_EP, ep_out, "ff66", [0x0000], ackIsDisabled=False)
+        read_attribute_zlinky_optarif(self, nwkid)
 
     for cluster in WORK_TO_BE_DONE:
         self.log.logging(["ReadAttributes", "ZLinky"], "Debug", "ReadAttributeReq_Scheduled_ZLinky: %s cluster %s attribute: %s" %( nwkid, cluster, WORK_TO_BE_DONE[ cluster ]), nwkid=nwkid)
@@ -1576,10 +1582,10 @@ def ReadAttribute_ZLinkyIndex(self, nwkid):
     raw_optarif = get_OPTARIF(self, nwkid) or ""
     optarif = str(raw_optarif)[:2] if isinstance(raw_optarif, str) else ""
 
-    if optarif not in INDEX_ATTRIBUTES:
+    if optarif is None or optarif not in INDEX_ATTRIBUTES:
         self.log.logging(["ReadAttributes", "ZLinky"], "Log", f"ReadAttribute_ZLinkyIndex: {nwkid} unknown OPTARIF '{optarif}', Reading OPTARIF attribute to try to get it for next time", nwkid=nwkid)
         # Request missing OPTARIF attribute to try to get it for next time
-        ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, "ff66", [0x0000], ackIsDisabled=False)
+        read_attribute_zlinky_optarif(self, nwkid)
         return
 
     list_attributes = INDEX_ATTRIBUTES[optarif]
