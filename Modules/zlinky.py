@@ -207,14 +207,21 @@ def get_OPTARIF(self, nwkid):
     """
     def _normalize_tarif(op_tarifaire):
         """ Normalize Op Tarif """
-        if op_tarifaire.startswith("BBR"):
+        if op_tarifaire == "HCHP 22h-6h":
+            return op_tarifaire
+
+        elif op_tarifaire.startswith("BBR"):
             base_tarifaire = "TEMPO"  # Treat any BBRx as TEMPO
+
         elif op_tarifaire.startswith("EJP"):
             base_tarifaire = "EJP"  # Treat any EJPx as EJP
+
         elif op_tarifaire.startswith("HC ") or op_tarifaire.startswith("HP "):
             base_tarifaire = "HC SEM ET HC WE"
+
         elif op_tarifaire.startswith("HCHP"):
             base_tarifaire = "HC SEM ET HC WE"
+
         else:
             base_tarifaire = op_tarifaire
         return base_tarifaire
