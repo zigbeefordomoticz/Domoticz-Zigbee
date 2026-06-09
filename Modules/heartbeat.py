@@ -26,7 +26,7 @@ from Modules.casaia import pollingCasaia
 from Modules.danfoss import danfoss_room_sensor_polling
 from Modules.domoticzAbstractLayer import (find_widget_unit_from_WidgetID,
                                            is_device_ieee_in_domoticz_db)
-from Modules.domoTools import (RetreiveWidgetTypeList,
+from Modules.domoTools import (retrieve_widget_type_list,
                                reset_device_ieee_unit_if_needed,
                                timedOutDevice)
 from Modules.linky import collect_ticmeter_linky
@@ -1030,7 +1030,7 @@ def check_and_reset_device_if_needed(self, Devices, NwkId):
 
     now = time.time()
     device_ieee = self.ListOfDevices[NwkId]["IEEE"]
-    ClusterTypeList = RetreiveWidgetTypeList(self, Devices, device_ieee, NwkId)
+    ClusterTypeList = retrieve_widget_type_list(self, Devices, device_ieee, NwkId)
     for WidgetEp, Widget_Idx, WidgetType in ClusterTypeList:
         
         if WidgetType in ( "Motion", "Vibration", SWITCH_SELECTORS):

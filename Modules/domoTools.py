@@ -31,55 +31,60 @@ from Modules.tools import (is_domoticz_touch,
 
 DELAY_BETWEEN_TOUCH = 120
 
-def RetreiveWidgetTypeList(self, Devices, device_id_ieee, NwkId, DeviceUnit=None):
+def retrieve_widget_type_list(self, Devices, device_id_ieee, NwkId, DeviceUnit=None):
     """
-    Return a list of tuple ( EndPoint, WidgetType, DeviceId)
-    If DeviceUnit provides we have to return the WidgetType matching this Device Unit.
+    Return a list of tuples (EndPoint, WidgetIdx, WidgetType).
+    If DeviceUnit is provided, return only the tuple matching that unit.
+    """
+    self.log.logging("Widget", "Debug",
+        f"retrieve_widget_type_list DeviceId: {device_id_ieee} Unit {DeviceUnit}", NwkId)
 
-    """
-    self.log.logging("Widget", "Debug", f"RetreiveWidgetTypeList DeviceId: {device_id_ieee} Unit {DeviceUnit}" , NwkId)
-    # Let's retreive All Widgets entries for the entire entry.
     to_return_list = []
+    widget_idx = None
+
     if DeviceUnit:
-        Widget_Idx = str(retrieve_widgetid_from_deviceId_unit(self, Devices, device_id_ieee, DeviceUnit))
-        self.log.logging("Widget", "Debug", f"RetreiveWidgetTypeList Looking for Device Idx {Widget_Idx}" , NwkId)
-
-    if "ClusterType" not in self.ListOfDevices[NwkId] or self.ListOfDevices[NwkId]["ClusterType"] in ( "", {}):
-        for iterEp in self.ListOfDevices[NwkId]["Ep"]:
-            if "ClusterType" in self.ListOfDevices[NwkId]["Ep"][iterEp]:
-                device_cluster_type_list = self.ListOfDevices[NwkId]["Ep"][iterEp]["ClusterType"]
-                self.log.logging("Widget", "Debug", f"RetreiveWidgetTypeList 'ClusterType': {device_cluster_type_list}", NwkId,)
-                
-                if DeviceUnit:
-                    if Widget_Idx in device_cluster_type_list:
-                        self.log.logging("Widget", "Debug", f"RetreiveWidgetTypeList {Widget_Idx} found", NwkId,)
-                        WidgetType = device_cluster_type_list[Widget_Idx]
-                        to_return_list.append((iterEp, Widget_Idx, WidgetType))
-                        self.log.logging("Widget", "Debug", f"RetreiveWidgetTypeList returning {to_return_list}", NwkId,)
-                        return to_return_list
-
-                else:
-                    for Widget_Idx in device_cluster_type_list:
-                        WidgetType = device_cluster_type_list[Widget_Idx]
-                        to_return_list.append((iterEp, Widget_Idx, WidgetType))
-
-        self.log.logging("Widget", "Debug", f"RetreiveWidgetTypeList returning {to_return_list}", NwkId,)
-        return to_return_list
-
-    # we are on the old fashion with Type at the global level like for the ( Xiaomi lumi.remote.n286acn01 )
-    # In that case we don't need a match with the incoming Ep as the correct one is the Widget EndPoint
-    self.log.logging( "Widget", "Debug", "------> OldFashion 'ClusterType': %s" % self.ListOfDevices[NwkId]["ClusterType"], NwkId )
-    if DeviceUnit:
-        if Widget_Idx in self.ListOfDevices[NwkId]["ClusterType"]:
-            WidgetType = self.ListOfDevices[NwkId]["ClusterType"][Widget_Idx]
-            to_return_list.append(("00", Widget_Idx, WidgetType))
+        raw = retrieve_widgetid_from_deviceId_unit(self, Devices, device_id_ieee, DeviceUnit)
+        if raw is None:
+            self.log.logging("Widget", "Warning",
+                f"retrieve_widget_type_list: no widget found for unit {DeviceUnit}", NwkId)
             return to_return_list
-    else:
-        for Widget_Idx in self.ListOfDevices[NwkId]["ClusterType"]:
-            WidgetType = self.ListOfDevices[NwkId]["ClusterType"][Widget_Idx]
-            to_return_list.append(("00", Widget_Idx, WidgetType))
+        widget_idx = str(raw)
+        self.log.logging("Widget", "Debug",
+            f"retrieve_widget_type_list Looking for Widget_Idx {widget_idx}", NwkId)
 
-    self.log.logging("Widget", "Debug", f"RetreiveWidgetTypeList returning {to_return_list}", NwkId,)
+    global_cluster_type = self.ListOfDevices[NwkId].get("ClusterType")
+
+    if not global_cluster_type:
+        # Per-endpoint ClusterType (modern layout)
+        for ep in self.ListOfDevices[NwkId].get("Ep", {}):
+            cluster_type = self.ListOfDevices[NwkId]["Ep"][ep].get("ClusterType", {})
+            if not cluster_type:
+                continue
+            self.log.logging("Widget", "Debug",
+                f"retrieve_widget_type_list ClusterType for ep {ep}: {cluster_type}", NwkId)
+
+            if widget_idx:
+                if widget_idx in cluster_type:
+                    to_return_list.append((ep, widget_idx, cluster_type[widget_idx]))
+                    return to_return_list  # first match
+            else:
+                to_return_list.extend((ep, idx, wtype) for idx, wtype in cluster_type.items())
+
+    else:
+        # Global ClusterType (legacy layout, e.g. Xiaomi lumi.remote.n286acn01)
+        self.log.logging("Widget", "Debug",
+            f"retrieve_widget_type_list OldFashion ClusterType: {global_cluster_type}", NwkId)
+        if widget_idx:
+            if widget_idx in global_cluster_type:
+                to_return_list.append(("00", widget_idx, global_cluster_type[widget_idx]))
+        else:
+            to_return_list.extend(
+                ("00", idx, wtype)
+                for idx, wtype in global_cluster_type.items()
+            )
+
+    self.log.logging("Widget", "Debug",
+        f"retrieve_widget_type_list returning {to_return_list}", NwkId)
     return to_return_list
 
 

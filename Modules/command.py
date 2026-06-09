@@ -31,7 +31,7 @@ from Modules.domoticzAbstractLayer import (domo_read_Name,
                                            is_dimmable_light,
                                            is_dimmable_switch)
 from Modules.domoTools import (RetreiveSignalLvlBattery,
-                               RetreiveWidgetTypeList, update_domoticz_widget)
+                               retrieve_widget_type_list, update_domoticz_widget)
 from Modules.fanControl import change_fan_mode
 from Modules.ias_ace_commands import (
     ias_keyboard_feedback_arm_response_all_zone_disarmed,
@@ -182,7 +182,7 @@ def domoticz_command(self, Devices, DeviceID, Unit, Nwkid, Command, Level, Color
     self.log.logging("Command", "Debug", f"mgtCommand ({Nwkid}) {DeviceID} {Unit} Name: {widget_name} Command: {Command} Level: {Level} Color: {Color}", Nwkid)
 
     SignalLevel, BatteryLevel = RetreiveSignalLvlBattery(self, Nwkid)
-    ClusterTypeList = RetreiveWidgetTypeList(self, Devices, DeviceID, Nwkid, Unit)
+    ClusterTypeList = retrieve_widget_type_list(self, Devices, DeviceID, Nwkid, Unit)
     
     if not ClusterTypeList or len(ClusterTypeList) != 1:
         self.log.logging("Command", "Error", f"Unexpected ClusterTypeList: {ClusterTypeList} for Nwkid: {Nwkid}")

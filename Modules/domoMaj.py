@@ -26,7 +26,7 @@ from Modules.domoticzAbstractLayer import (domo_check_unit,
                                            find_widget_unit_from_WidgetID,
                                            is_dimmable_blind)
 from Modules.domoTools import (RetreiveSignalLvlBattery,
-                               RetreiveWidgetTypeList, TypeFromCluster,
+                               retrieve_widget_type_list, TypeFromCluster,
                                remove_bad_cluster_type_entry,
                                update_domoticz_widget)
 from Modules.linky import linky_tarif_color, linky_tarif_color_ntarf
@@ -64,7 +64,7 @@ def MajDomoDevice(self, Devices, NwkId, Ep, ClusterId, value, Attribute_="", Col
     ClusterType = TypeFromCluster(self, ClusterId)
     self.log.logging("Widget", "Debug", "------> ClusterType = " + str(ClusterType), NwkId)
 
-    ClusterTypeList = RetreiveWidgetTypeList(self, Devices, device_id_ieee, NwkId)
+    ClusterTypeList = retrieve_widget_type_list(self, Devices, device_id_ieee, NwkId)
     self.log.logging("Widget", "Debug", "------> ClusterTypeList = " + str(ClusterTypeList), NwkId)
     
     if len(ClusterTypeList) == 0:
