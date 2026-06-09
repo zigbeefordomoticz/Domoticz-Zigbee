@@ -351,7 +351,7 @@ class LoggingManagement:
 def _is_to_be_logged(self, logType, module):
     
     # Always log if logType is Log, Status or Error, no matter the module, to avoid missing important information in Domoticz log or status
-    if logType in ( "Log", "Status", "Error"):
+    if logType in ( "Log", "Status", "Error", "Warning"):
         return True
 
     # Debug mode, check if module is in debug list
@@ -384,6 +384,17 @@ def enqueue_logging( self, thread_id, module, logType, message, nwkid, context )
     else:
         domoticz_log_api("%s" % message)
 
+def _logging_warning(self, thread_name, message, module, nwkid):
+
+    if self.pluginconf.pluginConf["logThreadName"]:
+        message = "[%17s] " %thread_name + "[%17s] " %module + "[%s]" %nwkid + message
+
+    if self.pluginconf.pluginConf["enablePluginLogging"]:
+        # Log to plugin log file
+        self._plugin_file_logger.warning(message)
+        
+    # Log to Domoticz status
+    domoticz_status_api(message)
 
 def _logging_status(self, thread_name, message, module, nwkid):
     if self.pluginconf.pluginConf["logThreadName"]:
@@ -430,6 +441,9 @@ def loggingDirector(self, thread_name, logType, message, module, nwkid):
 
     elif logType == "Status":
         _logging_status(self, thread_name, message, module, nwkid)
+
+    elif logType == "Warning":
+        _logging_warning(self, thread_name, message, module, nwkid)
 
 
 def loggingError(self, thread_name, message, module, nwkid, context):
@@ -582,6 +596,9 @@ def process_logging_event( self, logging_tuple):
 
     if logType == "Error":
         loggingError(self, thread_name, message, module, nwkid, context)
+        
+    elif logType == "Warning":
+        loggingDirector(self, thread_name, logType, message, module, nwkid)
 
     elif logType == "Debug" and _should_log_debug(self, thread_name) and _is_to_be_logged(self, logType, module):
         _debug_logging_filtering(self, thread_name, message, module, nwkid)
