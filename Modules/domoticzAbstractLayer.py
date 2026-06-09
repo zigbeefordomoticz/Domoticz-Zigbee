@@ -284,7 +284,8 @@ def find_widget_unit_from_WidgetID(self, Widget_Idx):
 def retrieve_widgetid_from_deviceId_unit(self, Devices, DeviceId, Unit):
     self.log.logging("AbstractDz", "Debug",
                      f"retrieve_widgetid_from_deviceId_unit: DeviceId: {DeviceId} Unit: {Unit}")
-    return next(
+
+    result = next(
         (
             x for x in self.ListOfDomoticzWidget
             if (
@@ -295,6 +296,16 @@ def retrieve_widgetid_from_deviceId_unit(self, Devices, DeviceId, Unit):
         None,
     )
 
+    if result is not None:
+        return result
+
+    # Cache miss: fall back to a direct lookup in Devices
+    self.log.logging("AbstractDz", "Warning",
+                     f"retrieve_widgetid_from_deviceId_unit: cache miss, searching Devices for DeviceId: {DeviceId} Unit: {Unit}")
+    if _device_exists(Devices, DeviceId) and Unit in Devices[DeviceId].Units:
+        return Devices[DeviceId].Units[Unit].ID
+
+    return None
 
 def find_first_unit_widget_from_deviceID(self, Devices, DeviceID):
     """Return the first unit index for a specific DeviceID, or None if not found."""
