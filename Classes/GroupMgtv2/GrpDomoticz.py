@@ -300,22 +300,27 @@ def my_best_widget_offer(self, current_widget, current_group_widget):
 
     return current_widget
 
+EXCLUDED_MODELS = {"TRADFRI remote control", "Remote Control N2"} | set(LEGRAND_REMOTES)
 
 def update_domoticz_group_device(self, GroupId):
     """
-    Update the Group status On/Off and Level , based on the attached devices
+    Recompute and push the On/Off + level state of a Zigbee group to Domoticz.
+
+    Iterates over all devices in the group, collects their individual states,
+    derives a combined nValue/sValue, and calls domo_update_api only when the
+    state has actually changed.
     """
     
     if int(GroupId,16) == self.pluginconf.pluginConf["pingViaGroup"]:
         self.logging("Debug", "update_domoticz_group_device - Skip PingViaGroup: %s" % GroupId)
         return
 
-    #####
     if GroupId not in self.ListOfGroups:
         self.logging("Error", "update_domoticz_group_device - unknown group: %s" % GroupId)
         return
 
-    if "Devices" not in self.ListOfGroups[GroupId]:
+    group_devices = self.ListOfGroups[GroupId].get("Devices")
+    if group_devices is None or len(group_devices) == 0:
         self.logging( "Debug", "update_domoticz_group_device - no Devices for that group: %s" % self.ListOfGroups[GroupId])
         return
 
@@ -325,16 +330,16 @@ def update_domoticz_group_device(self, GroupId):
         LookForGroupAndCreateIfNeeded(self, GroupId)
         return
 
-    Cluster = self.ListOfGroups[GroupId].get("Cluster")
+    group_cluster = self.ListOfGroups[GroupId].get("Cluster")
+    count_stop = count_on = count_off = 0
+    level = covering = None
+    on_off = None
 
-    countStop = countOn = countOff = 0
-    nValue = 0 if self.pluginconf.pluginConf["OnIfOneOn"] else 1
-    sValue = level = None
-    for NwkId, Ep, IEEE in self.ListOfGroups[GroupId]["Devices"]:
+    for NwkId, Ep, IEEE in group_devices:
+        # Check each device in the group and count On/Off/Stop and average level for dimmers and covering
         if NwkId not in self.ListOfDevices:
             self.logging( "Debug", "update_domoticz_group_device - Nwkid: %s/%s not found for GroupId: %s" %(
                 NwkId, IEEE, GroupId))
-
             if check_and_fix_missing_device(self, GroupId, NwkId, IEEE) is None:
                 self.logging( "Error", "update_domoticz_group_device - Nwkid: %s/%s not found for GroupId: %s" %(
                     NwkId, IEEE, GroupId))
@@ -345,122 +350,38 @@ def update_domoticz_group_device(self, GroupId):
             self.logging( "Debug", "update_domoticz_group_device - Nwkid: %s Ep: %s not found for GroupId: %s" %(
                 NwkId, Ep, GroupId))
             continue
-        if "Model" in self.ListOfDevices[NwkId]:
-            if self.ListOfDevices[NwkId]["Model"] in ("TRADFRI remote control", "Remote Control N2"):
-                continue
-            if self.ListOfDevices[NwkId]["Model"] in LEGRAND_REMOTES:
-                continue
 
-        # Cluster ON/OFF
-        if (
-            Cluster 
-            and Cluster in ("0006", "0008", "0300") 
-            and "0006" in self.ListOfDevices[NwkId]["Ep"][Ep]
-            and "0000" in self.ListOfDevices[NwkId]["Ep"][Ep]["0006"]
-            and is_hex(  str(self.ListOfDevices[NwkId]["Ep"][Ep]["0006"]["0000"]) )
-        ):
-            self.logging( "Debug", "update_domoticz_group_device - Cluster ON/OFF Group: %s NwkId: %s Ep: %s Value: %s" %( 
-                GroupId, NwkId, Ep, self.ListOfDevices[NwkId]["Ep"][Ep]["0006"]["0000"]))
-            if str(self.ListOfDevices[NwkId]["Ep"][Ep]["0006"]["0000"]) == "f0":
-                countStop += 1
-            elif int(self.ListOfDevices[NwkId]["Ep"][Ep]["0006"]["0000"]) != 0:
-                countOn += 1
-            else:
-                countOff += 1
+        model = self.ListOfDevices[NwkId].get("Model")
+        if model in EXCLUDED_MODELS:
+            continue
 
-        # Cluster Level Control
-        if (
-            Cluster 
-            and Cluster in ("0008", "0300") 
-            and "0008" in self.ListOfDevices[NwkId]["Ep"][Ep] 
-            and "0000" in self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]
-            and self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]["0000"] not in ( "", {} )
-        ):
-            lvl_value = self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]["0000"] if isinstance( self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]["0000"], int ) else int(self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]["0000"], 16)
-            self.logging( "Debug", "update_domoticz_group_device - Cluster Level Control Group: %s NwkId: %s Ep: %s Value: %s" %(
-                GroupId, NwkId, Ep, lvl_value))
-            level = lvl_value if level is None else (level + lvl_value) // 2
-        # Cluster Window Covering
-        if (
-            Cluster 
-            and Cluster == "0102" and "0102" in self.ListOfDevices[NwkId]["Ep"][Ep]
-            and "0008" in self.ListOfDevices[NwkId]["Ep"][Ep]["0102"]
-            and self.ListOfDevices[NwkId]["Ep"][Ep]["0102"]["0008"] not in ( "", {} )
-        ):
-            lvl_value = int(self.ListOfDevices[NwkId]["Ep"][Ep]["0102"]["0008"])
-            self.logging( "Debug", "update_domoticz_group_device - Cluster Window Covering Group: %s NwkId: %s Ep: %s Value: %s" %(
-                GroupId, NwkId, Ep, lvl_value))
-            level = lvl_value if level is None else (level + lvl_value) // 2
-            nValue, sValue = ValuesForVenetian(level)
+        on_off, level, covering = _collect_device_state(self, NwkId, Ep, group_cluster, GroupId, on_off, level, covering)
+
+        if covering is not None:
+            # It is assumed that we cannot have a group with a mix of covering and non covering devices, 
+            # so if we have a covering value, we will compute the nValue and sValue based on that and skip 
+            # the rest of the devices as they should not impact the group state
+            nValue, sValue = ValuesForVenetian(covering)
+            continue
+        
+        if on_off == 17:
+            count_stop += 1
+    
+        elif on_off != 0 and on_off is not None:
+            count_on += 1
+
+        elif on_off == 0:
+            count_off += 1
+            
 
         self.logging( "Debug", "update_domoticz_group_device - Processing: Group: %s %s/%s On: %s, Off: %s Stop: %s, level: %s" % (
-            GroupId, NwkId, Ep, countOn, countOff, countStop, level), )
-
-    if countStop > 0:
-        nValue = 17
-    elif self.pluginconf.pluginConf["OnIfOneOn"]:
-        if countOn > 0:
-            nValue = 1
-    elif countOff > 0:
-        nValue = 0
-    self.logging( "Debug", "update_domoticz_group_device - Processing: Group: %s ==  > nValue: %s, level: %s" % (
-        GroupId, nValue, level), )
-
+            GroupId, NwkId, Ep, count_on, count_off, count_stop, level), )
 
     switchType, Subtype, _ = domo_read_SwitchType_SubType_Type(self, self.Devices, GroupId, unit)
-    # At that stage
-    # nValue == 0 if Off
-    # nValue == 1 if Open/On
-    # nValue == 17 if Stop
-    # level is None, so we use nValue/sValue
-    # level is not None; so we have a LvlControl
-    if nValue == 17:
-        # Stop
-        sValue = "0"
-        
-    elif sValue is None and level:
-        if switchType not in (13, 14, 15, 16):
-            # Not a Shutter/Blind
-            analogValue = level
-            if analogValue >= 255:
-                sValue = 100
-            else:
-                sValue = round((level * 100) / 255)
-                if sValue > 100:
-                    sValue = 100
-                if sValue == 0 and analogValue > 0:
-                    sValue = 1
-        else:
-            # Shutter/blind
-            if nValue == 0:  # we are in an Off mode
-                sValue = 0
-            else:
-                # We are on either full or not
-                sValue = round((level * 100) / 255)
-                if sValue >= 100:
-                    sValue = 100
-                    nValue = 1
-
-                elif sValue > 0 and sValue < 100:
-                    nValue = 2
-                else:
-                    nValue = 0
-        sValue = str(sValue)
-
-    elif sValue is None:
-        if nValue == 0:
-            if switchType not in (13, 14, 15, 16):
-                sValue = "Close"
-            else:
-                sValue = "Off"
-
-        else:
-            if switchType not in (13, 14, 15, 16):
-                sValue = "Open"
-            else:
-                sValue = "On"
-
     current_nValue, current_sValue = domo_read_nValue_sValue(self, self.Devices, GroupId, unit)
+
+    nValue, sValue = _compute_nvalue_svalue( self, level, covering, switchType, count_on, count_off, count_stop, GroupId, current_sValue)    
+    
     group_name = domo_read_Name( self, self.Devices, GroupId, unit )
     self.logging( "Debug", "update_domoticz_group_device - Processing: Group: %s ==  > from %s:%s to %s:%s" % (
         GroupId, current_nValue, current_sValue, nValue, sValue), )
@@ -470,24 +391,181 @@ def update_domoticz_group_device(self, GroupId):
         self.ListOfGroups[GroupId]["sValue"] = sValue
         self.ListOfGroups[GroupId]["prev_nValue"] = current_nValue
         self.ListOfGroups[GroupId]["prev_sValue"] = current_sValue
-
         self.ListOfGroups[GroupId]["Switchtype"] = switchType
-        self.ListOfGroups[GroupId]["Subtype"] = switchType
+        self.ListOfGroups[GroupId]["Subtype"] = Subtype
         self.logging("Log", f"UpdateGroup  - ({group_name:>15}) {nValue}:{sValue}")
         domo_update_api(self, self.Devices, GroupId, unit, nValue, sValue)
 
 
+def _collect_device_state(self, nwkid, ep, group_cluster, group_id=None, on_off=None, level=None, covering=None ):
+    """
+    Read the current Zigbee attribute state for one device endpoint.
+
+    Returns (on_off, level, covering) for the given endpoint, where:
+    - on_off : 0 = off, 1 = on, 17 = stop, None = not available
+    - level  : raw Zigbee level (0–255) from cluster 0008, or None
+    - covering: raw Zigbee position (0–255) from cluster 0102, or None
+
+    The caller is responsible for accumulating level/covering across devices.
+    """
+    ep_data = self.ListOfDevices[nwkid]["Ep"][ep]
+    if group_cluster in ("0102",):
+        # If group_cluster Window Covering, we check the level for shutters/blinds (if Level is supported)
+        _device_covering_state = ep_data.get("0102", {}).get("0008")
+        if _device_covering_state is not None and _device_covering_state not in ("", {}):
+            self.logging( "Debug", "update_domoticz_group_device - group_cluster Window Covering Group: %s NwkId: %s Ep: %s Value: %s" %( 
+                group_id, nwkid, ep, _device_covering_state))
+            covering_value = int(_device_covering_state) if isinstance(_device_covering_state, int) else int(str(_device_covering_state), 16)
+            covering = covering_value if covering is None else (covering + covering_value) // 2
+            return None, None, covering
+
+
+    if group_cluster in ("0006", "0008", "0300"):
+        # We check the On/off state for switch and dimmers and color control (if On/Off is supported)
+        _device_on_off_state = ep_data.get("0006", {}).get("0000")
+        if _device_on_off_state is not None and is_hex(str(_device_on_off_state)):
+            self.logging( "Debug", "update_domoticz_group_device - group_cluster ON/OFF Group: %s NwkId: %s Ep: %s Value: %s" %( 
+                group_id, nwkid, ep, _device_on_off_state))
+
+            if str(_device_on_off_state) == "f0":
+                on_off = 17
+            elif int(_device_on_off_state) != 0:
+                on_off = 1
+            else:
+                on_off = 0
+
+    if group_cluster in ( "0008", "0300" ):
+        # We check the level for dimmers and color control (if Level is supported)
+        _device_level_state = ep_data.get("0008", {}).get("0000")
+        if _device_level_state is not None and _device_level_state not in ("", {}) and is_hex(str(_device_level_state)):
+            self.logging( "Debug", "update_domoticz_group_device - group_cluster Level Control Group: %s NwkId: %s Ep: %s Value: %s" %( 
+                group_id, nwkid, ep, _device_level_state))
+
+            lvl_value = int(_device_level_state) if isinstance(_device_level_state, int) else int(str(_device_level_state), 16)
+            level = lvl_value if level is None else (level + lvl_value) // 2
+            
+        
+    return on_off, level, covering   # at the end we return the last known state for the device, if we haven't found any relevant information for the group cluster, we will return None for on_off, level and covering, and those will be ignored in the computation of the group state
+
+
+def _compute_nvalue_svalue( self, level, covering, switchType, count_on, count_off, count_stop, group_id, current_sValue=None):
+    """
+    Derive the Domoticz (nValue, sValue) pair for the group from aggregated counters.
+
+    nValue priority: Stop (17) > On/Off logic > Off (0).
+    sValue is computed from level (dimmers), covering position (shutters),
+    or falls back to "On"/"Off"/"Open"/"Close" for plain switches.
+    current_sValue is used only in Stop mode to preserve the last known position.
+    """
+    nValue = 0 if self.pluginconf.pluginConf["OnIfOneOn"] else 1
+    sValue = None
+
+    if count_stop > 0:
+        nValue = 17
+
+    elif self.pluginconf.pluginConf["OnIfOneOn"]:
+        if count_on > 0:
+            nValue = 1
+
+    elif count_off > 0:
+        nValue = 0
+
+    self.logging( "Debug", "update_domoticz_group_device - Processing: Group: %s ==  > nValue: %s, level: %s" % (
+        group_id, nValue, level), )
+
+    # At that stage
+    # nValue == 0 if Off
+    # nValue == 1 if Open/On
+    # nValue == 17 if Stop
+    # level is None, so we use nValue/sValue
+    # level is not None; so we have a LvlControl
+
+    if nValue == 17:
+        # Covering is on Stop Mode, we keep the last sValue as it is the only way to keep the current position of the covering
+        sValue = current_sValue if current_sValue is not None else "0"
+
+    elif sValue is None and level is not None:
+        if nValue == 0:
+            # Device Off, we set sValue to 0 for covering and Off for others
+            sValue = "Close" if _is_covering_switchType(switchType) else "Off"
+    
+        if not _is_covering_switchType(switchType):
+            sValue = _compute_nvalue_svalue_for_level_control(level)
+
+        elif covering is not None:
+            # Shutter/blind
+            nValue, sValue = _compute_nvalue_svalue_for_covering(covering)
+
+    elif sValue is None:
+        if nValue == 0:
+            sValue = "Close" if _is_covering_switchType(switchType) else "Off"
+        else:
+            sValue = "Open" if _is_covering_switchType(switchType) else "On"
+
+    return nValue, sValue
+
+
+def _compute_nvalue_svalue_for_covering(covering):
+    """
+    Convert a raw Zigbee covering position (0–255) to a Domoticz (nValue, sValue).
+
+    Returns (0, "0") when closed, (1, "100") when fully open,
+    and (2, "<pct>") for intermediate positions.
+    """
+    if covering == 0:  # we are in an Off mode
+        return 0, "0"
+    
+    # We are on either full or not
+    sValue = round((covering * 100) / 255)
+    sValue = min(sValue, 100)
+    if sValue == 100:
+        return 1, "100"
+    elif sValue > 0:
+        return 2, str(sValue)
+    else:
+        return 0, "0"
+
+def _compute_nvalue_svalue_for_level_control(level):
+    """
+    Convert a raw Zigbee level (0–255) to a Domoticz sValue percentage string.
+
+    Returns "1" as a minimum when the device reports non-zero but rounds to 0.
+    """
+    analogValue = level
+    if analogValue >= 255:
+        sValue = 100
+    else:
+        sValue = round((level * 100) / 255)
+        sValue = min(sValue, 100)
+        if sValue == 0 and analogValue > 0:
+            sValue = 1
+    return str(sValue)
+
+    
+def _is_covering_switchType(switchType):
+    """Return True if switchType corresponds to a shutter or blind (13–16)."""
+    return switchType in (13, 14, 15, 16)
+
+def ValuesForVenetian(level):
+    """
+    Convert a 0–100 percentage level to a Domoticz (nValue, sValue) for venetian blinds.
+
+    Distinct from _compute_nvalue_svalue_for_covering which works on raw 0–255 Zigbee values.
+    """
+
+    if level == 0:
+        return 0, "0"
+
+    elif level == 100:
+        return 1, "100"
+
+    else:
+        return 2, str(level)
+   
 def update_domoticz_group_name(self, GrpId, NewGrpName):
     update_domoticz_group_device_widget_name(self, NewGrpName, GrpId)
 
 
-def ValuesForVenetian(level):
-    if level == 0:
-        return 0, "0"
-    elif level == 100:
-        return 1, "100"
-    else:
-        return 2, str(level)
 
 
 def remove_domoticz_group_device(self, GroupId):
