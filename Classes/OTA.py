@@ -441,9 +441,8 @@ class OTAManagement(object):
 
     def heartbeat(self):
         
-        nwk_id = self.ListInUpdate["NwkId"]
+        nwk_id = self.ListInUpdate.get("NwkId")
         if nwk_id is None:
-            logging(self, "Debug", "ota_heartbeat - nothing to do")
             return
 
         process = self.ListInUpdate["Process"]
@@ -1722,11 +1721,8 @@ def notify_upgrade_end(
 
     _transferTime_hh, _transferTime_mm, _transferTime_ss = convert_time(int(time.time() - self.ListInUpdate["StartTime"]))
     _ieee = self.ListOfDevices[MsgSrcAddr]["IEEE"]
-    _name = None
+    _name = self.ListOfDevices[MsgSrcAddr].get("ZDeviceName", f"{_ieee}")
     _textmsg = ""
-
-    if _ieee in self.Devices and self.Devices[_ieee].Units:
-        _name = next(iter(self.Devices[_ieee].Units.values())).Name
 
     if Status == "OK":
         _textmsg = "Device: %s has been updated with firmware %s in %s hour %s min %s sec" % (
@@ -1903,7 +1899,7 @@ def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgF
 
     # Retrieve device name from IEEE address
     _ieee = self.ListOfDevices[MsgSrcAddr]["IEEE"]
-    _name = next(iter(self.Devices[_ieee].Units.values())).Name if _ieee in self.Devices and self.Devices[_ieee].Units else None
+    _name = self.ListOfDevices[MsgSrcAddr].get("ZDeviceName", f"{_ieee}")
 
     # Estimate upload time. We expect to send 5 blocks in 1 second
     ota_profile = VENDOR_PROFILES.get( intMsgManufCode, DEFAULT_OTA_PROFILE )
