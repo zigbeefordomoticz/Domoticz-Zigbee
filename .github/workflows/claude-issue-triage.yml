@@ -1,0 +1,39 @@
+name: Claude Issue Triage
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            A new issue was opened on this Zigbee plugin for Domoticz.
+
+            - Title: ${{ github.event.issue.title }}
+            - Body: ${{ github.event.issue.body }}
+            - Author: ${{ github.event.issue.user.login }}
+            - Issue #: ${{ github.event.issue.number }}
+
+            Please:
+            1. Classify it (bug / feature request / config problem / question).
+            2. Investigate the repository codebase to find the relevant modules,
+               functions, and likely root cause.
+            3. If it's a bug, point to the specific files/lines involved and
+               propose a concrete fix or next debugging steps.
+            4. Note any missing info you'd need from the reporter (logs,
+               firmware version, coordinator type, etc.).
+
+            Post your analysis as a single helpful comment on the issue.
+          claude_args: |
+            --max-turns 8
