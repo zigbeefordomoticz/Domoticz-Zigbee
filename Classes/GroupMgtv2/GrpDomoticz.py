@@ -127,7 +127,16 @@ class GroupAccumulator:
     def covering(self):
         """Average covering position (0–100) or None if no cover contributed."""
         return round(self.covering_sum / self.covering_count) if self.covering_count else None
-
+    @property
+    def is_empty(self):
+        """True if no device contributed any usable state."""
+        return (
+            self.count_on == 0
+            and self.count_off == 0
+            and self.count_stop == 0
+            and self.level_count == 0
+            and self.covering_count == 0
+        )
 
 DEFAULT_GROUP_UNIT = 1  # As of 8.1.003, DomoticzEx, all groups will be using Unit 1 at creation (only legacy will rely on Unit)
 
