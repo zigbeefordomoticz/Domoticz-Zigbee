@@ -18,6 +18,7 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          track_progress: true          # <-- creates + updates a comment on the issue
           prompt: |
             A new issue was opened on this Zigbee plugin for Domoticz.
 
@@ -37,4 +38,5 @@ jobs:
 
             Post your analysis as a single helpful comment on the issue.
           claude_args: |
-            --max-turns 8
+            --max-turns 15
+
