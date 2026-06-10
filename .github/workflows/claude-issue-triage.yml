@@ -2,7 +2,7 @@ name: Claude Issue Triage
 
 on:
   issues:
-    types: [opened]
+    types: [labeled]
 
 permissions:
   contents: read
@@ -11,7 +11,9 @@ permissions:
 
 jobs:
   triage:
+    if: github.event.label.name == 'ai-triage'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
