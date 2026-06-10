@@ -418,7 +418,7 @@ def update_domoticz_group_device(self, GroupId):
         _collect_device_state(self, NwkId, Ep, group_cluster, acc, switchType, GroupId)
 
         self.logging("Debug", "update_domoticz_group_device - Processing: Group: %s with device: %s/%s On: %s, Off: %s Stop: %s, level: %s covering: %s" % (
-            GroupId, NwkId, Ep, acc.count_on, acc.count_off, acc.count_stop, acc.level, acc.covering_count))
+            GroupId, NwkId, Ep, acc.count_on, acc.count_off, acc.count_stop, acc.level, acc.covering_sum/acc.covering_count if acc.covering_count > 0 else 0))
 
     current_nValue, current_sValue = domo_read_nValue_sValue(self, self.Devices, GroupId, unit)
 
