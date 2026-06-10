@@ -194,7 +194,7 @@ def handle_model_name( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgA
     if modelName == "":
         return
 
-    if _is_device_already_provisioned( self, MsgSrcAddr, modelName):
+    if _provision_or_update_existing_device(self, MsgSrcAddr, modelName):
         return
 
     if self.ListOfDevices[MsgSrcAddr]["Model"] == modelName and self.ListOfDevices[MsgSrcAddr]["Model"] in self.DeviceConf:
@@ -224,30 +224,54 @@ def handle_model_name( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgA
 
 def _update_data_structutre_based_on_model_name( self, MsgSrcAddr, modelName):
     # Let's see if this model is known in DeviceConf. If so then we will retreive already the Eps
+
     if self.ListOfDevices[MsgSrcAddr]["Model"] not in self.DeviceConf: 
         return False
 
     modelName = self.ListOfDevices[MsgSrcAddr]["Model"]
     self.log.logging([ "ZclClusters", "Pairing"], "Debug", "_handle_model_name Extract all info from Model : %s" % self.DeviceConf[modelName], MsgSrcAddr)
 
-    if "ConfigSource" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["ConfigSource"] == "DeviceConf":
+    if _config_source_is_deviceconf(self, MsgSrcAddr):
         self.log.logging([ "ZclClusters", "Pairing"], "Debug", "_handle_model_name Not redoing the DeviceConf enrollement", MsgSrcAddr)
         return True
 
     self.ListOfDevices[MsgSrcAddr]["ConfigSource"] = "DeviceConf"
+
     if "Param" in self.DeviceConf[modelName]:
         self.ListOfDevices[MsgSrcAddr]["Param"] = dict(self.DeviceConf[modelName]["Param"])
 
-    _BackupEp = None
     if "Type" in self.DeviceConf[modelName]:  # If type exist at top level : copy it
         self.ListOfDevices[MsgSrcAddr]["Type"] = self.DeviceConf[modelName]["Type"]
 
         if "Ep" in self.ListOfDevices.get(MsgSrcAddr, {}):
-            self.log.logging([ "ZclClusters", "Pairing"], "Debug", "_handle_model_name Removing existing received Ep", MsgSrcAddr)
-            self.ListOfDevices[MsgSrcAddr]["Ep"] = {}  # Reset the "Ep" key
-            self.log.logging([ "ZclClusters", "Pairing"], "Debug", "-- Record removed 'Ep' %s" % (self.ListOfDevices[MsgSrcAddr]), MsgSrcAddr)
+            self.log.logging([ "ZclClusters", "Pairing"], "Debug", "_handle_model_name should Removing existing received Ep", MsgSrcAddr)
 
-    _upd_data_strut_based_on_model(self, MsgSrcAddr, modelName, _BackupEp)
+            if _has_non_empty_cluster_type(self.ListOfDevices.get(MsgSrcAddr, {})):
+                existing_ct = {
+                    ep: ep_info["ClusterType"]
+                    for ep, ep_info in self.ListOfDevices[MsgSrcAddr]["Ep"].items()
+                    if ep_info.get("ClusterType") not in (None, "", {})
+                }
+                self.log.logging(
+                    ["ZclClusters", "Pairing"], "Warning",
+                    f"_handle_model_name - {MsgSrcAddr} Model '{modelName}' "
+                    f"(ConfigSource={self.ListOfDevices[MsgSrcAddr].get('ConfigSource')}): "
+                    f"Ep reset BLOCKED to protect provisioned ClusterType {existing_ct}",
+                    MsgSrcAddr,
+                )
+            else:
+                self.log.logging(
+                    ["ZclClusters", "Pairing"], "Log",
+                    f"_handle_model_name - {MsgSrcAddr} Model '{modelName}': "
+                    f"resetting Ep (no provisioned ClusterType present)", MsgSrcAddr,
+                )
+                self.ListOfDevices[MsgSrcAddr]["Ep"] = {}
+                self.log.logging(
+                    ["ZclClusters", "Pairing"], "Debug",
+                    "-- Record after Ep reset: %s" % self.ListOfDevices[MsgSrcAddr], MsgSrcAddr,
+                )
+
+    _upd_data_strut_based_on_model(self, MsgSrcAddr, modelName, None)
 
 
 def _upd_data_strut_based_on_model(self, MsgSrcAddr, modelName, initial_ep):
@@ -281,6 +305,10 @@ def _upd_data_strut_based_on_model(self, MsgSrcAddr, modelName, initial_ep):
     return True
 
 
+def _config_source_is_deviceconf(self, nwk_id):
+    return self.ListOfDevices.get(nwk_id, {}).get("ConfigSource") == "DeviceConf"
+
+
 def _build_model_name( self, nwkid, modelName):
 
     self.log.logging([ "ZclClusters", "Pairing"], "Debug", f"_build_model_name  {modelName}", nwkid)
@@ -311,6 +339,70 @@ def _build_model_name( self, nwkid, modelName):
 
     return check_found_plugin_model( self, modelName, manufacturer_name=manufacturer_name, manufacturer_code=manuf_code, device_id=zdevice_id)
 
+
+def _has_non_empty_cluster_type(device_info):
+    """
+    Returns True if at least one endpoint carries a non-empty 'ClusterType'
+    mapping (i.e. real widgets are provisioned, not just an empty placeholder).
+
+    An endpoint with "ClusterType": {} or "" is treated as NOT provisioned.
+    """
+    return any(
+        ep_info.get("ClusterType") not in (None, "", {})
+        for ep_info in device_info.get("Ep", {}).values()
+    )
+
+
+def _has_provisioned_endpoint(device_info):
+    """
+    Pure check: returns True if any endpoint already carries a 'ClusterType'
+    mapping (i.e. widgets have been provisioned for this device).
+    """
+    return any("ClusterType" in ep_info for ep_info in device_info.get("Ep", {}).values())
+
+
+def _provision_or_update_existing_device(self, nwk_id, model_name):
+    """
+    If the device is already provisioned (at least one endpoint has a
+    'ClusterType'), make sure its Model and configuration are up to date,
+    and signal the caller to skip re-enrollment (which would wipe the Ep
+    structure, including ClusterType).
+
+    Parameters:
+        nwk_id (str): The network ID of the device.
+        model_name (str): The model name of the device.
+
+    Returns:
+        bool: True if the device is provisioned (caller should stop),
+              False otherwise.
+    """
+    device_info = self.ListOfDevices.get(nwk_id, {})
+
+    if not _has_provisioned_endpoint(device_info):
+        return False
+
+    # Already provisioned. Nothing to do if the model is unchanged.
+    if device_info.get("Model") == model_name:
+        self.log.logging(
+            ["ZclClusters", "Pairing"], "Debug",
+            f"{nwk_id} - {model_name} is already provisioned in Domoticz", nwk_id,
+        )
+        return True
+
+    # Provisioned, but the reported model name changed: update in place
+    # without resetting the endpoints.
+    self.log.logging(
+        ["ZclClusters", "Pairing"], "Debug",
+        f"{nwk_id} - Update Model Name to {model_name} (keeping existing Ep/ClusterType)", nwk_id,
+    )
+    device_info["Model"] = model_name
+
+    if model_name in self.DeviceConf:
+        device_info["ConfigSource"] = "DeviceConf"
+        device_info["Param"] = dict(self.DeviceConf[model_name].get("Param", {}))
+        device_info["CertifiedDevice"] = True
+
+    return True
 
 def _is_device_already_provisioned(self, nwk_id, model_name):
     """
