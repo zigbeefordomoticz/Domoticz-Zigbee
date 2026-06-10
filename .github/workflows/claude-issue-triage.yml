@@ -39,4 +39,5 @@ jobs:
             Post your analysis as a single helpful comment on the issue.
           claude_args: |
             --max-turns 15
+            --model claude-sonnet-4-
 
