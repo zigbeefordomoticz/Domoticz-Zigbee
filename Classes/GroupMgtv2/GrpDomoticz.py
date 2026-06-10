@@ -78,6 +78,57 @@ CLUSTER_MAPPING = {
     "VenetianInverted": "0102",
 }
 
+from dataclasses import dataclass
+
+
+@dataclass
+class GroupAccumulator:
+    """Aggregates per-device state while iterating over the devices of a group."""
+
+    # On/Off counters
+    count_on: int = 0
+    count_off: int = 0
+    count_stop: int = 0
+
+    # Level (dimmers) — running sum + count, raw Zigbee 0–255
+    level_sum: int = 0
+    level_count: int = 0
+
+    # Covering (shutters/blinds) — running sum + count, normalized 0–100
+    covering_sum: int = 0
+    covering_count: int = 0
+
+    def add_on_off(self, on_off):
+        if on_off == 17:
+            self.count_stop += 1
+        elif on_off is not None and on_off != 0:
+            self.count_on += 1
+        elif on_off == 0:
+            self.count_off += 1
+
+    def add_level(self, raw_level):
+        self.level_sum += raw_level
+        self.level_count += 1
+
+    def add_covering(self, pct):
+        self.covering_sum += pct
+        self.covering_count += 1
+
+    @property
+    def has_covering(self):
+        return self.covering_count > 0
+
+    @property
+    def level(self):
+        """Average level (0–255) or None if no dimmer contributed."""
+        return round(self.level_sum / self.level_count) if self.level_count else None
+
+    @property
+    def covering(self):
+        """Average covering position (0–100) or None if no cover contributed."""
+        return round(self.covering_sum / self.covering_count) if self.covering_count else None
+
+
 DEFAULT_GROUP_UNIT = 1  # As of 8.1.003, DomoticzEx, all groups will be using Unit 1 at creation (only legacy will rely on Unit)
 
 def create_domoticz_group_device(self, GroupName, GroupId):
@@ -331,12 +382,9 @@ def update_domoticz_group_device(self, GroupId):
         return
 
     group_cluster = self.ListOfGroups[GroupId].get("Cluster")
-    count_stop = count_on = count_off = 0
-    level = covering = None
-    on_off = None
 
+    acc = GroupAccumulator()
     switchType, Subtype, _ = domo_read_SwitchType_SubType_Type(self, self.Devices, GroupId, unit)
-
 
     for NwkId, Ep, IEEE in group_devices:
         # Check each device in the group and count On/Off/Stop and average level for dimmers and covering
@@ -358,34 +406,30 @@ def update_domoticz_group_device(self, GroupId):
         if model in EXCLUDED_MODELS:
             continue
 
-        on_off, level, covering = _collect_device_state(self, NwkId, Ep, group_cluster, GroupId, on_off, level, covering, switchType, Subtype)
+        _collect_device_state(self, NwkId, Ep, group_cluster, acc, switchType, GroupId)
 
-        if covering is not None:
-            continue
-        
-        if on_off == 17:
-            count_stop += 1
-    
-        elif on_off != 0 and on_off is not None:
-            count_on += 1
-
-        elif on_off == 0:
-            count_off += 1
-            
-
-        self.logging( "Debug", "update_domoticz_group_device - Processing: Group: %s with device: %s/%s On: %s, Off: %s Stop: %s, level: %s" % (
-            GroupId, NwkId, Ep, count_on, count_off, count_stop, level), )
+        self.logging("Debug", "update_domoticz_group_device - Processing: Group: %s with device: %s/%s On: %s, Off: %s Stop: %s, level: %s" % (
+            GroupId, NwkId, Ep, acc.count_on, acc.count_off, acc.count_stop, acc.level))
 
     current_nValue, current_sValue = domo_read_nValue_sValue(self, self.Devices, GroupId, unit)
 
-    if covering is not None:
+    if acc.is_empty:   # count_on+off+stop == 0 and level_count == 0 and covering_count == 0
+        self.logging("Debug", f"update_domoticz_group_device - no usable device state for {GroupId}, skipping")
+        return
+
+    elif acc.has_covering:
         # It is assumed that we cannot have a group with a mix of covering and non covering devices, 
         # For covering we directly use the covering value to compute nValue and sValue, as it is the most relevant
         # information for that type of device and should be the only one in the group
-        nValue, sValue = ValuesForVenetian(covering)
+        nValue, sValue = ValuesForVenetian(acc.covering)
+
     else:
-        nValue, sValue = _compute_nvalue_svalue( self, level, covering, switchType, count_on, count_off, count_stop, GroupId, current_sValue)    
-    
+        nValue, sValue = _compute_nvalue_svalue(
+            self, acc.level, switchType,
+            acc.count_on, acc.count_off, acc.count_stop,
+            GroupId, current_sValue
+        )
+            
     group_name = domo_read_Name( self, self.Devices, GroupId, unit )
     self.logging( "Debug", "update_domoticz_group_device - Processing: Group: %s ==  > from %s:%s to %s:%s" % (
         GroupId, current_nValue, current_sValue, nValue, sValue), )
@@ -401,78 +445,48 @@ def update_domoticz_group_device(self, GroupId):
         domo_update_api(self, self.Devices, GroupId, unit, nValue, sValue)
 
 
-def _collect_device_state(self, nwkid, ep, group_cluster, group_id=None, on_off=None, level=None, covering=None, switchType=None, Subtype=None):
+def _collect_device_state(self, nwkid, ep, group_cluster, acc, switchType, group_id=None):
     """
-    Read the current Zigbee attribute state for one device endpoint.
+    Read one device endpoint's Zigbee state and fold it into the group accumulator.
 
-    Returns (on_off, level, covering) for the given endpoint, where:
-    - on_off : 0 = off, 1 = on, 17 = stop, None = not available
-    - level  : raw Zigbee level (0–255) from cluster 0008, or None
-    - covering: group covering position normalized to 0–100, or None
-
-    The caller is responsible for accumulating level/covering across devices.
+    Mutates `acc` in place. Covering devices (cluster 0102, or 0008 on a covering
+    widget) short-circuit and only update covering; otherwise on_off and level are
+    folded in.
     """
     ep_data = self.ListOfDevices[nwkid]["Ep"][ep]
 
-    if group_cluster in ("0102",):
-        # group_cluster Window Covering, we check the level for shutters/blinds (if Level is supported)
-        # Cluster 0x0102 attribute 0x0008 provided a percentage value between 0 and 100, which we will average across devices in the group
-        _device_covering_state = ep_data.get("0102", {}).get("0008")
-        if _device_covering_state is not None and _device_covering_state not in ("", {}):
-            self.logging( "Debug", "update_domoticz_group_device - group_cluster Window Covering Group: %s NwkId: %s Ep: %s Value: %s" %( 
-                group_id, nwkid, ep, _device_covering_state))
-            covering_value = int(_device_covering_state) if isinstance(_device_covering_state, int) else int(str(_device_covering_state), 16)
-            
-            # rolling average, not too precise but should be ok
-            covering = covering_value if covering is None else (covering + covering_value) // 2
-            return None, None, covering
-        
-    if group_cluster in ("0008",) and _is_covering_switchType(switchType):
-        # group_cluster is Level Control and we are on a covering widget, we check the level for shutters/blinds (if Level is supported)
-        # Cluster 0x0008 attribute 0x0000 provided an analog value between 0 and 255, needs to be converted to percentage which and we will 
-        # average across devices in the group to derive the group covering position.
-        _device_covering_state = ep_data.get("0008", {}).get("0000")
-        if _device_covering_state is not None and _device_covering_state not in ("", {}):
-            self.logging( "Debug", "update_domoticz_group_device - group_cluster Level Control for Covering Group: %s NwkId: %s Ep: %s Value: %s" %( 
-                group_id, nwkid, ep, _device_covering_state))
-            covering_value = int(_device_covering_state) if isinstance(_device_covering_state, int) else int(str(_device_covering_state), 16)
-            
-            # We should work witgh percentage for covering, so we convert the raw value to percentage before averaging
-            covering_value = round((covering_value * 100) / 255)
+    if group_cluster == "0102":
+        raw = ep_data.get("0102", {}).get("0008")
+        if raw not in (None, "", {}):
+            pct = int(raw) if isinstance(raw, int) else int(str(raw), 16)
+            acc.add_covering(pct)   # 0102 attr 0008 is already 0–100
+            return
 
-            # rolling average, not too precise but should be ok
-            covering = covering_value if covering is None else (covering + covering_value) // 2
-            return None, None, covering
-
+    if group_cluster == "0008" and _is_covering_switchType(switchType):
+        raw = ep_data.get("0008", {}).get("0000")
+        if raw not in (None, "", {}):
+            val = int(raw) if isinstance(raw, int) else int(str(raw), 16)
+            acc.add_covering(round((val * 100) / 255))   # 0–255 → 0–100
+            return
 
     if group_cluster in ("0006", "0008", "0300"):
-        # We check the On/off state for switch and dimmers and color control (if On/Off is supported)
-        _device_on_off_state = ep_data.get("0006", {}).get("0000")
-        if _device_on_off_state is not None and is_hex(str(_device_on_off_state)):
-            self.logging( "Debug", "update_domoticz_group_device - group_cluster ON/OFF Group: %s NwkId: %s Ep: %s Value: %s" %( 
-                group_id, nwkid, ep, _device_on_off_state))
-
-            if str(_device_on_off_state) == "f0":
-                on_off = 17
-            elif int(_device_on_off_state) != 0:
-                on_off = 1
+        raw = ep_data.get("0006", {}).get("0000")
+        if raw is not None and is_hex(str(raw)):
+            if str(raw) == "f0":
+                acc.add_on_off(17)
+            elif int(raw) != 0:
+                acc.add_on_off(1)
             else:
-                on_off = 0
+                acc.add_on_off(0)
 
-    if group_cluster in ( "0008", "0300" ):
-        # We check the level for dimmers and color control (if Level is supported)
-        _device_level_state = ep_data.get("0008", {}).get("0000")
-        if _device_level_state is not None and _device_level_state not in ("", {}) and is_hex(str(_device_level_state)):
-            self.logging( "Debug", "update_domoticz_group_device - group_cluster Level Control Group: %s NwkId: %s Ep: %s Value: %s" %( 
-                group_id, nwkid, ep, _device_level_state))
-
-            lvl_value = int(_device_level_state) if isinstance(_device_level_state, int) else int(str(_device_level_state), 16)
-            level = lvl_value if level is None else (level + lvl_value) // 2
-
-    return on_off, level, covering   # at the end we return the last known state for the device, if we haven't found any relevant information for the group cluster, we will return None for on_off, level and covering, and those will be ignored in the computation of the group state
+    if group_cluster in ("0008", "0300"):
+        raw = ep_data.get("0008", {}).get("0000")
+        if raw not in (None, "", {}) and is_hex(str(raw)):
+            val = int(raw) if isinstance(raw, int) else int(str(raw), 16)
+            acc.add_level(val)
 
 
-def _compute_nvalue_svalue( self, level, covering, switchType, count_on, count_off, count_stop, group_id, current_sValue=None):
+def _compute_nvalue_svalue(self, level, switchType, count_on, count_off, count_stop, group_id, current_sValue=None):
     """
     Derive the Domoticz (nValue, sValue) pair for the group from aggregated counters.
 
