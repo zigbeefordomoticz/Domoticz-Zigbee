@@ -173,7 +173,7 @@ OTA_CODES = {
     "Lumi": {"Folder": "LUMI", "ManufCode": 0x1037, "ManufName": "Lumi", "Enabled": True},
     "devbis": {"Folder": "XIAOMI", "ManufCode": 0xdb15, "ManufName": "Lumi", "Enabled": True},
     "z03mmc": {"Folder": "XIAOMI", "ManufCode": 0x0084, "ManufName": "Lumi", "Enabled": True},
-    "Namron": {"Folder": "NAMRON", "ManufCode": 0x11224, "ManufName": "Namron", "Enabled": True},
+    "Namron": {"Folder": "NAMRON", "ManufCode": 0x1224, "ManufName": "Namron", "Enabled": True},
 }
 
 
@@ -468,7 +468,7 @@ class OTAManagement(object):
         if nwk_id and self.ListInUpdate["LastBlockSent"] == 0 and loaded_time_stamp != 0:
             _retry_notification(self)
 
-        if retry == 10 or self.ImageLoaded["NotifiedTimeStamp"] != 0 and (time.time() > self.ImageLoaded["NotifiedTimeStamp"] + 600):
+        if ( retry >= 10 or self.ImageLoaded["NotifiedTimeStamp"] != 0) and (time.time() > self.ImageLoaded["NotifiedTimeStamp"] + 600):
             _handle_timeout(self)
 
 
@@ -780,7 +780,7 @@ def update_list_in_update(self, offset, length):
     info = self.ListInUpdate
 
     now = time.time()
-    info["LastBlockSent"] = time.time()
+    info["LastBlockSent"] = now
     info["TimeStamps"] = now
     info["Status"] = "Transfer Progress"
     info["Received"] = offset
@@ -849,10 +849,25 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
         if self.latest_request_was_malformed:
             # 2nd time in a row we get a malformed request, aborting
             status = 0x95  # ABORT
+            # Let's rebuild the message with the correct status, so that we can trace it in the logs and have a clear feedback to the device about what is going on
+            data = build_ota_message(
+                self, dest_addr, dest_ep, sequence, 0x95, offset,
+                image_version_hex, image_type_hex, manufacturer_code_hex,
+                length, raw_ota_data
+            )
+
         else:
             # get a request for data we cannot provide
             status = 0x80  # MALFORMED_COMMAND
             self.latest_request_was_malformed = True
+            
+            # Let's rebuild the message with the correct status, so that we can trace it in the logs and have a clear feedback to the device about what is going on
+            data = build_ota_message(
+                self, dest_addr, dest_ep, sequence, 0x80, offset,
+                image_version_hex, image_type_hex, manufacturer_code_hex,
+                length, raw_ota_data
+            )
+
     else:
         status = 0x00  # Successblock_request_delay
         self.latest_request_was_malformed = False
@@ -1685,6 +1700,7 @@ def ota_aync_request( self, MsgSrcAddr, MsgEP, MsgIEEE, MsgFileOffset, image_ver
     entry = retrieve_image(self, image_type)
     if entry is None:
         logging(self, "Error", f"ota_aync_request: No Firmware available to satisfy this request by {MsgSrcAddr} !!!", MsgSrcAddr)
+        return False
 
     brand, ota_image_file = entry
     available_image = self.ListOfImages.get("Brands", {}).get(brand, {}).get(ota_image_file, {})
@@ -1800,7 +1816,7 @@ def logging_OTA_headers(self, headers):
                 logging( self, "Debug", f"==>    {attr}: {value}")
 
     # Decoding File Version
-    file_version = headers["file_version"]
+    file_version = headers["image_version"]
     logging( self, "Debug", f"==>    File Version:        0x{file_version:08X}")
     logging( self, "Debug", f"==>    Application Release: 0x{(file_version & 0xFF000000) >> 24:02X}", )
     logging( self, "Debug", f"==>    Application Build:   {(file_version & 0x00FF0000) >> 16}", )
