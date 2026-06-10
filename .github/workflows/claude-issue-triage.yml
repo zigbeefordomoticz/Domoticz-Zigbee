@@ -18,26 +18,25 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          track_progress: true          # <-- creates + updates a comment on the issue
+          track_progress: true
           prompt: |
             A new issue was opened on this Zigbee plugin for Domoticz.
-
+            
+            Triage this issue concisely. Read only the few files most relevant
+            to the problem — do not explore the whole codebase. Keep your
+            comment short: classification, likely root cause with file/line,
+            and 1-2 next steps. 
+            At most: classify it, give a one-paragraph likely-cause hypothesis,
+            name the 1-2 most relevant files (a quick grep is fine), and list
+            any missing info needed from the reporter. Keep it short.
+            If deep analysis is needed, say so and stop — a maintainer can
+            invoke @claude for a full investigation.
+            If the issue body contains long debug logs,
+            summarize them rather than re-reading repeatedly.
             - Title: ${{ github.event.issue.title }}
             - Body: ${{ github.event.issue.body }}
-            - Author: ${{ github.event.issue.user.login }}
             - Issue #: ${{ github.event.issue.number }}
 
-            Please:
-            1. Classify it (bug / feature request / config problem / question).
-            2. Investigate the repository codebase to find the relevant modules,
-               functions, and likely root cause.
-            3. If it's a bug, point to the specific files/lines involved and
-               propose a concrete fix or next debugging steps.
-            4. Note any missing info you'd need from the reporter (logs,
-               firmware version, coordinator type, etc.).
-
-            Post your analysis as a single helpful comment on the issue.
           claude_args: |
-            --max-turns 15
-            --model claude-sonnet-4-
-
+            --max-turns 8
+            --model claude-sonnet-4-6
