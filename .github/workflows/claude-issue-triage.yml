@@ -17,28 +17,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - id: prep
+        run: |
+          BODY=$(jq -r '.issue.body // ""' "$GITHUB_EVENT_PATH" | head -c 3000)
+          {
+            echo "body<<__EOF__"
+            echo "$BODY"
+            echo "__EOF__"
+          } >> "$GITHUB_OUTPUT"
+  
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           track_progress: true
-          prompt: |
-            A new issue was opened on this Zigbee plugin for Domoticz.
-            
-            Triage this issue concisely. Read only the few files most relevant
-            to the problem — do not explore the whole codebase. Keep your
-            comment short: classification, likely root cause with file/line,
-            and 1-2 next steps. 
-            At most: classify it, give a one-paragraph likely-cause hypothesis,
-            name the 1-2 most relevant files (a quick grep is fine), and list
-            any missing info needed from the reporter. Keep it short.
-            If deep analysis is needed, say so and stop — a maintainer can
-            invoke @claude for a full investigation.
-            If the issue body contains long debug logs,
-            summarize them rather than re-reading repeatedly.
-            - Title: ${{ github.event.issue.title }}
-            - Body: ${{ github.event.issue.body }}
-            - Issue #: ${{ github.event.issue.number }}
 
+          prompt: |
+            Triage this issue quickly. Do NOT explore the whole codebase.
+            Use at most 2-3 quick greps/reads. Then immediately post ONE
+            comment with: classification, a short likely-cause hypothesis,
+            the 1-2 most relevant files, and any missing info to request.
+            Do not attempt a full root-cause analysis or code changes — if
+            deep analysis is needed, say so and stop. Finish well within
+            your turn budget.
+            - Title: ${{ github.event.issue.title }}
+            - Issue #: ${{ github.event.issue.number }}
           claude_args: |
             --max-turns 8
             --model claude-sonnet-4-6
