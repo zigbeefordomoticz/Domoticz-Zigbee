@@ -84,8 +84,11 @@ from Zigbee.zclRawCommands import (zcl_raw_ota_image_block_response_success,
                                    zcl_raw_ota_query_next_image_response,
                                    zcl_raw_ota_upgrade_end_response)
 
-# This file is hosted on @koenkk repository.
-# This file is maintained from the community, so make sure what you do.
+# Maximum number of Image Notify retries while waiting for the device to start
+# the transfer, and grace period (seconds) after the last notification before
+# the OTA state machine is reset.
+OTA_MAX_NOTIFY_RETRY = 10
+OTA_NOTIFY_TIMEOUT = 600
 
 OTA_CLUSTER_ID = "0019"
 
@@ -465,10 +468,13 @@ class OTAManagement(object):
             _handle_ota_timeout(self)
             return
 
-        if nwk_id and self.ListInUpdate["LastBlockSent"] == 0 and loaded_time_stamp != 0:
+        if nwk_id and self.ListInUpdate["LastBlockSent"] == 0 and loaded_time_stamp != 0 and retry < OTA_MAX_NOTIFY_RETRY:
             _retry_notification(self)
 
-        if ( retry >= 10 or self.ImageLoaded["NotifiedTimeStamp"] != 0) and (time.time() > self.ImageLoaded["NotifiedTimeStamp"] + 600):
+        # Reset the OTA state machine once the notification retries are exhausted, or
+        # if the device never engaged within the grace period. NotifiedTimeStamp is
+        # refreshed on every Image Notify, so the retry counter is the primary guard.
+        if self.ListInUpdate["Retry"] >= OTA_MAX_NOTIFY_RETRY or ( notified_time_stamp != 0 and time.time() > ( notified_time_stamp + OTA_NOTIFY_TIMEOUT)):
             _handle_timeout(self)
 
 
@@ -599,7 +605,7 @@ class OTAManagement(object):
                     self.zigbee_ota_found_in_index.append( ( manufcode, imagetype, currentVersion)  )
                     notify_ota_firmware_available(self, srcnwkid, manufcode, imagetype, currentVersion, _ota_available )
 
-        # No Image available
+        # No Image available.
         logging( self, "Debug", ( f"OTA Query Next Image request - No Image Available for now " f"Current device manufcode: 0x{manufcode:04x}, " f"imagetype: 0x{imagetype:04x}, " f"currentVersion: 0x{currentVersion:08x}" ) )
         return zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, 0x98)
 
