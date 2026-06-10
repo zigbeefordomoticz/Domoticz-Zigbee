@@ -1724,9 +1724,9 @@ def notify_upgrade_end(
     _ieee = self.ListOfDevices[MsgSrcAddr]["IEEE"]
     _name = None
     _textmsg = ""
-    for x in self.Devices:
-        if self.Devices[x].DeviceID == _ieee:
-            _name = self.Devices[x].Name
+
+    if _ieee in self.Devices and self.Devices[_ieee].Units:
+        _name = next(iter(self.Devices[_ieee].Units.values())).Name
 
     if Status == "OK":
         _textmsg = "Device: %s has been updated with firmware %s in %s hour %s min %s sec" % (
@@ -1903,7 +1903,7 @@ def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgF
 
     # Retrieve device name from IEEE address
     _ieee = self.ListOfDevices[MsgSrcAddr]["IEEE"]
-    _name = next((dev.Name for dev in self.Devices.values() if dev.DeviceID == _ieee), None)
+    _name = next(iter(self.Devices[_ieee].Units.values())).Name if _ieee in self.Devices and self.Devices[_ieee].Units else None
 
     # Estimate upload time. We expect to send 5 blocks in 1 second
     ota_profile = VENDOR_PROFILES.get( intMsgManufCode, DEFAULT_OTA_PROFILE )
