@@ -152,7 +152,7 @@ def execute_rest_command(self, verb, data, version, command, parameters):
 def prepare_help_response(self):
     response = prepResponseMessage(self, setupHeadersResponse())
     response["Data"] = json.dumps({
-        x: {"Verbs": self.REST_COMMANDS[x]["Verbs"]} for x in self.REST_COMMANDS
+        x: {"Verbs": sorted(self.REST_COMMANDS[x]["Verbs"])} for x in self.REST_COMMANDS
     })
     return response
 
