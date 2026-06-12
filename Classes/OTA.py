@@ -394,15 +394,15 @@ class OTAManagement(object):
             MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus))
 
         if self.ListInUpdate["NwkId"] is None:
-            logging(self, "Log", "ota_upgrade_end_request - Receive Firmware Completed from %s with status %s most likely a duplicated packet as there is nothing in Progress. " % (MsgSrcAddr, MsgStatus))
-
+            logging(self, "Warning", "ota_upgrade_end_request - Receive Firmware Completed from %s with status %s most likely a duplicated packet as there is nothing in Progress. " % (MsgSrcAddr, MsgStatus))
             return
+
         if self.ListInUpdate["NwkId"] and MsgSrcAddr != self.ListInUpdate["NwkId"]:
-            logging(self, "Error", "ota_upgrade_end_request - OTA upgrade completed - %s with status %s not in Upgraded devices" % (MsgSrcAddr, MsgStatus))
-
+            logging(self, "Warning", "ota_upgrade_end_request - OTA upgrade completed - %s with status %s not in Upgraded devices" % (MsgSrcAddr, MsgStatus))
             return
+
         if "StartTime" not in self.ListInUpdate:
-            logging(self, "Error", "ota_upgrade_end_request - OTA upgrade completed - No Start Time for device: %s" % MsgSrcAddr)
+            logging(self, "Warning", "ota_upgrade_end_request - OTA upgrade completed - No Start Time for device: %s" % MsgSrcAddr)
             return
 
         if MsgStatus == "00":
@@ -412,31 +412,27 @@ class OTAManagement(object):
             notify_upgrade_end(self, "OK", MsgSrcAddr, MsgEP, image_type, intMsgManufCode, intMsgImageVersion)
 
         elif MsgStatus == "95":
-            logging(self, "Error", "ota_request_firmware_completed - OTA Firmware aborted - %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s" % (
+            logging(self, "Error", "OTA Firmware aborted - %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s" % (
                 MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus))
             notify_upgrade_end(self, "Aborted", MsgSrcAddr, MsgEP, image_type, intMsgManufCode, intMsgImageVersion)
 
         elif MsgStatus == "96":
-            logging(self, "Error", "ota_request_firmware_completed - OTA Firmware image validation failed %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s" % (
+            logging(self, "Error", "OTA Firmware image validation failed %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s" % (
                 MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus))
-
             notify_upgrade_end(self, "Failed", MsgSrcAddr, MsgEP, image_type, intMsgManufCode, intMsgImageVersion)
 
         elif MsgStatus == "97":
-            logging(self, "Log", "ota_request_firmware_completed - OTA Firmware image wait for data %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s" % (
+            logging(self, "Warning", "OTA Firmware image wait for data %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s" % (
                 MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus))
-
             return
         elif MsgStatus == "99":
-            logging(self, "Status", "ota_request_firmware_completed - OTA Firmware  The downloaded image was successfully received, but there is a need for additional image %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s" % (
+            logging(self, "Warning", "OTA Firmware  The downloaded image was successfully received, but there is a need for additional image %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s" % (
                 MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus))
-
             notify_upgrade_end(self, "More", MsgSrcAddr, MsgEP, image_type, intMsgManufCode, intMsgImageVersion)
 
         else:
-            logging(self, "Error", "ota_request_firmware_completed - OTA Firmware unexpected error %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s" % (
+            logging(self, "Error", "OTA Firmware unexpected error %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s" % (
                 MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus))
-
             notify_upgrade_end(self, "Aborted", MsgSrcAddr, MsgEP, image_type, intMsgManufCode, intMsgImageVersion)
 
         cleanup_after_completed_upgrade(self, MsgSrcAddr, MsgStatus)
@@ -517,7 +513,7 @@ class OTAManagement(object):
             return
 
         if len(data) > 1:
-            logging(self, "Error", "Only one device update at a time is supported!")
+            logging(self, "Warning", "Only one device update at a time is supported!")
             return
 
         # Process the single device update
@@ -613,7 +609,7 @@ class OTAManagement(object):
 
 # Local Routines and other helpers
 def _handle_ota_timeout(self):
-    logging(self, "Error", "Ota timed out on NwkId: %s for block: %s" % (
+    logging(self, "Warning", "Ota timed out on NwkId: %s for block: %s" % (
         self.ListInUpdate["NwkId"], self.ListInUpdate["intFileOffset"]))
     _reset_ota_state(self)
 
@@ -630,7 +626,7 @@ def _retry_notification(self):
 
 
 def _handle_timeout(self):
-    logging(self, "Error", "Ota detects Timeout while notifying device %s" % self.ListInUpdate["NwkId"])
+    logging(self, "Warning", "Ota detects Timeout while notifying device %s" % self.ListInUpdate["NwkId"])
     _reset_ota_state(self)
 
 
@@ -803,13 +799,13 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
     images = self.ListOfImages.get("ImageType", {})
     in_update = self.ListInUpdate
     if image_type not in images:
-        logging(self, "Error", f"ota_send_block - unknown image_type {image_type}")
+        logging(self, "Warning", f"ota_send_block - unknown image_type {image_type}")
         return False
 
     expected_image_type = int(in_update["ImageType"], 16)
     if image_type != expected_image_type:
         logging(
-            self, "Error",
+            self, "Warning",
             f"ota_send_block - inconsistent ImageType Received: {image_type} "
             f"Expecting: {in_update['ImageType']}"
         )
@@ -852,7 +848,7 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
 
     # Determine OTA block status
     if length == 0 or data is None:
-        logging( self, "Error", f"OTA {dest_addr}/{dest_ep} short of data, device request offset: {offset} expected size: {max_data_size} got only {length}" )
+        logging( self, "Warning", f"OTA {dest_addr}/{dest_ep} short of data, device request offset: {offset} expected size: {max_data_size} got only {length}" )
         
         if self.latest_request_was_malformed:
             # 2nd time in a row we get a malformed request, aborting
@@ -1122,26 +1118,26 @@ def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_updat
     if self.ListInUpdate["NwkId"]:
         logging(
             self,
-            "Error",
+            "Warning",
             "There is already an Image loaded %s for device: %s please come back later"
             % (self.ListInUpdate["FileName"], self.ListInUpdate["NwkId"]),
         )
         return False
 
     if brand not in self.ListOfImages["Brands"]:
-        logging(self, "Error", "restapi_firmware_update Brands %s unknown" % brand)
+        logging(self, "Warning", "restapi_firmware_update Brands %s unknown" % brand)
         return False
 
     if file_name not in self.ListOfImages["Brands"][brand]:
-        logging(self, "Error", "restapi_firmware_update FileName %s unknown in this Brand %s" % (file_name, brand))
+        logging(self, "Warning", "restapi_firmware_update FileName %s unknown in this Brand %s" % (file_name, brand))
         return False
 
     if target_nwkid not in self.ListOfDevices:
-        logging(self, "Error", "restapi_firmware_update NwkId: %s unknown" % target_nwkid)
+        logging(self, "Warning", "restapi_firmware_update NwkId: %s unknown" % target_nwkid)
         return False
 
     if target_ep not in self.ListOfDevices[target_nwkid]["Ep"]:
-        logging(self, "Error", "restapi_firmware_update NwkId: %s Ep: %s unknown" % (target_nwkid, target_ep))
+        logging(self, "Warning", "restapi_firmware_update NwkId: %s Ep: %s unknown" % (target_nwkid, target_ep))
         return False
 
     image_type = self.ListOfImages["Brands"][brand][file_name]["ImageType"]
@@ -1268,7 +1264,7 @@ def ota_scan_folder(self):  # OK 13/10
 
             # Check if the Image type is not used by another brand
             if image_type in self.ListOfImages["ImageType"] and self.ListOfImages["ImageType"][image_type] != brand:
-                logging(self, "Error", "ota_scan_folder Firmware %s not loaded, another firmware with the same ImageType and another brand is already loaded" %ota_image_file)
+                logging(self, "Warning", "ota_scan_folder Firmware %s not loaded, another firmware with the same ImageType and another brand is already loaded" %ota_image_file)
                 continue
 
             self.ListOfImages["ImageType"][image_type] = brand
@@ -1690,7 +1686,7 @@ def ota_aync_request( self, MsgSrcAddr, MsgEP, MsgIEEE, MsgFileOffset, image_ver
             return False
 
         # We need to prevent looping on serving if it is not expected!
-        logging(self, "Error", f"ota_aync_request: There is no upgrade plan for that device, drop request from {MsgSrcAddr}", MsgSrcAddr)
+        logging(self, "Warning", f"ota_aync_request: There is no upgrade plan for that device, drop request from {MsgSrcAddr}", MsgSrcAddr)
         return False
 
     if self.ListInUpdate.get("NwkId"):
@@ -1707,7 +1703,7 @@ def ota_aync_request( self, MsgSrcAddr, MsgEP, MsgIEEE, MsgFileOffset, image_ver
 
     entry = retrieve_image(self, image_type)
     if entry is None:
-        logging(self, "Error", f"ota_aync_request: No Firmware available to satisfy this request by {MsgSrcAddr} !!!", MsgSrcAddr)
+        logging(self, "Warning", f"ota_aync_request: No Firmware available to satisfy this request by {MsgSrcAddr} !!!", MsgSrcAddr)
         return False
 
     brand, ota_image_file = entry
@@ -1718,7 +1714,7 @@ def ota_aync_request( self, MsgSrcAddr, MsgEP, MsgIEEE, MsgFileOffset, image_ver
     if intMsgManufCode != available_image.get("intManufCode"):
         logging(
             self,
-            "Error",
+            "Warning",
             f"ota_aync_request: {MsgSrcAddr} Available Firmware {ota_image_file} is not for this Manufacturer Code {intMsgManufCode}. Dropping",
             MsgSrcAddr
         )
@@ -1895,7 +1891,7 @@ def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgF
     # Retrieve the image entry for the requested image type
     entry = retrieve_image(self, intMsgImageType)
     if entry is None:
-        logging(self, "Error", f"start_upgrade_infos: No firmware available for request by {MsgSrcAddr}", MsgSrcAddr)
+        logging(self, "Warning", f"start_upgrade_infos: No firmware available for request by {MsgSrcAddr}", MsgSrcAddr)
         return
     brand, ota_image_file = entry
     available_image = self.ListOfImages["Brands"][brand][ota_image_file]
