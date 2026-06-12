@@ -591,7 +591,10 @@ async def _send_and_retry(
         if result is not None:
             return result
 
-        packet_priority = t.PacketPriority.HIGH
+        # Escalate non-OTA retries to HIGH so they recover quickly.
+        # OTA retries intentionally stay at LOW to avoid starving other traffic.
+        if not is_ota_cluster:
+            packet_priority = t.PacketPriority.HIGH
 
 
 # ---------------------------------------------------------------------------
