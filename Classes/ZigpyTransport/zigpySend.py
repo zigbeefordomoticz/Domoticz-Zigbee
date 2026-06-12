@@ -511,7 +511,14 @@ async def _send_and_retry(
         f"{ieee}/0x{nwkid} 0x{profile:X} 0x{cluster:X} payload: {payload} "
         f"AckIsDisable: {ack_is_disable} extended_timeout: {extended_timeout}"
     )
-    packet_priority = t.PacketPriority.NORMAL
+    # OTA block responses (cluster 0x0019) use LOW priority so the watchdog
+    # ping and other control traffic can always preempt them.  This mirrors
+    # zigpy's own OTA manager which explicitly wraps image_block_response in
+    # request_priority(PacketPriority.LOW) for the same reason.
+    # Retries keep LOW priority — never escalate OTA to HIGH.
+    is_ota_cluster = (cluster == 0x0019)
+    packet_priority = t.PacketPriority.LOW if is_ota_cluster else t.PacketPriority.NORMAL
+
 
     async def __try_send(attempt):
         self.log.logging("TransportZigpy", "Debug",
