@@ -34,6 +34,13 @@ from Zigbee.zclCommands import (zcl_group_level_move_to_level,
                                 zcl_group_window_covering_on,
                                 zcl_group_window_covering_stop)
 
+from dataclasses import dataclass
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+DEFAULT_GROUP_UNIT = 1  # As of 8.1.003, DomoticzEx, all groups will be using Unit 1 at creation (only legacy will rely on Unit)
+
 WIDGET_STYLE = {
     "Plug": (244, 73, 0),
     "Switch": (244, 73, 0),
@@ -61,7 +68,6 @@ WIDGET_STYLE_TO_DOMOTICZ_TYPEMAP = {
     "ColorControlRGB": "RGB",
     "ColorControlRGBWW": "RGB_CW_WW",
     "ColorControlFull": "RGB_CW_WW_Z",
-
 }
 
 CLUSTER_MAPPING = {
@@ -78,8 +84,32 @@ CLUSTER_MAPPING = {
     "VenetianInverted": "0102",
 }
 
-from dataclasses import dataclass
+_WIDGET_RANK = {
+    "Switch":             0,
+    "Plug":               1,
+    "LvlControl":         2,
+    "ColorControlWW":     3,
+    "ColorControlRGB":    4,
+    "ColorControlRGBWW":  5,
+    "ColorControl":       6,
+    "ColorControlFull":   6,  # same capability as ColorControl, keep whichever is current
+}
 
+_BLIND_TYPE_MAP = {
+    "BlindInverted": ("BlindPercentInverted", "LvlControl"),
+    "Blind":         ("BlindPercent",         "LvlControl"),
+}
+
+_COVERING_WIDGETS = {
+    "VenetianInverted", "VanneInverted", "CurtainInverted",
+    "Venetian",         "Vanne",         "Curtain",
+}
+
+_COVERING_GROUP_STYLE = ("VenetianInverted", "LvlControl")
+
+_COVERING_GROUP_STYLES = {"BlindPercentInverted", "BlindPercent", "VenetianInverted"}
+
+_DEFAULT_WIDGET_TYPE = "ColorControlFull"
 
 @dataclass
 class GroupAccumulator:
@@ -138,7 +168,7 @@ class GroupAccumulator:
             and self.covering_count == 0
         )
 
-DEFAULT_GROUP_UNIT = 1  # As of 8.1.003, DomoticzEx, all groups will be using Unit 1 at creation (only legacy will rely on Unit)
+
 
 def create_domoticz_group_device(self, GroupName, GroupId):
     """ Create Device for just created group in Domoticz. """
@@ -246,119 +276,224 @@ def get_typename(self, Type_, Subtype_, SwitchType_):
     return None
 
 
-def best_group_widget(self, GroupId):
+def my_best_widget_offer(current_widget, current_group_widget):
+    """
+    Return the least-capable widget between current_widget and
+    current_group_widget, i.e. the highest common feature set the
+    group can expose.
+    """
+    if current_group_widget in (None, current_widget):
+        return current_widget
 
+    rank_widget = _WIDGET_RANK.get(current_widget)
+    rank_group  = _WIDGET_RANK.get(current_group_widget)
+
+    if rank_widget is None:
+        return current_group_widget
+    if rank_group is None:
+        return current_widget
+
+    # When ranks are equal (e.g. ColorControl vs ColorControlFull),
+    # keep current_widget — no downgrade needed.
+    return current_widget if rank_widget <= rank_group else current_group_widget
+
+
+# ---------------------------------------------------------------------------
+# Methods
+# ---------------------------------------------------------------------------
+
+def negotiate_endpoint_widget(self, NwkId, device_info, device_ep_info, GroupWidgetStyle, group_widget_type_candidate):
+    """
+    Determine the best Domoticz widget style for a Zigbee group by inspecting
+    one device's endpoint cluster types and negotiating against the group's
+    current widget candidate.
+
+    The function iterates over the ClusterType entries of a single device
+    endpoint. For each cluster type it either:
+
+    - Returns immediately with a covering/blind widget style when the device
+      is identified as a blind or venetian/curtain actuator (these are
+      incompatible with generic level-control groups and take precedence).
+    - Updates ``group_widget_type_candidate`` by calling ``my_best_widget_offer``
+      to find the least-capable widget that still satisfies both the group
+      candidate and the current device's widget type.
+
+    Parameters
+    ----------
+    NwkId : str
+        Network address of the device being inspected, used for logging only.
+    device_info : dict
+        Top-level device record. Used as a fallback source for the ``"Type"``
+        field when not present on the endpoint.
+    device_ep_info : dict
+        Endpoint record for the device. Must contain a ``"ClusterType"`` dict
+        mapping Domoticz device unit numbers to widget type strings.
+        Optionally contains a ``"Type"`` field (``"/"``-separated) used to
+        identify blind variants.
+    GroupWidgetStyle : str
+        The Domoticz widget style currently assigned to the group (e.g.
+        ``"Switch"``, ``"ColorControlRGB"``). Returned unchanged unless a
+        covering device is detected.
+    group_widget_type_candidate : str or None
+        The best widget type accumulated so far across all devices in the
+        group. Updated in-place as each cluster type is evaluated.
+
+    Returns
+    -------
+    tuple[str, str]
+        ``(GroupWidgetStyle, group_widget_type_candidate)`` where:
+
+        - For blind devices: ``("BlindPercent", "LvlControl")`` or
+          ``("BlindPercentInverted", "LvlControl")``.
+        - For covering/venetian devices: ``("VenetianInverted", "LvlControl")``.
+        - Otherwise: the input ``GroupWidgetStyle`` paired with the
+          updated ``group_widget_type_candidate`` after capability negotiation.
+
+    Notes
+    -----
+    Blind and covering types cause an **immediate return** from the middle of
+    the loop, meaning subsequent cluster types on the same endpoint are not
+    evaluated. This is intentional: a covering actuator cannot participate in
+    a generic on/off or colour-control group.
+
+    ``my_best_widget_offer`` implements a capability partial order where the
+    least-capable widget wins, ensuring the group only exposes features that
+    every member device supports.
+    """
+    for DomoDeviceUnit, device_widget_type in device_ep_info["ClusterType"].items():
+        self.logging("Debug", f"negotiate_endpoint_widget {NwkId} unit={DomoDeviceUnit} widget={device_widget_type} candidate={group_widget_type_candidate}")
+
+        if device_widget_type is None:
+            continue
+
+        # --- Covering/blind devices: resolve device Type field and return immediately ---
+        if device_widget_type == "LvlControl":
+            device_type = device_ep_info.get("Type") or device_info.get("Type") or ""
+            type_parts = device_type.split("/")
+            for blind_key, result in _BLIND_TYPE_MAP.items():
+                if blind_key in type_parts:
+                    self.logging("Debug", f"negotiate_endpoint_widget {NwkId} - found blind type '{blind_key}'")
+                    return result
+
+        if device_widget_type in _COVERING_WIDGETS:
+            self.logging("Debug", f"negotiate_endpoint_widget {NwkId} - found covering widget '{device_widget_type}'")
+            return _COVERING_GROUP_STYLE
+
+        # --- Normal capability negotiation ---
+        if device_widget_type == group_widget_type_candidate:
+            continue
+
+        group_widget_type_candidate = my_best_widget_offer(device_widget_type, group_widget_type_candidate)
+        self.logging("Debug", f"negotiate_endpoint_widget {NwkId} - best offer -> {group_widget_type_candidate}")
+
+    return GroupWidgetStyle, group_widget_type_candidate
+
+
+def best_group_widget(self, GroupId):
+    """
+    Determine and persist the best Domoticz widget for a Zigbee group,
+    then return the corresponding Domoticz widget constant.
+
+    Iterates over every device endpoint registered in the group, delegating
+    per-endpoint capability negotiation to ``negotiate_endpoint_widget``.
+    The result is the least-capable widget type that all group members can
+    support, ensuring no device is asked to perform actions it cannot handle.
+
+    Short-circuits as soon as a covering/blind widget is confirmed, since
+    those are incompatible with any further capability negotiation.
+
+    If no device contributes a recognisable widget type (e.g. the group
+    contains only the coordinator or devices with no ClusterType), the
+    fallback is ``"ColorControlFull"``.
+
+    Parameters
+    ----------
+    GroupId : str
+        Key into ``self.ListOfGroups`` identifying the group to evaluate.
+
+    Returns
+    -------
+    int or str
+        The Domoticz widget constant from ``WIDGET_STYLE`` corresponding to
+        the resolved ``GroupWidgetStyle``. Falls back to
+        ``WIDGET_STYLE["ColorControlFull"]`` if the style is unrecognised.
+
+    Side Effects
+    ------------
+    Updates the following keys in ``self.ListOfGroups[GroupId]``:
+
+    - ``"GroupWidgetType"`` : the negotiated widget type string
+      (e.g. ``"LvlControl"``, ``"ColorControlRGB"``).
+    - ``"GroupWidgetStyle"`` : the display style string, which may differ
+      from the type for covering devices (e.g. ``"BlindPercent"``).
+    - ``"Cluster"``          : the Zigbee cluster derived from
+      ``CLUSTER_MAPPING``, used when sending group commands.
+    - ``"Tradfri Remote" / "Color Mode"`` : set to the widget type if not
+        already present, so IKEA remotes default to the group's colour mode.
+
+    Notes
+    -----
+    Devices with ``NwkId == "0000"`` (the coordinator) are skipped.
+    Devices absent from ``self.ListOfDevices`` are skipped with an explicit
+    warning log.
+
+    The distinction between ``GroupWidgetStyle`` and
+    ``group_widget_type_candidate`` is subtle:
+
+    - ``group_widget_type_candidate`` drives capability negotiation and is
+      stored as ``"GroupWidgetType"``.
+    - ``GroupWidgetStyle`` controls the Domoticz widget appearance and may
+      be overridden for covering devices; it falls back to
+      ``group_widget_type_candidate`` when no covering device was detected.
+    """
     group_widget_type_candidate = None
     GroupWidgetStyle = None
 
-    self.logging("Debug", "best_group_widget Device - %s" % str(self.ListOfGroups[GroupId]["Devices"]))
+    self.logging("Debug", f"best_group_widget Group={GroupId} devices={self.ListOfGroups[GroupId]['Devices']}")
+
     for NwkId, devEp, iterIEEE in self.ListOfGroups[GroupId]["Devices"]:
-        # We will scan each Device in the Group and try to indentify which Widget is associated to it
-        # Based on the list of Widget will try to identified the Most Features
-        self.logging("Debug", "best_group_widget Device - %s  %s  %s" % (NwkId, devEp, iterIEEE))
+        self.logging("Debug", f"best_group_widget processing NwkId={NwkId} ep={devEp} ieee={iterIEEE}")
+
         if NwkId == "0000":
             continue
 
-        self.logging("Debug", "bestGroupWidget - Group: %s processing %s" % (GroupId, NwkId))
         if NwkId not in self.ListOfDevices:
-            # We have some inconsistency !
+            self.logging("Warning", f"best_group_widget Group={GroupId} NwkId={NwkId} not in ListOfDevices — skipping (inconsistency)")
             continue
 
-        device_info = self.ListOfDevices.get(NwkId)
-        device_ep_info = self.ListOfDevices.get(NwkId, {}).get("Ep", {}).get(devEp, {})
+        device_info    = self.ListOfDevices[NwkId]
+        device_ep_info = device_info.get("Ep", {}).get(devEp, {})
+
         if "ClusterType" not in device_ep_info:
             continue
 
-        GroupWidgetStyle, group_widget_type_candidate = screen_device_list(self, NwkId, device_info, device_ep_info, GroupWidgetStyle, group_widget_type_candidate)
-        self.logging( "Debug", f"best_group_widget {NwkId} {devEp} {iterIEEE} --> {GroupWidgetStyle} {group_widget_type_candidate}")
+        GroupWidgetStyle, group_widget_type_candidate = negotiate_endpoint_widget(
+            self, NwkId, device_info, device_ep_info, GroupWidgetStyle, group_widget_type_candidate
+        )
+        self.logging("Debug", f"best_group_widget {NwkId} ep={devEp} -> style={GroupWidgetStyle} candidate={group_widget_type_candidate}")
 
-        # If GroupWidgetStyle is set then we stop here
-        if GroupWidgetStyle in ( "BlindPercentInverted", "BlindPercent", "VenetianInverted"):
+        if GroupWidgetStyle in _COVERING_GROUP_STYLES:
             break
-    
+
+    # --- Persist results ---
     if group_widget_type_candidate is None:
-        group_widget_type_candidate = "ColorControlFull"
-        
+        group_widget_type_candidate = _DEFAULT_WIDGET_TYPE
+
     self.ListOfGroups[GroupId]["GroupWidgetType"] = group_widget_type_candidate
-
-    # Update Tradfri Remote color mode
     self.ListOfGroups[GroupId].get("Tradfri Remote", {}).setdefault("Color Mode", group_widget_type_candidate)
-
-    # Update Cluster based on WidgetStyle
     self.ListOfGroups[GroupId]["Cluster"] = CLUSTER_MAPPING.get(group_widget_type_candidate, "")
 
-    self.logging( "Debug", "best_group_widget for GroupId: %s Found WidgetType: %s Widget: %s" % (
-        GroupId, group_widget_type_candidate, WIDGET_STYLE.get(group_widget_type_candidate, WIDGET_STYLE["ColorControlFull"])), )
+    self.logging("Debug", f"best_group_widget Group={GroupId} WidgetType={group_widget_type_candidate} Widget={WIDGET_STYLE.get(group_widget_type_candidate, WIDGET_STYLE[_DEFAULT_WIDGET_TYPE])}")
 
     if GroupWidgetStyle is None:
         GroupWidgetStyle = group_widget_type_candidate
-        
+
     self.ListOfGroups[GroupId]["GroupWidgetStyle"] = GroupWidgetStyle
-        
-    return WIDGET_STYLE.get(GroupWidgetStyle, WIDGET_STYLE["ColorControlFull"])
+
+    return WIDGET_STYLE.get(GroupWidgetStyle, WIDGET_STYLE[_DEFAULT_WIDGET_TYPE])
 
 
-def screen_device_list(self, NwkId, device_info, device_ep_info, GroupWidgetStyle, group_widget_type_candidate):
-    
-    for DomoDeviceUnit, device_widget_type in device_ep_info["ClusterType"].items():
-        self.logging("Debug", f"------------screen_device_list {NwkId} DomoDeviceUnit: {DomoDeviceUnit} device_widget_type: {device_widget_type}" )
-        if (device_widget_type is None):
-            continue
 
-        self.logging("Debug", f"------------screen_device_list {NwkId} group_widget_type_candidate: {group_widget_type_candidate} device_widget_type: {device_widget_type}" )
-
-        if device_widget_type == "LvlControl":
-            device_type = device_ep_info.get("Type") or device_info.get("Type")
-            if device_type is not None:
-                device_type = device_type.split('/')
-            self.logging("Debug", f"------------screen_device_list {NwkId} device_ep_type: {device_type}" )
-
-            if "BlindInverted" in device_type:
-                # Blinds control via cluster 0x0008
-                self.logging("Debug", "------------screen_device_list - Found BlindInverted!!")
-                return "BlindPercentInverted", "LvlControl"
-
-            elif "Blind" in device_type:
-                # Blinds control via cluster 0x0008
-                self.logging("Debug", "------------screen_device_list - Found Blind!!")
-                return "BlindPercent", "LvlControl"
-
-        if device_widget_type in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
-            # Those widgets are commanded via cluster Level Control
-            return "VenetianInverted", "LvlControl"
-
-        if (device_widget_type == group_widget_type_candidate):
-            continue
-
-        group_widget_type_candidate = my_best_widget_offer(self, device_widget_type, group_widget_type_candidate)
-        self.logging("Debug", f"------------screen_device_list - Found from my_best_widget_offer {group_widget_type_candidate}")
-        
-    return GroupWidgetStyle, group_widget_type_candidate
-
-  
-WIDGET_STYLE_RULES = {
-    "Switch": {"Plug", "LvlControl", "ColorControlWW", "ColorControlRGB", "ColorControlRGBWW", "ColorControl", "ColorControlFull"},
-    "Plug": {"Plug", "LvlControl", "ColorControlWW", "ColorControlRGB", "ColorControlRGBWW", "ColorControl", "ColorControlFull"},
-    "LvlControl": {"ColorControlWW", "ColorControlRGB", "ColorControlRGBWW", "ColorControl", "ColorControlFull"},
-    "ColorControlWW": {"ColorControlRGBWW"},
-    "ColorControlRGB": {"ColorControlRGBWW"},
-    "ColorControlRGBWW": set(),
-    "ColorControl": set(),
-    "ColorControlFull": set()  
-}
-
-def my_best_widget_offer(self, current_widget, current_group_widget):
-    """ Find the best suitable widget. looks at the overlap features. If you have a Switch and ColorRGB, you can only do switch actions"""
-    if current_group_widget in (None, current_widget):
-        return current_widget
-    
-    if current_widget not in WIDGET_STYLE_RULES:
-        return current_group_widget
-
-    if current_group_widget in WIDGET_STYLE_RULES and current_widget in WIDGET_STYLE_RULES[current_group_widget]:
-        return current_group_widget
-
-    return current_widget
 
 EXCLUDED_MODELS = {"TRADFRI remote control", "Remote Control N2"} | set(LEGRAND_REMOTES)
 
