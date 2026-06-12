@@ -234,7 +234,7 @@ def LoadDeviceList(self):
         # Cleaning OTA structure if needed
         cleanup_ota(self, addr)
         
-        if self.pluginconf.pluginConf.get("ForceOTAUpdateRemoval"):
+        if self.pluginconf.pluginConf.get("resetOTAUpdate"):
             force_removal_ota_update(self, addr)
 
         # Fixing TS0601 which has been removed.
