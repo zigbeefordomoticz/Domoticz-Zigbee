@@ -344,9 +344,31 @@ async def watchdog_feed(self) -> None:
     liveness signal on every coordinator-level watchdog tick (~every 5s).
     This keeps _last_heartbeat fresh on empty networks where no device
     traffic reaches packet_received().
-    """
 
-    await super(type(self), self).watchdog_feed()
+    Transient TimeoutError from the coordinator (e.g. during heavy OTA
+    block transfer) are tolerated up to MAX_WATCHDOG_FAILURES consecutive
+    misses before propagating the error and triggering reconnection.
+    """
+    MAX_WATCHDOG_FAILURES = 3
+
+    try:
+        await super(type(self), self).watchdog_feed()
+        # Reset failure counter on success
+        self._watchdog_failure_count = 0
+    except TimeoutError as e:
+        count = getattr(self, '_watchdog_failure_count', 0) + 1
+        self._watchdog_failure_count = count
+        self.log.logging(
+            "TransportZigpy", "Warning",
+            f"watchdog_feed - coordinator did not respond (attempt {count}/{MAX_WATCHDOG_FAILURES}): {e}"
+        )
+        if count < MAX_WATCHDOG_FAILURES:
+            # Tolerate transient congestion (e.g. during OTA firmware transfer)
+            return
+        # Exceeded tolerance — propagate so zigpy triggers reconnection
+        self._watchdog_failure_count = 0
+        raise
+
     _transport = getattr(self, 'zigpy_running_ref', None)
     if _transport is not None and getattr(_transport, 'zigpy_loop', None) is not None:
         _transport._last_heartbeat = _transport.zigpy_loop.time()
