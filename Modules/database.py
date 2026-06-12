@@ -234,6 +234,9 @@ def LoadDeviceList(self):
         # Cleaning OTA structure if needed
         cleanup_ota(self, addr)
         
+        if self.pluginconf.pluginConf.get("ForceOTAUpdateRemoval"):
+            force_removal_ota_update(self, addr)
+
         # Fixing TS0601 which has been removed.
         hack_ts0601(self, addr)
         
@@ -1303,6 +1306,12 @@ def cleanup_ota(self, nwkid):
     if clean_ota:
         # Replace OTAUpgrade dict with the cleaned one
         self.ListOfDevices[nwkid]["OTAUpgrade"] = clean_ota
+
+def force_removal_ota_update(self, nwkid):
+    """
+    force removal of OTAUpdate entry if it exists
+    """
+    self.ListOfDevices.get(nwkid, {}).pop("OTAUpdate", None)
 
 
 def update_gamma_troniques_attributes_at_startup(self, nwkid):

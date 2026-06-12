@@ -144,6 +144,7 @@ SETTINGS = {
             "checkConfigurationReporting": { "type": "int", "default": 75600, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "resetReadAttributes": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, },
             "resetMotiondelay": { "type": "int", "default": 30, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
+            "resetOTAUpdate": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, },
             "resetSwitchSelectorPushButton": { "type": "int", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
             "forceSwitchSelectorPushButton": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
             "doUnbindBind": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
