@@ -364,6 +364,14 @@ def optional_configuration_setup(self, config, radio_conf, set_extendedPanId, se
 
     config[zigpy.config.CONF_SOURCE_ROUTING] = bool(self.pluginconf.pluginConf["zigpySourceRouting"])
     config[zigpy.config.CONF_OTA][zigpy.config.CONF_OTA_ENABLED] = False
+
+    # Disable zigpy's periodic OTA broadcast (added in zigpy 1.5.x): the plugin
+    # manages its own OTA notifications via Classes/OTA.py. The broadcast would
+    # send image_notify to all devices simultaneously every ~3.9 hours, causing
+    # a traffic storm that can saturate the coordinator during an OTA transfer.
+    if hasattr(zigpy.config, "CONF_OTA_BROADCAST_ENABLED"):
+        config[zigpy.config.CONF_OTA][zigpy.config.CONF_OTA_BROADCAST_ENABLED] = False
+
     config[zigpy.config.CONF_TOPO_SCAN_ENABLED] = False
     config[zigpy.config.CONF_WATCHDOG_ENABLED] = True
     config[zigpy.config.CONF_MAX_CONCURRENT_REQUESTS] = 4
