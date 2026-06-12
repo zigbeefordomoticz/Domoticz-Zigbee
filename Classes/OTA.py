@@ -108,14 +108,14 @@ VENDOR_PROFILES = {
 
     0x117C: {  # IKEA (TRÅDFRI / Dirigera)
         "max_data": 64,
-        "min_delay": 0,
+        "min_delay": 0.250,
         "retry": 3,
         "notes": "Generally robust; failures often mesh-related."
     },
 
     0x1021: {  # Legrand / Netatmo
         "max_data": 64,
-        "min_delay": 0.10,
+        "min_delay": 0.250,
         "retry": 3,
         "notes": "Very picky image metadata; some devices require vendor-style packaging."
     },
@@ -452,29 +452,30 @@ class OTAManagement(object):
         image_type = self.ImageLoaded["image_type"]
         loaded_time_stamp = self.ImageLoaded["LoadedTimeStamp"]
         notified_time_stamp = self.ImageLoaded["NotifiedTimeStamp"]
-        retry = self.ListInUpdate["Retry"]
+        retry_notification = self.ListInUpdate["Retry"]
         authorized_for_update = self.ListInUpdate["AuthorizedForUpdate"]
+        last_block_sent = self.ListInUpdate["LastBlockSent"]
 
         logging(
             self,
             "Debug",
-            "ota_heartbeat - NwkId: %s Process: %s Loaded: 0x%s Time: %s Notified: %s Retry: %s Authorized: %s"
-            % (nwk_id, process, image_type, loaded_time_stamp, notified_time_stamp, retry, authorized_for_update),
+            "ota_heartbeat - NwkId: %s Process: %s Loaded: 0x%s Block Sent: %s Time: %s Notified: %s Retry Notif: %s Authorized: %s"
+            % (nwk_id, process, image_type, last_block_sent, loaded_time_stamp, notified_time_stamp, retry_notification, authorized_for_update),
         )
 
-        if nwk_id and self.ListInUpdate["Status"] == "Transfer Progress" and self.ListInUpdate["LastBlockSent"] != 0 and (
-                time.time() > self.ListInUpdate["LastBlockSent"] + 300):
+        if nwk_id and self.ListInUpdate["Status"] == "Transfer Progress" and last_block_sent != 0 and (time.time() > ( last_block_sent + 300)):
             # TODO: retry mechanism per device
             _handle_ota_timeout(self)
             return
 
-        if nwk_id and self.ListInUpdate["LastBlockSent"] == 0 and loaded_time_stamp != 0 and retry < OTA_MAX_NOTIFY_RETRY:
+        if nwk_id and last_block_sent == 0 and loaded_time_stamp != 0 and ( retry_notification < OTA_MAX_NOTIFY_RETRY):
             _retry_notification(self)
+            retry_notification = self.ListInUpdate["Retry"]
 
         # Reset the OTA state machine once the notification retries are exhausted, or
         # if the device never engaged within the grace period. NotifiedTimeStamp is
         # refreshed on every Image Notify, so the retry counter is the primary guard.
-        if self.ListInUpdate["Retry"] >= OTA_MAX_NOTIFY_RETRY or ( notified_time_stamp != 0 and time.time() > ( notified_time_stamp + OTA_NOTIFY_TIMEOUT)):
+        if retry_notification >= OTA_MAX_NOTIFY_RETRY or ( notified_time_stamp != 0 and time.time() > ( notified_time_stamp + OTA_NOTIFY_TIMEOUT)):
             _handle_timeout(self)
 
 
@@ -618,6 +619,7 @@ def _handle_ota_timeout(self):
 
 
 def _retry_notification(self):
+    
     self.ListInUpdate["Retry"] += 1
     logging(self, "Log", "Ota retries notifying device %s" % self.ListInUpdate["NwkId"])
     
@@ -883,7 +885,7 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
     if raw_mode:
         raw_data_hex = "".join(f"{b:02x}" for b in raw_ota_data)
 
-        return zcl_raw_ota_image_block_response_success(
+        return zcl_raw_ota_image_block_response_success( 
             self,
             f"{sequence:02x}",
             dest_addr,
@@ -1758,6 +1760,9 @@ def notify_upgrade_end(
         if "Firmware Update" in self.PluginHealth and len(self.PluginHealth["Firmware Update"]) > 0:
             self.PluginHealth["Firmware Update"]["Progress"] = "Success"
         
+        # And finaly remove if there is firmware URL (need to use )
+        self.ListOfDevices.get(MsgSrcAddr, {}).get("OTAUpdate", {}).pop("%x" %image_type, None)
+
     elif Status == "Aborted":
         _textmsg = "Firmware update aborted error code %s for Device %s in %s hour %s min %s sec" % (
             Status,
@@ -1769,6 +1774,7 @@ def notify_upgrade_end(
 
         if "Firmware Update" in self.PluginHealth and len(self.PluginHealth["Firmware Update"]) > 0:
             self.PluginHealth["Firmware Update"]["Progress"] = "Aborted"
+
     elif Status == "Failed":
         _textmsg = "Firmware update aborted error code %s for Device %s in %s hour %s min %s sec" % (
             Status,
@@ -1779,6 +1785,7 @@ def notify_upgrade_end(
         )
         if "Firmware Update" in self.PluginHealth and len(self.PluginHealth["Firmware Update"]) > 0:
             self.PluginHealth["Firmware Update"]["Progress"] = "Failed"
+
     elif Status == "More":
         _textmsg = "Device: %s has been updated to latest firmware in %s hour %s min %s sec, but additional Image needed" % (
             _name,
@@ -1791,8 +1798,6 @@ def notify_upgrade_end(
 
     self.adminWidgets.updateNotificationWidget(self.Devices, _textmsg)
 
-    # And finaly remove if there is firmware URL
-    self.ListOfDevices.get(MsgSrcAddr, {}).get("OTAUpdate", {}).pop(image_type, None)
 
 
 def convert_time(seconds):
