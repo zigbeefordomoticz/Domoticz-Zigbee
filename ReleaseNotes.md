@@ -18,6 +18,11 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
+## Jun 2026 - stable8.1.006 (2026.5)
+
+- [Issue] - Hotfix to prevent lost of device in the DeviceList-xx.txt file. (issue#1977)
+- [Issue] - Hotx fix to prevent extensive logs from zigpy/asyncio layer
+
 ## May 2026 - stable8.1.005 (2026.4)
 
 - [Technical] - Fix memory leaks (zigpy based)

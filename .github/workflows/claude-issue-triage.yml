@@ -1,0 +1,46 @@
+name: Claude Issue Triage
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: read
+  issues: write
+  id-token: write
+
+jobs:
+  triage:
+    if: github.event.label.name == 'ai-triage'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: prep
+        run: |
+          BODY=$(jq -r '.issue.body // ""' "$GITHUB_EVENT_PATH" | head -c 3000)
+          {
+            echo "body<<__EOF__"
+            echo "$BODY"
+            echo "__EOF__"
+          } >> "$GITHUB_OUTPUT"
+  
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          track_progress: true
+
+          prompt: |
+            Triage this issue quickly. Do NOT explore the whole codebase.
+            Use at most 2-3 quick greps/reads. Then immediately post ONE
+            comment with: classification, a short likely-cause hypothesis,
+            the 1-2 most relevant files, and any missing info to request.
+            Do not attempt a full root-cause analysis or code changes — if
+            deep analysis is needed, say so and stop. Finish well within
+            your turn budget.
+            - Title: ${{ github.event.issue.title }}
+            - Issue #: ${{ github.event.issue.number }}
+          claude_args: |
+            --max-turns 8
+            --model claude-sonnet-4-6
