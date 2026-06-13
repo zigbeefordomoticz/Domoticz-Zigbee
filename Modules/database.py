@@ -27,7 +27,9 @@ plugin instance state (for example ``self.ListOfDevices`` and
 """
 
 
+
 import ast
+import contextlib
 import json
 import os.path
 import time
@@ -437,46 +439,70 @@ def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
             _write_DeviceList_txt(self)
 
     self.HBcount = 0
-
-
 def _write_DeviceList_txt(self):
     """Write device list in legacy text format.
 
     Writes one device per line in "key : <python-literal>" format.
-    Handles various encoding and IO errors that can occur during write.
+
+    The write is performed crash-safely: records are written to a temporary
+    file which is then atomically renamed over the target. This guarantees
+    the on-disk database is never left truncated/partial if the plugin is
+    interrupted while writing (for example killed during a restart), which
+    otherwise causes records to be silently lost on the next load.
+
+    We also iterate over a snapshot of the device list instead of the live
+    ``self.ListOfDevices`` dict. At ``onStop()`` the database is flushed
+    before the transport/forwarder threads are stopped, so an inbound message
+    could mutate the dict mid-write and raise "dictionary changed size during
+    iteration", aborting the write and corrupting the file.
     """
     _pluginData = Path( self.pluginconf.pluginConf["pluginData"] )
     _DeviceListFileName = _pluginData / self.DeviceListName
+    _tmpFileName = _pluginData / (self.DeviceListName + ".tmp")
+
+    # Snapshot to protect against concurrent mutation from other threads.
+    snapshot = list(self.ListOfDevices.items())
     _count = 0
     try:
         self.log.logging("Database", "Debug", "Write %s = %s" % (_DeviceListFileName, str(self.ListOfDevices)))
-        with open(_DeviceListFileName, "wt", encoding='utf-8') as file:
-            for key in self.ListOfDevices:
+        with open(_tmpFileName, "wt", encoding='utf-8') as file:
+            for key, value in snapshot:
                 try:
-                    file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
+                    file.write(key + " : " + str(value) + "\n")
                     _count += 1
                 except UnicodeEncodeError:
-                    self.log.logging( "Database", "Error", "UnicodeEncodeError while while saving %s : %s on file" %( 
-                        key, self.ListOfDevices[key]))
+                    self.log.logging( "Database", "Error", "UnicodeEncodeError while while saving %s : %s on file" %(
+                        key, value))
                     continue
                 except ValueError:
-                    self.log.logging( "Database", "Error", "ValueError while saving %s : %s on file" %( 
-                        key, self.ListOfDevices[key]))
+                    self.log.logging( "Database", "Error", "ValueError while saving %s : %s on file" %(
+                        key, value))
                     continue
-                except IOError:
-                    self.log.logging( "Database", "Error", "IOError while writing to plugin Database %s" % _DeviceListFileName)
-                    continue
+            # Make sure the bytes hit the disk before we swap the file in.
+            file.flush()
+            os.fsync(file.fileno())
+        # Atomic replace: the target is either the previous content or the
+        # fully written new content, never a partial file.
+        os.replace(_tmpFileName, _DeviceListFileName)
         self.log.logging("Database", "Debug", "WriteDeviceList - flush Plugin db to %s" % _DeviceListFileName)
+        
     except FileNotFoundError:
         self.log.logging( "Database", "Error", "WriteDeviceList - File not found >%s<" %_DeviceListFileName)
+
     except IOError:
         self.log.logging( "Database", "Error", "Error while Writing plugin Database %s" % _DeviceListFileName)
-    
-    if _count != len(self.ListOfDevices):
-        self.log.logging("Database", "Error", f"Plugin Database flushed on disk {_DeviceListFileName} {_count}/{len(self.ListOfDevices)} records")
+
+    finally:
+        # Best effort cleanup of the temporary file if the rename did not happen.
+        with contextlib.suppress(OSError):
+            if os.path.isfile(_tmpFileName):
+                os.remove(_tmpFileName)
+
+    if _count != len(snapshot):
+        self.log.logging("Database", "Error", f"Plugin Database flushed on disk {_DeviceListFileName} {_count}/{len(snapshot)} records")
     else:
-        self.log.logging("Database", "Log", f"Plugin Database flushed on disk {_DeviceListFileName} {_count}/{len(self.ListOfDevices)} records")
-        
+        self.log.logging("Database", "Log", f"Plugin Database flushed on disk {_DeviceListFileName} {_count}/{len(snapshot)} records")
+
 
 def _write_DeviceList_json(self):
     """Write device list as JSON file.
@@ -487,9 +513,23 @@ def _write_DeviceList_json(self):
     """
     _pluginData = Path( self.pluginconf.pluginConf["pluginData"] )
     _DeviceListFileName = _pluginData / (self.DeviceListName[:-3] + "json")
-    self.log.logging("Database", "Debug", "Write %s = %s" % (_DeviceListFileName, str(self.ListOfDevices)))
-    with open(_DeviceListFileName, "wt") as file:
-        json.dump(self.ListOfDevices, file, sort_keys=True, indent=2)
+    _tmpFileName = _pluginData / (self.DeviceListName[:-3] + "json.tmp")
+    
+    # Snapshot to avoid serialising a dict that other threads may mutate.
+    snapshot = dict(self.ListOfDevices)
+    self.log.logging("Database", "Debug", "Write %s = %s" % (_DeviceListFileName, str(snapshot)))
+    try:
+        with open(_tmpFileName, "wt") as file:
+            json.dump(snapshot, file, sort_keys=True, indent=2)
+            file.flush()
+            os.fsync(file.fileno())
+        os.replace(_tmpFileName, _DeviceListFileName)
+    finally:
+        try:
+            if os.path.isfile(_tmpFileName):
+                os.remove(_tmpFileName)
+        except OSError:
+            pass
     self.log.logging("Database", "Debug", "WriteDeviceList - flush Plugin db to %s" % _DeviceListFileName)
 
 
