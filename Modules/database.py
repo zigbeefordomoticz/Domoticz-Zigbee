@@ -410,8 +410,11 @@ def is_domoticz_recent(self, dz_timestamp, device_list_txt_filename):
         return True
     return False
 
+def request_flush_plugin_listofdevices(self):
+    self.flush_list_of_devices = True
 
-def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
+
+def flush_plugin_listofdevice(self):  # sourcery skip: merge-nested-ifs
     """Persist the in-memory DeviceList to disk and Domoticz storage.
 
     Uses heartbeat counting to throttle writes. Will write both legacy text
@@ -421,16 +424,12 @@ def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
     Args:
         count: Number of heartbeats to wait between writes
     """
-    if self.HBcount < count:
-        self.HBcount = self.HBcount + 1
-        return
-
     if self.log:
-        self.log.logging("Database", "Debug", "WriteDeviceList %s %s" %(self.HBcount, count))
+        self.log.logging("Database", "Debug", "flush_plugin_listofdevice")
 
     if self.pluginconf.pluginConf["pluginData"] is None or self.DeviceListName is None:
         if self.log:
-            self.log.logging("Database", "Error", "WriteDeviceList - self.pluginconf.pluginConf['pluginData']: %s , self.DeviceListName: %s" % (
+            self.log.logging("Database", "Error", "flush_plugin_listofdevice - self.pluginconf.pluginConf['pluginData']: %s , self.DeviceListName: %s" % (
                 self.pluginconf.pluginConf["pluginData"], self.DeviceListName))
         return
 
@@ -443,15 +442,18 @@ def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
 
     use_domoticz_db = self.pluginconf.pluginConf.get("useDomoticzDb")
     store_in_domoticz_db = self.pluginconf.pluginConf.get("storeDomoticzDb")
-    self.log.logging("Database", "Debug", f"WriteDeviceList - useDomoticzDb: {use_domoticz_db} storeDomoticzDb: {store_in_domoticz_db}")
+    self.log.logging("Database", "Debug", f"flush_plugin_listofdevice - useDomoticzDb: {use_domoticz_db} storeDomoticzDb: {store_in_domoticz_db}")
 
     if ( Modules.tools.is_domoticz_db_available(self) and ( use_domoticz_db and store_in_domoticz_db)):
         if _write_DeviceList_Domoticz(self) is None:
             # An error occured. Probably Dz.Configuration() is not available.
-            self.log.logging("Database", "Error", "WriteDeviceList - flush Plugin db to Domoticz failed, we secure it to %s file" % self.DeviceListName)
+            self.log.logging("Database", "Error", "flush_plugin_listofdevice - flush Plugin db to Domoticz failed, we secure it to %s file" % self.DeviceListName)
             _write_DeviceList_txt(self)
 
     self.HBcount = 0
+    self.flush_list_of_devices = False
+
+
 def _write_DeviceList_txt(self):
     """Write device list in legacy text format.
 
@@ -496,17 +498,17 @@ def _write_DeviceList_txt(self):
                     continue
 
             # Make sure the bytes hit the disk before we swap the file in.
-            self.log.logging("Database", "Debug", "WriteDeviceList - flush Plugin db to %s" % _DeviceListFileName)
+            self.log.logging("Database", "Debug", "_write_DeviceList_txt - flush Plugin db to %s" % _DeviceListFileName)
             file.flush()
             os.fsync(file.fileno())
 
         # Atomic replace: the target is either the previous content or the
         # fully written new content, never a partial file.
         os.replace(_tmpFileName, _DeviceListFileName)
-        self.log.logging("Database", "Debug", "WriteDeviceList - flush Plugin db to %s" % _DeviceListFileName)
+        self.log.logging("Database", "Debug", "_write_DeviceList_txt - flush Plugin db to %s" % _DeviceListFileName)
 
     except FileNotFoundError:
-        self.log.logging( "Database", "Error", "WriteDeviceList - File not found >%s<" %_DeviceListFileName)
+        self.log.logging( "Database", "Error", "_write_DeviceList_txt - File not found >%s<" %_DeviceListFileName)
 
     except IOError:
         self.log.logging( "Database", "Error", "Error while Writing plugin Database %s" % _DeviceListFileName)
@@ -549,7 +551,7 @@ def _write_DeviceList_json(self):
                 os.remove(_tmpFileName)
         except OSError:
             pass
-    self.log.logging("Database", "Debug", "WriteDeviceList - flush Plugin db to %s" % _DeviceListFileName)
+    self.log.logging("Database", "Debug", "_write_DeviceList_json - flush Plugin db to %s" % _DeviceListFileName)
 
 
 def _write_DeviceList_Domoticz(self):

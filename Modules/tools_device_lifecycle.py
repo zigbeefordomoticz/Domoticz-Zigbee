@@ -8,7 +8,7 @@
 """Device lifecycle helpers extracted from tools.py"""
 import copy
 
-from Modules.database import PLUGIN_DATABASE_RECORD_VERSION, WriteDeviceList
+from Modules.database import PLUGIN_DATABASE_RECORD_VERSION, request_flush_plugin_listofdevices
 from Modules.domoticzAbstractLayer import domo_read_Device_Idx, domo_read_Name
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 
@@ -114,7 +114,7 @@ def remap_device_nwkid(self, new_NwkId: str, IEEE: str, old_NwkId: str) -> bool:
             del self.ListOfDevices[new_NwkId][STORE_CONFIGURE_REPORTING]
         self.ListOfDevices[new_NwkId]["Heartbeat"] = "0"
 
-    WriteDeviceList(self, 0)
+    request_flush_plugin_listofdevices(self)
     self.log.logging("PluginTools", "Status", "NetworkID: %s is replacing %s for object: %s" % (new_NwkId, old_NwkId, IEEE))
     return True
 

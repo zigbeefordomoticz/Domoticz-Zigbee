@@ -157,7 +157,7 @@ from Modules.checkingUpdate import (is_internet_available,
                                     start_version_check_worker,
                                     stop_version_check_worker)
 from Modules.command import domoticz_command
-from Modules.database import (LoadDeviceList, WriteDeviceList,
+from Modules.database import (LoadDeviceList, flush_plugin_listofdevice,
                               checkDevices2LOD, checkListOfDevice2Devices,
                               import_local_device_conf)
 from Modules.domoticzAbstractLayer import (
@@ -220,6 +220,7 @@ ZIGPY_BACKENDS = {
 }
 
 TRACE_MALLOC_MAX_DEPTH = 25
+DATABASE_FLUSH_PERIOD = 15 * 60  # 15 minutes
 
 class BasePlugin:
     enabled = False
@@ -289,7 +290,6 @@ class BasePlugin:
         self.Ping["Nb Ticks"] = self.Ping["Status"] = self.Ping["TimeStamp"] = None
         self.connectionState = None
 
-        self.HBcount = 0
         self.HeartbeatCount = 0
         self.internalHB = 0
 
@@ -314,6 +314,8 @@ class BasePlugin:
         self.PluzzyFirmware = False
         self.pluginVersion = {}
         self.z4d_certified_devices_version = None
+        
+        self.flush_list_of_devices = False
 
         self.loggingFileHandle = None
         self.level = 0
@@ -685,7 +687,7 @@ class BasePlugin:
         if self.log:
             self.log.logging(["Transport", "StopProcess"], "Log", "Flushing plugin database onto disk")
         if self.pluginconf:
-            WriteDeviceList(self, 0)  # write immediatly
+            flush_plugin_listofdevice(self)
 
         if self.domoticz_api:
             self.domoticz_api.stop()
@@ -713,7 +715,7 @@ class BasePlugin:
         if self.PDMready and self.pluginconf:
             if self.log:
                 self.log.logging(["Transport", "StopProcess"], "Log", "Flushing plugin database onto disk")
-            WriteDeviceList(self, 0)
+            flush_plugin_listofdevice(self)
 
         # Print and save statistics if configured
         if self.PDMready and self.pluginconf and self.statistics:
@@ -999,15 +1001,18 @@ class BasePlugin:
         if self.groupmgt:
             self.groupmgt.hearbeat_group_mgt()
 
-        # Write the ListOfDevice every 15 minutes or immediatly if we have remove or added a Device
-        if len(Devices) == prevLenDevices:
-            WriteDeviceList(self, ( (15 * 60) // HEARTBEAT) )
+        if self.flush_list_of_devices:
+            # If triggered / result of remap_device_nwkid()
+            _resync_device_registry(self)
 
-        else:
+        elif len(Devices) == prevLenDevices and ( DATABASE_FLUSH_PERIOD // HEARTBEAT) == self.internalHB:
+            # If no new devices, but the Period is over
+            flush_plugin_listofdevice(self)
+
+        elif len(Devices) != prevLenDevices:
+            # The List of Domoticz widget has changed!
             self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
-            WriteDeviceList(self, 0)  # write immediatly
-            networksize_update(self)
-            self.domoticz_device_cache.refresh()
+            _resync_device_registry(self)
   
         _trigger_coordinator_backup( self )
 
@@ -1050,6 +1055,12 @@ class BasePlugin:
     def onDeviceModified(self, DeviceId, Unit):
         device_idx = retrieve_widgetid_from_deviceId_unit(self, Devices, DeviceId, Unit)
         self.domoticz_device_cache.refresh_device( device_idx)
+
+
+def _resync_device_registry(self):
+    flush_plugin_listofdevice(self)
+    networksize_update(self)
+    self.domoticz_device_cache.refresh()
 
 
 def _plugin_statistics(self):
