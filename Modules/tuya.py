@@ -424,7 +424,24 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     # 11/02/0004/0000001e0
     # 90/40/001/00
 
-    if cmd in ( "01", "02",):  # TY_DATA_RESPONE, TY_DATA_REPORT
+    if cmd == "00":
+        #               1           2
+        # 01 23 4567 89 01 2345 67890123
+        # 9f/02/0001/04/02/0004/00000030
+        # a3/02/0003/01/02/0004/00000107
+        # a4/02/0004/6d/02/0004/00000000
+        # a5/02/0005/74/02/0004/00000320
+        # a6/02/0006/6c/02/0004/00000000
+        dp = int(MsgPayload[8:10], 16)
+        datatype = int(MsgPayload[10:12], 16)
+        len_data = MsgPayload[12:16]
+        data = MsgPayload[16:]
+        self.log.logging( "Tuya", "Debug", "tuyaReadRawAPS - command %s dp: %s dt: %s len: %s data: %s" % (
+            cmd, dp, datatype, len_data, data), NwkId, )
+
+        tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+
+    elif cmd in ( "01", "02",):  # TY_DATA_RESPONE, TY_DATA_REPORT
         status = MsgPayload[6:8]  # uint8
         self.log.logging( "Tuya", "Debug", "    status: %s" % ( status ), NwkId, )
 
@@ -502,7 +519,6 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         payload = cluster_frame + sqn_out + cmd + in_payload + "01"
         raw_APS_request(self, NwkId, srcEp, "ef00", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
 
-    
     else:
         self.log.logging( "Tuya", "Log", "tuyaReadRawAPS - Model: %s UNMANAGED Nwkid: %s/%s fcf: %s sqn: %s cmd: %s data: %s" % (
             _ModelName, NwkId, srcEp, fcf, sqn, cmd, MsgPayload[6:]), NwkId, )
