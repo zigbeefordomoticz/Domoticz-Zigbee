@@ -972,7 +972,7 @@ class BasePlugin:
             self.log.logging(
                 "Plugin",
                 "Debug",
-                "onHeartbeat - busy = %s, Health: %s, startZigateNeeded: %s/%s, InitPhase1: %s InitPhase2: %s, InitPhase3: %s PDM_LOCK: %s ErasePDMinProgress: %s ErasePDMDone: %s"
+                "onHeartbeat - busy = %s, Health: %s, startZigateNeeded: %s Hearbeat: %s InitPhase1: %s InitPhase2: %s, InitPhase3: %s PDM_LOCK: %s ErasePDMinProgress: %s ErasePDMDone: %s"
                 % ( self.busy, self.PluginHealth, self.startZigateNeeded, self.HeartbeatCount, self.InitPhase1, self.InitPhase2, self.InitPhase3, self.ControllerLink.pdm_lock_status(), self.ErasePDMinProgress, self.ErasePDMDone, ),
             )
 
@@ -990,40 +990,38 @@ class BasePlugin:
             return
 
         # Memorize the size of Devices. This is will allow to trigger a backup of live data to file, if the size change.
-        prevLenDevices = len(Devices)
+        previous_number_widgets = len(Devices)
 
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         processListOfDevices(self, Devices)
 
         # Check and Update Heating demand for Wiser if applicable (this will be check in the call)
         wiser_thermostat_monitoring_heating_demand(self, Devices)
+
         # Group Management
         if self.groupmgt:
             self.groupmgt.hearbeat_group_mgt()
 
+        is_time_flush_plugin_listofdevices = self.HeartbeatCount % (PLUGIN_STATISTICS_PERIOD // HEARTBEAT) == 0
         if self.flush_list_of_devices:
             # If triggered / result of remap_device_nwkid()
+            self.log.logging([ "Database", "Plugin"], "Debug", "Flush databases to disk as requested")
             _resync_device_registry(self)
 
-        elif len(Devices) == prevLenDevices and ( DATABASE_FLUSH_PERIOD // HEARTBEAT) == self.internalHB:
-            # If no new devices, but the Period is over
-            flush_plugin_listofdevice(self)
-
-        elif len(Devices) != prevLenDevices:
+        elif len(Devices) != previous_number_widgets:
             # The List of Domoticz widget has changed!
-            self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
+            self.log.logging([ "Database", "Plugin"], "Debug", "Flush databases to disk as we have a change in number of Widgets")
             _resync_device_registry(self)
+
+        elif is_time_flush_plugin_listofdevices:
+            # If no new devices, but the Period is over
+            self.log.logging([ "Database", "Plugin"], "Debug", "Flush databases to disk as it is the periodic time")
+            flush_plugin_listofdevice(self)
   
         _trigger_coordinator_backup( self )
 
         if self.pairing_in_progress:
-            self.PluginHealth["Flag"] = 2
-            self.PluginHealth["Txt"] = "Enrollment in Progress"
-            self.adminWidgets.updateStatusWidget(Devices, "Enrollment")
-
-            # Maintain trend statistics
-            self.statistics._Load = self.ControllerLink.loadTransmit()
-            self.statistics.addPointforTrendStats(self.HeartbeatCount)
+            _flag_pairing_mode(self)
             return
 
         # OTA upgrade
@@ -1055,6 +1053,19 @@ class BasePlugin:
     def onDeviceModified(self, DeviceId, Unit):
         device_idx = retrieve_widgetid_from_deviceId_unit(self, Devices, DeviceId, Unit)
         self.domoticz_device_cache.refresh_device( device_idx)
+
+
+def _flag_pairing_mode(self):
+    self.PluginHealth["Flag"] = 2
+    self.PluginHealth["Txt"] = "Enrollment in Progress"
+    self.adminWidgets.updateStatusWidget(Devices, "Enrollment")
+    _update_statistics_trend(self)
+
+
+def _update_statistics_trend(self):
+    # Maintain trend statistics
+    self.statistics._Load = self.ControllerLink.loadTransmit()
+    self.statistics.addPointforTrendStats(self.HeartbeatCount)
 
 
 def _resync_device_registry(self):
@@ -1886,9 +1897,8 @@ def uninstall_Z4D_to_domoticz_custom_ui():
 
 def _check_if_busy(self):
     busy_ = self.ControllerLink.loadTransmit() >= MAX_FOR_ZIGATE_BUZY
-    # Maintain trend statistics
-    self.statistics._Load = self.ControllerLink.loadTransmit()
-    self.statistics.addPointforTrendStats(self.HeartbeatCount)
+
+    _update_statistics_trend(self)
 
     if busy_:
         self.PluginHealth["Flag"] = 2
