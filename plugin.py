@@ -990,7 +990,7 @@ class BasePlugin:
             return
 
         # Memorize the size of Devices. This is will allow to trigger a backup of live data to file, if the size change.
-        prevLenDevices = len(Devices)
+        previous_len_devices = len(Devices)
 
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         processListOfDevices(self, Devices)
@@ -1003,17 +1003,19 @@ class BasePlugin:
 
         if self.flush_list_of_devices:
             # If triggered / result of remap_device_nwkid()
+            self.log.logging(["Plugin", "Database"], "Debug", "Flush database on disk requested")
             _resync_device_registry(self)
 
-        elif len(Devices) == prevLenDevices and self.HeartbeatCount % (DATABASE_FLUSH_PERIOD // HEARTBEAT) == 0:
+        elif len(Devices) != previous_len_devices:
+            # The List of Domoticz widget has changed!
+            self.log.logging(["Plugin", "Database"], "Debug", "Flush database on disk as size has changed")
+            _resync_device_registry(self)
+
+        elif (self.HeartbeatCount % (DATABASE_FLUSH_PERIOD // HEARTBEAT) == 0):
             # If no new devices, but the Period is over
+            self.log.logging(["Plugin", "Database"], "Debug", "Flush database on disk as periodic occured")
             flush_plugin_listofdevice(self)
 
-        elif len(Devices) != prevLenDevices:
-            # The List of Domoticz widget has changed!
-            self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
-            _resync_device_registry(self)
-  
         _trigger_coordinator_backup( self )
 
         if self.pairing_in_progress:
