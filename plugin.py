@@ -1005,7 +1005,7 @@ class BasePlugin:
             # If triggered / result of remap_device_nwkid()
             _resync_device_registry(self)
 
-        elif len(Devices) == prevLenDevices and ( DATABASE_FLUSH_PERIOD // HEARTBEAT) == self.internalHB:
+        elif len(Devices) == prevLenDevices and self.HeartbeatCount % (DATABASE_FLUSH_PERIOD // HEARTBEAT) == 0:
             # If no new devices, but the Period is over
             flush_plugin_listofdevice(self)
 
