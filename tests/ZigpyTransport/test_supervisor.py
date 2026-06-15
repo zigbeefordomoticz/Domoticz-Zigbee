@@ -135,8 +135,7 @@ class TestPrepareForRestart(unittest.TestCase):
 
     def test_nulls_app_and_calls_disconnect_when_app_is_set(self):
         t = make_transport()
-        mock_app = MagicMock()
-        mock_app.disconnect = AsyncMock()
+        mock_app = AsyncMock()
         t.app = mock_app
         self._run_prepare(t)
         self.assertIsNone(t.app)
@@ -145,8 +144,8 @@ class TestPrepareForRestart(unittest.TestCase):
     def test_disconnect_exception_is_suppressed(self):
         """A failing disconnect must not propagate — restart must proceed."""
         t = make_transport()
-        mock_app = MagicMock()
-        mock_app.disconnect = AsyncMock(side_effect=Exception("port error"))
+        mock_app = AsyncMock()
+        mock_app.disconnect.side_effect = Exception("port error")
         t.app = mock_app
         # Should not raise
         self._run_prepare(t)
@@ -169,8 +168,7 @@ class TestMaybeResetRadio(unittest.TestCase):
     def test_nulls_app_after_disconnect(self):
         from Classes.ZigpyTransport.supervisor import _maybe_reset_radio
         t = make_transport()
-        mock_app = MagicMock()
-        mock_app.disconnect = AsyncMock()
+        mock_app = AsyncMock()
         t.app = mock_app
         t._consecutive_failures = 5
         with patch("Classes.ZigpyTransport.supervisor.asyncio.sleep", new=AsyncMock()):
@@ -188,8 +186,8 @@ class TestMaybeResetRadio(unittest.TestCase):
     def test_disconnect_exception_is_suppressed(self):
         from Classes.ZigpyTransport.supervisor import _maybe_reset_radio
         t = make_transport()
-        mock_app = MagicMock()
-        mock_app.disconnect = AsyncMock(side_effect=RuntimeError("boom"))
+        mock_app = AsyncMock()
+        mock_app.disconnect.side_effect = RuntimeError("boom")
         t.app = mock_app
         t._consecutive_failures = 5
         with patch("Classes.ZigpyTransport.supervisor.asyncio.sleep", new=AsyncMock()):

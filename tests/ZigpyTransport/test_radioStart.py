@@ -404,8 +404,7 @@ class TestStartZigpyTaskTimeout(unittest.TestCase):
         t = make_transport()
         t.pluginconf.pluginConf["extendedPANID"] = "0x1234567890ABCDEF"
         t.pluginconf.pluginConf["channel"]       = "15"
-        t.app = MagicMock()
-        t.app.disconnect = AsyncMock()
+        t.app = AsyncMock()
 
         with patch("Classes.ZigpyTransport.radioStart.radio_start",
                    side_effect=slow_radio_start), \

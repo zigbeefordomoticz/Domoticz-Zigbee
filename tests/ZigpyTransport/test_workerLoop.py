@@ -36,7 +36,7 @@ def make_transport():
     t.zigpy_running  = True
     t.writer_queue   = queue.Queue()
     t.forwarder_queue = queue.Queue()
-    t.app            = MagicMock()
+    t.app            = AsyncMock()
     t.app.coordinator_backup   = AsyncMock()
     t.app.get_time_server      = AsyncMock()
     t.app.set_certification    = AsyncMock()
