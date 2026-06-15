@@ -210,7 +210,8 @@ ZNP_STARTUP_TIMEOUT_DELAY_FOR_WARNING = 120
 STARTUP_TIMEOUT_DELAY_FOR_STOP = 100
 ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP = 180
 
-PLUGIN_STATISTICS_PERIOD = 300  # In seconds, period for plugin statistics logging
+PLUGIN_STATISTICS_PERIOD = 300    # In seconds, period for plugin statistics logging
+MATOMO_PUBLISHING_PERIOD = 21600  # In seconds, 6 hours
 
 ZIGPY_BACKENDS = {
     "ZigpyZNP": ("znp", "zigpy_znp", "ZNP"),
@@ -983,8 +984,8 @@ class BasePlugin:
             zigateInit_Phase3(self)
             return
 
-        if self.pluginconf.pluginConf["MatomoOptIn"] and self.HeartbeatCount % ( (9 * 3600) // HEARTBEAT) == 0:
-                matomo_plugin_analytics_infos(self)
+        if self.pluginconf.pluginConf["MatomoOptIn"] and self.HeartbeatCount % ( MATOMO_PUBLISHING_PERIOD // HEARTBEAT) == 0:
+            matomo_plugin_analytics_infos(self)
 
         if self.transport == "None":
             return
