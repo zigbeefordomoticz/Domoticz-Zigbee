@@ -696,36 +696,36 @@ SIMPLE_WIDGET = {
         "Switchtype": 0,
         "Options": "1;ppm"
     },
-    "ColorControlFull": {
-        "Type": 241,
-        "Subtype": 7,
-        "Switchtype": 7
-    },
     "ColorControlRGB": {
         "Type": 241,
-        "Subtype": 1,
+        "Subtype": 2,
         "Switchtype": 7
-    },
+    },   # RGB
     "ColorControlRGBW": {
         "Type": 241,
         "Subtype": 1,
         "Switchtype": 7
-    },
-    "ColorControlRGBWW": {
-        "Type": 241,
-        "Subtype": 4,
-        "Switchtype": 7
-    },
-    "ColorControlRGBWZ": {
-        "Type": 241,
-        "Subtype": 2,
-        "Switchtype": 7
-    },
+    },   # RGBW
     "ColorControlWW": {
         "Type": 241,
         "Subtype": 8,
         "Switchtype": 7
-    },
+    },   # Cold white + Warm white
+    "ColorControlRGBWW": {
+        "Type": 241,
+        "Subtype": 4,
+        "Switchtype": 7
+    },   # RGB + cold white + warm white, either RGB or white can be lit
+    "ColorControlRGBWZ": {
+        "Type": 241,
+        "Subtype": 6,
+        "Switchtype": 7
+    },   # Like RGBW, but allows combining RGB and white
+    "ColorControlFull": {
+        "Type": 241,
+        "Subtype": 7,
+        "Switchtype": 7
+    },   # Like RGBWW, but allows combining RGB and white
     "ConsoMeter": {
         "Type": 113,
         "Subtype": 0,
