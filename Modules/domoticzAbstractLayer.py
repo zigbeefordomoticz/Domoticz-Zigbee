@@ -507,7 +507,7 @@ def domo_delete_widget(self, Devices, DeviceID_, Unit_):
                      f"domo_delete_widget: DeviceID_: {DeviceID_} Unit_: {Unit_}")
 
     if not _device_unit_exists(Devices, DeviceID_, Unit_):
-        self.log.logging("AbstractDz", "Error",
+        self.log.logging("AbstractDz", "Warning",
                          f"domo_delete_widget - {DeviceID_}/{Unit_} not found, skipping")
         return
 
