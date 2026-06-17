@@ -107,7 +107,7 @@ class DomoticzAPIClient:
     def stop(self):
         """Stops the worker thread cleanly."""
         
-        self.logging("Status", "Zigbee: ++ DomoticzDB Api thread stop requested")
+        self.logging("Status", "++ DomoticzDB Api thread stop requested")
         self._stop_event.set()
         try:
             self._queue.put_nowait((0, None, None))   # sentinel with priority 0
@@ -117,7 +117,7 @@ class DomoticzAPIClient:
         if self._worker.is_alive():
             self.logging("Error", "DomoticzDB Api thread did not stop cleanly")
         else:
-            self.logging("Debug", "Zigbee: ++ DomoticzDB Api thread stopped.")
+            self.logging("Debug", "++ DomoticzDB Api thread stopped.")
 
         # Break the circular reference DomoticzAPIClient._device_caches <-> DomoticzDeviceCache.api
         # so the garbage collector can reclaim both objects without waiting for a GC cycle.

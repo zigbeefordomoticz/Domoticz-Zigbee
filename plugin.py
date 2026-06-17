@@ -355,6 +355,7 @@ class BasePlugin:
         
         initialize_version_checker(self)
 
+
     def onStart(self):
 
         mode6 = Parameters.get("Mode6", "0")
@@ -637,7 +638,7 @@ class BasePlugin:
             else:
                 self.log.logging( "Plugin", "Error", "WebServer disabled du to Parameter Mode4 set to %s" % Parameters["Mode4"] )
 
-        self.log.logging("Plugin", "Status", f"Z4D starting with Domoticz 'Extended Framework'")
+        self.log.logging("Plugin", "Status", "Z4D starting with Domoticz 'Extended Framework'")
 
         self.busy = False
 
@@ -779,6 +780,7 @@ class BasePlugin:
 
         load_list_of_domoticz_widget(self, Devices)
 
+
     def onConnect(self, Connection, Status, Description):
 
         self.log.logging( "Plugin", "Debug", "onConnect %s called with status: %s and Desc: %s" % (Connection, Status, Description) )
@@ -897,6 +899,7 @@ class BasePlugin:
 
         restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=Parameters["Mode5"])
 
+
     def onCommand(self, DeviceID, Unit, Command, Level, Color):
         if (  self.ControllerLink is None or not self.VersionNewFashion or self.pluginconf is None ):
             if self.log:
@@ -991,7 +994,7 @@ class BasePlugin:
             return
 
         # Memorize the size of Devices. This is will allow to trigger a backup of live data to file, if the size change.
-        previous_number_widgets = len(Devices)
+        previous_len_devices = len(Devices)
 
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         processListOfDevices(self, Devices)
@@ -1003,22 +1006,21 @@ class BasePlugin:
         if self.groupmgt:
             self.groupmgt.hearbeat_group_mgt()
 
-        is_time_flush_plugin_listofdevices = self.HeartbeatCount % (PLUGIN_STATISTICS_PERIOD // HEARTBEAT) == 0
         if self.flush_list_of_devices:
             # If triggered / result of remap_device_nwkid()
-            self.log.logging([ "Database", "Plugin"], "Debug", "Flush databases to disk as requested")
+            self.log.logging(["Plugin", "Database"], "Debug", "Flush database on disk requested")
             _resync_device_registry(self)
 
-        elif len(Devices) != previous_number_widgets:
+        elif len(Devices) != previous_len_devices:
             # The List of Domoticz widget has changed!
-            self.log.logging([ "Database", "Plugin"], "Debug", "Flush databases to disk as we have a change in number of Widgets")
+            self.log.logging(["Plugin", "Database"], "Debug", "Flush database on disk as size has changed")
             _resync_device_registry(self)
 
-        elif is_time_flush_plugin_listofdevices:
+        elif (self.HeartbeatCount % (DATABASE_FLUSH_PERIOD // HEARTBEAT) == 0):
             # If no new devices, but the Period is over
-            self.log.logging([ "Database", "Plugin"], "Debug", "Flush databases to disk as it is the periodic time")
+            self.log.logging(["Plugin", "Database"], "Debug", "Flush database on disk as periodic occured")
             flush_plugin_listofdevice(self)
-  
+
         _trigger_coordinator_backup( self )
 
         if self.pairing_in_progress:
@@ -1119,41 +1121,6 @@ def _hourly_tracemalloc_analysis(self, tracemalloc, current, prev_snapshot):
         self.log.logging("Plugin", "Log", f"  EnableTraceMalloc: {str(stat)}")
         for line in stat.traceback.format():
             self.log.logging("Plugin", "Log", f"  EnableTraceMalloc:   {line}")
-
-        
-def parse_mode2_serial_com_specifics(mode2):
-    """
-    Parse the Mode2 string to extract Serial Mode, Baudrate, and Flow Control.
-
-    Args:
-        mode2 (str): The Mode2 string to parse.
-
-    Returns:
-        dict: A dictionary containing 'SerialMode', 'Baudrate', and 'FlowControl'.
-    """
-    # Default values
-    result = {
-    }
-    
-    # Split the Mode2 string by commas
-    parts = mode2.split(",")
-
-    # Extract SerialMode (always the first part)
-    if len(parts) > 0:
-        result["SerialMode"] = parts[0]
-
-    # Extract Baudrate (if present, it's the second part)
-    if len(parts) > 1:
-        try:
-            result["Baudrate"] = int(parts[1])  # Convert to integer
-        except ValueError:
-            result["Baudrate"] = None
-
-    # Extract FlowControl (if present, it's the third part)
-    if len(parts) > 2:
-        result["FlowControl"] = parts[2]
-
-    return result
 
 
 def _onConnect_status_error(self, Status, Description):
