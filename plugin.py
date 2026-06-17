@@ -354,6 +354,7 @@ class BasePlugin:
         
         initialize_version_checker(self)
 
+
     def onStart(self):
 
         mode6 = Parameters.get("Mode6", "0")
@@ -636,7 +637,7 @@ class BasePlugin:
             else:
                 self.log.logging( "Plugin", "Error", "WebServer disabled du to Parameter Mode4 set to %s" % Parameters["Mode4"] )
 
-        self.log.logging("Plugin", "Status", f"Z4D starting with Domoticz 'Extended Framework'")
+        self.log.logging("Plugin", "Status", "Z4D starting with Domoticz 'Extended Framework'")
 
         self.busy = False
 
@@ -778,6 +779,7 @@ class BasePlugin:
 
         load_list_of_domoticz_widget(self, Devices)
 
+
     def onConnect(self, Connection, Status, Description):
 
         self.log.logging( "Plugin", "Debug", "onConnect %s called with status: %s and Desc: %s" % (Connection, Status, Description) )
@@ -895,6 +897,7 @@ class BasePlugin:
             matomo_plugin_restart(self)
 
         restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=Parameters["Mode5"])
+
 
     def onCommand(self, DeviceID, Unit, Command, Level, Color):
         if (  self.ControllerLink is None or not self.VersionNewFashion or self.pluginconf is None ):
@@ -1054,6 +1057,19 @@ class BasePlugin:
         self.domoticz_device_cache.refresh_device( device_idx)
 
 
+def _flag_pairing_mode(self):
+    self.PluginHealth["Flag"] = 2
+    self.PluginHealth["Txt"] = "Enrollment in Progress"
+    self.adminWidgets.updateStatusWidget(Devices, "Enrollment")
+    _update_statistics_trend(self)
+
+
+def _update_statistics_trend(self):
+    # Maintain trend statistics
+    self.statistics._Load = self.ControllerLink.loadTransmit()
+    self.statistics.addPointforTrendStats(self.HeartbeatCount)
+
+
 def _resync_device_registry(self):
     flush_plugin_listofdevice(self)
     networksize_update(self)
@@ -1104,41 +1120,6 @@ def _hourly_tracemalloc_analysis(self, tracemalloc, current, prev_snapshot):
         self.log.logging("Plugin", "Log", f"  EnableTraceMalloc: {str(stat)}")
         for line in stat.traceback.format():
             self.log.logging("Plugin", "Log", f"  EnableTraceMalloc:   {line}")
-
-        
-def parse_mode2_serial_com_specifics(mode2):
-    """
-    Parse the Mode2 string to extract Serial Mode, Baudrate, and Flow Control.
-
-    Args:
-        mode2 (str): The Mode2 string to parse.
-
-    Returns:
-        dict: A dictionary containing 'SerialMode', 'Baudrate', and 'FlowControl'.
-    """
-    # Default values
-    result = {
-    }
-    
-    # Split the Mode2 string by commas
-    parts = mode2.split(",")
-
-    # Extract SerialMode (always the first part)
-    if len(parts) > 0:
-        result["SerialMode"] = parts[0]
-
-    # Extract Baudrate (if present, it's the second part)
-    if len(parts) > 1:
-        try:
-            result["Baudrate"] = int(parts[1])  # Convert to integer
-        except ValueError:
-            result["Baudrate"] = None
-
-    # Extract FlowControl (if present, it's the third part)
-    if len(parts) > 2:
-        result["FlowControl"] = parts[2]
-
-    return result
 
 
 def _onConnect_status_error(self, Status, Description):
