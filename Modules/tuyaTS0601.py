@@ -1579,13 +1579,29 @@ def ts0601_action_liquid_level_percent(self, nwkid, ep, dp, value=None):
     data = "%08x" % value
     ts0601_tuya_cmd(self, nwkid, ep, action, data)
 
+SAMPLING_STEP = 5
+SAMPLING_MIN_VAL = 5
+SAMPLING_MAX_VAL = 1200
+
+def ts0601_sampling_interval(self, nwkid, ep, dp, value=None):
+    self.log.logging("Tuya0601", "Debug", "ts0601_sampling_interval - Nwkid: %s/%s interval: %s" % (nwkid, ep, value))
+
+    if value is None:
+        return
+    stepped = round(value / SAMPLING_STEP) * SAMPLING_STEP   # snap to 5s grid
+    max(SAMPLING_MIN_VAL, min(SAMPLING_MAX_VAL, stepped))    # clamp 5..1200
+
+    action = "%02x02" %dp   # DataType 0x02
+    data = "%08x" % value
+    ts0601_tuya_cmd(self, nwkid, ep, action, data)
+
 
 TS0601_COMMANDS = {
     "liquid_max_set": ts0601_action_param_liquid_max_set,
     "liquid_mini_set": ts0601_action_param_liquid_mini_set,
     "liquid_installation_height": ts0601_action_liquid_installation_height,
     "liquid_depth_max": ts0601_action_liquid_depth_max,
-    
+    "SamplingInterval": ts0601_sampling_interval,
     "IndicatorStatus": ts0601_curtain_indicator_status,
     "CurtainState": ts0601_curtain_state_cmd,
     "CurtainLevel": ts0601_curtain_level_cmd,

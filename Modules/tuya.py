@@ -399,73 +399,59 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     _ModelName = self.ListOfDevices[NwkId].get("Model", "")
 
     if len(MsgPayload) < 6:
-        self.log.logging("Tuya", "Debug2", "tuyaReadRawAPS - MsgPayload %s too short" % (MsgPayload), NwkId)
+        self.log.logging("Tuya", "Warning", "tuyaReadRawAPS - MsgPayload %s too short" % (MsgPayload), NwkId)
         return
     
-    fcf = MsgPayload[:2]  # uint8
+    fcf = MsgPayload[:2]  # uint8 - ZCL Frame Control Field
+
+    # Manufacturer-specific frames (FCF bit 2 set) carry a 2-byte manufacturer
+    # code between the FCF and the Transaction Sequence Number. Some Tuya
+    # devices (e.g. Excellux NTCHT01 temp/humi probe) report their datapoints
+    # in a manufacturer-specific frame (fcf 0x0d, manuf code 0x0001). Strip the
+    # manufacturer code so the standard offsets below stay valid; otherwise the
+    # 0x02 DataReport is mis-read as command 0x00 and the payload is shifted.
+    manuf_code = None
+    if int(fcf, 16) & 0x04:
+        manuf_code = MsgPayload[4:6] + MsgPayload[2:4]   # to logical/big-endian, matches tools_fcf
+        MsgPayload = fcf + MsgPayload[6:]
+
     sqn = MsgPayload[2:4]  # uint8
     updSQN(self, NwkId, sqn)
 
     cmd = MsgPayload[4:6]  # uint8
+
+    self.log.logging( "Tuya", "Debug", "tuyaReadRawAPS - %s/%s fcf: %s manuf: %s sqn: %s cmd: %s Payload: %s" % (
+        NwkId, srcEp, fcf, manuf_code, sqn, cmd, MsgPayload ), NwkId, )
+
     # Send a Default Response ( why might check the FCF eventually )
     if self.zigbee_communication == "native" and self.FirmwareVersion and int(self.FirmwareVersion, 16) < 0x031E:
         #tuya_send_default_response(self, NwkId, srcEp, sqn, cmd, fcf)
-        tuya_default_response(self, NwkId, srcEp, ClusterID, cmd, sqn, fcf)
+        tuya_default_response(self, NwkId, srcEp, ClusterID, cmd, sqn, fcf, manuf_code)
+
     elif self.zigbee_communication == "zigpy" and cmd == "02" and get_deviceconf_parameter_value(self, _ModelName, "TY_DEFAULT_RESPONSE", return_default=False):
-        tuya_default_response(self, NwkId, srcEp, ClusterID, cmd, sqn, fcf)
+        tuya_default_response(self, NwkId, srcEp, ClusterID, cmd, sqn, fcf, manuf_code)
 
-
-    # https://developer.tuya.com/en/docs/iot/tuya-zigbee-module-uart-communication-protocol?id=K9ear5khsqoty
     self.log.logging( "Tuya", "Debug", "tuyaReadRawAPS - %s/%s fcf: %s sqn: %s cmd: %s Payload: %s" % (
         NwkId, srcEp, fcf, sqn, cmd, MsgPayload ), NwkId, )
     
-    # 0c/02/0004/00000046
-    # 0d/02/0004/00000014
-    # 11/02/0004/0000001e0
-    # 90/40/001/00
-
-    if cmd in ( "01", "02",):  # TY_DATA_RESPONE, TY_DATA_REPORT
+    # dataResponse (0x01), dataReport (0x02), activeStatusReport (0x05) and
+    # activeStatusReportAlt (0x06) all share the same body layout:
+    # status (uint8), transid (uint8) followed by a list of datapoints, each
+    # encoded as dp (uint8), datatype (uint8), len (uint16) and data.
+    if cmd in ("01", "02", "05", "06"):
         status = MsgPayload[6:8]  # uint8
-        self.log.logging( "Tuya", "Debug", "    status: %s" % ( status ), NwkId, )
-
         transid = MsgPayload[8:10]  # uint8
-        self.log.logging( "Tuya", "Debug", "    TransId: %s" % ( transid ), NwkId, )
         idx = 10
-        while idx < len(MsgPayload):
-            self.log.logging( "Tuya", "Debug", "    working on remaining payload %s idx: %s" % ( MsgPayload[idx:], idx ), NwkId, )
+        while idx + 8 <= len(MsgPayload):
+            dp = int(MsgPayload[idx:idx + 2], 16);             idx += 2
+            datatype = int(MsgPayload[idx:idx + 2], 16);       idx += 2
+            len_data = 2 * int(MsgPayload[idx:idx + 4], 16);   idx += 4
+            data = MsgPayload[idx:idx + len_data];             idx += len_data
             
-            dp = int(MsgPayload[idx:idx + 2], 16)
-            idx += 2
-            
-            datatype = int(MsgPayload[idx:idx + 2], 16)
-            idx += 2
-            
-            len_data = 2 * int(MsgPayload[idx:idx + 4], 16)
-            idx += 4
-            
-            data = MsgPayload[idx:idx + len_data]
-            idx += len_data
-            
-            self.log.logging( "Tuya", "Debug", "tuyaReadRawAPS - command %s dp: %s dt: %s len: %s data: %s idx: %s" % (
-                cmd, dp, datatype, len_data, data, idx ), NwkId, )
+            self.log.logging("Tuya", "Debug",
+            "tuyaReadRawAPS - cmd %s dp: %s dt: %s len: %s data: %s" % (cmd, dp, datatype, len_data, data), NwkId)
             tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
             
-    elif cmd == "06":  # TY_DATA_SEARCH
-        status = MsgPayload[6:8]  # uint8
-        transid = MsgPayload[8:10]  # uint8
-        dp = int(MsgPayload[10:12], 16)
-        datatype = int(MsgPayload[12:14], 16)
-        fn = MsgPayload[14:16]
-        len_data = MsgPayload[16:18]
-        data = MsgPayload[18:]
-        self.log.logging(
-            "Tuya",
-            "Debug2",
-            "tuyaReadRawAPS - command %s MsgPayload %s/ Data: %s" % (cmd, MsgPayload, MsgPayload[6:]),
-            NwkId,
-        )
-        tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
-        
     elif cmd == "0b":  # ??
         pass
     
@@ -502,16 +488,15 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         payload = cluster_frame + sqn_out + cmd + in_payload + "01"
         raw_APS_request(self, NwkId, srcEp, "ef00", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
 
-    
     else:
         self.log.logging( "Tuya", "Log", "tuyaReadRawAPS - Model: %s UNMANAGED Nwkid: %s/%s fcf: %s sqn: %s cmd: %s data: %s" % (
             _ModelName, NwkId, srcEp, fcf, sqn, cmd, MsgPayload[6:]), NwkId, )
 
 
-def tuya_default_response(self, SrcNwkId, SrcEndPoint, ClusterID, Command, Sqn, fcf):
+def tuya_default_response(self, SrcNwkId, SrcEndPoint, ClusterID, Command, Sqn, fcf, manuf_code=None):
     self.log.logging( "Tuya", "Debug", "tuya_default_response -  %s/%s %s %s %s %s" %(
         SrcNwkId, SrcEndPoint, ClusterID, Command, Sqn, fcf ))
-    zcl_raw_default_response( self, SrcNwkId, ZIGATE_EP, SrcEndPoint, ClusterID, Command, Sqn, command_status="00", manufcode=None, orig_fcf=fcf )
+    zcl_raw_default_response( self, SrcNwkId, ZIGATE_EP, SrcEndPoint, ClusterID, Command, Sqn, command_status="00", manufcode=manuf_code, orig_fcf=fcf )
 
 
 def tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):

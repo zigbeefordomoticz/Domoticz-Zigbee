@@ -42,6 +42,7 @@ from dataclasses import dataclass
 DEFAULT_GROUP_UNIT = 1  # As of 8.1.003, DomoticzEx, all groups will be using Unit 1 at creation (only legacy will rely on Unit)
 
 WIDGET_STYLE = {
+    # "Widget": (Type_, Subtype_, SwitchType_)
     "Plug": (244, 73, 0),
     "Switch": (244, 73, 0),
     "LvlControl": (244, 73, 7),
@@ -50,10 +51,10 @@ WIDGET_STYLE = {
     "WindowCovering": (244, 73, 13),
     "Venetian": (244, 73, 15),
     "VenetianInverted": (244, 73, 15),
-    "ColorControlWW": (241, 8, 7),
-    "ColorControlRGB": (241, 2, 7),
-    "ColorControlRGBWW": (241, 4, 7),
-    "ColorControlFull": (241, 7, 7),
+    "ColorControlWW": (241, 8, 7),            # Cold white + Warm white
+    "ColorControlRGB": (241, 2, 7),           # RGB
+    "ColorControlRGBWW": (241, 4, 7),         # RGB + cold white + warm white, either RGB or white can be lit
+    "ColorControlFull": (241, 7, 7),          # Like RGBWW, but allows combining RGB and white
 }
 
 WIDGET_STYLE_TO_DOMOTICZ_TYPEMAP = {
@@ -1054,5 +1055,4 @@ def is_device_inverted(self, GroupId):
 
 
 def get_group_latest_typename(self, GroupId):
-    
     return self.ListOfGroups[GroupId].get("TypeName")

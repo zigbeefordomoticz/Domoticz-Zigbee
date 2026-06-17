@@ -1,3 +1,12 @@
+[tool.pytest.ini_options]
+# Python 3.11 MagicMock auto-creates AsyncMock for async magic methods
+# (__aenter__, __aexit__, …). The GC fires a RuntimeWarning when those
+# internal coroutines are collected mid-test. This is a known unittest.mock
+# quirk, not a real unawaited-coroutine bug in the tests.
+filterwarnings = [
+    "ignore::RuntimeWarning:unittest.mock",
+]
+
 [tool.black]
 line-length = 160
 

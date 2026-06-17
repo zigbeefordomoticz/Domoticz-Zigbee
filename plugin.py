@@ -972,7 +972,7 @@ class BasePlugin:
             self.log.logging(
                 "Plugin",
                 "Debug",
-                "onHeartbeat - busy = %s, Health: %s, startZigateNeeded: %s/%s, InitPhase1: %s InitPhase2: %s, InitPhase3: %s PDM_LOCK: %s ErasePDMinProgress: %s ErasePDMDone: %s"
+                "onHeartbeat - busy = %s, Health: %s, startZigateNeeded: %s Hearbeat: %s InitPhase1: %s InitPhase2: %s, InitPhase3: %s PDM_LOCK: %s ErasePDMinProgress: %s ErasePDMDone: %s"
                 % ( self.busy, self.PluginHealth, self.startZigateNeeded, self.HeartbeatCount, self.InitPhase1, self.InitPhase2, self.InitPhase3, self.ControllerLink.pdm_lock_status(), self.ErasePDMinProgress, self.ErasePDMDone, ),
             )
 
@@ -997,6 +997,7 @@ class BasePlugin:
 
         # Check and Update Heating demand for Wiser if applicable (this will be check in the call)
         wiser_thermostat_monitoring_heating_demand(self, Devices)
+
         # Group Management
         if self.groupmgt:
             self.groupmgt.hearbeat_group_mgt()
@@ -1019,13 +1020,7 @@ class BasePlugin:
         _trigger_coordinator_backup( self )
 
         if self.pairing_in_progress:
-            self.PluginHealth["Flag"] = 2
-            self.PluginHealth["Txt"] = "Enrollment in Progress"
-            self.adminWidgets.updateStatusWidget(Devices, "Enrollment")
-
-            # Maintain trend statistics
-            self.statistics._Load = self.ControllerLink.loadTransmit()
-            self.statistics.addPointforTrendStats(self.HeartbeatCount)
+            _flag_pairing_mode(self)
             return
 
         # OTA upgrade
@@ -1888,9 +1883,8 @@ def uninstall_Z4D_to_domoticz_custom_ui():
 
 def _check_if_busy(self):
     busy_ = self.ControllerLink.loadTransmit() >= MAX_FOR_ZIGATE_BUZY
-    # Maintain trend statistics
-    self.statistics._Load = self.ControllerLink.loadTransmit()
-    self.statistics.addPointforTrendStats(self.HeartbeatCount)
+
+    _update_statistics_trend(self)
 
     if busy_:
         self.PluginHealth["Flag"] = 2
