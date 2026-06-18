@@ -243,35 +243,30 @@ def _update_data_structutre_based_on_model_name( self, MsgSrcAddr, modelName):
     if "Type" in self.DeviceConf[modelName]:  # If type exist at top level : copy it
         self.ListOfDevices[MsgSrcAddr]["Type"] = self.DeviceConf[modelName]["Type"]
 
-        if "Ep" in self.ListOfDevices.get(MsgSrcAddr, {}):
-            self.log.logging([ "ZclClusters", "Pairing"], "Debug", "_handle_model_name should Removing existing received Ep", MsgSrcAddr)
+    # Non-destructive enrolment (issue #1987): we MUST keep any existing Ep data, in particular
+    # the per-endpoint "ClusterType" that cross-references the Domoticz widgets. A Model Name
+    # report can arrive at any time (rejoin, re-pair, battery check-in); wiping Ep here used to
+    # silently drop ClusterType and break widget updates. _upd_data_strut_based_on_model() is
+    # purely additive (it only creates missing endpoints/clusters), so we merge the DeviceConf
+    # skeleton on top of the existing Ep instead of resetting it.
+    self.ListOfDevices[MsgSrcAddr].setdefault("Ep", {})
+    self.log.logging([ "ZclClusters", "Pairing"], "Debug", "_handle_model_name merging DeviceConf into existing Ep (ClusterType preserved)", MsgSrcAddr)
+    before_cluster_type = _cluster_type_pairs(self.ListOfDevices[MsgSrcAddr])
 
-            if _has_non_empty_cluster_type(self.ListOfDevices.get(MsgSrcAddr, {})):
-                existing_ct = {
-                    ep: ep_info["ClusterType"]
-                    for ep, ep_info in self.ListOfDevices[MsgSrcAddr]["Ep"].items()
-                    if ep_info.get("ClusterType") not in (None, "", {})
-                }
-                self.log.logging(
-                    ["ZclClusters", "Pairing"], "Warning",
-                    f"_handle_model_name - {MsgSrcAddr} Model '{modelName}' "
-                    f"(ConfigSource={self.ListOfDevices[MsgSrcAddr].get('ConfigSource')}): "
-                    f"Ep reset BLOCKED to protect provisioned ClusterType {existing_ct}",
-                    MsgSrcAddr,
-                )
-            else:
-                self.log.logging(
-                    ["ZclClusters", "Pairing"], "Log",
-                    f"_handle_model_name - {MsgSrcAddr} Model '{modelName}': "
-                    f"resetting Ep (no provisioned ClusterType present)", MsgSrcAddr,
-                )
-                self.ListOfDevices[MsgSrcAddr]["Ep"] = {}
-                self.log.logging(
-                    ["ZclClusters", "Pairing"], "Debug",
-                    "-- Record after Ep reset: %s" % self.ListOfDevices[MsgSrcAddr], MsgSrcAddr,
-                )
+    result = _upd_data_strut_based_on_model(self, MsgSrcAddr, modelName, None)
 
-    _upd_data_strut_based_on_model(self, MsgSrcAddr, modelName, None)
+    # Invariant tripwire: re-enrolment must never drop a provisioned ClusterType entry. The only
+    # legitimate way to shrink ClusterType is removing a Domoticz widget. If this ever fires it
+    # means a new regression reintroduced a destructive Ep/ClusterType reset on this path.
+    lost_cluster_type = before_cluster_type - _cluster_type_pairs(self.ListOfDevices[MsgSrcAddr])
+    if lost_cluster_type:
+        self.log.logging(
+            ["ZclClusters", "Pairing"], "Error",
+            f"_handle_model_name - {MsgSrcAddr} Model '{modelName}': ClusterType shrank during "
+            f"re-enrollment (lost {sorted(lost_cluster_type)}) - this must never happen", MsgSrcAddr,
+        )
+
+    return result
 
 
 def _upd_data_strut_based_on_model(self, MsgSrcAddr, modelName, initial_ep):
@@ -338,6 +333,20 @@ def _build_model_name( self, nwkid, modelName):
         return plugin_identifier
 
     return check_found_plugin_model( self, modelName, manufacturer_name=manufacturer_name, manufacturer_code=manuf_code, device_id=zdevice_id)
+
+
+def _cluster_type_pairs(device_info):
+    """
+    Return the set of (endpoint, widget_idx) pairs currently registered across every
+    endpoint's 'ClusterType'. Used to assert that re-enrollment never drops a provisioned
+    widget cross-reference (issue #1987).
+    """
+    pairs = set()
+    for ep, ep_info in device_info.get("Ep", {}).items():
+        cluster_type = ep_info.get("ClusterType")
+        if isinstance(cluster_type, dict):
+            pairs.update((ep, widget_idx) for widget_idx in cluster_type)
+    return pairs
 
 
 def _has_non_empty_cluster_type(device_info):
