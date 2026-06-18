@@ -191,9 +191,10 @@ def create_domoticz_group_device(self, GroupName, GroupId):
     self.logging("Debug", "createDomoticzGroupDevice - Unit: %s" % DEFAULT_GROUP_UNIT)
     if idx == -1:
         self.logging("Error", f"createDomoticzGroupDevice - failed to create Group device. {GroupName} with unit {DEFAULT_GROUP_UNIT}")
-        return
+        return None
 
     self.ListOfGroups[GroupId]["WidgetType"] = idx
+    return idx
 
 
 def LookForGroupAndCreateIfNeeded(self, GroupId):
@@ -210,8 +211,8 @@ def LookForGroupAndCreateIfNeeded(self, GroupId):
         self.ListOfGroups[GroupId]["GroupName"] = "Zigate Group %s" % GroupId
 
     GroupName = self.ListOfGroups[GroupId]["GroupName"]
-    create_domoticz_group_device(self, GroupName, GroupId)
-    update_domoticz_group_device_widget(self, GroupId)
+    if create_domoticz_group_device(self, GroupName, GroupId):
+        update_domoticz_group_device_widget(self, GroupId)
 
 
 def update_domoticz_group_device_widget_name(self, GroupName, GroupId):
@@ -242,7 +243,6 @@ def update_domoticz_group_device_widget(self, GroupId):
     unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
     if unit is None:
         self.logging( "Debug", f"update_domoticz_group_device_widget - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}" )
-        LookForGroupAndCreateIfNeeded(self, GroupId)
         return
 
     Type_, Subtype_, SwitchType_ = best_group_widget(self, GroupId)
