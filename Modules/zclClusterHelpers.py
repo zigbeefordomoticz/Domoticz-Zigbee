@@ -259,7 +259,7 @@ def _update_data_structutre_based_on_model_name( self, MsgSrcAddr, model_name):
             }
             self.log.logging(
                 ["ZclClusters", "Pairing"], "Warning",
-                f"Prevent datastructure update - {MsgSrcAddr} Model '{model_name}' "
+                f"Prevent datastructure refresh - {MsgSrcAddr} Model '{model_name}' "
                 f"(ConfigSource={self.ListOfDevices[MsgSrcAddr].get('ConfigSource')}): "
                 f"Ep reset BLOCKED to protect provisioned ClusterType {existing_ct}",
                 MsgSrcAddr,
@@ -268,7 +268,7 @@ def _update_data_structutre_based_on_model_name( self, MsgSrcAddr, model_name):
 
     self.log.logging(
         ["ZclClusters", "Pairing"], "Log",
-        f"Allowing datastructure update - {MsgSrcAddr} Model '{model_name}': "
+        f"Allowing datastructure refresh - {MsgSrcAddr} Model '{model_name}': "
         f"resetting Ep (no provisioned ClusterType present)", MsgSrcAddr,
     )
     self.ListOfDevices[MsgSrcAddr]["Ep"] = {}
