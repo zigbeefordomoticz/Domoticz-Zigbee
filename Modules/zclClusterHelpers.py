@@ -367,7 +367,7 @@ def _has_non_empty_cluster_type(device_info):
     An endpoint with "ClusterType": {} or "" is treated as NOT provisioned.
     """
     return any(
-        ep_info.get("ClusterType") not in (None, "", {})
+        isinstance(ep_info, dict) and ep_info.get("ClusterType") not in (None, "", {})
         for ep_info in device_info.get("Ep", {}).values()
     )
 

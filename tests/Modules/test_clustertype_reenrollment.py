@@ -109,6 +109,10 @@ def test_has_non_empty_cluster_type(zclch):
     assert zclch._has_non_empty_cluster_type({"Ep": {"01": {"ClusterType": {}}}}) is False
     assert zclch._has_non_empty_cluster_type({"Ep": {"01": {"0006": {}}}}) is False
     assert zclch._has_non_empty_cluster_type({"Ep": {}}) is False
+    # malformed record: a non-dict endpoint value must not raise (fail-safe probe)
+    assert zclch._has_non_empty_cluster_type({"Ep": {"01": "bogus"}}) is False
+    assert zclch._has_non_empty_cluster_type(
+        {"Ep": {"01": "bogus", "02": {"ClusterType": {"576": "ColorControl"}}}}) is True
 
 
 def test_has_provisioned_endpoint(zclch):
