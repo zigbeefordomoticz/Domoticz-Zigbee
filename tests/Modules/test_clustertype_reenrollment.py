@@ -4,13 +4,20 @@
 Regression tests for issue #1987: a Model Name re-announcement must never wipe the
 per-endpoint ``ClusterType`` cross-reference.
 
+The protection strategy in the current code is *blocking* (not merging): when an
+endpoint already carries a non-empty ``ClusterType`` (real Domoticz widgets are
+provisioned), ``_update_data_structutre_based_on_model_name`` refuses to touch the
+``Ep`` structure at all and returns ``False``. Only when no provisioned ClusterType
+is present does it reset ``Ep`` and rebuild it from ``DeviceConf``.
+
 Coverage:
-  - _cluster_type_pairs                          – snapshot helper
-  - _update_data_structutre_based_on_model_name  – ClusterType preserved on re-enrollment
-                                                   – missing DeviceConf clusters are added (superset)
-                                                   – empty ClusterType handled without crashing
-                                                   – already-DeviceConf config short-circuits
-                                                   – invariant tripwire logs an Error if ClusterType shrinks
+  - _has_non_empty_cluster_type                  – endpoint provisioning probe
+  - _has_provisioned_endpoint                    – endpoint provisioning probe
+  - _update_data_structutre_based_on_model_name
+        – provisioned ClusterType blocks the Ep reset (Ep preserved, returns False)
+        – empty ClusterType allows the Ep reset/rebuild from DeviceConf
+        – already-DeviceConf config short-circuits untouched
+        – unknown model returns False
 """
 
 import importlib
@@ -93,23 +100,30 @@ def _deviceconf():
     }
 
 
-# ── _cluster_type_pairs ───────────────────────────────────────────────────────
+# ── provisioning probes ──────────────────────────────────────────────────────
 
-def test_cluster_type_pairs(zclch):
-    device = {"Ep": {
-        "01": {"ClusterType": {"576": "ColorControl", "577": "LvlControl"}},
-        "02": {"ClusterType": {"600": "Switch"}},
-        "03": {"ClusterType": {}},     # empty, contributes nothing
-        "04": {"0006": {}},            # no ClusterType key
-    }}
-    assert zclch._cluster_type_pairs(device) == {
-        ("01", "576"), ("01", "577"), ("02", "600"),
-    }
+def test_has_non_empty_cluster_type(zclch):
+    assert zclch._has_non_empty_cluster_type(
+        {"Ep": {"01": {"ClusterType": {"576": "ColorControl"}}}}) is True
+    # empty / missing ClusterType are NOT provisioned
+    assert zclch._has_non_empty_cluster_type({"Ep": {"01": {"ClusterType": {}}}}) is False
+    assert zclch._has_non_empty_cluster_type({"Ep": {"01": {"0006": {}}}}) is False
+    assert zclch._has_non_empty_cluster_type({"Ep": {}}) is False
+
+
+def test_has_provisioned_endpoint(zclch):
+    assert zclch._has_provisioned_endpoint(
+        {"Ep": {"01": {"ClusterType": {"576": "ColorControl"}}}}) is True
+    # an empty ClusterType mapping is falsy -> not provisioned
+    assert bool(zclch._has_provisioned_endpoint({"Ep": {"01": {"ClusterType": {}}}})) is False
+    assert bool(zclch._has_provisioned_endpoint({"Ep": {"01": {"0006": {}}}})) is False
 
 
 # ── _update_data_structutre_based_on_model_name ──────────────────────────────
 
-def test_reenrollment_preserves_clustertype_and_adds_missing_clusters(zclch):
+def test_reenrollment_with_provisioned_clustertype_is_blocked(zclch):
+    """A non-empty ClusterType must block the Ep reset: Ep is left fully intact
+    (missing DeviceConf clusters are NOT merged in) and the call returns False."""
     self = _FakeSelf()
     self.DeviceConf = _deviceconf()
     self.ListOfDevices[NWK] = {
@@ -120,18 +134,21 @@ def test_reenrollment_preserves_clustertype_and_adds_missing_clusters(zclch):
 
     result = zclch._update_data_structutre_based_on_model_name(self, NWK, MODEL)
 
-    assert result is True
+    assert result is False
     ep01 = self.ListOfDevices[NWK]["Ep"]["01"]
-    # ClusterType is untouched
+    # ClusterType is untouched and the Ep is not rebuilt from DeviceConf
     assert ep01["ClusterType"] == {"576": "ColorControl"}
-    # DeviceConf clusters merged in as a superset (0008 added, 0006 kept)
-    assert "0006" in ep01 and "0008" in ep01
+    assert "0006" in ep01
+    assert "0008" not in ep01          # DeviceConf cluster NOT merged because we bailed out
+    # ConfigSource is still flipped to DeviceConf before the guard
     assert self.ListOfDevices[NWK]["ConfigSource"] == "DeviceConf"
-    # No Error logged
-    assert "Error" not in self.log.levels()
+    # The protective bail-out is logged as a Warning mentioning the block
+    assert "Warning" in self.log.levels()
+    assert any("BLOCKED" in message for _, message in self.log.entries)
 
 
-def test_reenrollment_with_empty_clustertype_does_not_crash(zclch):
+def test_reenrollment_with_empty_clustertype_resets_and_rebuilds(zclch):
+    """With no provisioned ClusterType, Ep is reset and rebuilt from DeviceConf."""
     self = _FakeSelf()
     self.DeviceConf = _deviceconf()
     self.ListOfDevices[NWK] = {
@@ -142,9 +159,15 @@ def test_reenrollment_with_empty_clustertype_does_not_crash(zclch):
 
     result = zclch._update_data_structutre_based_on_model_name(self, NWK, MODEL)
 
+    # Successful reset/rebuild returns True (gates IAS re-registration in the caller).
     assert result is True
-    assert self.ListOfDevices[NWK]["Ep"]["01"]["ClusterType"] == {}
-    assert "0008" in self.ListOfDevices[NWK]["Ep"]["01"]
+    ep01 = self.ListOfDevices[NWK]["Ep"]["01"]
+    # Ep was wiped and rebuilt: DeviceConf clusters are present, the placeholder
+    # (empty) ClusterType key was dropped by the reset.
+    assert "0006" in ep01 and "0008" in ep01
+    assert "ClusterType" not in ep01
+    assert ep01["Type"] == ["Switch", "LvlControl"]
+    assert self.ListOfDevices[NWK]["ConfigSource"] == "DeviceConf"
     assert "Error" not in self.log.levels()
 
 
@@ -170,26 +193,3 @@ def test_unknown_model_returns_false(zclch):
     self.DeviceConf = {}
     self.ListOfDevices[NWK] = {"Model": MODEL, "Ep": {}}
     assert zclch._update_data_structutre_based_on_model_name(self, NWK, MODEL) is False
-
-
-def test_invariant_tripwire_fires_when_clustertype_shrinks(zclch, monkeypatch):
-    """If a future regression drops ClusterType during the merge, an Error must be logged."""
-    self = _FakeSelf()
-    self.DeviceConf = _deviceconf()
-    self.ListOfDevices[NWK] = {
-        "Model": MODEL,
-        "ConfigSource": "??",
-        "Ep": {"01": {"ClusterType": {"576": "ColorControl"}}},
-    }
-
-    def _destructive(self_, nwk, model, initial_ep):
-        # Simulate the historical bug: wipe the endpoint structure.
-        self_.ListOfDevices[nwk]["Ep"]["01"]["ClusterType"] = {}
-        return True
-
-    monkeypatch.setattr(zclch, "_upd_data_strut_based_on_model", _destructive)
-
-    zclch._update_data_structutre_based_on_model_name(self, NWK, MODEL)
-
-    assert "Error" in self.log.levels()
-    assert any("shrank" in message for _, message in self.log.entries)
