@@ -162,7 +162,8 @@ def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None
         return None
 
     self.ListOfDevices[nwkid]["Status"] = "inDB"
-    self.ListOfDevices[nwkid]["Ep"][ep]["ClusterType"][str(myDev_ID)] = ( ForceClusterType or cType )
+    _update_cluster_type(self, nwkid, ep, myDev_ID, ForceClusterType or cType  )
+
     return unit
 
 
@@ -447,9 +448,10 @@ def create_xcube_widgets(self, Devices, NWKID, DeviceID_IEEE, Ep, t):
     if idx == -1:
         self.ListOfDevices[NWKID]["Status"] = "failDB"
         self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} {t} {unit}")
+        return None
     else:
         self.log.logging( "WidgetCreation", "Debug", f"create_xcube_widgets - widgetID {idx} for '{t}'")
-        self.ListOfDevices[NWKID]["Ep"][Ep]["ClusterType"][str(idx)] = t
+        _update_cluster_type(self, NWKID, Ep, idx, t)
 
     # Create the Status (Text) Widget to report Rotation angle
     unit += 1
@@ -457,9 +459,12 @@ def create_xcube_widgets(self, Devices, NWKID, DeviceID_IEEE, Ep, t):
     
     if idx == -1:
         self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} Text {unit}")
+        return None
     else:
         self.log.logging( "WidgetCreation", "Debug", f"create_xcube_widgets - widgetID {idx} for 'Text'")
-        self.ListOfDevices[NWKID]["Ep"][Ep]["ClusterType"][str(idx)] = "Text"
+        _update_cluster_type(self, NWKID, Ep, idx, "Text")
+
+    return unit
 
 
 def number_switch_selectors( widget_type ):
@@ -496,11 +501,15 @@ def create_switch_selector_widget( self, Devices, NWKID, DeviceID_IEEE, Ep, t):
     _SelectorStyle=selector_style( t )
     _num_level = number_switch_selectors( t )
     Options = createSwitchSelector(self, _num_level, DeviceType=t, OffHidden=_OffHidden, SelectorStyle=_SelectorStyle)
-    createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-    
+    unit = createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
+    if unit is None:
+        self.ListOfDevices[NWKID]["Status"] = "failDB"
+        self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} {t} {unit}")
+        return None
+
     self.log.logging("WidgetCreation", "Debug", "create_switch_selector_widget - t: %s Levels: %s Off: %s Style: %s " % (
         t, _num_level, _OffHidden, _SelectorStyle), NWKID)
-    return True
+    return unit
 
 
 def colorcontrol_if_undefinded( self, Nwkid ):
@@ -549,10 +558,12 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
             self.log.logging( "WidgetCreation", "Debug", "create_native_widget - Type: %s Widget %s for %s" %(
                 widget_name, widget_record[ "widgetType" ], NwkId), NwkId)
             unit = createDomoticzWidget(self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name, widget_record[ "widgetType" ])
-            if unit:
-                set_default_value( self, Devices, DeviceID_IEEE, unit, widget_record)
-
-            return True
+            if unit is None:
+                self.ListOfDevices[NwkId]["Status"] = "failDB"
+                self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} {widget_record[ 'widgetType' ]} {unit}")
+                return None
+            set_default_value( self, Devices, DeviceID_IEEE, unit, widget_record)
+            return unit
 
     elif is_domoticz_new_blind(self) and widget_name in BLIND_DOMOTICZ_2023:
         widget_record = BLIND_DOMOTICZ_2023[ widget_name ]
@@ -560,9 +571,11 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
             self.log.logging( "WidgetCreation", "Debug", "create_native_widget - BLIND_DOMOTICZ_2023 Type: %s Widget %s for %s" %(
                 widget_name, widget_record[ "widgetType" ], NwkId), NwkId)
             unit = createDomoticzWidget(self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name, widget_record[ "widgetType" ])
-            if unit:
-                set_default_value( self, Devices,DeviceID_IEEE, unit, widget_record)
-
+            if unit is None:
+                self.ListOfDevices[NwkId]["Status"] = "failDB"
+                self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} {widget_record[ 'widgetType' ]} {unit}")
+                return None
+            set_default_value( self, Devices,DeviceID_IEEE, unit, widget_record)
             return True
         
     elif widget_name in BLIND_DOMOTICZ_2022:
@@ -571,9 +584,12 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
             self.log.logging( "WidgetCreation", "Debug", "create_native_widget - BLIND_DOMOTICZ_2022 Type: %s Widget %s for %s" %(
                 widget_name, widget_record[ "widgetType" ], NwkId), NwkId)
             unit = createDomoticzWidget(self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name, widget_record[ "widgetType" ])
-            if unit:
-                set_default_value( self, Devices, DeviceID_IEEE, unit, widget_record)
+            if unit is None:
+                self.ListOfDevices[NwkId]["Status"] = "failDB"
+                self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} {widget_record[ 'widgetType' ]} {unit}")
+                return None
 
+            set_default_value( self, Devices, DeviceID_IEEE, unit, widget_record)
             return True
  
     else:
@@ -594,8 +610,12 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
         Image=Image, 
         ForceClusterType=ForceClusterType
     )
-    if unit:
-        set_default_value( self, Devices, DeviceID_IEEE, unit, widget_record)
+    if unit is None:
+        self.ListOfDevices[NwkId]["Status"] = "failDB"
+        self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} {Type} {Subtype} {Switchtype} {unit}")
+        return None
+
+    set_default_value( self, Devices, DeviceID_IEEE, unit, widget_record)
     return True
 
 
@@ -606,7 +626,52 @@ def set_default_value( self, Devices, device_id_ieee, device_unit, widget_record
         nValue = widget_record["nValue"] 
         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, 0, 0, ForceUpdate_=True)
 
- 
+
+def _update_cluster_type(
+    self, nwkid: str, ep: str, widget_idx: int | str, widget_type: str
+) -> None:
+    """Record the Domoticz widget type associated with an endpoint's cluster.
+
+    Updates ``ListOfDevices[nwkid]["Ep"][ep]["ClusterType"][str(widget_idx)]``
+    defensively: if the device or the endpoint is missing, the call is skipped
+    and logged rather than raising a ``KeyError``. The ``ClusterType``
+    sub-dictionary is created on the fly when absent.
+
+    Args:
+        nwkid (str): Zigbee network address of the device (key in ``ListOfDevices``).
+        ep (str): Endpoint identifier (e.g. ``"01"``).
+        widget_idx (int | str): Domoticz widget index. Cast to a string to be
+            used as a key, matching the ``ClusterType`` format.
+        widget_type (str): Widget type to associate (e.g. ``"Temp"``, ``"Switch"``).
+
+    Returns:
+        None: The update is performed in place on ``self.ListOfDevices``.
+
+    Note:
+        An unknown ``nwkid`` or ``ep`` is treated as an anomaly (logged at
+        ``Error`` level) because it usually signals an unprovisioned device or
+        an out-of-sequence call rather than a nominal case.
+    """
+    device = self.ListOfDevices.get(nwkid)
+    if device is None:
+        self.log.logging(
+            "Widget", "Error",
+            f"_update_cluster_type - unknown nwkid {nwkid}, skipping"
+        )
+        return
+
+    endpoints = device.get("Ep")
+    if endpoints is None or ep not in endpoints:
+        self.log.logging(
+            "Widget", "Error",
+            f"_update_cluster_type - nwkid {nwkid} has no endpoint {ep}, skipping"
+        )
+        return
+
+    cluster_type = endpoints[ep].setdefault("ClusterType", {})
+    cluster_type[str(widget_idx)] = widget_type
+
+
 SIMPLE_WIDGET = {
     "AirPurifierAlarm": {
         "Type": 243,
