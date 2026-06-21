@@ -363,17 +363,13 @@ def interview_state_createDB(self, Devices, NWKID, RIA, status):
         self.ListOfDevices[NWKID]["ConfigSource"] = "DeviceConf"
 
     self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" % (RIA, NWKID))
-    IsCreated = False
     # Let's check if the IEEE is not known in Domoticz
-    
-    if is_device_ieee_in_domoticz_db(self, Devices, self.ListOfDevices[NWKID].get("IEEE")):
-        IsCreated = True
-        self.log.logging("Pairing", "Error", "There are alreday Widget(s) associated for this objet %s in Domoticz" % str(self.ListOfDevices[NWKID]) )
-        return
 
-    if not IsCreated:
-        full_provision_device(self, Devices, NWKID, RIA, status)
-        return
+    ieee = self.ListOfDevices[NWKID].get("IEEE")
+    if ieee and is_device_ieee_in_domoticz_db(self, Devices, ieee):
+        self.log.logging("Pairing", "Warning", f"There are already Widget(s) associated for this objet IEEE: {ieee} NwkId: {NWKID} in Domoticz, we might create duplicate widgets" )
+
+    full_provision_device(self, Devices, NWKID, RIA, status)
 
 
 def create_device_without_Domoticz_Widgets( self, Nwkid):
