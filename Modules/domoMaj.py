@@ -1703,7 +1703,7 @@ def is_time_to_domo_update(self, NwkId, Ep):
         # simply put the device back
         self.ListOfDevices[NwkId]["Status"] = "inDB"
         
-    elif "Status" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Status"] != "inDB":
+    elif "Status" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Status"] not in ("inDB", "8043", "8045", "004d"):
         self.log.logging(
             "Widget",
             "Log",
