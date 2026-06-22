@@ -262,11 +262,16 @@ def update_domoticz_group_device_widget(self, GroupId):
 
         return
 
-    # Old fashion we rely only on Type_, Subtype_, SwitchType_
+    # Old fashion: the abstract layer can only switch a widget through its TypeName,
+    # so resolve it from Type_/Subtype_/SwitchType_ and update both the widget and ListOfGroups.
     current_switchType, current_Subtype, current_Type = domo_read_SwitchType_SubType_Type(self, self.Devices, GroupId, unit)
-    self.logging("Debug", f"      Looking to update Unit: {unit} from {current_Type} {current_Subtype} {current_switchType} to {Type_} {Subtype_} {SwitchType_}")
+    new_typename = get_typename(self, Type_, Subtype_, SwitchType_)
+    current_typename = get_typename(self, current_switchType, current_Subtype, current_Type)
+    self.logging("Debug", f"      Looking to update Unit: {unit} from {current_Type} {current_Subtype} {current_switchType} ({current_typename}) to {Type_} {Subtype_} {SwitchType_} ({new_typename})")
 
-    domo_update_SwitchType_SubType_Type(self, self.Devices, GroupId, unit, Type_, Subtype_, SwitchType_)
+    if new_typename is not None and current_typename != new_typename:
+        self.ListOfGroups[GroupId]['TypeName'] = new_typename
+        domo_update_SwitchType_SubType_Type(self, self.Devices, GroupId, unit, Type_, Subtype_, SwitchType_, Typename_=new_typename)
 
 
 def get_typename(self, Type_, Subtype_, SwitchType_):
