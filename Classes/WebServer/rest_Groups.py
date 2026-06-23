@@ -237,6 +237,9 @@ def rest_zGroup(self, verb, data, parameters):
     if verb == "PUT":
         return _zgroup_put( self, data, parameters)
 
+    # Unsupported verb: return the prepared (empty) response rather than None.
+    return _response
+
 
 def _zgroup_put( self, data, parameters):
     _response = prepResponseMessage(self, setupHeadersResponse())
