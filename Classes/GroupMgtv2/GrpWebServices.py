@@ -15,9 +15,9 @@ from time import time
 from Classes.GroupMgtv2.GrpIkeaRemote import Ikea5BToBeAddedToListIfExist
 from Classes.GroupMgtv2.GrpServices import (
     SendGroupIdentifyEffect, create_new_group_and_attach_devices,
-    scan_all_devices_for_grp_membership, submitForGroupMemberShipScaner,
-    update_group_and_add_devices, update_group_and_remove_devices,
-    updateGroupName)
+    get_available_grp_id, scan_all_devices_for_grp_membership,
+    submitForGroupMemberShipScaner, update_group_and_add_devices,
+    update_group_and_remove_devices, updateGroupName)
 from Modules.tools import getListOfEpForCluster, mainPoweredDevice
 
 
@@ -35,10 +35,10 @@ def ScanDevicesForGroupMemberShip(self, DevicesToScan):
             submitForGroupMemberShipScaner(self, NwkId, "01")
             continue
         if NwkId not in self.ListOfDevices:
-            self.logging("Debug", "ScanDevicesForGroupMemberShip : Skiping %s not existing" % NwkId)
+            self.logging("Debug", "ScanDevicesForGroupMemberShip : Skipping %s not existing" % NwkId)
             continue
         if not mainPoweredDevice(self, NwkId):
-            self.logging("Debug", "ScanDevicesForGroupMemberShip : Skiping %s not main powered" % NwkId)
+            self.logging("Debug", "ScanDevicesForGroupMemberShip : Skipping %s not main powered" % NwkId)
             continue
 
         ListEp = getListOfEpForCluster(self, NwkId, "0004")
@@ -112,10 +112,8 @@ def process_web_request(self, webInput):
 
 
 def get_group_id(self):
-    for x in range(0x0001, 0x0999):
-        GrpId = "%04x" % x
-        if GrpId not in self.ListOfGroups:
-            return GrpId
+    # Manually-created (WebUI) groups use the low ascending band.
+    return get_available_grp_id(self, 0x0001, 0x0999)
 
 
 def diff(first, second):
@@ -154,6 +152,9 @@ def newGroup(self, GrpName, item):
     self.logging("Debug", " --  -- - > Creation of Group: %s " % GrpName)
     # New Group to be added
     GrpId = get_group_id(self)
+    if GrpId is None:
+        self.logging("Error", " --  --  -- - > No available Group Id, cannot create Group: %s " % GrpName)
+        return
     self.logging("Debug", " --  --  -- - > GroupId: %s " % GrpId)
     self.logging("Debug", " --  --  -- - > DevicesSelected: %s " % item["devicesSelected"])
     DevicesList = []
