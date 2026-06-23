@@ -423,7 +423,7 @@ def CreateDomoDevice(self, Devices, NWKID):
     # so the behaviour is unchanged in the nominal case.
     self.widget_reuse_pool = build_widget_reuse_pool(self, Devices, DeviceID_IEEE)
     if self.widget_reuse_pool:
-        self.log.logging("WidgetCreation", "Status",
+        self.log.logging("WidgetCreation", "Debug",
                          "CreateDomoDevice - %s existing Domoticz widget(s) found for %s; matching ones will be reused instead of duplicated" % (
                              len(self.widget_reuse_pool), DeviceID_IEEE), NWKID)
 
@@ -462,12 +462,18 @@ def CreateDomoDevice(self, Devices, NWKID):
 
         self.log.logging("WidgetCreation", "Debug", "CreateDomoDevice - Creating devices based on Type: %s" % Type, NWKID)
 
-        # Prior to start the Creation of the Widget, let's check that we have enought Unit available in Domoticz, 
+        # Prior to start the Creation of the Widget, let's check that we have enought Unit available in Domoticz,
         # to allocate all the required widgets for this device/ep
         nb_occupied_units = get_unit_counts(self, Devices, DeviceID_IEEE)["allocated"]
         self.log.logging("WidgetCreation", "Debug", f"CreateDomoDevice - Device {DeviceID_IEEE} has already {nb_occupied_units} units occupied in Domoticz", NWKID)
 
-        if ( nb_occupied_units + len(Type)) >= 254:  # Domoticz has a limit of 254 devices per hardware
+        # Widgets that can be served from the reuse pool map onto units that are already
+        # allocated (already counted in nb_occupied_units), so they consume no new unit.
+        # Only the widgets that cannot be reused require a new free unit.
+        reusable_units = len(getattr(self, "widget_reuse_pool", {}) or {})
+        new_units_needed = max(0, len(Type) - reusable_units)
+
+        if ( nb_occupied_units + new_units_needed) >= 254:  # Domoticz has a limit of 254 devices per hardware
             self.log.logging("WidgetCreation", "Error", f"Domoticz Widget Creation Failed - No available unit for device {DeviceID_IEEE}. ", NWKID)
             self.widget_reuse_pool = {}
             return
