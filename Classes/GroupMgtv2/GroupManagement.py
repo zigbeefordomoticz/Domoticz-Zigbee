@@ -19,8 +19,8 @@
 #
 #  Group management rely on 2 files:
 #
-#  - ZigateGroupsConfig -xx.json which contains the Group configuration/definition
-#  - GroupsList-xx.pck which contains somehow a cash of what is available on each devices
+#  - ZigbeeGroupsConfig -xx.json which contains the Group configuration/definition
+#  - GroupsList-xx.pck which contains somehow a cache of what is available on each devices
 #                      (1) will be converted to a JSON format
 #
 #
@@ -42,8 +42,8 @@
 #
 #  SYNOPSIS
 #
-#  - At plugin start, if the group cash file exist, read and populate the data structure.
-#                     if the cash doesn't exist, request to each Main Powered device tfor their existing group membership.
+#  - At plugin start, if the group cache file exist, read and populate the data structure.
+#                     if the cache doesn't exist, request to each Main Powered device for their existing group membership.
 #                     collect the information and populate the data structure accordingly.
 #
 #  - When the data structure is fully loaded, the object will be full operational and able to handle the following request
@@ -119,7 +119,7 @@ class GroupsManagement(object):
         self.DeviceConf = DeviceConf
         self.ListOfGroups = {}  # Data structutre to store all groups
         self.log = log
-        self.GroupListFileName = None  # Filename of Group cashing file
+        self.GroupListFileName = None  # Filename of Group caching file
         self.ControllerIEEE = None
         self.ScanDevicesToBeDone = []  # List of Devices for which a GrpMemberShip request as to be performed
         self.GroupStatus = "Starting"  # Used by WebServer to display Status of Group!
