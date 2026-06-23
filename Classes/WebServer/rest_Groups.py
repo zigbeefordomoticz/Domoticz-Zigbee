@@ -276,6 +276,9 @@ def _zgroup_get(self, parameters):
                 ieee = self.ListOfDevices.get(dev, {}).get("IEEE", "")
             elif len(itemDevice) == 3:
                 dev, ep, ieee = itemDevice
+            else:
+                self.logging("Error", "_zgroup_get - Group %s skipping malformed device entry: %s" % (itergrp, itemDevice))
+                continue
             zgroup["Devices"].append( {"_NwkId": dev, "Ep": ep, "IEEE": ieee} )
 
         zgroup["Cluster"] = group_info.get("Cluster", "")
