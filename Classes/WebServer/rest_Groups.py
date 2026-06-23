@@ -283,7 +283,12 @@ def _zgroup_get(self, parameters):
         zgroup["nValue"] = group_info.get("nValue", "")
         zgroup["sValue"] = group_info.get("sValue", "")
         if "Tradfri Remote" in group_info:
-            zgroup["Devices"].append(  {"_NwkId": group_info["Tradfri Remote"]} )
+            tradfri_remote = group_info["Tradfri Remote"]
+            zgroup["Devices"].append({
+                "_NwkId": tradfri_remote.get("Device Addr", ""),
+                "Ep": tradfri_remote.get("Ep", ""),
+                "IEEE": tradfri_remote.get("IEEE", ""),
+            })
 
         self.logging("Debug", f"Processed Group: {itergrp} {zgroup}")
     
