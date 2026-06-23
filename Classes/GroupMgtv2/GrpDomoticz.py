@@ -181,7 +181,7 @@ def create_domoticz_group_device(self, GroupName, GroupId):
         return
 
     if find_first_unit_widget_from_deviceID(self, self.Devices, GroupId):
-        self.logging( "Log", f"createDomoticzGroupDevice - {GroupId} exists alreday in Domoticz"  )
+        self.logging( "Log", f"createDomoticzGroupDevice - {GroupId} exists already in Domoticz"  )
         return
 
     Type_, Subtype_, SwitchType_ = best_group_widget(self, GroupId)
@@ -861,21 +861,21 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
             zcl_group_window_covering_on(self, GrpId, ZIGATE_EP, EPout)
             domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
 
-        if Command in ( "On", "Open",):
+        elif Command in ( "On", "Open",):
             nValue = 1
             sValue = "100"
             zcl_group_window_covering_off(self, GrpId, ZIGATE_EP, EPout)
             update_device_list_attribute(self, GrpId, "0102", 100)
             domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
 
-        if Command == "Stop":
+        elif Command == "Stop":
             nValue = 17
             sValue = "0"
             zcl_group_window_covering_stop(self, GrpId, ZIGATE_EP, EPout)
             update_device_list_attribute(self, GrpId, "0102", 50)
             domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
 
-        if Command == "Set Level":
+        elif Command == "Set Level":
             nValue = 2
             sValue = str(Level)
             if is_device_inverted(self, GrpId):
@@ -886,7 +886,7 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
             zcl_group_window_covering_level(self, GrpId, ZIGATE_EP, EPout, level="%02x" %Level)
             domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
 
-        resetDevicesHearttBeat(self, GrpId)
+        resetDevicesHeartBeat(self, GrpId)
         return
 
     # Old Fashon
@@ -1010,10 +1010,10 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue, Color=Color_)
 
     # Request to force ReadAttribute to each devices part of that group
-    resetDevicesHearttBeat(self, GrpId)
+    resetDevicesHeartBeat(self, GrpId)
 
 
-def resetDevicesHearttBeat(self, GrpId):
+def resetDevicesHeartBeat(self, GrpId):
 
     if not self.pluginconf.pluginConf["forceGroupDeviceRefresh"]:
         return
@@ -1025,7 +1025,7 @@ def resetDevicesHearttBeat(self, GrpId):
                 NwkId = self.IEEE2NWK[Ieee]
             else:
                 self.logging(
-                    "Error", "resetDevicesHearttBeat - Hum Hum something wrong NwkId: %s Ieee %s" % (NwkId, Ieee)
+                    "Error", "resetDevicesHeartBeat - Hum Hum something wrong NwkId: %s Ieee %s" % (NwkId, Ieee)
                 )
 
         if NwkId in self.ListOfDevices:
