@@ -87,13 +87,17 @@ def rest_zGroup_lst_avlble_dev(self, verb, data, parameters):
                     _device["WidgetList"].extend( widget )
 
         if "ClusterType" in device_entry:
+            # Legacy device-level ClusterType is not tied to a specific endpoint.
+            # Use the device's main endpoint (prefer "01") rather than the leaked
+            # `ep` left over from the loop above.
+            device_level_ep = "01" if "01" in device_entry_endpoints else next(iter(device_entry_endpoints), "01")
             clusterType = device_entry["ClusterType"]
 
             for widgetID in clusterType:
                 if clusterType[widgetID] not in LIST_CLUSTERTYPE_FOR_GROUPS:
                     continue
 
-                widget = _build_device_widgetList_infos( self, widgetID, ep, self.ListOfDevices[nwkid]["ZDeviceName"] )
+                widget = _build_device_widgetList_infos( self, widgetID, device_level_ep, self.ListOfDevices[nwkid]["ZDeviceName"] )
                 _device["WidgetList"].extend( widget)
 
         if _device not in device_lst:
