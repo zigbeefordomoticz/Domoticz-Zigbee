@@ -37,7 +37,7 @@ def ScanDevicesForGroupMemberShip(self, DevicesToScan):
         if NwkId not in self.ListOfDevices:
             self.logging("Debug", "ScanDevicesForGroupMemberShip : Skiping %s not existing" % NwkId)
             continue
-        if not mainPoweredDevice:
+        if not mainPoweredDevice(self, NwkId):
             self.logging("Debug", "ScanDevicesForGroupMemberShip : Skiping %s not main powered" % NwkId)
             continue
 
