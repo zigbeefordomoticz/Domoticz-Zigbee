@@ -59,7 +59,6 @@
 import json
 import os
 
-from Classes.GroupMgtv2.GrpMigration import GrpMgtv2Migration
 from Classes.GroupMgtv2.GrpServices import scan_device_for_grp_membership
 from Classes.LoggingManagement import LoggingManagement
 from Modules.zigateConsts import MAX_LOAD_ZIGATE

@@ -43,7 +43,7 @@ def migrateTupleToList(self, GrpId, tupleItem):
 
     if lenItem == 2:
         NwkId, Ep = tupleItem
-        if "IEEE" not in self.ListOfDevices[NwkId]:
+        if NwkId not in self.ListOfDevices or "IEEE" not in self.ListOfDevices[NwkId]:
             self.logging("Error", "For Group: %s unexpected Group Device %s droping" % (GrpId, str(tupleItem)))
             return
         Ieee = self.ListOfDevices[NwkId]["IEEE"]
