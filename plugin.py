@@ -1038,7 +1038,8 @@ class BasePlugin:
             self.log.loggingCleaningErrorHistory()
             zigate_get_time(self)
 
-        if self.HeartbeatCount % (PLUGIN_STATISTICS_PERIOD // HEARTBEAT) == 0:
+        if self.zigbee_communication == "zigpy" and self.HeartbeatCount % (PLUGIN_STATISTICS_PERIOD // HEARTBEAT) == 0:
+            # Valid only with zigpy
             _plugin_statistics(self)
 
         if (
