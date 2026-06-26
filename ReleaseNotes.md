@@ -18,6 +18,11 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
+## June 2026 - stable8.1.007 ( 2026.6)
+
+- [Issue] - do not run plugin_stats when on Zigate 
+- [Hardware] - Refactor handling of Tuya datapoints with cluster 0xef00
+
 ## Jun 2026 - stable8.1.006 (2026.5)
 
 - [Issue] - Hotfix to prevent lost of device in the DeviceList-xx.txt file. (issue#1977)
