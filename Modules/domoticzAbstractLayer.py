@@ -399,6 +399,34 @@ def is_device_ieee_in_domoticz_db(self, Devices, DeviceID_):
     return found
 
 
+def build_widget_reuse_pool(self, Devices, DeviceID_):
+    """Snapshot the existing Domoticz units of a device.
+
+    Used during widget (re)creation so that a widget which already exists in
+    Domoticz (e.g. when re-pairing a device whose widgets were never removed)
+    can be reused/linked instead of creating a duplicate.
+
+    Returns a dict: {unit: {"ID", "Type", "SubType", "SwitchType", "Name"}}.
+    Empty when the device has no existing units.
+    """
+    pool = {}
+    if not DeviceID_ or not _device_exists(Devices, DeviceID_):
+        return pool
+
+    for unit, unit_data in Devices[DeviceID_].Units.items():
+        pool[unit] = {
+            "ID": unit_data.ID,
+            "Type": unit_data.Type,
+            "SubType": unit_data.SubType,
+            "SwitchType": unit_data.SwitchType,
+            "Name": unit_data.Name,
+        }
+
+    self.log.logging("AbstractDz", "Debug",
+                     f"build_widget_reuse_pool: DeviceID={DeviceID_} found {len(pool)} existing unit(s)")
+    return pool
+
+
 def domo_create_api(self, Devices, DeviceID_, Unit_, Name_,
                     widgetType=None, Type_=None, Subtype_=None, Switchtype_=None,
                     widgetOptions=None, Image=None):

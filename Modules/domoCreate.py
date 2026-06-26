@@ -16,7 +16,8 @@
 """
 
 
-from Modules.domoticzAbstractLayer import retreive_free_unit_for_widget, domo_create_api, get_unit_counts
+from Modules.domoticzAbstractLayer import (retreive_free_unit_for_widget, domo_create_api, get_unit_counts,
+                                           build_widget_reuse_pool)
 from Modules.domoTools import (GetType, subtypeRGB_FromProfile_Device_IDs,
                                subtypeRGB_FromProfile_Device_IDs_onEp2,
                                update_domoticz_widget)
@@ -134,6 +135,101 @@ def createSwitchSelector(self, nbSelector, DeviceType=None, OffHidden=False, Sel
     return Options
 
 
+# Maps a Domoticz TypeName (used with Domoticz.Unit(TypeName=...)) to the numeric
+# (Type, Subtype, Switchtype) it will be created with. Required so that widgets
+# defined by a TypeName (Temp, Hum, ...) can be matched against existing Domoticz
+# units when looking for a widget to reuse during (re)pairing.
+# Values cross-checked against domoticz/hardware/plugins/PythonObjects.cpp (maptypename).
+TYPENAME_TO_TRIO = {
+    "Temperature": (80, 5, 0),
+    "Humidity": (81, 1, 0),
+    "Temp+Hum": (82, 1, 0),
+    "Temp+Hum+Baro": (84, 1, 0),
+    "Barometer": (243, 26, 0),
+    "Air Quality": (249, 1, 0),
+    "Voltage": (243, 8, 0),
+    "kWh": (243, 29, 0),
+    "Usage": (248, 1, 0),
+    "Custom": (243, 31, 0),
+}
+
+
+def _resolve_widget_trio(widgetType, Type_, Subtype_, Switchtype_, widgetOptions):
+    """Return the (Type, Subtype, Switchtype) the widget will be created with.
+
+    Returns None when it cannot be determined reliably, in which case widget
+    reuse is skipped and a brand new widget is created (current behaviour).
+    """
+    if widgetType:
+        return TYPENAME_TO_TRIO.get(widgetType)
+    if Type_ is not None and Subtype_ is not None:
+        return (Type_, Subtype_, Switchtype_ if Switchtype_ is not None else 0)
+    if widgetOptions:
+        # Switch-selector default applied by domo_create_api when only widgetOptions is given
+        return (244, 62, 18)
+    return None
+
+
+def _find_reusable_widget_unit(self, target_trio, target_fullname):
+    """Find an existing, not-yet-claimed Domoticz unit matching the target widget.
+
+    Matching policy (conservative, to avoid mis-linking ambiguous widgets such as
+    several 'Custom' or selector widgets sharing the same Type/Subtype/Switchtype):
+      1. Same (Type, Subtype, Switchtype) AND same widget name  -> strongest.
+      2. Same (Type, Subtype, Switchtype) only when there is exactly one candidate.
+    Otherwise no reuse (a new widget is created).
+    """
+    pool = getattr(self, "widget_reuse_pool", None)
+    if not pool or target_trio is None:
+        return None
+
+    t_type, t_sub, t_switch = target_trio
+
+    def _matches(info):
+        return info["Type"] == t_type and info["SubType"] == t_sub and info["SwitchType"] == t_switch
+
+    # 1) Same signature AND same name (same physical device / endpoint being re-paired)
+    for unit, info in pool.items():
+        if info["Name"] == target_fullname and _matches(info):
+            return unit
+
+    # 2) Same signature, only when unambiguous
+    candidates = [unit for unit, info in pool.items() if _matches(info)]
+    if len(candidates) == 1:
+        return candidates[0]
+
+    return None
+
+
+def _try_reuse_widget(self, Devices, nwkid, ieee, ep, cType, widgetName, widgetType, Type_, Subtype_, Switchtype_, widgetOptions, ForceClusterType):
+    """Reuse (link) an existing Domoticz widget instead of creating a duplicate.
+
+    Returns the reused unit number on success, or None when no suitable existing
+    widget was found (caller then proceeds with normal creation).
+    """
+    pool = getattr(self, "widget_reuse_pool", None)
+    if not pool:
+        return None
+
+    target_trio = _resolve_widget_trio(widgetType, Type_, Subtype_, Switchtype_, widgetOptions)
+    if target_trio is None:
+        return None
+
+    target_fullname = f"{self.pluginParameters['Name']} - {widgetName}"
+    unit = _find_reusable_widget_unit(self, target_trio, target_fullname)
+    if unit is None:
+        return None
+
+    info = pool.pop(unit)  # claim it so it cannot be reused by another widget
+    self.ListOfDevices[nwkid]["Status"] = "inDB"
+    _update_cluster_type(self, nwkid, ep, info["ID"], ForceClusterType or cType)
+    self.log.logging(
+        "WidgetCreation", "Status",
+        "Reusing existing Domoticz widget '%s' (IDX %s, unit %s) for %s/%s %s instead of creating a duplicate" % (
+            info["Name"], info["ID"], unit, nwkid, ep, cType), nwkid)
+    return unit
+
+
 def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None, Type_=None, Subtype_=None, Switchtype_=None, widgetOptions=None, Image=None, ForceClusterType=None, ):
     """
     widgetType are pre-defined widget Type
@@ -141,6 +237,14 @@ def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None
     Image is an optional parameter
     forceClusterType if you want to overwrite the ClusterType usally based with cType
     """
+
+    widgetName = deviceName(self, nwkid, cType, ieee, ep)
+
+    # When widgets already exist in Domoticz for this device (e.g. re-pairing a device
+    # whose widgets were never removed), reuse a matching widget instead of duplicating it.
+    reused_unit = _try_reuse_widget(self, Devices, nwkid, ieee, ep, cType, widgetName, widgetType, Type_, Subtype_, Switchtype_, widgetOptions, ForceClusterType)
+    if reused_unit is not None:
+        return reused_unit
 
     unit = retreive_free_unit_for_widget(self, Devices, ieee)
     if unit is None:
@@ -151,7 +255,6 @@ def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None
     self.log.logging( "WidgetCreation", "Debug", "--- cType: %s widgetType: %s Type: %s Subtype: %s SwitchType: %s widgetOption: %s Image: %s ForceCluster: %s" % (
         cType, widgetType, Type_, Subtype_, Switchtype_, widgetOptions, Image, ForceClusterType), nwkid, )
 
-    widgetName = deviceName(self, nwkid, cType, ieee, ep)
     # oldFashionWidgetName = cType + "-" + ieee + "-" + ep
 
     myDev_ID = domo_create_api(self, Devices, ieee, unit, widgetName, widgetType=widgetType, Type_=Type_, Subtype_=Subtype_, Switchtype_=Switchtype_, widgetOptions=widgetOptions, Image=Image)
@@ -314,6 +417,16 @@ def CreateDomoDevice(self, Devices, NWKID):
 
     self.log.logging("WidgetCreation", "Debug", f"CreateDomoDevice - Starting creation of Domoticz Device for NWKID: {NWKID} IEEE: {DeviceID_IEEE} Model: {model_name}")
 
+    # Snapshot any pre-existing Domoticz widgets for this device. When re-pairing a device
+    # whose widgets are still present in Domoticz, a matching widget is reused (linked) by
+    # createDomoticzWidget() instead of creating a duplicate. Empty for a brand new device,
+    # so the behaviour is unchanged in the nominal case.
+    self.widget_reuse_pool = build_widget_reuse_pool(self, Devices, DeviceID_IEEE)
+    if self.widget_reuse_pool:
+        self.log.logging("WidgetCreation", "Debug",
+                         "CreateDomoDevice - %s existing Domoticz widget(s) found for %s; matching ones will be reused instead of duplicated" % (
+                             len(self.widget_reuse_pool), DeviceID_IEEE), NWKID)
+
     # When Type is at Global level, then we create all Type against the 1st EP
     # If Type needs to be associated to EP, then it must be at EP level and nothing at Global level
     GlobalEP = False
@@ -349,13 +462,20 @@ def CreateDomoDevice(self, Devices, NWKID):
 
         self.log.logging("WidgetCreation", "Debug", "CreateDomoDevice - Creating devices based on Type: %s" % Type, NWKID)
 
-        # Prior to start the Creation of the Widget, let's check that we have enought Unit available in Domoticz, 
+        # Prior to start the Creation of the Widget, let's check that we have enought Unit available in Domoticz,
         # to allocate all the required widgets for this device/ep
         nb_occupied_units = get_unit_counts(self, Devices, DeviceID_IEEE)["allocated"]
         self.log.logging("WidgetCreation", "Debug", f"CreateDomoDevice - Device {DeviceID_IEEE} has already {nb_occupied_units} units occupied in Domoticz", NWKID)
 
-        if ( nb_occupied_units + len(Type)) >= 254:  # Domoticz has a limit of 254 devices per hardware
+        # Widgets that can be served from the reuse pool map onto units that are already
+        # allocated (already counted in nb_occupied_units), so they consume no new unit.
+        # Only the widgets that cannot be reused require a new free unit.
+        reusable_units = len(getattr(self, "widget_reuse_pool", {}) or {})
+        new_units_needed = max(0, len(Type) - reusable_units)
+
+        if ( nb_occupied_units + new_units_needed) >= 254:  # Domoticz has a limit of 254 devices per hardware
             self.log.logging("WidgetCreation", "Error", f"Domoticz Widget Creation Failed - No available unit for device {DeviceID_IEEE}. ", NWKID)
+            self.widget_reuse_pool = {}
             return
 
         if "ClusterType" not in self.ListOfDevices[NWKID]["Ep"][Ep]:
@@ -389,6 +509,9 @@ def CreateDomoDevice(self, Devices, NWKID):
 
     # for Ep
     update_device_type( self, NWKID, GlobalType )
+
+    # Reuse pool is scoped to this creation pass only
+    self.widget_reuse_pool = {}
 
 
 def update_device_type( self, NWKID, GlobalType ):

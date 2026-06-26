@@ -367,7 +367,7 @@ def interview_state_createDB(self, Devices, NWKID, RIA, status):
 
     ieee = self.ListOfDevices[NWKID].get("IEEE")
     if ieee and is_device_ieee_in_domoticz_db(self, Devices, ieee):
-        self.log.logging("Pairing", "Warning", f"There are already Widget(s) associated for this objet IEEE: {ieee} NwkId: {NWKID} in Domoticz, we might create duplicate widgets" )
+        self.log.logging("Pairing", "Warning", f"There are already Widget(s) associated for this objet IEEE: {ieee} NwkId: {NWKID} in Domoticz; matching widgets will be reused (linked) instead of being duplicated" )
 
     full_provision_device(self, Devices, NWKID, RIA, status)
 
