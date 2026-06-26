@@ -131,7 +131,7 @@ def checkNwkIdAndUpdateIfAny(self, NwkId, ieee):
     will return NwkId or an updated one in case of change of ShortId.
     will return None is the NwkId doesn't exist anymore
     """
-    if NwkId is self.ListOfDevices:
+    if NwkId in self.ListOfDevices:
         return NwkId
 
     # NwkId not found, let's check if the Ieee is stil there

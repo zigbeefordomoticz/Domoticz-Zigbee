@@ -145,7 +145,10 @@ def add_group_member_ship_from_remote(self, NwkId, Ep, GroupId):
     checkToCreateOrUpdateGroup(self, NwkId, Ep, GroupId)
 
 def get_available_grp_id(self, start_range, stop_range):
-    for x in range(start_range, stop_range, -1):
+    # Single allocator for both ascending (WebUI) and descending (Legrand reserved
+    # band) ranges: the step direction is derived from start_range vs stop_range.
+    step = -1 if start_range > stop_range else 1
+    for x in range(start_range, stop_range, step):
         GrpId = "%04x" % x
         if GrpId not in self.ListOfGroups:
             return GrpId
