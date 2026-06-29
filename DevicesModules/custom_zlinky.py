@@ -174,7 +174,7 @@ def _zlinky_update_color(self, nwkid, op_tarifaire, previous_color, new_color):
 
         if ptect_value and ptect_value != new_color:
             # Looks like the PTEC info is not aligned with the current color !
-            self.log.logging("ZLinky", "Status", f"Requesting PTEC as not inline op_tarifaire: {op_tarifaire} ptec: {ptect_value} to prev_volor: {previous_color} new_color: {new_color}", nwkid)
+            self.log.logging("ZLinky", "Status", f"Z4D requests PTEC as not inline op_tarifaire: {op_tarifaire} ptec: {ptect_value} to prev_color: {previous_color} new_color: {new_color}", nwkid)
             ReadAttributeReq_Scheduled_ZLinky(self, nwkid)
             zlinky_color_tarif(self, nwkid, new_color)
         return
@@ -195,7 +195,7 @@ def _zlinky_update_color(self, nwkid, op_tarifaire, previous_color, new_color):
 
     self.log.logging("ZLinky", "Debug", f"_zlinky_update_color - LTARF >{ltarf_value}<", nwkid)
     if ltarf_value and ltarf_value != new_color:
-        self.log.logging("ZLinky", "Status", f"Requesting LTARF (0xff66) as not inline {ltarf_value} to {previous_color}/{new_color}", nwkid)
+        self.log.logging("ZLinky", "Status", f"Z4D requests LTARF (0xff66) as not inline {ltarf_value} to {previous_color}/{new_color}", nwkid)
         ReadAttributeRequest_ff66(self, nwkid)
         zlinky_color_tarif(self, nwkid, new_color)
 

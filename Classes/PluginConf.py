@@ -626,9 +626,9 @@ def load_settings(self):
         self.pluginConf["ZigpyTopologyReport"] = False
     
     if dz_timestamp >= txt_timestamp:
-        Domoticz.Status( "Z4D Loaded pluginconf from Domoticz Db: %s" % len(self.pluginConf))
+        Domoticz.Status("Z4D loads pluginconf from Domoticz Db: %s" % len(self.pluginConf))
     else:
-        Domoticz.Status( "Z4D Loaded pluginconf from Json File: %s" % len(self.pluginConf))
+        Domoticz.Status("Z4D loads pluginconf from Json File: %s" % len(self.pluginConf))
 
 
 def _path_check(self):
@@ -678,7 +678,7 @@ def _path_check(self):
 
             if self.pluginConf[param] != str(_path_name):
                 if self.pluginConf["PosixPathUpdate"]:
-                    Domoticz.Status(f"Updating path from {self.pluginConf[param]} to {_path_name}")
+                    Domoticz.Status(f"Z4D updates path from {self.pluginConf[param]} to {_path_name}")
                     self.pluginConf[param] = str(_path_name)
                     update_done = True
                 else:

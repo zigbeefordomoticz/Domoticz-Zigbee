@@ -18,7 +18,7 @@ from Modules.database import PLUGIN_DATABASE_RECORD_VERSION
 
 def initLODZigate(self, nwkid, ieee):
 
-    self.log.logging("Input", "Status", "Initialize Zigate Data Structure %s %s" % (nwkid, ieee))
+    self.log.logging("Input", "Status", "Z4D initializes Zigate Data Structure %s %s" % (nwkid, ieee))
     self.IEEE2NWK[ieee] = nwkid
     self.ListOfDevices[nwkid] = {
         'Version': PLUGIN_DATABASE_RECORD_VERSION,

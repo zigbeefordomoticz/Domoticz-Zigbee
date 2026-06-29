@@ -743,7 +743,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
 
     if device_model == "TICMeter":
         # Retreive as much attribuutes
-        self.log.logging("Pairing", "Status", "Reading TICMeter and collecting all data")
+        self.log.logging("Pairing", "Status", "Z4D reads TICMeter and collects all data")
         read_attributes_gammatroniques_tic_meter(self, NWKID)
         read_attributes_ticmeter_tarif(self, NWKID)
         read_attributes_ticmeter_details(self, NWKID)

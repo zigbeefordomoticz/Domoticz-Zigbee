@@ -295,7 +295,7 @@ def _ed00_cmd05_final(self, Devices, NwkId, srcEp, data_hex):
         return
 
     learned_code = base64.b64encode(bytes(rx_buffer)).decode("ascii")
-    self.log.logging("ZosungIR", "Status", "zosung IR Code received - NwkId: %s learned IR code len=%d '%s'" % (
+    self.log.logging("ZosungIR", "Status", "Z4D receives zosung IR Code - NwkId: %s, learned IR code len=%d '%s'" % (
         NwkId, len(learned_code), learned_code), NwkId)
 
     store_tuya_attribute(self, NwkId, "ZosungIR_learned_code", learned_code)

@@ -259,7 +259,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
             if _retrieved_backup is None:
                 await super(type(self),self).form_network()
             else:
-                self.log.logging( "Zigpy", "Status","++ Force Form: Restoring the most recent network backup")
+                self.log.logging("Zigpy", "Status", "++ Force Form: Restoring the most recent network backup")
                 await self.backups.restore_backup(  _retrieved_backup ) 
 
     # Load Network Information
@@ -272,16 +272,16 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         if not auto_form:
             raise
 
-        self.log.logging( "Zigpy", "Status","++ Forming a new network")
+        self.log.logging("Zigpy", "Status", "++ Forming a new network")
         await super(type(self),self).form_network()
 
         if _retrieved_backup is None:
             # Form a new network if we have no backup
-            self.log.logging( "Zigpy", "Status","++ Forming a new network with no backup")
+            self.log.logging("Zigpy", "Status", "++ Forming a new network with no backup")
             await self.form_network()
         else:
             # Otherwise, restore the most recent backup
-            self.log.logging( "Zigpy", "Status","++ Restoring the most recent network backup")
+            self.log.logging("Zigpy", "Status", "++ Restoring the most recent network backup")
             await self.backups.restore_backup( _retrieved_backup )
 
         await self.load_network_info(load_devices=True)

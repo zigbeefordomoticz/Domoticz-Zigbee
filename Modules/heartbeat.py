@@ -341,7 +341,7 @@ def pollingManufSpecificDevices(self, NwkId, HB):
             if "ScheduledZLinkyRead" in self.ListOfDevices[NwkId]:
                 return
             if parameter == "ZLinkyPollingPTEC":
-                self.log.logging("Heartbeat", "Status", "Reading ZLinky Color of Day and Next Day")
+                self.log.logging("Heartbeat", "Status", "Z4D reads ZLinky Color of Day and Next Day")
 
             self.ListOfDevices[NwkId]["ScheduledZLinkyRead"] = True
             func = FUNC_MANUF[param]
@@ -1007,7 +1007,7 @@ def processListOfDevices(self, Devices):
         # if phase == 0:
         #    self.networkmap.start_scan( )
         if phase == 1:
-            self.log.logging("Heartbeat", "Status", "Starting Network Topology")
+            self.log.logging("Heartbeat", "Status", "Z4D starts Network Topology")
             self.networkmap.start_scan()
         elif phase == 2:
             self.log.logging( "Heartbeat", "Debug", "processListOfDevices Topology scan is possible %s" % self.ControllerLink.loadTransmit(), )

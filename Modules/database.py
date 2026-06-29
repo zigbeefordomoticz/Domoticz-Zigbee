@@ -217,7 +217,7 @@ def LoadDeviceList(self):
         # Keep the Size of the DeviceList in order to check changes
         self.DeviceListSize = os.path.getsize(device_list_txt_filename)
         
-    self.log.logging("Database", "Status", "Creating a versioned backup of %s" % device_list_txt_filename)
+    self.log.logging("Database", "Status", "Z4D creates a versioned backup of %s" % device_list_txt_filename)
     Modules.tools.rotate_file_versions(device_list_txt_filename, self.pluginconf.pluginConf["numDeviceListVersion"])
 
     cleanup_table_entries( self)
@@ -635,7 +635,7 @@ def importDeviceConf(self):
         if iterDevType == "":
             del self.DeviceConf[iterDevType]
 
-    self.log.logging("Database", "Status", "Z4D loaded %s configuration from legacy database." %len(self.DeviceConf))
+    self.log.logging("Database", "Status", "Z4D loads %s configuration from legacy database." % len(self.DeviceConf))
 
 
 def import_local_device_conf(self):
@@ -685,7 +685,7 @@ def import_local_device_conf(self):
                     self.log.logging( "Database", "Debug", "--> Config for %s" % ( str(device_model_name)) )
                     self.DeviceConf[device_model_name] = dict(model_definition)
                     
-                    self.log.logging( "Database", "Status", f"++ Overwrite standard configuration model {device_model_name} with {filename}" )
+                    self.log.logging("Database", "Status", f"++ Overwrite standard configuration model {device_model_name} with {filename}")
 
                     if "Identifier" in model_definition:
                         self.log.logging( "Database", "Debug", "--> Identifier found %s" % (str(model_definition["Identifier"])) )
@@ -862,7 +862,7 @@ def CheckDeviceList(self, key, val):
             OldModel = self.ListOfDevices[key][attribute]
             self.ListOfDevices[key][attribute] = self.ListOfDevices[key][attribute].replace("/", "")
             if OldModel != self.ListOfDevices[key][attribute]:
-                self.log.logging("Database", "Status", "Z4D adjusted Model from %s to %s" % (
+                self.log.logging("Database", "Status", "Z4D adjusts Model from %s to %s" % (
                     OldModel, self.ListOfDevices[key][attribute]))
 
     self.ListOfDevices[key]["Health"] = ""
@@ -1236,7 +1236,7 @@ def profalux_fix_remote_device_model(self):
         if self.ListOfDevices[x]["MacCapa"] != "80":
             continue
         if "Model" in self.ListOfDevices[x] and self.ListOfDevices[x]["Model"] != "Telecommande-Profalux":
-            self.log.logging( "Profalux", "Status", "Z4D forces Model Name from %s to %s" % (
+            self.log.logging("Profalux", "Status", "Z4D forces Model from %s to %s" % (
                 x, self.ListOfDevices[x]["Model"],), x)
             self.ListOfDevices[x]["Model"] = "Telecommande-Profalux"
 
@@ -1304,7 +1304,7 @@ def hack_ts0601_rename_model( self, nwkid, modelName, manufacturer_name):
     suggested_model = check_found_plugin_model( self, modelName, manufacturer_name=manufacturer_name, manufacturer_code=None, device_id=None )
     
     if self.ListOfDevices[ nwkid ][ 'Model' ] != suggested_model:
-        self.log.logging("Tuya", "Status", "Z4D adjusts Model name from %s to %s" %( modelName, suggested_model))
+        self.log.logging("Tuya", "Status", "Z4D adjusts Model from %s to %s" % (modelName, suggested_model))
         self.ListOfDevices[ nwkid ][ 'Model' ] = suggested_model
 
 

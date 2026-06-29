@@ -176,7 +176,7 @@ def callbackDeviceAwake_Schneider(self, Devices, nwk_id, ep, cluster):
         and (schneider_data.get("ReportingMode") == "Fast" )
         and (schneider_data.get("Registration", 0) + FAST_REPORTING_INTERVAL) <= now
     ):
-        self.log.logging("Schneider", "Status", f"{nwk_id}/{ep} Switching Reporting to NORMAL mode")
+        self.log.logging("Schneider", "Status", f"{nwk_id}/{ep} switches Reporting to NORMAL mode")
         vact_config_reporting_normal(self, nwk_id, ep)
 
     # Handle override setpoint check for thermostats
@@ -2019,7 +2019,7 @@ def cancel_override_attribute( self, nwkid ):
     if "ThermostatOverride" not in self.ListOfDevices[nwkid][SCHNEIDER_META_DATA]:
         return
     nickname = get_device_nickname(self, NwkId=nwkid)
-    self.log.logging("Schneider", "Status", f"Cancelling temperature boost for device {nickname}", nwkid)
+    self.log.logging("Schneider", "Status", f"Z4D cancels temperature boost for device {nickname}", nwkid)
     
     del self.ListOfDevices[nwkid][SCHNEIDER_META_DATA]["ThermostatOverride"]
     self.ListOfDevices[nwkid ][SCHNEIDER_META_DATA]["BoostDemand"] = False
@@ -2102,7 +2102,7 @@ def override_setpoint(self, nwkid, ep, override, duration):
     schneider_meta_data["BoostDemand"] = True
     
     nickname = get_device_nickname(self, NwkId=nwkid)
-    self.log.logging("Schneider", "Status", f"Temperature boost for device {nickname} from {current_setpoint} to {override}", nwkid)
+    self.log.logging("Schneider", "Status", f"Z4D boosts temperature for device {nickname} from {current_setpoint} to {override}", nwkid)
 
     return override
 

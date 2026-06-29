@@ -389,7 +389,7 @@ def update_zlinky_device_model_if_needed(self, nwkid):
             self.log.logging("ZLinky", "Log", f"Not authorized to adjust ZLinky model from {model_name} to {zlinky_conf}")
         return
 
-    self.log.logging("ZLinky", "Status", f"Adjusting ZLinky model from {model_name} to {zlinky_conf}")
+    self.log.logging("ZLinky", "Status", f"Z4D adjusts ZLinky model from {model_name} to {zlinky_conf}")
 
     # Update the model name
     device_info["Model"] = zlinky_conf
