@@ -24,6 +24,7 @@ from DevicesModules.custom_Chameleon import erl_z3_master_info
 from Modules.basicOutputs import getListofAttribute
 from Modules.casaia import pollingCasaia
 from Modules.danfoss import danfoss_room_sensor_polling
+from Modules.domoCreate import retry_failed_widget_creation
 from Modules.domoticzAbstractLayer import (find_widget_unit_from_WidgetID,
                                            is_device_ieee_in_domoticz_db)
 from Modules.domoTools import (retrieve_widget_type_list,
@@ -91,6 +92,7 @@ ATTRIBUTE_DISCOVERY_REFRESH = (( 3600 // HEARTBEAT ) + 7)
 CHECKING_DELAY_READATTRIBUTE = (( 60 // HEARTBEAT ) + 7)
 PING_DEVICE_VIA_GROUPID = 3567 // HEARTBEAT    # Secondes ( 59minutes et 45 secondes )
 FIRST_PING_VIA_GROUP = 127 // HEARTBEAT
+WIDGET_CREATION_RETRY = 300 // HEARTBEAT       # Retry a recoverable widget-creation failure every 5 minutes
 CHECKING_TICMETER_KEY_ATTRIBUTES = (30 // HEARTBEAT)  # 30 Sec
 CHECKING_ERLZ3_KEY_ATTRIBUTES = ( 300 // HEARTBEAT )  # 5 Min
 
@@ -922,7 +924,18 @@ def processListOfDevices(self, Devices):
 
         status = device.get("Status", {})
         if status == "failDB":
+            # Terminal failure: incomplete entry that never paired. Safe to drop.
             entriesToBeRemoved.append(NwkId)
+            continue
+
+        if status in ("failDB_NoUnit", "failDB_NoHardware"):
+            # Recoverable widget-creation failure (Domoticz refused new hardware,
+            # or no free unit was available). Keep the device - deleting it would
+            # lose the whole entry (Ep/Cluster/ClusterType) - and let the creation
+            # module retry every 5 minutes so it self-heals once the user re-enables
+            # 'Accept New Hardware' / frees units.
+            if (int(device["Heartbeat"]) % WIDGET_CREATION_RETRY) == 0:
+                retry_failed_widget_creation(self, Devices, NwkId)
             continue
 
         # Known Devices

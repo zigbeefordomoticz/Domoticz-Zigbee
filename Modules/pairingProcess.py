@@ -393,7 +393,7 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
         profalux_fake_deviceModel(self, NWKID)
 
     CreateDomoDevice(self, Devices, NWKID)
-    if self.ListOfDevices[NWKID]["Status"] not in ("inDB", "failDB"):
+    if self.ListOfDevices[NWKID]["Status"] != "inDB" and not self.ListOfDevices[NWKID]["Status"].startswith("failDB"):
         # Something went wrong in the Widget creation
         self.log.logging("Pairing", "Error","processNotinDBDevices - Creat Domo Device Failed !!! for %s status: %s" % (NWKID, self.ListOfDevices[NWKID]["Status"]))
         self.ListOfDevices[NWKID]["Status"] = "UNKNOW"

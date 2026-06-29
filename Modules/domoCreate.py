@@ -248,6 +248,8 @@ def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None
 
     unit = retreive_free_unit_for_widget(self, Devices, ieee)
     if unit is None:
+        # Recoverable: no free Domoticz unit. Mark so the heartbeat retries instead of deleting the device.
+        self.ListOfDevices[nwkid]["Status"] = "failDB_NoUnit"
         self.log.logging("WidgetCreation", "Error", "Domoticz widget creation failed. No available unit for device %s. Cannot create widget." % ieee)
         return None
 
@@ -260,7 +262,9 @@ def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None
     myDev_ID = domo_create_api(self, Devices, ieee, unit, widgetName, widgetType=widgetType, Type_=Type_, Subtype_=Subtype_, Switchtype_=Switchtype_, widgetOptions=widgetOptions, Image=Image)
     
     if myDev_ID == -1:
-        self.ListOfDevices[nwkid]["Status"] = "failDB"
+        # Recoverable: Domoticz refused the creation (e.g. 'Accept New Hardware' is off).
+        # Mark so the heartbeat retries instead of deleting the device.
+        self.ListOfDevices[nwkid]["Status"] = "failDB_NoHardware"
         self.log.logging("WidgetCreation", "Error", "Domoticz widget creation failed. Check that Domoticz can Accept New Hardware [%s]" % myDev_ID)
         return None
 
@@ -514,6 +518,27 @@ def CreateDomoDevice(self, Devices, NWKID):
     self.widget_reuse_pool = {}
 
 
+def retry_failed_widget_creation(self, Devices, NwkId):
+    """Re-attempt a previously-failed (recoverable) widget creation.
+
+    A device left in ``failDB_NoUnit`` / ``failDB_NoHardware`` could not get its
+    widgets created because Domoticz refused new hardware or no free unit was
+    available. Both are recoverable, so the device is kept (its Ep/Cluster/
+    ClusterType are preserved) and creation is retried here. On success
+    CreateDomoDevice sets Status back to ``inDB``.
+
+    Widget-creation ownership stays in this module; the heartbeat only schedules
+    the call (see Modules/heartbeat.py).
+    """
+    status = self.ListOfDevices[NwkId].get("Status")
+    self.log.logging(
+        "WidgetCreation", "Status",
+        "Widget creation previously failed (%s) for %s - retrying. Check Domoticz 'Accept New "
+        "Hardware' setting and that free device units are available." % (status, NwkId),
+        NwkId)
+    CreateDomoDevice(self, Devices, NwkId)
+
+
 def update_device_type( self, NWKID, GlobalType ):
     self.log.logging("WidgetCreation", "Debug", "GlobalType: %s" % (str(GlobalType)), NWKID)
     if len(GlobalType) != 0:
@@ -569,7 +594,7 @@ def create_xcube_widgets(self, Devices, NWKID, DeviceID_IEEE, Ep, t):
     idx = domo_create_api(self, Devices, DeviceID_IEEE, unit, deviceName(self, NWKID, t, DeviceID_IEEE, Ep), Type_=244, Subtype_=62, Switchtype_=18, widgetOptions=Options)
     
     if idx == -1:
-        self.ListOfDevices[NWKID]["Status"] = "failDB"
+        self.ListOfDevices[NWKID]["Status"] = "failDB_NoHardware"
         self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} {t} {unit}")
         return None
     else:
@@ -626,7 +651,7 @@ def create_switch_selector_widget( self, Devices, NWKID, DeviceID_IEEE, Ep, t):
     Options = createSwitchSelector(self, _num_level, DeviceType=t, OffHidden=_OffHidden, SelectorStyle=_SelectorStyle)
     unit = createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
     if unit is None:
-        self.ListOfDevices[NWKID]["Status"] = "failDB"
+        # Status (failDB_NoUnit / failDB_NoHardware) already set by createDomoticzWidget; don't clobber it.
         self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} {t} {unit}")
         return None
 
@@ -682,7 +707,7 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
                 widget_name, widget_record[ "widgetType" ], NwkId), NwkId)
             unit = createDomoticzWidget(self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name, widget_record[ "widgetType" ])
             if unit is None:
-                self.ListOfDevices[NwkId]["Status"] = "failDB"
+                # Status (failDB_NoUnit / failDB_NoHardware) already set by createDomoticzWidget; don't clobber it.
                 self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} {widget_record[ 'widgetType' ]} {unit}")
                 return None
             set_default_value( self, Devices, DeviceID_IEEE, unit, widget_record)
@@ -695,7 +720,7 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
                 widget_name, widget_record[ "widgetType" ], NwkId), NwkId)
             unit = createDomoticzWidget(self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name, widget_record[ "widgetType" ])
             if unit is None:
-                self.ListOfDevices[NwkId]["Status"] = "failDB"
+                # Status (failDB_NoUnit / failDB_NoHardware) already set by createDomoticzWidget; don't clobber it.
                 self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} {widget_record[ 'widgetType' ]} {unit}")
                 return None
             set_default_value( self, Devices,DeviceID_IEEE, unit, widget_record)
@@ -708,7 +733,7 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
                 widget_name, widget_record[ "widgetType" ], NwkId), NwkId)
             unit = createDomoticzWidget(self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name, widget_record[ "widgetType" ])
             if unit is None:
-                self.ListOfDevices[NwkId]["Status"] = "failDB"
+                # Status (failDB_NoUnit / failDB_NoHardware) already set by createDomoticzWidget; don't clobber it.
                 self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} {widget_record[ 'widgetType' ]} {unit}")
                 return None
 
@@ -734,7 +759,7 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
         ForceClusterType=ForceClusterType
     )
     if unit is None:
-        self.ListOfDevices[NwkId]["Status"] = "failDB"
+        # Status (failDB_NoUnit / failDB_NoHardware) already set by createDomoticzWidget; don't clobber it.
         self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} {Type} {Subtype} {Switchtype} {unit}")
         return None
 
