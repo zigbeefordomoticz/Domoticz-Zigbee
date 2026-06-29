@@ -43,7 +43,7 @@ def handle_zigpy_backup(self, backup):
     store_in_domoticz_db = self.pluginconf.pluginConf.get("storeDomoticzDb")
     if use_domoticz_db or store_in_domoticz_db:
         domoticz_backup(self, json.dumps((backup.as_dict())))
-        self.log.logging("TransportZigpy", "Status", "Coordinator backup store in Domoticz")
+        self.log.logging("TransportZigpy", "Status", "Z4D stores Coordinator backup in Domoticz")
         
 
 def domoticz_backup(self, coordinator_backup):

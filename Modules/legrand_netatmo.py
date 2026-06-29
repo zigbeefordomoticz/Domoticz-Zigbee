@@ -266,7 +266,7 @@ def rejoin_legrand_reset(self):
         return
 
     # Send a Write Attributes no responses
-    self.log.logging( "Legrand", "Status", "Detected Legrand IEEE, broadcast Write Attribute 0x0000/0xf000")
+    self.log.logging( "Legrand", "Status", "Z4D detects Legrand IEEE, broadcasts Write Attribute 0x0000/0xf000")
     write_attributeNoResponse(self, "ffff", ZIGATE_EP, "01", "0000", "1021", "01", "f000", "23", "00000000")
 
 

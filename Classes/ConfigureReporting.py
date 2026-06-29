@@ -489,9 +489,9 @@ class ConfigureReporting:
                             continue
                         
                         if not wip_flap:
-                            self.logging( "Status", f"------ We have detected a miss configuration reports for device {Nwkid} on ep {_ep} and cluster {_cluster}" ,nwkid=Nwkid)
+                            self.logging("Status", f"------ Z4D detects misconfigured reporting for device {Nwkid} on ep {_ep} and cluster {_cluster}", nwkid=Nwkid)
                         
-                        self.logging( "Status", f" - Attribut {attribut} request to force a Configure Reporting due to field {x} '{attribute_current_configuration[ x ]}' != '{cluster_configuration[ attribut ][ x]}'", nwkid=Nwkid)
+                        self.logging("Status", f" - Attribute {attribut} forces a Configure Reporting due to field {x} '{attribute_current_configuration[ x ]}' != '{cluster_configuration[ attribut ][ x]}'", nwkid=Nwkid)
                         configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, True, cluster_configuration)
                         wip_flap = True
                         cluster_update = True

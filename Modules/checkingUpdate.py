@@ -185,7 +185,7 @@ def _run_version_check(self, zigbee_communication, branch, zigate_model):
         if is_zigate_firmware_available(
             self, self.FirmwareMajorVersion, self.FirmwareVersion, firm_major, firm_minor
         ):
-            self.log.logging("Plugin", "Status", "Z4D found a newer Zigate Firmware version")
+            self.log.logging("Plugin", "Status", "Z4D finds a newer Zigate Firmware version")
             self.pluginParameters["FirmwareUpdate"] = True
 
     except Exception as e:

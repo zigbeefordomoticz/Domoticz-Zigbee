@@ -78,9 +78,9 @@ def load_groups_list_from_json(self):
         self.logging( "Debug", "Groups data loaded where saved on %s" % time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp)), )
 
     if dz_timestamp >= txt_timestamp:
-        self.logging( "Status", "Z4D Loaded groups from Domoticz Db: %s" % len(self.ListOfGroups))
+        self.logging("Status", "Z4D loads groups from Domoticz Db: %s" % len(self.ListOfGroups))
     else:
-        self.logging( "Status", "Z4D Loaded groups from Json File: %s" % len(self.ListOfGroups))
+        self.logging("Status", "Z4D loads groups from Json File: %s" % len(self.ListOfGroups))
 
 
 def build_group_list_from_list_of_devices(self):

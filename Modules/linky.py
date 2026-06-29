@@ -327,7 +327,7 @@ def collect_ticmeter_linky(self, nwkid):
             # Avoid repeated reads within 5 minutes
             return
 
-        self.log.logging("Pairing", "Status", "Reading TICMeter and collecting all data, as key data are missing")
+        self.log.logging("Pairing", "Status", "Z4D reads TICMeter and collects all data, as key data are missing")
 
         Modules.readAttributes.read_attributes_gammatroniques_tic_meter(self, nwkid)
         Modules.readAttributes.read_attributes_ticmeter_tarif(self, nwkid)

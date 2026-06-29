@@ -1990,7 +1990,7 @@ def notify_ota_firmware_available(self, srcnwkid, manufcode, imagetype, filevers
 
     folder = next((OTA_CODES[supported_manufacturer]["Folder"] for supported_manufacturer in OTA_CODES if OTA_CODES[supported_manufacturer]["ManufCode"] == manufcode), None)
 
-    logging(self, "Status", "We have detected a potential new firmware for the device %s [%s]" %( get_device_nickname( self, NwkId=srcnwkid, ), srcnwkid ))
+    logging(self, "Status", "Z4D detects a potential new firmware for device %s [%s]" % ( get_device_nickname( self, NwkId=srcnwkid, ), srcnwkid ))
     logging(self, "Status", "   current version: %s" % fileversion)
     logging(self, "Status", "     firmware type: %s" % imagetype)
     logging(self, "Status", "    newest version: %s" % _ota_available["fileVersion"])

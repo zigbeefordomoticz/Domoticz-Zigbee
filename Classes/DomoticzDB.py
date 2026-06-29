@@ -107,7 +107,7 @@ class DomoticzAPIClient:
     def stop(self):
         """Stops the worker thread cleanly."""
         
-        self.logging("Status", "++ DomoticzDB Api thread stop requested")
+        self.logging("Status", "++ DomoticzDB API thread stop requested")
         self._stop_event.set()
         try:
             self._queue.put_nowait((0, None, None))   # sentinel with priority 0

@@ -81,7 +81,7 @@ def runmode_with_gpiomodule(self):
 
         ei0 = GPIO.input(17)
         ei2 = GPIO.input(27)
-        self.log.logging("PiZigate", "Status", "Switch PiZigate in RUN mode")
+        self.log.logging("PiZigate", "Status", "Z4D switches PiZigate to RUN mode")
         if ei0:
             self.log.logging("PiZigate", "Log", " + GPIO(RUN) OK")
         else:

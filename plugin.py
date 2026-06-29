@@ -360,10 +360,10 @@ class BasePlugin:
 
         mode6 = Parameters.get("Mode6", "0")
         if mode6.lstrip("-").isdigit():
-            Domoticz.Status( f"Enabling Debug Log Level: {mode6}")
+            Domoticz.Status(f"Enabling Debug Log Level: {mode6}")
             Domoticz.Debugging(int(mode6))
 
-        Domoticz.Status( "Welcome to Zigbee for Domoticz (Z4D) plugin. (c)pipiche38 - 2018 - 2026")
+        Domoticz.Status("Welcome to Zigbee for Domoticz (Z4D) plugin. (c)pipiche38 - 2018 - 2026")
 
         # Print PYTHONPATH if set
         pythonpath = os.getenv('PYTHONPATH')
@@ -462,7 +462,7 @@ class BasePlugin:
             return
 
         # Import PluginConf.txt
-        Domoticz.Status("Z4D is loading configuration settings")
+        Domoticz.Status("Z4D loads configuration settings")
         self.pluginconf = PluginConf(
             self.zigbee_communication, self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor, Parameters["HomeFolder"], self.HardwareID
         )
@@ -474,7 +474,7 @@ class BasePlugin:
             self.internet_available = is_internet_available()
 
         if self.internet_available and self.pluginconf.pluginConf.get("CheckRequirements", True):
-            Domoticz.Status("Z4D is checking the python modules requirements")
+            Domoticz.Status("Z4D checks the Python modules requirements")
             if check_requirements( Parameters[ "HomeFolder"] ):
                 # Check_requirements() return True if requirements not meet.
                 self.onStop()
@@ -482,7 +482,7 @@ class BasePlugin:
 
         # Create Domoticz Sub menu
         if "DomoticzCustomMenu" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["DomoticzCustomMenu"]:
-            Domoticz.Status("Z4D is installing the WebUI in the domoticz custom menu")
+            Domoticz.Status("Z4D installs the WebUI in the Domoticz custom menu")
             install_Z4D_to_domoticz_custom_ui( )
 
         # Create the adminStatusWidget if needed
@@ -503,7 +503,7 @@ class BasePlugin:
             self.log.openLogFile()
 
         # We can use from now the self.log.logging()
-        self.log.logging( "Plugin", "Status", "Z4D is starting with %s-%s and using DomoticzEx !" % (
+        self.log.logging("Plugin", "Status", "Z4D starts with %s-%s and using DomoticzEx !" % (
             self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"]), )
 
         # Debuging information
@@ -514,7 +514,7 @@ class BasePlugin:
  
         self.StartupFolder = Parameters["StartupFolder"]
 
-        Domoticz.Status("Z4D is initializing a connection to Domoticz Api/Json")
+        Domoticz.Status("Z4D initializes a connection to Domoticz API/JSON")
         self.domoticz_api = DomoticzAPIClient( Parameters["Mode5"], self.pluginconf, self.log)
         self.domoticz_device_cache = DomoticzDeviceCache(self.domoticz_api)
         
@@ -532,10 +532,10 @@ class BasePlugin:
             if sys.version_info < (3, 13):
                 # https://github.com/python/cpython/issues/91375
                 # Fixed in Python 3.13 via cpython/pull/104196 (freelist ported to module state)
-                self.log.logging("Plugin", "Status", "Z4D Multi-instances detected. Enabling 'asyncio' workaround")
+                self.log.logging("Plugin", "Status", "Z4D detects multiple instances, enabling 'asyncio' workaround")
                 sys.modules["_asyncio"] = None
             else:
-                self.log.logging("Plugin", "Status", "Z4D Multi-instances detected. Python 3.13+ — using native C asyncio.")
+                self.log.logging("Plugin", "Status", "Z4D detects multiple instances, using native C asyncio (Python 3.13+)")
 
         if "LogLevel" not in self.pluginParameters:
             log_level = self.domoticzdb_Hardware.get_loglevel_value()
@@ -574,7 +574,7 @@ class BasePlugin:
         load_list_of_domoticz_widget(self, Devices)
         
         # Import DeviceList.txt Filename is : DeviceListName
-        self.log.logging("Plugin", "Status", "Z4D loading plugin database")
+        self.log.logging("Plugin", "Status", "Z4D loads plugin database")
         if LoadDeviceList(self) == "Failed":
 
             self.log.logging("Plugin", "Error", "Something wennt wrong during the import of Load of Devices ...")
@@ -638,7 +638,7 @@ class BasePlugin:
             else:
                 self.log.logging( "Plugin", "Error", "WebServer disabled du to Parameter Mode4 set to %s" % Parameters["Mode4"] )
 
-        self.log.logging("Plugin", "Status", "Z4D starting with Domoticz 'Extended Framework'")
+        self.log.logging("Plugin", "Status", "Z4D starts with Domoticz 'Extended Framework'")
 
         self.busy = False
 
@@ -770,12 +770,12 @@ class BasePlugin:
 
                 # for a remove in case device didn't send the leave
                 zigate_remove_device(self, str(self.ControllerIEEE), str(DeviceID) )
-                self.log.logging( "Plugin", "Status", f"Request device {device_name} -> {DeviceID} to be removed from coordinator" )
+                self.log.logging("Plugin", "Status", f"Request device {device_name} -> {DeviceID} to be removed from coordinator")
 
             self.log.logging("Plugin", "Debug", f"ListOfDevices :After REMOVE {self.ListOfDevices}")
   
         elif self.groupmgt and DeviceID in self.groupmgt.ListOfGroups:
-            self.log.logging("Plugin", "Status", f"Request device {DeviceID} to be remove from Group(s)")
+            self.log.logging("Plugin", "Status", f"Request device {DeviceID} to be removed from Group(s)")
             self.groupmgt.FullRemoveOfGroup(Unit, DeviceID)
 
         load_list_of_domoticz_widget(self, Devices)
@@ -804,7 +804,7 @@ class BasePlugin:
             self.adminWidgets.updateStatusWidget(Devices, "Starting the plugin up")
 
         elif self.connectionState == 0:
-            self.log.logging("Plugin", "Status", "Z4D reconnected after failure")
+            self.log.logging("Plugin", "Status", "Z4D reconnects after failure")
             self.PluginHealth["Flag"] = 2
             self.PluginHealth["Txt"] = "Reconnecting after failure"
 
@@ -1163,7 +1163,7 @@ def retreive_zigpy_topology_data(self):
 
 def start_zigbee_transport(self ):
     # Connect to Coordinator only when all initialisation are properly done.
-    self.log.logging("Plugin", "Status", F"Z4D is starting transport Mode: '{self.transport}' Serial: '{Parameters['SerialPort']}' IP: '{Parameters['Address']} 'Port: '{Parameters['Port']}'")
+    self.log.logging("Plugin", "Status", f"Z4D starts transport Mode: '{self.transport}' Serial: '{Parameters['SerialPort']}' IP: '{Parameters['Address']} 'Port: '{Parameters['Port']}'")
 
     
     if self.transport in ("USB", "DIN", "V2-DIN", "V2-USB"):
@@ -1202,7 +1202,7 @@ def _start_zigpy_backend(self, backend_key):
     check_python_modules_version( self )
     self.zigbee_communication = "zigpy"
     self.pluginParameters["Zigpy"] = True
-    self.log.logging("Plugin", "Status", f"Z4D starting {label}")
+    self.log.logging("Plugin", "Status", f"Z4D starts {label}")
 
     if Parameters["Mode2"] == "Socket":
         SerialPort = "socket://" + Parameters["Address"] + ':' + Parameters["Port"]
@@ -1331,7 +1331,7 @@ def zigateInit_Phase1(self):
         zigate_erase_eeprom(self)
         if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
             matomo_coordinator_initialisation(self)
-        self.log.logging("Plugin", "Status", "Z4D has erase the Zigate PDM")
+        self.log.logging("Plugin", "Status", "Z4D erases the Zigate PDM")
         #sendZigateCmd(self, "0012", "")
         self.PDMready = False
         self.startZigateNeeded = 1
@@ -1432,7 +1432,7 @@ def zigateInit_Phase3(self):
 
     # Set Certification Code
     if self.pluginconf.pluginConf["CertificationCode"] in CERTIFICATION:
-        self.log.logging( "Plugin", "Status", "Z4D coordinator set to Certification : %s/%s -> %s" % (
+        self.log.logging("Plugin", "Status", "Z4D coordinator set to Certification : %s/%s -> %s" % (
             self.pluginconf.pluginConf["CertificationCode"], self.pluginconf.pluginConf["Certification"], CERTIFICATION[self.pluginconf.pluginConf["CertificationCode"]],))
         #sendZigateCmd(self, "0019", "%02x" % self.pluginconf.pluginConf["CertificationCode"])
         zigate_set_certificate(self, "%02x" % self.pluginconf.pluginConf["CertificationCode"] )
@@ -1524,7 +1524,7 @@ def zigateInit_Phase3(self):
         self.iaszonemgt.setZigateIEEE(self.ControllerIEEE)
     
     if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
-        self.log.logging("Plugin", "Status", "Z4D sending analytics information. (if you need to disable, disable the MatomoOptIn parameter via the WebUI - Settings)")
+        self.log.logging("Plugin", "Status", "Z4D sends analytics information. (if you need to disable, disable the MatomoOptIn parameter via the WebUI - Settings)")
         matomo_plugin_started(self)
 
     if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
@@ -1601,7 +1601,7 @@ def start_OTAManagement(self, homefolder):
 
 def start_web_server(self, webserver_port, webserver_homefolder):
  
-    self.log.logging("Plugin", "Status", f"Z4D starting WebUI on port {webserver_port}" )
+    self.log.logging("Plugin", "Status", f"Z4D starts WebUI on port {webserver_port}")
     self.webserver = WebServer(
         self.zigbee_communication,
         self.ControllerData,
@@ -1704,7 +1704,7 @@ def pingZigate(self):
     if self.Ping["Status"] == "Receive":
         if self.connectionState == 0:
             # self.adminWidgets.updateStatusWidget( self, Devices, 'Ping: Reconnected after failure')
-            self.log.logging("Plugin", "Status", "Z4D - reconnected after failure")
+            self.log.logging("Plugin", "Status", "Z4D reconnects after failure")
         self.log.logging(
             "Plugin",
             "Debug",
@@ -1954,7 +1954,7 @@ def _post_readiness_startup_completed( self ):
                 # In case case, we have to set the extendedPANID
                 # ErasePDM has been requested, we are in the next Loop.
                 if self.ErasePDMDone and self.pluginconf.pluginConf["extendedPANID"] is not None:
-                    self.log.logging( "Plugin", "Status", "Z4D - Setting extPANID : 0x%016x" % (self.pluginconf.pluginConf["extendedPANID"]), )
+                    self.log.logging("Plugin", "Status", "Z4D sets extended PANID : 0x%016x" % (self.pluginconf.pluginConf["extendedPANID"]), )
                     setExtendedPANID(self, self.pluginconf.pluginConf["extendedPANID"])
 
                 start_Zigate(self)

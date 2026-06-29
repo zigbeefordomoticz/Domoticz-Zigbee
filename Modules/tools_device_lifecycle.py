@@ -115,7 +115,7 @@ def remap_device_nwkid(self, new_NwkId: str, IEEE: str, old_NwkId: str) -> bool:
         self.ListOfDevices[new_NwkId]["Heartbeat"] = "0"
 
     request_flush_plugin_listofdevices(self)
-    self.log.logging("PluginTools", "Status", "NetworkID: %s is replacing %s for object: %s" % (new_NwkId, old_NwkId, IEEE))
+    self.log.logging("PluginTools", "Status", "NetworkID: %s replaces %s for object: %s" % (new_NwkId, old_NwkId, IEEE))
     return True
 
 
