@@ -2060,7 +2060,7 @@ def _load_json_from_url(self, url, retries=3, timeout=5):
                     delay = min(float(retry_after), 30.0)
                 except ValueError:
                     pass  # Retry-After was an HTTP-date; fall back to backoff
-            time.sleep(delay + random.uniform(0, 0.5))  # jitter
+            time.sleep(delay + random.uniform(0, 0.5))  # nosec B311 - jitter only, not security-sensitive
             backoff *= 2
 
     logging(self, "Error",
