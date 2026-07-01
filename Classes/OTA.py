@@ -75,6 +75,9 @@ from datetime import datetime
 from os import listdir
 from os.path import exists, isfile, join
 from pathlib import Path
+import http.client
+
+import random
 
 from Modules.sendZigateCommand import sendZigateCmd
 from Modules.tools import get_device_nickname
@@ -2013,36 +2016,52 @@ def notify_ota_firmware_available(self, srcnwkid, manufcode, imagetype, filevers
         logging(self, "Status", "   open an Issue on GitHub here: https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/new?assignees=&labels=&template=feature_request.md&title=")
 
 
-
-def _load_json_from_url(self, url):
-
-    retries = 3
+def _load_json_from_url(self, url, retries=3, timeout=5):
     last_reason = "unknown error"
+    backoff = 1.0
 
-    for _ in range(retries):
+    req = urllib.request.Request(url, headers={"User-Agent": "Z4D"})
+
+    for attempt in range(retries):
+        retry_after = None
         try:
-            with urllib.request.urlopen(url, timeout=5) as response:
+            with urllib.request.urlopen(req, timeout=timeout) as response:
                 return json.load(response)
 
         except urllib.error.HTTPError as e:
-            # HTTPError may wrap a timeout
-            if e.code in (429, 504):
+            if e.code in (429, 500, 502, 503, 504):
+                # transient server-side — worth retrying
                 last_reason = f"HTTP {e.code}: {e.reason}"
-            elif isinstance(e.reason, socket.timeout):
-                last_reason = f"HTTPError timeout: {e.reason}"
+                retry_after = e.headers.get("Retry-After")
             else:
-                last_reason = f"HTTPError: {e.reason}"
+                # 400/403/404/... won't fix themselves — fail fast
+                last_reason = f"HTTP {e.code}: {e.reason}"
+                break
 
         except urllib.error.URLError as e:
-            if isinstance(e.reason, socket.timeout):
-                last_reason = f"URLError timeout: {e.reason}"
-            else:
-                last_reason = f"URLError: {e.reason}"
+            # covers DNS failures, connection refused, and URLError-wrapped timeouts
+            last_reason = f"URLError: {e.reason}"
 
-        except socket.timeout as e:
-            last_reason = f"socket.timeout: {e}"
+        except (socket.timeout, TimeoutError) as e:
+            last_reason = f"timeout: {e}"
 
-        time.sleep(1)
+        except (json.JSONDecodeError, ValueError) as e:
+            # malformed or truncated body
+            last_reason = f"invalid JSON: {e}"
+
+        except (http.client.IncompleteRead, ConnectionError, OSError) as e:
+            last_reason = f"connection error: {e}"
+
+        # don't sleep after the final attempt
+        if attempt < retries - 1:
+            delay = backoff
+            if retry_after:
+                try:
+                    delay = min(float(retry_after), 30.0)
+                except ValueError:
+                    pass  # Retry-After was an HTTP-date; fall back to backoff
+            time.sleep(delay + random.uniform(0, 0.5))  # nosec B311 - jitter only, not security-sensitive
+            backoff *= 2
 
     logging(self, "Error",
             f"loading_zigbee_ota_index: Unable to access {url} Reason: {last_reason}")
