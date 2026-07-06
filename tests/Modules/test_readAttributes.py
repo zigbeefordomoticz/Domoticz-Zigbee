@@ -953,8 +953,11 @@ class TestSimpleClusterRequests:
         ra.ReadAttributeRequest_0006_0000(p, "1234")
         req.assert_called_once()
 
-    def test_0006_400x_ts0121_uses_0x8002(self, ra, monkeypatch):
-        p = _plugin(model="TS0121")
+    def test_0006_400x_flag_enabled_uses_0x8002(self, ra, monkeypatch):
+        """Regression #1996: attribute choice must follow the
+        PowerOnOffStateAttribute8002 device-conf flag, not a hardcoded model list."""
+        p = _plugin(model="TS011F-plug")
+        monkeypatch.setattr(ra._mock_get_devcfg_val, "side_effect", lambda *a, **kw: True)
         monkeypatch.setattr(ra._mock_getListOfEp, "side_effect", lambda *a: ["01"])
         req = MagicMock()
         monkeypatch.setattr(ra, "ReadAttributeReq", req)
@@ -962,8 +965,9 @@ class TestSimpleClusterRequests:
         attrs = req.call_args.args[5]
         assert 0x8002 in attrs
 
-    def test_0006_400x_generic_uses_0x4003(self, ra, monkeypatch):
+    def test_0006_400x_flag_disabled_uses_0x4003(self, ra, monkeypatch):
         p = _plugin(model="SomeLight")
+        monkeypatch.setattr(ra._mock_get_devcfg_val, "side_effect", lambda *a, **kw: False)
         monkeypatch.setattr(ra._mock_getListOfEp, "side_effect", lambda *a: ["01"])
         req = MagicMock()
         monkeypatch.setattr(ra, "ReadAttributeReq", req)
