@@ -677,10 +677,11 @@ def ReadAttributeRequest_0006_0000(self, key):
 def ReadAttributeRequest_0006_400x(self, key):
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0006 focus on 0x400x attributes- Key: %s " % key, nwkid=key)
 
+    model = self.ListOfDevices[key].get("Model", "")
     ListOfEp = getListOfEpForCluster(self, key, "0006")
     for EPout in ListOfEp:
         listAttributes = []
-        if "Model" in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] in ("TS0121", "TS0115"):
+        if get_deviceconf_parameter_value(self, model, "PowerOnOffStateAttribute8002", return_default=False):
             listAttributes.append(0x8002)
             self.log.logging(
                 "ReadAttributes",
