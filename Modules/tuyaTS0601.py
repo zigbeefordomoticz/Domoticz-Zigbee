@@ -267,17 +267,17 @@ def ts0601_extract_data_point_infos( self, model_name):
 
 
 def ts0601_actuator_dp( command, dps_mapping, ep=None):
-      matching = [ dp for dp in dps_mapping if dps_mapping[dp].get("action_type") == command ]
-      if not matching:
-          return None
-      if ep is not None:
-          # Multi-gang / multi-widget devices: several datapoints share the same
-          # action_type (e.g. "switch"). Pick the one whose domo_ep matches the
-          # widget endpoint the command originated from.
-          for dp in matching:
-              if dps_mapping[dp].get("domo_ep", "01") == ep:
-                  return dp
-      return matching[0]
+    matching = [ dp for dp in dps_mapping if dps_mapping[dp].get("action_type") == command ]
+    if not matching:
+        return None
+    if ep is not None:
+        # Multi-gang / multi-widget devices: several datapoints share the same
+        # action_type (e.g. "switch"). Pick the one whose domo_ep matches the
+        # widget endpoint the command originated from.
+        for dp in matching:
+            if dps_mapping[dp].get("domo_ep", "01") == ep:
+                return dp
+    return matching[0]
     
 # Sensors responses
 def ts0601_motion(self, Devices, nwkid, ep, value):
