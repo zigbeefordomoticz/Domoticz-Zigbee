@@ -515,7 +515,7 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
         and is_tst0601_data_points_defined
         ):
             self.log.logging( "Command", "Log", f"{Nwkid}/{EPout} Switch Off with Tuya dimmer.", Nwkid, )
-            ts0601_actuator(self, Nwkid, "switch", 0)
+            ts0601_actuator(self, Nwkid, "switch", 0, ep=EPout)
     else:
         # Remaining Slider widget
         _off_command_default(self, Nwkid, EPout, profalux, model_name)
@@ -731,7 +731,7 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         and is_tst0601_data_points_defined
         ):
             self.log.logging( "Command", "Log", f"{Nwkid}/{EPout} Switch On with Tuya dimmer.", Nwkid, )
-            ts0601_actuator(self, Nwkid, "switch", 1)
+            ts0601_actuator(self, Nwkid, "switch", 1, ep=EPout)
 
     elif profalux:
             move_withonoff = bool( get_device_config_param(self, Nwkid, "MoveWithOnOff") or get_deviceconf_parameter_value(self, model_name, "MoveWithOnOff", return_default=False) )
