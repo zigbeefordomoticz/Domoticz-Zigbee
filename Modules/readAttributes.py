@@ -1884,6 +1884,17 @@ def ReadAttributeRequest_ff66(self, key):
 
     ReadAttributeReq(self, key, ZIGATE_EP, ep_out, "ff66", attribute_list, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
+
+def refresh_zlinky_stge(self, key):
+
+    self.log.logging("ReadAttributes", "Debug", "refresh_zlinky_stge - Key: %s " % key, nwkid=key)
+    ep_out = "01"
+    attribute_list = [ 0x0217 ]
+    self.log.logging(["ReadAttributes", "ZLinky"], "Debug", "refresh_zlinky_stge - Key: %s request %s" % (
+        key, attribute_list), nwkid=key)
+    ReadAttributeReq(self, key, ZIGATE_EP, ep_out, "ff66", attribute_list, ackIsDisabled=is_ack_tobe_disabled(self, key))
+
+
 def ReadAttributeRequest_fc7d(self, key):
     # Cluster IKEA
     self.log.logging("ReadAttributes", "Log", "ReadAttributeRequest_fc7d - Key: %s " % key, nwkid=key)

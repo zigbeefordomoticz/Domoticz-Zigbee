@@ -27,9 +27,8 @@ from Modules.danfoss import danfoss_room_sensor_polling
 from Modules.domoCreate import retry_failed_widget_creation
 from Modules.domoticzAbstractLayer import (find_widget_unit_from_WidgetID,
                                            is_device_ieee_in_domoticz_db)
-from Modules.domoTools import (retrieve_widget_type_list,
-                               reset_device_ieee_unit_if_needed,
-                               timedOutDevice)
+from Modules.domoTools import (reset_device_ieee_unit_if_needed,
+                               retrieve_widget_type_list, timedOutDevice)
 from Modules.linky import collect_ticmeter_linky
 from Modules.pairingProcess import (binding_needed_clusters_with_coordinator,
                                     processNotinDBDevices)
@@ -57,14 +56,16 @@ from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST, ReadAttributeReq,
                                     ping_devices_via_group, ping_tuya_device,
                                     read_attributes_gammatroniques_tic_meter,
                                     read_attributes_ticmeter_details,
-                                    read_attributes_ticmeter_tarif)
+                                    read_attributes_ticmeter_tarif,
+                                    refresh_zlinky_stge)
 from Modules.schneider_wiser import schneiderRenforceent
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import (ReArrangeMacCapaBasedOnModel, deviceconf_device,
-                           get_device_nickname, get_deviceconf_parameter_value,
-                           getAttributeValue, getListOfEpForCluster, is_hex,
+                           drop_stale_nwkid, get_device_nickname,
+                           get_deviceconf_parameter_value, getAttributeValue,
+                           getListOfEpForCluster, is_hex,
                            is_time_to_perform_work, mainPoweredDevice,
-                           night_shift_jobs, drop_stale_nwkid)
+                           night_shift_jobs)
 from Modules.tuya import tuya_polling
 from Modules.tuyaTRV import tuya_switch_online
 from Modules.zb_tables_management import mgmt_rtg, mgtm_binding
@@ -311,6 +312,7 @@ def pollingManufSpecificDevices(self, NwkId, HB):
         "ZLinkyPolling0702": ReadAttributeRequest_0702_ZLinky_TIC,  # Metering
         "ZLinkyPollingGlobal": ReadAttributeReq_ZLinky,             # All ZLinky Clusters/Attributes
         "PollingCusterff66": ReadAttributeRequest_ff66,             # All Manufacturer Specific ZLinky attributes
+        "PollingZLinkySTGE": refresh_zlinky_stge,                   # Read attribute 0xff66/0x0217
         "InletTempPolling": ReadAttributeRequest_0702_0017,      # Retreive Inlet Temperature
         "TICMeter_Tarif_Polling": read_attributes_ticmeter_tarif,        # Retreive Tarif
         "TICMeter_tic_specific": read_attributes_ticmeter_details,       # Retreive TICMeter details
