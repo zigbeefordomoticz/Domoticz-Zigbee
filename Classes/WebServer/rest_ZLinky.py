@@ -87,6 +87,44 @@ def zlinky_version_infos(self, nwkid ):
     return date_build, version_build
 
 
+def rest_zlinky_stge(self, verb, data, parameters):
+    # Retreive the ZLINKY/STGE dict
+    _response = prepResponseMessage(self, setupHeadersResponse())
+    _response["Data"] = None
+
+    self.logging( "Debug", "rest_zlinky_stge - for %s %s %s" % (verb, data, parameters))
+
+    if verb != "GET":
+        _response["Data"] = {
+            'Error': f"Verb {verb} not supported"
+        }
+        return _response
+    
+    if len(parameters) != 1:
+        _response["Data"] = {
+            'Error': f"Missing or too many parameters - {parameters}"
+        }
+        return _response
+
+    nwkid = parameters[0]
+    if len(nwkid) == 16:
+        # We are assuming that is an ieee instead of nwkid
+        nwkid = self.IEEE2NWK.get( nwkid )
+
+    if nwkid not in self.ListOfDevices:
+        _response["Data"] = {
+            'Error': f"Unknown device - {parameters[0]}/{nwkid}"
+        }
+        return _response
+
+    device_info = self.ListOfDevices.get( nwkid )
+    device_zlinky = device_info.get("ZLinky", "{}")
+
+    _response["Data"] = json.dumps(device_zlinky.get("STGE",{}), sort_keys=False)
+    self.logging("Debug", "rest_zlinky_stge - Read to send  %s " % (_response["Data"]))  
+    return _response
+
+    
 def rest_zlinky(self, verb, data, parameters): 
 
     _response = prepResponseMessage(self, setupHeadersResponse())

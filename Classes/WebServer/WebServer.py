@@ -123,7 +123,7 @@ class WebServer(object):
     from Classes.WebServer.rest_recreateWidget import rest_recreate_widgets
     from Classes.WebServer.rest_Topology import (rest_netTopologie,
                                                  rest_req_topologie)
-    from Classes.WebServer.rest_ZLinky import rest_zlinky
+    from Classes.WebServer.rest_ZLinky import rest_zlinky, rest_zlinky_stge
     from Classes.WebServer.sendresponse import sendResponse
     from Classes.WebServer.tools import (DumpHTTPResponseToLog,
                                          keepConnectionAlive)

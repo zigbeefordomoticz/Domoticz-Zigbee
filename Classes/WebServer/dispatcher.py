@@ -88,6 +88,7 @@ def setup_list_rest_commands( self ):
         {"Name": "zigate-mode", "Verbs": {"GET"}, "function": self.rest_zigate_mode},
         {"Name": "zigate", "Verbs": {"GET"}, "function": self.rest_zigate },
         {"Name": "zlinky", "Verbs": {"GET"}, "function": self.rest_zlinky },
+        {"Name": "zlinky-stge", "Verbs": {"GET"}, "function": self.rest_zlinky_stge },
         {"Name": "coordinator-erase-PDM", "Verbs": {"GET"}, "function": self.rest_zigate_erase_PDM},
         {"Name": "coordinator-mode", "Verbs": {"GET"}, "function": self.rest_zigate_mode},
         {"Name": "coordinator", "Verbs": {"GET"}, "function": self.rest_zigate}, 
