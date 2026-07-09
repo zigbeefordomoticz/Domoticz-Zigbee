@@ -452,7 +452,7 @@ COULEUR = {
 }
 
 
-def decode_STEG(stge):
+def decode_STGE(stge):
     """ Decoding of STGE Linky frame """
 
     # Attempt to convert the input into an integer, return an empty dictionary on failure.
