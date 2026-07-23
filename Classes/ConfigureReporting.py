@@ -479,6 +479,10 @@ class ConfigureReporting:
                     for x in ( "Change", "MinInterval", "MaxInterval"):
                         if x not in attribute_current_configuration:
                             continue
+
+                        if x in ( "MinInterval", "MaxInterval", ) and attribute_current_configuration[x] == '0000':
+                            continue
+
                         if x == "Change" and not analog_value(int(attribute_current_configuration['DataType'], 16)):
                             continue
                         if (
