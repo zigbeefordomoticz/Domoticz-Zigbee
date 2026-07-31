@@ -15,8 +15,38 @@ If you want to contribue , please let us know , we are looking for help in vario
 
 Release Numbering
 
-- Odd numbers --> Stable/7
-- Even numbers  --> Beta/7 (dev branch)
+- Odd numbers --> Stable/9.1 (stable branch)
+- Even numbers  --> Beta/9.2 (dev branch)
+
+## July 2026 - stable9 9.1.001 (2026.8)
+
+- [Technical] - Enable Domoticz 'Extended Framework' (DomoticzEx) as the plugin's primary framework, replacing the legacy Domoticz API (#1863, #1931)
+- [Technical] - ZigpyTransport - new HA-grade supervisor for the zigpy thread, with watchdog retry tolerance and automatic recovery (#1935)
+- [Technical] - ZigpyTransport - split zigpyThread.py into dedicated radioStart.py, supervisor.py, workerLoop.py and zigpySend.py modules
+- [Technical] - Introduce ThreadSafeDeviceDict to protect ListOfDevices, IEEE2NWK and ListOfDomoticzWidget from concurrent access (#1932)
+- [Technical] - Refactor Modules/tools.py into logical dedicated modules (tools_datastruct, tools_device_lifecycle, tools_device_lookup, tools_domoticz, tools_fcf, tools_files, tools_mac_capa, tools_model, tools_primitives, tools_sqn) (#1962)
+- [Technical] - Serial link - detect a broken line via OSError (not only SerialException) and trigger reconnection; add a startup serial port check with retry loop (#1950, #1951)
+- [Technical] - Give zigpy up to 30s to shutdown gracefully; add a dedicated "Zigbee transport stopped" status message (#1950)
+- [Technical] - Make DNS / plugin version-check access non-blocking, delegated to a dedicated worker thread (#1966)
+- [Technical] - Bump internal plugin database schema to version 4
+- [Technical] - Upgrade to latest zigpy / zigpy-znp libraries
+- [Technical] - Refactor Group management and widget creation/reuse logic; during pairing, reuse existing matching Domoticz widgets instead of duplicating them; prevent concurrent database writes (#1976, #1979, #1984, #1985, #1990, #1991)
+- [Technical] - Widget creation now reports precise failure status (NoUnit/NoHardware) and retries recoverable failures automatically (#1992)
+- [Technical] - Normalize plugin Status log messages to a consistent voice (#1993)
+- [Technical] - Increase Matomo statistics update interval from 9h to 6h (#1983)
+- [Technical] - Extensive new unit test coverage: ZigpyTransport (supervisor/radioStart/workerLoop/zigpySend), Z4D_decoders, group widget selection
+
+- [Hardware] - New Tools/replace_device.py - first version of a tool to replace a physical device while preserving its Domoticz history (#1989)
+- [Hardware] - New Tools/repair_clustertype.py; protect provisioned ClusterType from being wiped on Model-Name re-announcement (#1988)
+- [Hardware] - ZLinky - update STGE management, normalize OP_TARIF handling (HC SEM ET HC WE) and request attributes when OP_TARIF is unknown
+- [Hardware] - Tuya - refactor cluster 0xef00 decoding; multi-gang/multi-widget devices now pick the datapoint matching the command's originating endpoint (#1996, #1997)
+- [Hardware] - Danfoss - refactor eTRV handling and add new OEM variant (#1924)
+- [Hardware] - Fix ColorControl widget Subtype selection
+
+- [Issue] - Make OTA compatible with DomoticzEx (#1968)
+- [Issue] - Fix OTA JSON load issue (#1995)
+- [Issue] - Fix OTA heartbeat issue, with dedicated unit tests (#1974)
+- [Issue] - Prevent requesting a cfg report when Min/Max eq to 0x0000 (#1998)
 
 ## June 2026 - stable8.1.007 ( 2026.6)
 
