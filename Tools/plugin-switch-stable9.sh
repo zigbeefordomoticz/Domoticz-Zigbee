@@ -8,13 +8,43 @@
 # under the Extended Framework, 'stable8' can no longer manage them.
 # There is no supported path back.
 #
-# Usage: plugin-switch-stable9.sh [domoticz_ip] [domoticz_port]
-#   Defaults: 127.0.0.1 8080
+# Usage: plugin-switch-stable9.sh [--ip IP] [--port PORT] [-h|--help]
+#   Defaults: --ip 127.0.0.1 --port 8080
 
 set -e
 
-DOMOTICZ_IP="${1:-127.0.0.1}"
-DOMOTICZ_PORT="${2:-8080}"
+usage() {
+    echo "Usage: $(basename "$0") [--ip IP] [--port PORT]"
+    echo
+    echo "  --ip IP        Domoticz server IP/host (default: 127.0.0.1)"
+    echo "  --port PORT    Domoticz web server port (default: 8080)"
+    echo "  -h, --help     Show this help and exit"
+}
+
+DOMOTICZ_IP="127.0.0.1"
+DOMOTICZ_PORT="8080"
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --ip)
+            DOMOTICZ_IP="$2"
+            shift 2
+            ;;
+        --port)
+            DOMOTICZ_PORT="$2"
+            shift 2
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            echo "Unknown argument: $1"
+            usage
+            exit 1
+            ;;
+    esac
+done
 
 # Get the directory where the script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
