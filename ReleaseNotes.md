@@ -18,7 +18,12 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
-## June 2026 - stable8.1.007 ( 2026.6)
+## July 2026 - stable8 8.1.008 (2026.7)
+
+- [Issue] - PR #2000 - Preventing Config Reporting error. And accept Min 0x0000 as default (and do not overwrite)
+
+
+## June 2026 - stable8 8.1.007 (2026.6)
 
 - [Issue] - do not run plugin_stats when on Zigate 
 - [Hardware] - Refactor handling of Tuya datapoints with cluster 0xef00
