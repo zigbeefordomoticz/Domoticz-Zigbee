@@ -20,10 +20,11 @@ script falls back to asking the user to confirm manually rather than
 silently assuming success.
 
 Switching itself is forward compatible: it does not modify or recreate
-any existing device. The one-way aspect is about support, not data:
-`stable8` is closed for new development, so once you move to `stable9`
-further updates and fixes only land there — going back is not a
-supported path going forward.
+any existing device. The one-way aspect kicks in afterwards: any device
+paired once running on `stable9` is created directly under the Extended
+Framework, and such new devices are not compatible with `stable8`'s
+legacy widget model — so going back stops being an option as soon as a
+new device is added.
 
 There are exactly two ways this script runs, and it never reads stdin:
 
@@ -99,9 +100,10 @@ def display_migration_notice(version_status: str) -> None:
         f"{version_status}\n\n"
         "NOTE - THIS MOVE IS FORWARD-ONLY:\n"
         "  Switching itself is forward compatible: it does not modify or recreate\n"
-        "  any of your existing devices. But 'stable8' is closed for new development,\n"
-        "  so once you switch, further updates and fixes only land on 'stable9' —\n"
-        "  going back to 'stable8' afterwards is not a supported path."
+        "  any of your existing devices. But any device you pair AFTER switching is\n"
+        "  created directly under the Extended Framework by 'stable9' — such new\n"
+        "  devices are not compatible with 'stable8's legacy widget model. Going\n"
+        "  back to 'stable8' stops being an option as soon as a new device is added."
     )
 
     french = (
@@ -111,10 +113,11 @@ def display_migration_notice(version_status: str) -> None:
         "Domoticz (DomoticzEx), disponible depuis Domoticz 2025.1.\n\n"
         "REMARQUE - CE BASCULEMENT EST À SENS UNIQUE :\n"
         "  Le basculement lui-même est rétrocompatible : il ne modifie ni ne recrée\n"
-        "  aucun de vos périphériques existants. Mais la branche 'stable8' étant fermée\n"
-        "  aux nouveaux développements, les prochaines mises à jour et correctifs ne\n"
-        "  seront disponibles que sur 'stable9' — revenir à 'stable8' ensuite n'est\n"
-        "  pas un chemin supporté."
+        "  aucun de vos périphériques existants. Mais tout périphérique appairé APRÈS\n"
+        "  le basculement est créé directement sous le Framework Étendu par 'stable9' —\n"
+        "  ces nouveaux périphériques ne sont pas compatibles avec l'ancien modèle de\n"
+        "  widgets de 'stable8'. Revenir à 'stable8' cesse d'être possible dès qu'un\n"
+        "  nouveau périphérique est ajouté."
     )
 
     print("=" * 78)

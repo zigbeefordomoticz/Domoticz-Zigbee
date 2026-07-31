@@ -363,7 +363,7 @@ class BasePlugin:
         Domoticz.Error("The 'stable8' branch no longer receives new features, only critical fixes.")
         Domoticz.Error("New development continues on 'stable9', built on the Domoticz Extended Framework.")
         Domoticz.Error("To get further updates, run on the command line: Tools/plugin-switch-stable9.sh --i-understand")
-        Domoticz.Error("'stable8' is closed for new development: going back afterwards is not a supported path.")
+        Domoticz.Error("Any device paired after switching is created under the Extended Framework and is not usable back on 'stable8'.")
         Domoticz.Error("************* IMPORTANT *************")
 
         # Print PYTHONPATH if set

@@ -5,9 +5,10 @@
 # 'stable9' drops the legacy Domoticz widget model and requires the
 # Domoticz Extended Framework (DomoticzEx, available since Domoticz
 # 2025.1). The switch itself is forward compatible and does not modify
-# or recreate any existing device. The move is forward-only in terms of
-# support: 'stable8' is closed for new development, so going back
-# afterwards is not a supported path.
+# or recreate any existing device. But any device paired AFTER switching
+# is created directly under the Extended Framework, and such new devices
+# are not compatible with 'stable8's legacy widget model — going back
+# stops being an option as soon as a new device is added.
 #
 # Usage: plugin-switch-stable9.sh --i-understand [--ip IP] [--port PORT] [-h|--help]
 #   Defaults: --ip 127.0.0.1 --port 8080
@@ -125,8 +126,10 @@ if git show-ref --verify --quiet refs/remotes/origin/stable9; then
     }
 
     echo "Successfully switched to stable9 branch"
-    echo "Reminder: 'stable8' is closed for new development, so going back to it"
-    echo "afterwards is not a supported path. Your devices were not modified by this switch."
+    echo "Your existing devices were not modified by this switch. Reminder: any device"
+    echo "you pair from now on is created under the Extended Framework and will not be"
+    echo "usable if you go back to 'stable8' — going back stops being an option as soon"
+    echo "as a new device is added."
 else
     echo "Error: stable9 branch does not exist in the remote repository"
     exit 1
