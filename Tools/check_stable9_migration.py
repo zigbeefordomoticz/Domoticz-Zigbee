@@ -7,35 +7,38 @@ new development and that `stable9` — built exclusively on the Domoticz
 Extended Framework (`DomoticzEx`) — is where updates continue.
 
 The Extended Framework has been available in Domoticz since version
-2025.1, so unlike the earlier "cannot be probed" assumption, this script
-queries the running Domoticz server's own JSON API
-(`/json.htm?type=command&param=getversion`) to confirm the requirement
-is met, the same way any other Domoticz JSON API client (including this
-plugin) would. It uses only the Python standard library (`urllib`) so
-it works with the system `python3` even when the plugin's virtualenv
-(and its `requests` dependency) isn't active — which is normally the
-case when this script is invoked outside the plugin.
+2025.1, so this script queries the running Domoticz server's own JSON
+API (`/json.htm?type=command&param=getversion`) to confirm the
+requirement is met, the same way any other Domoticz JSON API client
+(including this plugin) would. It uses only the Python standard library
+(`urllib`) so it works with the system `python3` even when the plugin's
+virtualenv (and its `requests` dependency) isn't active — which is
+normally the case when this script is invoked outside the plugin.
 
 If Domoticz cannot be reached (wrong --ip/--port, not running, etc.) the
 script falls back to asking the user to confirm manually rather than
 silently assuming success.
 
-This tool cannot silently decide "you're good to go" for the second,
-more important fact: the move is a ONE-WAY DOOR. Once Domoticz
-(re)creates widgets under the Extended Framework, the `stable8` plugin
-code can no longer manage them — there is no supported path back to
-stable8 for an installation that has switched. Explicit confirmation is
-always required before the switch is suggested.
+Switching itself is forward compatible: it does not modify or recreate
+any existing device. The one-way aspect is about support, not data:
+`stable8` is closed for new development, so once you move to `stable9`
+further updates and fixes only land there — going back is not a
+supported path going forward.
+
+There are exactly two ways this script runs, and it never reads stdin:
+
+  - No flags (the default): display-only. This is what the plugin's own
+    upgrade path (WebUI "Upgrade Plugin", plugin-auto-upgrade*.sh) uses
+    on every run — purely informational, no input expected, safe to run
+    unattended.
+  - `--i-understand`: an explicit, human-typed acknowledgement on the
+    command line that the switch may proceed. Only
+    `Tools/plugin-switch-stable9.sh` should be invoked this way, by a
+    person who read the notice and decided to switch.
 
 Usage:
 
-    python3 Tools/check_stable9_migration.py [--ip 127.0.0.1] [--port 8080]
-                                              [--yes] [--simulate|--no-simulate]
-
-`--simulate` (default) only prints the notice and the manual command to
-run. `--no-simulate` additionally requires the user to type the
-confirmation phrase before pointing them at
-`Tools/plugin-switch-stable9.sh`.
+    python3 Tools/check_stable9_migration.py [--ip 127.0.0.1] [--port 8080] [--i-understand]
 """
 
 from __future__ import annotations
@@ -51,7 +54,6 @@ MIN_DOMOTICZ_VERSION = (2025, 1)  # DomoticzEx / Extended Framework available si
 DEFAULT_IP = "127.0.0.1"
 DEFAULT_PORT = "8080"
 GET_TIMEOUT = 5
-CONFIRMATION_PHRASE = "I UNDERSTAND"
 
 
 def get_domoticz_version(ip: str, port: str, timeout: int = GET_TIMEOUT) -> Tuple[Optional[Tuple[int, int]], Optional[str]]:
@@ -95,10 +97,11 @@ def display_migration_notice(version_status: str) -> None:
         "built exclusively on the Domoticz Extended Framework (DomoticzEx),\n"
         "available since Domoticz 2025.1.\n\n"
         f"{version_status}\n\n"
-        "WARNING - THIS IS A ONE-WAY MOVE:\n"
-        "  Once your devices are (re)created by Domoticz under the Extended\n"
-        "  Framework, the 'stable8' plugin can no longer read or manage them.\n"
-        "  There is no supported way back to 'stable8' after switching."
+        "NOTE - THIS MOVE IS FORWARD-ONLY:\n"
+        "  Switching itself is forward compatible: it does not modify or recreate\n"
+        "  any of your existing devices. But 'stable8' is closed for new development,\n"
+        "  so once you switch, further updates and fixes only land on 'stable9' —\n"
+        "  going back to 'stable8' afterwards is not a supported path."
     )
 
     french = (
@@ -106,10 +109,12 @@ def display_migration_notice(version_status: str) -> None:
         "ne reçoit plus que des correctifs critiques. Tous les nouveaux développements\n"
         "se poursuivent sur 'stable9', basée exclusivement sur le Framework Étendu de\n"
         "Domoticz (DomoticzEx), disponible depuis Domoticz 2025.1.\n\n"
-        "ATTENTION - CE BASCULEMENT EST IRRÉVERSIBLE :\n"
-        "  Une fois vos périphériques recréés par Domoticz sous le Framework Étendu,\n"
-        "  le plugin 'stable8' ne peut plus les lire ni les gérer. Il n'existe aucun\n"
-        "  chemin de retour supporté vers 'stable8' après le basculement."
+        "REMARQUE - CE BASCULEMENT EST À SENS UNIQUE :\n"
+        "  Le basculement lui-même est rétrocompatible : il ne modifie ni ne recrée\n"
+        "  aucun de vos périphériques existants. Mais la branche 'stable8' étant fermée\n"
+        "  aux nouveaux développements, les prochaines mises à jour et correctifs ne\n"
+        "  seront disponibles que sur 'stable9' — revenir à 'stable8' ensuite n'est\n"
+        "  pas un chemin supporté."
     )
 
     print("=" * 78)
@@ -119,14 +124,12 @@ def display_migration_notice(version_status: str) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Warn about, and optionally trigger, the stable8 -> stable9 migration")
+    parser = argparse.ArgumentParser(description="Display, and optionally acknowledge, the stable8 -> stable9 migration notice")
     parser.add_argument("--ip", default=DEFAULT_IP, help=f"Domoticz server IP/host (default: {DEFAULT_IP})")
     parser.add_argument("--port", default=DEFAULT_PORT, help=f"Domoticz web server port (default: {DEFAULT_PORT})")
     parser.add_argument("--min-version", default="2025.1", help="Minimum required Domoticz version, e.g. 2025.1")
-    parser.add_argument("--simulate", dest="simulate", action="store_true", help="Only display the notice (default)")
-    parser.add_argument("--no-simulate", dest="simulate", action="store_false", help="Require confirmation before pointing to the switch script")
-    parser.add_argument("--yes", "-y", dest="yes", action="store_true", help="Skip the interactive confirmation phrase (non-interactive use only)")
-    parser.set_defaults(simulate=True)
+    parser.add_argument("--i-understand", dest="i_understand", action="store_true",
+                         help="Explicit human acknowledgement that the switch may proceed. Never pass this from an automated/unattended caller.")
     args = parser.parse_args()
 
     mv = args.min_version.split(".")
@@ -165,26 +168,13 @@ def main() -> None:
         print("\nAborting: Domoticz version requirement not met. No changes made.")
         raise SystemExit(1)
 
-    if args.simulate:
-        print("\nDry-run: to switch to 'stable9' run (manual):")
-        print("    Tools/plugin-switch-stable9.sh")
+    if not args.i_understand:
+        print("\nThis is informational only, no changes were made.")
+        print("To switch to 'stable9', re-run explicitly on the command line:")
+        print("    Tools/plugin-switch-stable9.sh --i-understand")
         return
 
-    print(f'\nTo continue, type exactly: {CONFIRMATION_PHRASE}')
-    if args.yes:
-        confirmed = True
-    else:
-        try:
-            answer = input("> ")
-        except EOFError:
-            answer = ""
-        confirmed = answer.strip() == CONFIRMATION_PHRASE
-
-    if not confirmed:
-        print("Confirmation not received. Aborted, no changes made.")
-        raise SystemExit(1)
-
-    print("Confirmation received. You may now run: Tools/plugin-switch-stable9.sh")
+    print("\nAcknowledgement received (--i-understand). Proceeding is now allowed.")
 
 
 if __name__ == "__main__":

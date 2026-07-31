@@ -42,8 +42,8 @@ def rest_plugin_upgrade(self, verb, data, parameters):
     self.logging("Error", "************* IMPORTANT *************")
     self.logging("Error", "The 'stable8' branch no longer receives new features, only critical fixes.")
     self.logging("Error", "New development continues on 'stable9', built on the Domoticz Extended Framework.")
-    self.logging("Error", "To get further updates, run: Tools/plugin-switch-stable9.sh")
-    self.logging("Error", "This is a ONE-WAY move: there is no supported path back to 'stable8' afterwards.")
+    self.logging("Error", "To get further updates, run on the command line: Tools/plugin-switch-stable9.sh --i-understand")
+    self.logging("Error", "'stable8' is closed for new development: going back afterwards is not a supported path.")
     self.logging("Error", "************* IMPORTANT *************")
 
     self.logging("Log", "Plugin Upgrade starting: %s" %(upgrade_script))

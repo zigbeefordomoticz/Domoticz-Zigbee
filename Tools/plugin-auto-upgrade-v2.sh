@@ -192,10 +192,11 @@ check_stable9_migration_notice() {
     NOTICE_SCRIPT="$SCRIPT_DIR/check_stable9_migration.py"
 
     if [ -f "$NOTICE_SCRIPT" ]; then
-        # Informational only: remind the user that 'stable8' no longer receives
-        # feature updates and that switching to 'stable9' requires running
-        # Tools/plugin-switch-stable9.sh (a deliberate, one-way action).
-        python3 "$NOTICE_SCRIPT" --no-simulate --yes
+        # Display-only, no flags, no stdin expected: remind the user that
+        # 'stable8' no longer receives feature updates and that switching to
+        # 'stable9' requires explicitly running
+        # Tools/plugin-switch-stable9.sh --i-understand on the command line.
+        python3 "$NOTICE_SCRIPT"
         rc=$?
         echo "check_stable9_migration.py exited with code $rc"
     else
