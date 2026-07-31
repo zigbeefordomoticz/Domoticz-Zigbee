@@ -6,47 +6,84 @@ Small helper that warns the user that the `stable8` branch is closed for
 new development and that `stable9` — built exclusively on the Domoticz
 Extended Framework (`DomoticzEx`) — is where updates continue.
 
-Unlike the earlier stable7 -> stable8 check, this is NOT a Python-version
-gate: `DomoticzEx` is a capability of the running Domoticz server itself
-and cannot be reliably probed from a standalone script outside of it.
-This tool therefore cannot silently decide "you're good to go" the way
-the old Python-version check could. Its job is to make sure the user has
-explicitly acknowledged the two facts that matter before anything is
-touched:
+The Extended Framework has been available in Domoticz since version
+2025.1, so unlike the earlier "cannot be probed" assumption, this script
+queries the running Domoticz server's own JSON API
+(`/json.htm?type=command&param=getversion`) to confirm the requirement
+is met, the same way any other Domoticz JSON API client (including this
+plugin) would.
 
-  1. `stable9` requires a Domoticz build with the Extended Framework
-     available and enabled for this hardware instance.
-  2. The move is a ONE-WAY DOOR. Once Domoticz (re)creates widgets under
-     the Extended Framework, the `stable8` plugin code can no longer
-     manage them — there is no supported path back to stable8 for an
-     installation that has switched.
+If Domoticz cannot be reached (wrong --ip/--port, not running, etc.) the
+script falls back to asking the user to confirm manually rather than
+silently assuming success.
+
+This tool cannot silently decide "you're good to go" for the second,
+more important fact: the move is a ONE-WAY DOOR. Once Domoticz
+(re)creates widgets under the Extended Framework, the `stable8` plugin
+code can no longer manage them — there is no supported path back to
+stable8 for an installation that has switched. Explicit confirmation is
+always required before the switch is suggested.
 
 Usage:
 
-    python3 Tools/check_stable9_migration.py [--yes] [--simulate|--no-simulate]
+    python3 Tools/check_stable9_migration.py [--ip 127.0.0.1] [--port 8080]
+                                              [--yes] [--simulate|--no-simulate]
 
-`--simulate` (default) only prints the warning and the manual command to
-run. `--no-simulate` additionally offers to invoke
-`Tools/plugin-switch-stable9.sh` once the user has typed the
-confirmation phrase.
+`--simulate` (default) only prints the notice and the manual command to
+run. `--no-simulate` additionally requires the user to type the
+confirmation phrase before pointing them at
+`Tools/plugin-switch-stable9.sh`.
 """
 
 from __future__ import annotations
 
 import argparse
+import re
+from typing import Optional, Tuple
 
+try:
+    import requests
+except ImportError:
+    requests = None
+
+MIN_DOMOTICZ_VERSION = (2025, 1)  # DomoticzEx / Extended Framework available since 2025.1
+DEFAULT_IP = "127.0.0.1"
+DEFAULT_PORT = "8080"
+GET_TIMEOUT = 5
 CONFIRMATION_PHRASE = "I UNDERSTAND"
 
 
-def display_migration_notice() -> None:
+def get_domoticz_version(ip: str, port: str, timeout: int = GET_TIMEOUT) -> Optional[Tuple[int, int]]:
+    """Query the running Domoticz server's own JSON API for its version.
+
+    Returns a (year, release) tuple, e.g. (2025, 1), or None if Domoticz
+    could not be reached or the response could not be parsed.
+    """
+    if requests is None:
+        return None
+
+    url = f"http://{ip}:{port}/json.htm?type=command&param=getversion"
+    try:
+        response = requests.get(url, timeout=timeout)
+        response.raise_for_status()
+        payload = response.json()
+    except Exception:
+        return None
+
+    version_str = payload.get("version", "")
+    m = re.match(r"(\d+)\.(\d+)", version_str)
+    if not m:
+        return None
+    return (int(m.group(1)), int(m.group(2)))
+
+
+def display_migration_notice(version_status: str) -> None:
     english = (
         "The 'stable8' branch is now closed for new features and only receives\n"
         "critical bug fixes. All new development continues on 'stable9', which is\n"
-        "built exclusively on the Domoticz Extended Framework (DomoticzEx).\n\n"
-        "Before switching, make sure that:\n"
-        "  - Your Domoticz server exposes the Extended Framework (check your\n"
-        "    Domoticz version and Settings) — the plugin will fail to start\n"
-        "    otherwise, as 'stable9' no longer supports the legacy widget model.\n\n"
+        "built exclusively on the Domoticz Extended Framework (DomoticzEx),\n"
+        "available since Domoticz 2025.1.\n\n"
+        f"{version_status}\n\n"
         "WARNING - THIS IS A ONE-WAY MOVE:\n"
         "  Once your devices are (re)created by Domoticz under the Extended\n"
         "  Framework, the 'stable8' plugin can no longer read or manage them.\n"
@@ -57,11 +94,7 @@ def display_migration_notice() -> None:
         "La branche 'stable8' est désormais fermée aux nouvelles fonctionnalités et\n"
         "ne reçoit plus que des correctifs critiques. Tous les nouveaux développements\n"
         "se poursuivent sur 'stable9', basée exclusivement sur le Framework Étendu de\n"
-        "Domoticz (DomoticzEx).\n\n"
-        "Avant de basculer, assurez-vous que :\n"
-        "  - Votre serveur Domoticz expose le Framework Étendu (vérifiez la version\n"
-        "    de Domoticz et ses paramètres) — sans cela, le plugin ne démarrera pas,\n"
-        "    car 'stable9' ne supporte plus l'ancien modèle de widgets.\n\n"
+        "Domoticz (DomoticzEx), disponible depuis Domoticz 2025.1.\n\n"
         "ATTENTION - CE BASCULEMENT EST IRRÉVERSIBLE :\n"
         "  Une fois vos périphériques recréés par Domoticz sous le Framework Étendu,\n"
         "  le plugin 'stable8' ne peut plus les lire ni les gérer. Il n'existe aucun\n"
@@ -76,13 +109,43 @@ def display_migration_notice() -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Warn about, and optionally trigger, the stable8 -> stable9 migration")
+    parser.add_argument("--ip", default=DEFAULT_IP, help=f"Domoticz server IP/host (default: {DEFAULT_IP})")
+    parser.add_argument("--port", default=DEFAULT_PORT, help=f"Domoticz web server port (default: {DEFAULT_PORT})")
+    parser.add_argument("--min-version", default="2025.1", help="Minimum required Domoticz version, e.g. 2025.1")
     parser.add_argument("--simulate", dest="simulate", action="store_true", help="Only display the notice (default)")
-    parser.add_argument("--no-simulate", dest="simulate", action="store_false", help="Offer to run the switch script after explicit confirmation")
+    parser.add_argument("--no-simulate", dest="simulate", action="store_false", help="Require confirmation before pointing to the switch script")
     parser.add_argument("--yes", "-y", dest="yes", action="store_true", help="Skip the interactive confirmation phrase (non-interactive use only)")
     parser.set_defaults(simulate=True)
     args = parser.parse_args()
 
-    display_migration_notice()
+    mv = args.min_version.split(".")
+    min_version = (int(mv[0]), int(mv[1]) if len(mv) > 1 else 0)
+
+    detected = get_domoticz_version(args.ip, args.port)
+
+    if detected is None:
+        version_status = (
+            f"Could not automatically verify the Domoticz version at http://{args.ip}:{args.port}\n"
+            "(server unreachable or response not understood). Please confirm manually,\n"
+            "via Setup > About in Domoticz, that your version is 2025.1 or newer before switching."
+        )
+        requirement_met = None  # unknown
+    elif detected >= min_version:
+        version_status = f"Detected Domoticz {detected[0]}.{detected[1]} at http://{args.ip}:{args.port} — Extended Framework requirement satisfied."
+        requirement_met = True
+    else:
+        version_status = (
+            f"Detected Domoticz {detected[0]}.{detected[1]} at http://{args.ip}:{args.port}, which is OLDER than the "
+            f"minimum required ({min_version[0]}.{min_version[1]}) for the Extended Framework.\n"
+            "Upgrade Domoticz itself before switching to 'stable9' — the plugin will fail to start otherwise."
+        )
+        requirement_met = False
+
+    display_migration_notice(version_status)
+
+    if requirement_met is False:
+        print("\nAborting: Domoticz version requirement not met. No changes made.")
+        raise SystemExit(1)
 
     if args.simulate:
         print("\nDry-run: to switch to 'stable9' run (manual):")

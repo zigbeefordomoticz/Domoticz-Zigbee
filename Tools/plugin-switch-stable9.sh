@@ -3,20 +3,28 @@
 # Switches a Zigbee for Domoticz checkout from 'stable8' to 'stable9'.
 #
 # 'stable9' drops the legacy Domoticz widget model and requires the
-# Domoticz Extended Framework (DomoticzEx). This is a ONE-WAY move: once
-# Domoticz (re)creates devices under the Extended Framework, 'stable8'
-# can no longer manage them. There is no supported path back.
+# Domoticz Extended Framework (DomoticzEx, available since Domoticz
+# 2025.1). This is a ONE-WAY move: once Domoticz (re)creates devices
+# under the Extended Framework, 'stable8' can no longer manage them.
+# There is no supported path back.
+#
+# Usage: plugin-switch-stable9.sh [domoticz_ip] [domoticz_port]
+#   Defaults: 127.0.0.1 8080
 
 set -e
+
+DOMOTICZ_IP="${1:-127.0.0.1}"
+DOMOTICZ_PORT="${2:-8080}"
 
 # Get the directory where the script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$(dirname "$SCRIPT_DIR")"  # Go to parent directory of Tools/
 
-# Require the user to have explicitly acknowledged the one-way notice
-echo "Checking stable9 migration acknowledgement..."
-if ! python3 "$SCRIPT_DIR/check_stable9_migration.py" --no-simulate; then
-    echo "Error: migration not acknowledged. Cannot switch to stable9 branch."
+# Confirm the Domoticz version supports the Extended Framework, and
+# require the user to have explicitly acknowledged the one-way notice
+echo "Checking Domoticz version and stable9 migration acknowledgement..."
+if ! python3 "$SCRIPT_DIR/check_stable9_migration.py" --ip "$DOMOTICZ_IP" --port "$DOMOTICZ_PORT" --no-simulate; then
+    echo "Error: migration not confirmed. Cannot switch to stable9 branch."
     exit 1
 fi
 
