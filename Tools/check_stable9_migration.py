@@ -139,7 +139,13 @@ def main() -> None:
             f"Could not automatically verify the Domoticz version: {error}\n"
             "Please confirm manually, via Setup > About in Domoticz, that your version\n"
             "is 2025.1 or newer before switching. If Domoticz runs on a different host/port,\n"
-            "pass --ip/--port."
+            "pass --ip/--port.\n"
+            "If Domoticz runs in a Docker container and this script was run from the Docker\n"
+            "HOST (not via 'docker compose exec'), 127.0.0.1 on the host only reaches Domoticz\n"
+            "if that port is published to the host. Either run this script inside the\n"
+            "container (e.g. 'docker compose exec <container> bash -c \"cd <plugin_dir> &&\n"
+            "Tools/plugin-switch-stable9.sh\"', matching Tools/update_domoticz_docker_container.sh),\n"
+            "or pass --ip/--port matching the host-published address."
         )
         requirement_met = None  # unknown
     elif detected >= min_version:
