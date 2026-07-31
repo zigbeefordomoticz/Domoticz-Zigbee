@@ -11,7 +11,10 @@ The Extended Framework has been available in Domoticz since version
 queries the running Domoticz server's own JSON API
 (`/json.htm?type=command&param=getversion`) to confirm the requirement
 is met, the same way any other Domoticz JSON API client (including this
-plugin) would.
+plugin) would. It uses only the Python standard library (`urllib`) so
+it works with the system `python3` even when the plugin's virtualenv
+(and its `requests` dependency) isn't active — which is normally the
+case when this script is invoked outside the plugin.
 
 If Domoticz cannot be reached (wrong --ip/--port, not running, etc.) the
 script falls back to asking the user to confirm manually rather than
@@ -38,13 +41,11 @@ confirmation phrase before pointing them at
 from __future__ import annotations
 
 import argparse
+import json
 import re
+import urllib.error
+import urllib.request
 from typing import Optional, Tuple
-
-try:
-    import requests
-except ImportError:
-    requests = None
 
 MIN_DOMOTICZ_VERSION = (2025, 1)  # DomoticzEx / Extended Framework available since 2025.1
 DEFAULT_IP = "127.0.0.1"
@@ -53,28 +54,38 @@ GET_TIMEOUT = 5
 CONFIRMATION_PHRASE = "I UNDERSTAND"
 
 
-def get_domoticz_version(ip: str, port: str, timeout: int = GET_TIMEOUT) -> Optional[Tuple[int, int]]:
+def get_domoticz_version(ip: str, port: str, timeout: int = GET_TIMEOUT) -> Tuple[Optional[Tuple[int, int]], Optional[str]]:
     """Query the running Domoticz server's own JSON API for its version.
 
-    Returns a (year, release) tuple, e.g. (2025, 1), or None if Domoticz
-    could not be reached or the response could not be parsed.
+    Returns a (version, error) tuple: version is a (year, release) tuple,
+    e.g. (2025, 1), when successfully parsed, else None. error is a
+    human-readable explanation of what went wrong, or None on success.
     """
-    if requests is None:
-        return None
-
     url = f"http://{ip}:{port}/json.htm?type=command&param=getversion"
     try:
-        response = requests.get(url, timeout=timeout)
-        response.raise_for_status()
-        payload = response.json()
-    except Exception:
-        return None
+        with urllib.request.urlopen(url, timeout=timeout) as response:
+            status = response.status
+            body = response.read().decode("utf-8", errors="replace")
+    except urllib.error.HTTPError as e:
+        return None, f"HTTP {e.code} response from {url} (is authentication enabled on Domoticz?)"
+    except urllib.error.URLError as e:
+        return None, f"could not connect to {url} ({e.reason})"
+    except Exception as e:
+        return None, f"request to {url} failed ({e})"
+
+    if status != 200:
+        return None, f"HTTP {status} response from {url}"
+
+    try:
+        payload = json.loads(body)
+    except Exception as e:
+        return None, f"response from {url} was not valid JSON ({e}); got: {body[:120]!r}"
 
     version_str = payload.get("version", "")
     m = re.match(r"(\d+)\.(\d+)", version_str)
     if not m:
-        return None
-    return (int(m.group(1)), int(m.group(2)))
+        return None, f"'version' field missing or unparseable in response from {url}: {payload}"
+    return (int(m.group(1)), int(m.group(2))), None
 
 
 def display_migration_notice(version_status: str) -> None:
@@ -121,13 +132,14 @@ def main() -> None:
     mv = args.min_version.split(".")
     min_version = (int(mv[0]), int(mv[1]) if len(mv) > 1 else 0)
 
-    detected = get_domoticz_version(args.ip, args.port)
+    detected, error = get_domoticz_version(args.ip, args.port)
 
     if detected is None:
         version_status = (
-            f"Could not automatically verify the Domoticz version at http://{args.ip}:{args.port}\n"
-            "(server unreachable or response not understood). Please confirm manually,\n"
-            "via Setup > About in Domoticz, that your version is 2025.1 or newer before switching."
+            f"Could not automatically verify the Domoticz version: {error}\n"
+            "Please confirm manually, via Setup > About in Domoticz, that your version\n"
+            "is 2025.1 or newer before switching. If Domoticz runs on a different host/port,\n"
+            "pass --ip/--port."
         )
         requirement_met = None  # unknown
     elif detected >= min_version:
