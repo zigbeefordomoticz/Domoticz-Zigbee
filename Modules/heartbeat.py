@@ -24,11 +24,11 @@ from DevicesModules.custom_Chameleon import erl_z3_master_info
 from Modules.basicOutputs import getListofAttribute
 from Modules.casaia import pollingCasaia
 from Modules.danfoss import danfoss_room_sensor_polling
+from Modules.domoCreate import retry_failed_widget_creation
 from Modules.domoticzAbstractLayer import (find_widget_unit_from_WidgetID,
                                            is_device_ieee_in_domoticz_db)
-from Modules.domoTools import (RetreiveWidgetTypeList,
-                               reset_device_ieee_unit_if_needed,
-                               timedOutDevice)
+from Modules.domoTools import (reset_device_ieee_unit_if_needed,
+                               retrieve_widget_type_list, timedOutDevice)
 from Modules.linky import collect_ticmeter_linky
 from Modules.pairingProcess import (binding_needed_clusters_with_coordinator,
                                     processNotinDBDevices)
@@ -56,14 +56,16 @@ from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST, ReadAttributeReq,
                                     ping_devices_via_group, ping_tuya_device,
                                     read_attributes_gammatroniques_tic_meter,
                                     read_attributes_ticmeter_details,
-                                    read_attributes_ticmeter_tarif)
+                                    read_attributes_ticmeter_tarif,
+                                    refresh_zlinky_stge)
 from Modules.schneider_wiser import schneiderRenforceent
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import (ReArrangeMacCapaBasedOnModel, deviceconf_device,
-                           get_device_nickname, get_deviceconf_parameter_value,
-                           getAttributeValue, getListOfEpForCluster, is_hex,
+                           drop_stale_nwkid, get_device_nickname,
+                           get_deviceconf_parameter_value, getAttributeValue,
+                           getListOfEpForCluster, is_hex,
                            is_time_to_perform_work, mainPoweredDevice,
-                           night_shift_jobs, removeNwkInList)
+                           night_shift_jobs)
 from Modules.tuya import tuya_polling
 from Modules.tuyaTRV import tuya_switch_online
 from Modules.zb_tables_management import mgmt_rtg, mgtm_binding
@@ -91,6 +93,7 @@ ATTRIBUTE_DISCOVERY_REFRESH = (( 3600 // HEARTBEAT ) + 7)
 CHECKING_DELAY_READATTRIBUTE = (( 60 // HEARTBEAT ) + 7)
 PING_DEVICE_VIA_GROUPID = 3567 // HEARTBEAT    # Secondes ( 59minutes et 45 secondes )
 FIRST_PING_VIA_GROUP = 127 // HEARTBEAT
+WIDGET_CREATION_RETRY = 300 // HEARTBEAT       # Retry a recoverable widget-creation failure every 5 minutes
 CHECKING_TICMETER_KEY_ATTRIBUTES = (30 // HEARTBEAT)  # 30 Sec
 CHECKING_ERLZ3_KEY_ATTRIBUTES = ( 300 // HEARTBEAT )  # 5 Min
 
@@ -309,6 +312,7 @@ def pollingManufSpecificDevices(self, NwkId, HB):
         "ZLinkyPolling0702": ReadAttributeRequest_0702_ZLinky_TIC,  # Metering
         "ZLinkyPollingGlobal": ReadAttributeReq_ZLinky,             # All ZLinky Clusters/Attributes
         "PollingCusterff66": ReadAttributeRequest_ff66,             # All Manufacturer Specific ZLinky attributes
+        "PollingZLinkySTGE": refresh_zlinky_stge,                   # Read attribute 0xff66/0x0217
         "InletTempPolling": ReadAttributeRequest_0702_0017,      # Retreive Inlet Temperature
         "TICMeter_Tarif_Polling": read_attributes_ticmeter_tarif,        # Retreive Tarif
         "TICMeter_tic_specific": read_attributes_ticmeter_details,       # Retreive TICMeter details
@@ -341,7 +345,7 @@ def pollingManufSpecificDevices(self, NwkId, HB):
             if "ScheduledZLinkyRead" in self.ListOfDevices[NwkId]:
                 return
             if parameter == "ZLinkyPollingPTEC":
-                self.log.logging("Heartbeat", "Status", "Reading ZLinky Color of Day and Next Day")
+                self.log.logging("Heartbeat", "Status", "Z4D reads ZLinky Color of Day and Next Day")
 
             self.ListOfDevices[NwkId]["ScheduledZLinkyRead"] = True
             func = FUNC_MANUF[param]
@@ -922,7 +926,18 @@ def processListOfDevices(self, Devices):
 
         status = device.get("Status", {})
         if status == "failDB":
+            # Terminal failure: incomplete entry that never paired. Safe to drop.
             entriesToBeRemoved.append(NwkId)
+            continue
+
+        if status in ("failDB_NoUnit", "failDB_NoHardware"):
+            # Recoverable widget-creation failure (Domoticz refused new hardware,
+            # or no free unit was available). Keep the device - deleting it would
+            # lose the whole entry (Ep/Cluster/ClusterType) - and let the creation
+            # module retry every 5 minutes so it self-heals once the user re-enables
+            # 'Accept New Hardware' / frees units.
+            if (int(device["Heartbeat"]) % WIDGET_CREATION_RETRY) == 0:
+                retry_failed_widget_creation(self, Devices, NwkId)
             continue
 
         # Known Devices
@@ -968,7 +983,7 @@ def processListOfDevices(self, Devices):
                             self.ListOfDevices[NwkId]["IEEE"], NwkId) )
                         del self.IEEE2NWK[self.ListOfDevices[NwkId]["IEEE"]]
                     self.log.logging( "Heartbeat", "Status", "processListOfDevices - Removing the entry %s from ListOfDevice" % (NwkId))
-                    removeNwkInList(self, NwkId)
+                    drop_stale_nwkid(self, NwkId)
 
         elif status not in ("inDB", "UNKNOW", "erasePDM"):
             # Discovery process 0x004d -> 0x0042 -> 0x8042 -> 0w0045 -> 0x8045 -> 0x0043 -> 0x8043
@@ -1007,7 +1022,7 @@ def processListOfDevices(self, Devices):
         # if phase == 0:
         #    self.networkmap.start_scan( )
         if phase == 1:
-            self.log.logging("Heartbeat", "Status", "Starting Network Topology")
+            self.log.logging("Heartbeat", "Status", "Z4D starts Network Topology")
             self.networkmap.start_scan()
         elif phase == 2:
             self.log.logging( "Heartbeat", "Debug", "processListOfDevices Topology scan is possible %s" % self.ControllerLink.loadTransmit(), )
@@ -1030,11 +1045,11 @@ def check_and_reset_device_if_needed(self, Devices, NwkId):
 
     now = time.time()
     device_ieee = self.ListOfDevices[NwkId]["IEEE"]
-    ClusterTypeList = RetreiveWidgetTypeList(self, Devices, device_ieee, NwkId)
+    ClusterTypeList = retrieve_widget_type_list(self, Devices, device_ieee, NwkId)
     for WidgetEp, Widget_Idx, WidgetType in ClusterTypeList:
         
         if WidgetType in ( "Motion", "Vibration", SWITCH_SELECTORS):
-            device_unit = find_widget_unit_from_WidgetID(self, Devices, Widget_Idx )
+            device_unit = find_widget_unit_from_WidgetID(self, Widget_Idx )
             self.log.logging( "Heartbeat", "Debug", "Candidate for reseting %s %s %s %s %s" %(device_ieee, device_unit, NwkId, WidgetType, Widget_Idx))
             reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, NwkId, WidgetType, Widget_Idx, now)
 

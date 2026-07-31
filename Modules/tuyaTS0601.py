@@ -104,7 +104,7 @@ def sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mappin
     return process_sensor_data(self, _sensor_type, dps_mapping_item, value, Devices, NwkId, domo_ep)
 
 
-def ts0601_actuator( self, NwkId, command, value=None):
+def ts0601_actuator( self, NwkId, command, value=None, ep=None):
     self.log.logging("Tuya0601", "Debug", "ts0601_actuator - requesting %s %s" %(
         command, value))
 
@@ -123,7 +123,7 @@ def ts0601_actuator( self, NwkId, command, value=None):
         return False
     
     # Check if we have the command via a TS0601_DP
-    str_dp = ts0601_actuator_dp( command, dps_mapping)
+    str_dp = ts0601_actuator_dp( command, dps_mapping, ep=ep)
     if str_dp is None:
         self.log.logging("Tuya0601", "Error", "ts0601_actuator - unknow command %s in config file" % command)
         return False
@@ -265,9 +265,19 @@ def check_domo_format_req(self, dp_informations, value):
 def ts0601_extract_data_point_infos( self, model_name):
     return self.DeviceConf.get(model_name, {}).get("TS0601_DP")
 
-def ts0601_actuator_dp( command, dps_mapping):
-    return next( ( dp for dp in dps_mapping if "action_type" in dps_mapping[dp] and command == dps_mapping[dp]["action_type"] ), None, )
 
+def ts0601_actuator_dp( command, dps_mapping, ep=None):
+    matching = [ dp for dp in dps_mapping if dps_mapping[dp].get("action_type") == command ]
+    if not matching:
+        return None
+    if ep is not None:
+        # Multi-gang / multi-widget devices: several datapoints share the same
+        # action_type (e.g. "switch"). Pick the one whose domo_ep matches the
+        # widget endpoint the command originated from.
+        for dp in matching:
+            if dps_mapping[dp].get("domo_ep", "01") == ep:
+                return dp
+    return matching[0]
     
 # Sensors responses
 def ts0601_motion(self, Devices, nwkid, ep, value):

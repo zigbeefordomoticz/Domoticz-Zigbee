@@ -41,9 +41,10 @@ ZLINKY_MODE = {
 
 ZLINKY_UPGRADE_PATHS = { 
     "ZLinky_TIC": (
-    "ZLinky_TIC-historique-mono", "ZLinky_TIC-historique-tri",
-    "ZLinky_TIC-standard-mono", "ZLinky_TIC-standard-mono-prod",
-    "ZLinky_TIC-standard-tri", "ZLinky_TIC-standard-tri-prod"),
+        "ZLinky_TIC-historique-mono", "ZLinky_TIC-historique-tri",
+        "ZLinky_TIC-standard-mono", "ZLinky_TIC-standard-mono-prod",
+        "ZLinky_TIC-standard-tri", "ZLinky_TIC-standard-tri-prod"
+    ),
     "ZLinky_TIC-historique-mono": ( "ZLinky_TIC-standard-mono", "ZLinky_TIC-standard-mono-prod"),
     "ZLinky_TIC-historique-tri": ( "ZLinky_TIC-standard-tri", "ZLinky_TIC-standard-tri-prod" ),
     "ZLinky_TIC-standard-mono-prod": (),
@@ -206,12 +207,21 @@ def get_OPTARIF(self, nwkid):
     """
     def _normalize_tarif(op_tarifaire):
         """ Normalize Op Tarif """
-        if op_tarifaire.startswith("BBR"):
+        if op_tarifaire == "HCHP 22h-6h":
+            return op_tarifaire
+
+        elif op_tarifaire.startswith("BBR"):
             base_tarifaire = "TEMPO"  # Treat any BBRx as TEMPO
+
         elif op_tarifaire.startswith("EJP"):
             base_tarifaire = "EJP"  # Treat any EJPx as EJP
+
         elif op_tarifaire.startswith("HC ") or op_tarifaire.startswith("HP "):
             base_tarifaire = "HC SEM ET HC WE"
+
+        elif op_tarifaire.startswith("HCHP"):
+            base_tarifaire = "HC SEM ET HC WE"
+
         else:
             base_tarifaire = op_tarifaire
         return base_tarifaire
@@ -379,7 +389,7 @@ def update_zlinky_device_model_if_needed(self, nwkid):
             self.log.logging("ZLinky", "Log", f"Not authorized to adjust ZLinky model from {model_name} to {zlinky_conf}")
         return
 
-    self.log.logging("ZLinky", "Status", f"Adjusting ZLinky model from {model_name} to {zlinky_conf}")
+    self.log.logging("ZLinky", "Status", f"Z4D adjusts ZLinky model from {model_name} to {zlinky_conf}")
 
     # Update the model name
     device_info["Model"] = zlinky_conf
@@ -442,7 +452,7 @@ COULEUR = {
 }
 
 
-def decode_STEG(stge):
+def decode_STGE(stge):
     """ Decoding of STGE Linky frame """
 
     # Attempt to convert the input into an integer, return an empty dictionary on failure.

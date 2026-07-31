@@ -479,23 +479,30 @@ class ConfigureReporting:
                     for x in ( "Change", "MinInterval", "MaxInterval"):
                         if x not in attribute_current_configuration:
                             continue
+
+                        if x in ( "MinInterval", "MaxInterval", ) and attribute_current_configuration[x] == "0000":
+                            # This is a special case, let's not consider this as a misconfiguration, as the device is not able to report
+                            continue
+
                         if x == "Change" and not analog_value(int(attribute_current_configuration['DataType'], 16)):
                             continue
-                        if (
-                            attribute_current_configuration[x] != '' 
-                            and cluster_configuration[attribut][x] != ''
-                            and int(attribute_current_configuration[x],16) == int(cluster_configuration[attribut][x],16)
-                        ):
+                        
+                        if attribute_current_configuration[x] == '' or cluster_configuration[attribut][x] == '':
+                            # We don't have a value for this attribute, so we cannot compare
+                            continue
+
+                        if int(attribute_current_configuration[x],16) == int(cluster_configuration[attribut][x],16):
                             continue
                         
                         if not wip_flap:
-                            self.logging( "Status", f"------ We have detected a miss configuration reports for device {Nwkid} on ep {_ep} and cluster {_cluster}" ,nwkid=Nwkid)
+                            self.logging("Status", f"------ Z4D detects misconfigured reporting for device {Nwkid} on ep {_ep} and cluster {_cluster}", nwkid=Nwkid)
                         
-                        self.logging( "Status", f" - Attribut {attribut} request to force a Configure Reporting due to field {x} '{attribute_current_configuration[ x ]}' != '{cluster_configuration[ attribut ][ x]}'", nwkid=Nwkid)
+                        self.logging("Status", f" - Attribute {attribut} forces a Configure Reporting due to field {x} '{attribute_current_configuration[ x ]}' != '{cluster_configuration[ attribut ][ x]}'", nwkid=Nwkid)
                         configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, True, cluster_configuration)
                         wip_flap = True
                         cluster_update = True
                         break   # No need to check for an other difference
+
                     if cluster_update:
                         # We need to move to the next cluster, as we have requested
                         # a cluster cfg reporting update

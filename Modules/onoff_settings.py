@@ -76,17 +76,25 @@ def onoff_startup_onoff_mode(self, nwkid, ep, value):
             self.log.logging( "onoffSettings", "Error", f"onoff_startup_onoff_mode for {nwkid}/{ep} - value error {value}", nwkid )
             return
 
-    write_attribute( 
-        self, 
+    model = self.ListOfDevices[nwkid].get("Model", "")
+    attribute, data_type = ONOFF_CONFIG_SET[ "StartupOnOff"]
+    if get_deviceconf_parameter_value(self, model, "PowerOnOffStateAttribute8002", return_default=False):
+        # Tuya 0x8002 uses 0x00 Off, 0x01 On, 0x02 Previous (instead of 0xff for 0x4003)
+        attribute = "8002"
+        if value == 0xFF:
+            value = 0x02
+
+    write_attribute(
+        self,
         nwkid,
-        ZIGATE_EP, 
-        ep, 
-        ONOFF_CLUSTER_ID, 
-        "0000", 
-        "00", 
-        ONOFF_CONFIG_SET[ "StartupOnOff"][0], 
-        ONOFF_CONFIG_SET[ "StartupOnOff"][1], 
-        "%02x" %value, 
+        ZIGATE_EP,
+        ep,
+        ONOFF_CLUSTER_ID,
+        "0000",
+        "00",
+        attribute,
+        data_type,
+        "%02x" %value,
         ackIsDisabled=False, )
 
 

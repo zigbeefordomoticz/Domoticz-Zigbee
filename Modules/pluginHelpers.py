@@ -15,8 +15,7 @@ import re
 import sys
 from pathlib import Path
 
-#import DomoticzEx as Domoticz
-import Domoticz as Domoticz
+import DomoticzEx as Domoticz
 
 from Modules.tools import how_many_devices
 from Modules.domoticzAbstractLayer import domoticz_error_api
@@ -129,7 +128,7 @@ def check_python_modules_version(self):
 def check_requirements(home_folder):
 
     requirements_file = Path(home_folder) / "constraints.txt"
-    Domoticz.Status("Checking Python modules %s" % requirements_file)
+    Domoticz.Status("Z4D checks Python modules %s" % requirements_file)
 
     with open(requirements_file, 'r') as file:
         requirements_list = file.readlines()

@@ -17,7 +17,7 @@ from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
 from Modules.domoticzAbstractLayer import (
     domo_browse_widgets, domo_read_Device_Idx, domo_read_Name,
-    domoticz_error_api, retreive_widgetid_from_deviceId_unit)
+    domoticz_error_api, retrieve_widgetid_from_deviceId_unit)
 
 LIST_CLUSTERTYPE_FOR_GROUPS = ( 
     "LvlControl", "Switch", "Plug",
@@ -87,13 +87,17 @@ def rest_zGroup_lst_avlble_dev(self, verb, data, parameters):
                     _device["WidgetList"].extend( widget )
 
         if "ClusterType" in device_entry:
+            # Legacy device-level ClusterType is not tied to a specific endpoint.
+            # Use the device's main endpoint (prefer "01") rather than the leaked
+            # `ep` left over from the loop above.
+            device_level_ep = "01" if "01" in device_entry_endpoints else next(iter(device_entry_endpoints), "01")
             clusterType = device_entry["ClusterType"]
 
             for widgetID in clusterType:
                 if clusterType[widgetID] not in LIST_CLUSTERTYPE_FOR_GROUPS:
                     continue
 
-                widget = _build_device_widgetList_infos( self, widgetID, ep, self.ListOfDevices[nwkid]["ZDeviceName"] )
+                widget = _build_device_widgetList_infos( self, widgetID, device_level_ep, self.ListOfDevices[nwkid]["ZDeviceName"] )
                 _device["WidgetList"].extend( widget)
 
         if _device not in device_lst:
@@ -158,7 +162,7 @@ def _build_device_widgetList_infos( self, widgetID, ep, ZDeviceName ):
     widget_list = []
     
     for device_ieee, unit in domo_browse_widgets(self, self.Devices): 
-        widget_idx = retreive_widgetid_from_deviceId_unit(self, self.Devices, device_ieee, unit)
+        widget_idx = retrieve_widgetid_from_deviceId_unit(self, self.Devices, device_ieee, unit)
         if widget_idx != int(widgetID):
             continue
         widget = {
@@ -233,6 +237,9 @@ def rest_zGroup(self, verb, data, parameters):
     if verb == "PUT":
         return _zgroup_put( self, data, parameters)
 
+    # Unsupported verb: return the prepared (empty) response rather than None.
+    return _response
+
 
 def _zgroup_put( self, data, parameters):
     _response = prepResponseMessage(self, setupHeadersResponse())
@@ -272,6 +279,9 @@ def _zgroup_get(self, parameters):
                 ieee = self.ListOfDevices.get(dev, {}).get("IEEE", "")
             elif len(itemDevice) == 3:
                 dev, ep, ieee = itemDevice
+            else:
+                self.logging("Error", "_zgroup_get - Group %s skipping malformed device entry: %s" % (itergrp, itemDevice))
+                continue
             zgroup["Devices"].append( {"_NwkId": dev, "Ep": ep, "IEEE": ieee} )
 
         zgroup["Cluster"] = group_info.get("Cluster", "")
@@ -283,7 +293,12 @@ def _zgroup_get(self, parameters):
         zgroup["nValue"] = group_info.get("nValue", "")
         zgroup["sValue"] = group_info.get("sValue", "")
         if "Tradfri Remote" in group_info:
-            zgroup["Devices"].append(  {"_NwkId": group_info["Tradfri Remote"]} )
+            tradfri_remote = group_info["Tradfri Remote"]
+            zgroup["Devices"].append({
+                "_NwkId": tradfri_remote.get("Device Addr", ""),
+                "Ep": tradfri_remote.get("Ep", ""),
+                "IEEE": tradfri_remote.get("IEEE", ""),
+            })
 
         self.logging("Debug", f"Processed Group: {itergrp} {zgroup}")
     

@@ -16,6 +16,7 @@ import os
 import os.path
 import platform
 import time
+from collections import deque
 
 from Classes.PluginConf import SETTINGS
 from Classes.WebServer.headerResponse import (prepResponseMessage,
@@ -64,6 +65,14 @@ MIMETYPES = {
     "ttf": "application/x-font-ttf",
     "woff": "application/x-font-woff",
 }
+
+# Helper for a more defensive encoder that also catches other non-serializable 
+# types that might crop up (sets, bytes, numpy types, etc.)
+class ZigbeeJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (deque, set, frozenset)):
+            return list(obj)
+        return obj.hex() if isinstance(obj, bytes) else super().default(obj)
 
 
 class WebServer(object):
@@ -114,7 +123,7 @@ class WebServer(object):
     from Classes.WebServer.rest_recreateWidget import rest_recreate_widgets
     from Classes.WebServer.rest_Topology import (rest_netTopologie,
                                                  rest_req_topologie)
-    from Classes.WebServer.rest_ZLinky import rest_zlinky
+    from Classes.WebServer.rest_ZLinky import rest_zlinky, rest_zlinky_stge
     from Classes.WebServer.sendresponse import sendResponse
     from Classes.WebServer.tools import (DumpHTTPResponseToLog,
                                          keepConnectionAlive)
@@ -1204,7 +1213,8 @@ class WebServer(object):
                     entry = dict(self.ListOfDevices[item])
                     entry["NwkID"] = item
                     zdev_lst.append(entry)
-                _response["Data"] = json.dumps(zdev_lst, sort_keys=False)
+                #_response["Data"] = json.dumps(zdev_lst, sort_keys=False)
+                _response["Data"] = json.dumps(zdev_lst, sort_keys=False, cls=ZigbeeJSONEncoder)
             elif len(parameters) == 1:
                 device_infos = {
                     "PluginInfos": get_plugin_parameters(self, filter=True),
@@ -1217,8 +1227,28 @@ class WebServer(object):
                     device_infos["Device"] = self.ListOfDevices[self.IEEE2NWK[parameters[0]]]
 
                 _response["Data"] = json.dumps(device_infos, sort_keys=False)
+                _response["Data"] = json.dumps(device_infos, sort_keys=False, cls=ZigbeeJSONEncoder)
 
         return _response
+
+    def rest_IEEE2NWK_raw(self, verb, data, parameters):
+        """Return the IEEE2NWK dict in raw format (no conversion) for debug purposes."""
+
+        response = prepResponseMessage(self, setupHeadersResponse())
+        response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if verb != "GET" or not self.IEEE2NWK:
+            return response
+
+        if not parameters:
+            response["Data"] = json.dumps(
+                [{"IEEE": ieee, "NWK": self.IEEE2NWK[ieee]} for ieee in self.IEEE2NWK],
+                sort_keys=False,
+                cls=ZigbeeJSONEncoder,
+            )
+
+        return response
+
 
     def rest_change_channel(self, verb, data, parameters):
         domoticz_log_api("rest_change_channel - %s %s" % (verb, data))

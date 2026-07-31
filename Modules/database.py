@@ -33,6 +33,7 @@ import contextlib
 import json
 import os.path
 import time
+from collections import deque
 from pathlib import Path
 from typing import Dict
 
@@ -47,7 +48,7 @@ from Modules.pluginModels import check_found_plugin_model
 from Modules.tuyaConst import TUYA_MANUFACTURER_NAME
 from Modules.zlinky import update_zlinky_device_model_if_needed
 
-
+PLUGIN_DATABASE_RECORD_VERSION = 4
 
 CIE_ATTRIBUTES = {
     "Version", 
@@ -212,11 +213,12 @@ def LoadDeviceList(self):
 
         self.log.logging("Database", "Status", "Z4D loads %s entries from %s" % (len(self.ListOfDevices), device_list_txt_filename))
 
-        self.log.logging("Database", "Debug", "LoadDeviceList - DeviceList filename : %s" % device_list_txt_filename)
-        Modules.tools.helper_versionFile(device_list_txt_filename, self.pluginconf.pluginConf["numDeviceListVersion"])
 
         # Keep the Size of the DeviceList in order to check changes
         self.DeviceListSize = os.path.getsize(device_list_txt_filename)
+        
+    self.log.logging("Database", "Status", "Z4D creates a versioned backup of %s" % device_list_txt_filename)
+    Modules.tools.rotate_file_versions(device_list_txt_filename, self.pluginconf.pluginConf["numDeviceListVersion"])
 
     cleanup_table_entries( self)
 
@@ -234,6 +236,9 @@ def LoadDeviceList(self):
         # Cleaning OTA structure if needed
         cleanup_ota(self, addr)
         
+        if self.pluginconf.pluginConf.get("resetOTAUpdate"):
+            force_removal_ota_update(self, addr)
+
         # Fixing TS0601 which has been removed.
         hack_ts0601(self, addr)
         
@@ -251,18 +256,18 @@ def LoadDeviceList(self):
 
         if self.pluginconf.pluginConf["resetReadAttributes"]:
             self.log.logging("Database", "Log", "ReadAttributeReq - Reset ReadAttributes data %s" % addr)
-            Modules.tools.reset_datastruct(self, "ReadAttributes", addr)
+            Modules.tools.reset_device_attribute(self, "ReadAttributes", addr)
 
         if self.pluginconf.pluginConf["resetConfigureReporting"]:
             self.log.logging("Database", "Log", "Reset ConfigureReporting data %s" % addr)
-            Modules.tools.reset_datastruct(self, STORE_CONFIGURE_REPORTING, addr)
-            Modules.tools.reset_datastruct(self, STORE_READ_CONFIGURE_REPORTING, addr)
+            Modules.tools.reset_device_attribute(self, STORE_CONFIGURE_REPORTING, addr)
+            Modules.tools.reset_device_attribute(self, STORE_READ_CONFIGURE_REPORTING, addr)
             
         if ( 
             STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[ addr ] 
             and "Request" in self.ListOfDevices[ addr ][STORE_READ_CONFIGURE_REPORTING]
         ):
-            Modules.tools.reset_datastruct(self, STORE_READ_CONFIGURE_REPORTING, addr)
+            Modules.tools.reset_device_attribute(self, STORE_READ_CONFIGURE_REPORTING, addr)
 
         if (
             "Param" in self.ListOfDevices[addr] 
@@ -317,9 +322,15 @@ def loadTxtDatabase(self, dbName):
                 continue
             try:
                 dlVal = eval(val)  # nosec B307
+
             except (SyntaxError, NameError, TypeError, ZeroDivisionError):
                 self.log.logging("Database", "Error", "LoadDeviceList failed on %s" % val)
                 continue
+
+            except Exception as e:
+                self.log.logging("Database", "Error", f"LoadDeviceList unexpected error on {val} : {str(e)}")
+                continue
+
             self.log.logging("Database", "Debug", "LoadDeviceList - " + str(key) + " => dlVal " + str(dlVal), key)
             if not dlVal.get("Version"):
                 if key == "0000":  # Bug fixed in later version
@@ -327,8 +338,8 @@ def loadTxtDatabase(self, dbName):
                 self.log.logging("Database", "Error", "LoadDeviceList - entry " + key + " not loaded - not Version 3 - " + str(dlVal))
                 res = "Failed"
                 continue
-            if dlVal["Version"] != "3":
-                self.log.logging("Database", "Error", "LoadDeviceList - entry " + key + " not loaded - not Version 3 - " + str(dlVal))
+            if int(dlVal["Version"]) > int(PLUGIN_DATABASE_RECORD_VERSION):
+                self.log.logging("Database", "Error", f"LoadDeviceList - entry {key} not loaded - not Version {PLUGIN_DATABASE_RECORD_VERSION} or below\n" + str(dlVal))
                 res = "Failed"
                 continue
             else:
@@ -399,8 +410,11 @@ def is_domoticz_recent(self, dz_timestamp, device_list_txt_filename):
         return True
     return False
 
+def request_flush_plugin_listofdevices(self):
+    self.flush_list_of_devices = True
 
-def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
+
+def flush_plugin_listofdevice(self):  # sourcery skip: merge-nested-ifs
     """Persist the in-memory DeviceList to disk and Domoticz storage.
 
     Uses heartbeat counting to throttle writes. Will write both legacy text
@@ -410,35 +424,36 @@ def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
     Args:
         count: Number of heartbeats to wait between writes
     """
-    if self.HBcount < count:
-        self.HBcount = self.HBcount + 1
-        return
-
     if self.log:
-        self.log.logging("Database", "Debug", "WriteDeviceList %s %s" %(self.HBcount, count))
+        self.log.logging("Database", "Debug", "flush_plugin_listofdevice")
 
     if self.pluginconf.pluginConf["pluginData"] is None or self.DeviceListName is None:
         if self.log:
-            self.log.logging("Database", "Error", "WriteDeviceList - self.pluginconf.pluginConf['pluginData']: %s , self.DeviceListName: %s" % (
+            self.log.logging("Database", "Error", "flush_plugin_listofdevice - self.pluginconf.pluginConf['pluginData']: %s , self.DeviceListName: %s" % (
                 self.pluginconf.pluginConf["pluginData"], self.DeviceListName))
         return
 
     if self.pluginconf.pluginConf["expJsonDatabase"]:
         _write_DeviceList_json(self)
 
+    # 1st we write the text file as it is the legacy format and we want to be sure to have it updated even if Domoticz Db write fails for some reason. 
+    # We will have always a backup of the database in the text file. Finally as by default we read the most recent between Domoticz Db and text file.
     _write_DeviceList_txt(self)
 
     use_domoticz_db = self.pluginconf.pluginConf.get("useDomoticzDb")
     store_in_domoticz_db = self.pluginconf.pluginConf.get("storeDomoticzDb")
-    self.log.logging("Database", "Debug", f"WriteDeviceList - useDomoticzDb: {use_domoticz_db} storeDomoticzDb: {store_in_domoticz_db}")
+    self.log.logging("Database", "Debug", f"flush_plugin_listofdevice - useDomoticzDb: {use_domoticz_db} storeDomoticzDb: {store_in_domoticz_db}")
 
     if ( Modules.tools.is_domoticz_db_available(self) and ( use_domoticz_db and store_in_domoticz_db)):
         if _write_DeviceList_Domoticz(self) is None:
             # An error occured. Probably Dz.Configuration() is not available.
-            self.log.logging("Database", "Error", "WriteDeviceList - flush Plugin db to Domoticz failed, we secure it to %s file" % self.DeviceListName)
+            self.log.logging("Database", "Error", "flush_plugin_listofdevice - flush Plugin db to Domoticz failed, we secure it to %s file" % self.DeviceListName)
             _write_DeviceList_txt(self)
 
     self.HBcount = 0
+    self.flush_list_of_devices = False
+
+
 def _write_DeviceList_txt(self):
     """Write device list in legacy text format.
 
@@ -468,26 +483,32 @@ def _write_DeviceList_txt(self):
         with open(_tmpFileName, "wt", encoding='utf-8') as file:
             for key, value in snapshot:
                 try:
-                    file.write(key + " : " + str(value) + "\n")
+                    safe_value = _flatten_deques(value)  # converts deque -> list
+                    file.write(f"{key} : {repr(safe_value)}\n")
                     _count += 1
+
                 except UnicodeEncodeError:
                     self.log.logging( "Database", "Error", "UnicodeEncodeError while while saving %s : %s on file" %(
                         key, value))
                     continue
+
                 except ValueError:
                     self.log.logging( "Database", "Error", "ValueError while saving %s : %s on file" %(
                         key, value))
                     continue
+
             # Make sure the bytes hit the disk before we swap the file in.
+            self.log.logging("Database", "Debug", "_write_DeviceList_txt - flush Plugin db to %s" % _DeviceListFileName)
             file.flush()
             os.fsync(file.fileno())
+
         # Atomic replace: the target is either the previous content or the
         # fully written new content, never a partial file.
         os.replace(_tmpFileName, _DeviceListFileName)
-        self.log.logging("Database", "Debug", "WriteDeviceList - flush Plugin db to %s" % _DeviceListFileName)
-        
+        self.log.logging("Database", "Debug", "_write_DeviceList_txt - flush Plugin db to %s" % _DeviceListFileName)
+
     except FileNotFoundError:
-        self.log.logging( "Database", "Error", "WriteDeviceList - File not found >%s<" %_DeviceListFileName)
+        self.log.logging( "Database", "Error", "_write_DeviceList_txt - File not found >%s<" %_DeviceListFileName)
 
     except IOError:
         self.log.logging( "Database", "Error", "Error while Writing plugin Database %s" % _DeviceListFileName)
@@ -530,19 +551,62 @@ def _write_DeviceList_json(self):
                 os.remove(_tmpFileName)
         except OSError:
             pass
-    self.log.logging("Database", "Debug", "WriteDeviceList - flush Plugin db to %s" % _DeviceListFileName)
+    self.log.logging("Database", "Debug", "_write_DeviceList_json - flush Plugin db to %s" % _DeviceListFileName)
 
 
 def _write_DeviceList_Domoticz(self):
-    """Store device list in Domoticz plugin configuration.
-
-    Retries up to 3 times on concurrent-modification errors before giving up.
-    Returns None on failure so the caller falls back to the txt-file path.
     """
-    ListOfDevices_for_save = self.ListOfDevices.copy()
+    Store device list in Domoticz plugin configuration.
 
-    self.log.logging("Database", "Log", f"Plugin Database flushed on Domoticz {len(self.ListOfDevices)} records")
-    return setConfigItem( Key="ListOfDevices", Attribute="b64-devicelist", Value={"TimeStamp": time.time(), "b64-devicelist": ListOfDevices_for_save} )
+    Creates a JSON-safe snapshot of the device list and stores it
+    with a timestamp in Domoticz plugin configuration storage.
+    """
+
+    ListOfDevices_for_save = _flatten_deques(self.ListOfDevices)
+
+    self.log.logging(
+        "Database",
+        "Log",
+        f"Plugin Database flushed on Domoticz {len(self.ListOfDevices)} records"
+    )
+
+    return setConfigItem(
+        Key="ListOfDevices",
+        Attribute="b64-devicelist",
+        Value={
+            "TimeStamp": time.time(),
+            "b64-devicelist": ListOfDevices_for_save
+        }
+    )
+
+
+def _sanitize_devices(devices):
+    """
+    Convert ListOfDevices into JSON-serializable structure.
+    """
+    def sanitize(value):
+        if isinstance(value, deque):
+            return list(value)
+        if isinstance(value, dict):
+            return {k: sanitize(v) for k, v in value.items()}
+        if isinstance(value, list):
+            return [sanitize(v) for v in value]
+        return value
+
+    return sanitize(devices)
+
+
+def _flatten_deques(obj):
+    if isinstance(obj, deque):
+        return list(obj)
+
+    if isinstance(obj, dict):
+        return {k: _flatten_deques(v) for k, v in obj.items()}
+
+    if isinstance(obj, list):
+        return [_flatten_deques(v) for v in obj]
+
+    return obj
 
 
 def importDeviceConf(self):
@@ -571,7 +635,7 @@ def importDeviceConf(self):
         if iterDevType == "":
             del self.DeviceConf[iterDevType]
 
-    self.log.logging("Database", "Status", "Z4D loaded %s configuration from legacy database." %len(self.DeviceConf))
+    self.log.logging("Database", "Status", "Z4D loads %s configuration from legacy database." % len(self.DeviceConf))
 
 
 def import_local_device_conf(self):
@@ -621,7 +685,7 @@ def import_local_device_conf(self):
                     self.log.logging( "Database", "Debug", "--> Config for %s" % ( str(device_model_name)) )
                     self.DeviceConf[device_model_name] = dict(model_definition)
                     
-                    self.log.logging( "Database", "Status", f"++ Overwrite standard configuration model {device_model_name} with {filename}" )
+                    self.log.logging("Database", "Status", f"++ Overwrite standard configuration model {device_model_name} with {filename}")
 
                     if "Identifier" in model_definition:
                         self.log.logging( "Database", "Debug", "--> Identifier found %s" % (str(model_definition["Identifier"])) )
@@ -658,6 +722,7 @@ def checkDevices2LOD(self, Devices):
         self.ListOfDevices[nwkid]["ConsistencyCheck"] = ""
         if self.ListOfDevices[nwkid].get("Status") == "inDB":
             self.ListOfDevices[nwkid]["ConsistencyCheck"] = next(("ok" for dev in Devices if Devices[dev].DeviceID == self.ListOfDevices[nwkid]["IEEE"]), "not in DZ")
+
 
 def checkListOfDevice2Devices(self, Devices):
     """Verify Domoticz widgets map to known plugin devices.
@@ -758,7 +823,7 @@ def CheckDeviceList(self, key, val):
     if key == "0000":
         self.ListOfDevices[key] = {"Status": ""}
     else:
-        Modules.tools.initDeviceInList(self, key)
+        Modules.tools.initialize_device_record(self, key)
 
     self.ListOfDevices[key]["RIA"] = "10"
 
@@ -797,7 +862,7 @@ def CheckDeviceList(self, key, val):
             OldModel = self.ListOfDevices[key][attribute]
             self.ListOfDevices[key][attribute] = self.ListOfDevices[key][attribute].replace("/", "")
             if OldModel != self.ListOfDevices[key][attribute]:
-                self.log.logging("Database", "Status", "Z4D adjusted Model from %s to %s" % (
+                self.log.logging("Database", "Status", "Z4D adjusts Model from %s to %s" % (
                     OldModel, self.ListOfDevices[key][attribute]))
 
     self.ListOfDevices[key]["Health"] = ""
@@ -1171,7 +1236,7 @@ def profalux_fix_remote_device_model(self):
         if self.ListOfDevices[x]["MacCapa"] != "80":
             continue
         if "Model" in self.ListOfDevices[x] and self.ListOfDevices[x]["Model"] != "Telecommande-Profalux":
-            self.log.logging( "Profalux", "Status", "Z4D forces Model Name from %s to %s" % (
+            self.log.logging("Profalux", "Status", "Z4D forces Model from %s to %s" % (
                 x, self.ListOfDevices[x]["Model"],), x)
             self.ListOfDevices[x]["Model"] = "Telecommande-Profalux"
 
@@ -1239,7 +1304,7 @@ def hack_ts0601_rename_model( self, nwkid, modelName, manufacturer_name):
     suggested_model = check_found_plugin_model( self, modelName, manufacturer_name=manufacturer_name, manufacturer_code=None, device_id=None )
     
     if self.ListOfDevices[ nwkid ][ 'Model' ] != suggested_model:
-        self.log.logging("Tuya", "Status", "Z4D adjusts Model name from %s to %s" %( modelName, suggested_model))
+        self.log.logging("Tuya", "Status", "Z4D adjusts Model from %s to %s" % (modelName, suggested_model))
         self.ListOfDevices[ nwkid ][ 'Model' ] = suggested_model
 
 
@@ -1287,6 +1352,12 @@ def cleanup_ota(self, nwkid):
     if clean_ota:
         # Replace OTAUpgrade dict with the cleaned one
         self.ListOfDevices[nwkid]["OTAUpgrade"] = clean_ota
+
+def force_removal_ota_update(self, nwkid):
+    """
+    force removal of OTAUpdate entry if it exists
+    """
+    self.ListOfDevices.get(nwkid, {}).pop("OTAUpdate", None)
 
 
 def update_gamma_troniques_attributes_at_startup(self, nwkid):

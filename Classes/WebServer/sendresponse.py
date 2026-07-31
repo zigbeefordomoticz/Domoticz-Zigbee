@@ -143,11 +143,12 @@ def prepare_http_response( self, response_dict, gziped=False, deflated=False , c
         response_body += zlib_compress.flush()
         self.logging( "Debug", "Compression from %s to %s (%s %%)" % (orig_size, len(response_body), int(100 - (len(response_body) / orig_size) * 100)), )
 
-    # Content-Length set to the body sent. If compressed this has to be the 
-    http_response += f"Content-Length: {len(response_body)}\r\n"
-
     if chunked:
+        # In chunked mode, it is forbidden to send Content-Length
         http_response += "Transfer-Encoding: chunked\r\n"
+    else:
+        # Content-Length set to the body sent. If compressed this has to be the
+        http_response += f"Content-Length: {len(response_body)}\r\n"
 
     http_response += "\r\n"
     self.logging("Debug", f"{http_response}")

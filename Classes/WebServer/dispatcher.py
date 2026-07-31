@@ -81,12 +81,14 @@ def setup_list_rest_commands( self ):
         {"Name": "zdevice-name", "Verbs": {"GET", "PUT", "DELETE"}, "function": self.rest_zDevice_name},
         {"Name": "zdevice-raw", "Verbs": {"GET", "PUT"}, "function": self.rest_zDevice_raw},
         {"Name": "zdevice", "Verbs": {"GET", "DELETE"}, "function": self.rest_zDevice},
+        {"Name": "ieee2nwk-raw", "Verbs": {"GET"}, "function": self.rest_IEEE2NWK_raw},
         {"Name": "zgroup-list-available-device", "Verbs": {"GET"}, "function": self.rest_zGroup_lst_avlble_dev },
         {"Name": "zgroup", "Verbs": {"GET", "PUT"}, "function": self.rest_zGroup},
         {"Name": "zigate-erase-PDM", "Verbs": {"GET"}, "function": self.rest_zigate_erase_PDM},
         {"Name": "zigate-mode", "Verbs": {"GET"}, "function": self.rest_zigate_mode},
         {"Name": "zigate", "Verbs": {"GET"}, "function": self.rest_zigate },
         {"Name": "zlinky", "Verbs": {"GET"}, "function": self.rest_zlinky },
+        {"Name": "zlinky-stge", "Verbs": {"GET"}, "function": self.rest_zlinky_stge },
         {"Name": "coordinator-erase-PDM", "Verbs": {"GET"}, "function": self.rest_zigate_erase_PDM},
         {"Name": "coordinator-mode", "Verbs": {"GET"}, "function": self.rest_zigate_mode},
         {"Name": "coordinator", "Verbs": {"GET"}, "function": self.rest_zigate}, 
@@ -151,7 +153,7 @@ def execute_rest_command(self, verb, data, version, command, parameters):
 def prepare_help_response(self):
     response = prepResponseMessage(self, setupHeadersResponse())
     response["Data"] = json.dumps({
-        x: {"Verbs": self.REST_COMMANDS[x]["Verbs"]} for x in self.REST_COMMANDS
+        x: {"Verbs": sorted(self.REST_COMMANDS[x]["Verbs"])} for x in self.REST_COMMANDS
     })
     return response
 

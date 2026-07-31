@@ -19,7 +19,7 @@ from Modules.readAttributes import (ReadAttributeReq_Scheduled_ZLinky,
 from Modules.tools import (checkAndStoreAttributeValue,
                            get_device_config_param, getAttributeValue)
 from Modules.zlinky import (ZLINK_CONF_MODEL, ZLinky_TIC_COMMAND,
-                            convert_kva_to_ampere, decode_STEG,
+                            convert_kva_to_ampere, decode_STGE,
                             get_linky_mode_from_ep, get_ltarf, get_OPTARIF,
                             get_ptec, get_tarif_color, linky_mode,
                             store_ZLinky_infos,
@@ -174,7 +174,7 @@ def _zlinky_update_color(self, nwkid, op_tarifaire, previous_color, new_color):
 
         if ptect_value and ptect_value != new_color:
             # Looks like the PTEC info is not aligned with the current color !
-            self.log.logging("ZLinky", "Status", f"Requesting PTEC as not inline op_tarifaire: {op_tarifaire} ptec: {ptect_value} to prev_volor: {previous_color} new_color: {new_color}", nwkid)
+            self.log.logging("ZLinky", "Status", f"Z4D requests PTEC as not inline op_tarifaire: {op_tarifaire} ptec: {ptect_value} to prev_color: {previous_color} new_color: {new_color}", nwkid)
             ReadAttributeReq_Scheduled_ZLinky(self, nwkid)
             zlinky_color_tarif(self, nwkid, new_color)
         return
@@ -195,7 +195,7 @@ def _zlinky_update_color(self, nwkid, op_tarifaire, previous_color, new_color):
 
     self.log.logging("ZLinky", "Debug", f"_zlinky_update_color - LTARF >{ltarf_value}<", nwkid)
     if ltarf_value and ltarf_value != new_color:
-        self.log.logging("ZLinky", "Status", f"Requesting LTARF (0xff66) as not inline {ltarf_value} to {previous_color}/{new_color}", nwkid)
+        self.log.logging("ZLinky", "Status", f"Z4D requests LTARF (0xff66) as not inline {ltarf_value} to {previous_color}/{new_color}", nwkid)
         ReadAttributeRequest_ff66(self, nwkid)
         zlinky_color_tarif(self, nwkid, new_color)
 
@@ -780,15 +780,18 @@ def zlinky_cluster_lixee_private(self, domoticz_devices, nwkid, ep, cluster, att
     elif attribut == "0217":
         # Standard : STGE
         self.log.logging( "ZLinky", "Log", "STGE raw Value: %s" % ( value ))
-        try:
-            stge = binascii.unhexlify( value ).decode("utf-8")
-            self.log.logging( "ZLinky", "Log", "STGE unhexlify Value: %s/%s" % ( value, stge ))
-        except Exception as e:
-            self.log.logging( "ZLinky", "Log", "STGE Value: %s" % ( value ))
+        if isinstance(value,str):
             stge = value
+        else:
+            try:
+                stge = binascii.unhexlify( value ).decode("utf-8")
+                self.log.logging( "ZLinky", "Log", "STGE unhexlify Value: %s/%s" % ( value, stge ))
+            except Exception as e:
+                self.log.logging( "ZLinky", "Log", "STGE Value: %s" % ( value ))
+                stge = value
 
-        self.log.logging( "ZLinky", "Log", "STGE decoded %s : %s" % ( stge, decode_STEG( stge ) ))
-        store_ZLinky_infos( self, nwkid, "STGE", decode_STEG( stge ))
+        self.log.logging( "ZLinky", "Log", "STGE decoded %s : %s" % ( stge, decode_STGE( stge ) ))
+        store_ZLinky_infos( self, nwkid, "STGE", decode_STGE( stge ))
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, stge)
         
         process_tomorrow_color(self, domoticz_devices, nwkid)

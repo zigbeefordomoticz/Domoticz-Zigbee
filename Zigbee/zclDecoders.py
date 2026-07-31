@@ -25,6 +25,7 @@ from Modules.zigateConsts import (SIZE_DATA_TYPE, ZIGATE_EP, composite_value,
 from Zigbee.encoder_tools import decode_endian_data, encapsulate_plugin_frame
 from Zigbee.zclRawCommands import zcl_raw_default_response
 
+MALFORMED_COMMAND = "80"
 
 def is_duplicate_zcl_frame(self, nwkid, cluster_id, sqn, default_response_disable=False):
     """
@@ -282,7 +283,7 @@ def buildframe_foundation_cluster(self, fcf, disable_default_response, command, 
 
 def foundation_cluster_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     # 01 0000f0010023020023030021040023050021060030070021080021090021fdff21
-    self.log.logging("zclDecoder", "Debug", "buildframe_discover_attribute_response - Data: %s" % Data)
+    self.log.logging("zclDecoder", "Debug", "86400 - Data: %s" % Data)
     
     discovery_complete = Data[:2]
     buildPayload = "f7" + discovery_complete
@@ -300,9 +301,9 @@ def foundation_cluster_discover_attribute_response(self, frame, Sqn, SrcNwkId, S
 
 
 def foundation_cluster_read_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
-    self.log.logging("zclDecoder", "Debug", "buildframe_read_attribute_request - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data), SrcNwkId)
+    self.log.logging("zclDecoder", "Debug", "foundation_cluster_read_attribute_request - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data), SrcNwkId)
     if len(Data) % 4 != 0:
-        self.log.logging("zclDecoder", "Debug", "Most Likely Livolo Frame : %s (%s)" % (Data, len(Data)), SrcNwkId)
+        self.log.logging("zclDecoder", "Debug", "foundation_cluster_read_attribute_request Most Likely Livolo Frame : %s (%s)" % (Data, len(Data)), SrcNwkId)
         return frame
 
     ManufSpec = "00"
@@ -325,7 +326,7 @@ def foundation_cluster_read_attribute_request(self, frame, Sqn, SrcNwkId, SrcEnd
 
 
 def foundation_cluster_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
-    self.log.logging("zclDecoder", "Debug", "buildframe_write_attribute_request - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data), SrcNwkId)
+    self.log.logging("zclDecoder", "Debug", "foundation_cluster_write_attribute_request - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data), SrcNwkId)
 
     ManufSpec = "00"
     ManufCode = "0000"
@@ -346,7 +347,7 @@ def foundation_cluster_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEn
         
         idx, size, value = extract_value_size(self, Data, idx, DType )
         if value is None and idx is None:
-            decoding_error(self, "buildframe_write_attribute_request", Sqn, SrcNwkId, SrcEndPoint, ClusterId, Attribute, DType, idx=idx, buildPayload=buildPayload, frame=frame, Data=Data)
+            decoding_error(self, "foundation_cluster_write_attribute_request", Sqn, SrcNwkId, SrcEndPoint, ClusterId, Attribute, DType, idx=idx, buildPayload=buildPayload, frame=frame, Data=Data)
             return frame
 
         lenData = "%04x" % (size // 2)
@@ -358,7 +359,7 @@ def foundation_cluster_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEn
 
 
 def foundation_cluster_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
-    self.log.logging("zclDecoder", "Debug", "buildframe_write_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data), SrcNwkId)
+    self.log.logging("zclDecoder", "Debug", "foundation_cluster_write_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data), SrcNwkId)
 
     # This is based on assumption that we only Write 1 attribute at a time
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId + "0000" + Data
@@ -366,7 +367,7 @@ def foundation_cluster_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcE
 
 
 def foundation_cluster_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
-    self.log.logging("zclDecoder", "Debug", "buildframe_read_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data), SrcNwkId)
+    self.log.logging("zclDecoder", "Debug", "foundation_cluster_read_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data), SrcNwkId)
 
     nbAttribute = 0
     idx = 0
@@ -387,7 +388,7 @@ def foundation_cluster_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEn
         idx += 2
         idx, size, value = extract_value_size(self, Data, idx, DType )
         if value is None and idx is None:
-            decoding_error(self, "buildframe_read_attribute_response", Sqn, SrcNwkId, SrcEndPoint, ClusterId, Attribute, DType, idx=idx, buildPayload=buildPayload, frame=frame, Data=Data)
+            decoding_error(self, "foundation_cluster_read_attribute_response", Sqn, SrcNwkId, SrcEndPoint, ClusterId, Attribute, DType, idx=idx, buildPayload=buildPayload, frame=frame, Data=Data)
             return frame
 
         lenData = "%04x" % (size // 2)
@@ -398,7 +399,7 @@ def foundation_cluster_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEn
 
 
 def foundation_cluster_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
-    self.log.logging("zclDecoder", "Debug", "buildframe_report_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data), SrcNwkId)
+    self.log.logging("zclDecoder", "Debug", "foundation_cluster_report_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data), SrcNwkId)
 
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
     nbAttribute = 0
@@ -412,7 +413,7 @@ def foundation_cluster_report_attribute_response(self, frame, Sqn, SrcNwkId, Src
         idx += 2
         idx, size, value = extract_value_size(self, Data, idx, DType )
         if value is None and idx is None:
-            decoding_error(self, "buildframe_report_attribute_response", Sqn, SrcNwkId, SrcEndPoint, ClusterId, Attribute, DType, idx=idx, buildPayload=buildPayload, frame=frame, Data=Data)
+            decoding_error(self, "foundation_cluster_report_attribute_response", Sqn, SrcNwkId, SrcEndPoint, ClusterId, Attribute, DType, idx=idx, buildPayload=buildPayload, frame=frame, Data=Data)
             return frame
 
         lenData = "%04x" % (size // 2)
@@ -423,18 +424,18 @@ def foundation_cluster_report_attribute_response(self, frame, Sqn, SrcNwkId, Src
 
 
 def foundation_cluster_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
-    self.log.logging("zclDecoder", "Debug", "buildframe_configure_reporting_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data), SrcNwkId)
+
+    self.log.logging("zclDecoder", "Debug", "foundation_cluster_configure_reporting_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data), SrcNwkId)
+
 
     if len(Data) == 2:
-        # The response tells that all Attributes have been correctly configured
-        # in that case Data == Status as Direction and Attribute are omitted.
-        nbAttribute = 1
         buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId + Data
+
     else:
-        # The response details the status per attribute
         idx = 0
         nbAttribute = 0
         buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
+
         while idx < len(Data) and len(Data[idx:]) >= 8:
             nbAttribute += 1
             Status = Data[idx : idx + 2]
@@ -445,11 +446,22 @@ def foundation_cluster_configure_reporting_response(self, frame, Sqn, SrcNwkId, 
             idx += 4
             buildPayload += Attribute + Status
 
+        if idx < len(Data):
+            # leftover bytes don't form a complete status record: device sent a truncated/malformed response
+            self.log.logging(
+                "zclDecoder",
+                "Log",
+                "foundation_cluster_configure_reporting_response - truncated Configure Reporting Response from %s, discarding %s leftover byte(s): %s"
+                % (SrcNwkId, len(Data[idx:]) // 2, Data[idx:]),
+                SrcNwkId,
+            )
+            buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId + MALFORMED_COMMAND
+
     return encapsulate_plugin_frame("8120", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
 def foundation_cluster_read_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
-    self.log.logging("zclDecoder", "Debug", "buildframe_read_configure_reporting_response - %s %s %s Data: %s" % (
+    self.log.logging("zclDecoder", "Debug", "foundation_cluster_read_configure_reporting_response - %s %s %s Data: %s" % (
         SrcNwkId, SrcEndPoint, ClusterId, Data), SrcNwkId)
   
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId  
@@ -492,7 +504,7 @@ def foundation_cluster_read_configure_reporting_response(self, frame, Sqn, SrcNw
                 buildPayload += timeout
                 idx += 1
                                       
-            self.log.logging("zclDecoder", "Debug", "buildframe_read_configure_reporting_response - NwkId: %s Ep: %s Cluster: %s Attribute: %s Status: %s DataType: %s Min: %s Max: %s Change: %s" % (
+            self.log.logging("zclDecoder", "Debug", "foundation_cluster_read_configure_reporting_response - NwkId: %s Ep: %s Cluster: %s Attribute: %s Status: %s DataType: %s Min: %s Max: %s Change: %s" % (
                 SrcNwkId, SrcEndPoint, ClusterId, attribute, status, DataType, MinInterval, MaxInterval, Change), SrcNwkId)
 
     return encapsulate_plugin_frame("8122", buildPayload, frame[len(frame) - 4 : len(frame) - 2])    
@@ -503,15 +515,15 @@ def foundation_cluster_read_configure_reporting_response(self, frame, Sqn, SrcNw
 
 def buildframe_for_cluster_0003(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data ):
     if Command == "00":  # Identify
-        self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_0003 - Identify command Time: %s" % Data[:4], SrcNwkId)
+        self.log.logging("zclDecoder", "Debug", "foundation_cluster_0003 - Identify command Time: %s" % Data[:4], SrcNwkId)
         return None
 
     if Command == "01":  # Identify Query
-        self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_0003 - Identify Query ", SrcNwkId)
+        self.log.logging("zclDecoder", "Debug", "foundation_cluster_0003 - Identify Query ", SrcNwkId)
         return None
 
     if Command == "40":  # Trigger effect
-        self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_0003 - Trigger Effect: %s   %s" % ( Data[:2], Data[2:4]), SrcNwkId)
+        self.log.logging("zclDecoder", "Debug", "foundation_cluster_0003 - Trigger Effect: %s   %s" % ( Data[:2], Data[2:4]), SrcNwkId)
         return None
 
 

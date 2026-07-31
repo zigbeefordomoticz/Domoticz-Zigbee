@@ -19,8 +19,8 @@
 #
 #  Group management rely on 2 files:
 #
-#  - ZigateGroupsConfig -xx.json which contains the Group configuration/definition
-#  - GroupsList-xx.pck which contains somehow a cash of what is available on each devices
+#  - ZigbeeGroupsConfig -xx.json which contains the Group configuration/definition
+#  - GroupsList-xx.pck which contains somehow a cache of what is available on each devices
 #                      (1) will be converted to a JSON format
 #
 #
@@ -42,8 +42,8 @@
 #
 #  SYNOPSIS
 #
-#  - At plugin start, if the group cash file exist, read and populate the data structure.
-#                     if the cash doesn't exist, request to each Main Powered device tfor their existing group membership.
+#  - At plugin start, if the group cache file exist, read and populate the data structure.
+#                     if the cache doesn't exist, request to each Main Powered device for their existing group membership.
 #                     collect the information and populate the data structure accordingly.
 #
 #  - When the data structure is fully loaded, the object will be full operational and able to handle the following request
@@ -56,13 +56,8 @@
 #      - Managing device short address changes ( could be better to store the IEEE )
 #
 
-import json
-import os
-import pickle
 
-from Classes.GroupMgtv2.GrpMigration import GrpMgtv2Migration
 from Classes.GroupMgtv2.GrpServices import scan_device_for_grp_membership
-from Classes.LoggingManagement import LoggingManagement
 from Modules.zigateConsts import MAX_LOAD_ZIGATE
 
 
@@ -121,7 +116,7 @@ class GroupsManagement(object):
         self.DeviceConf = DeviceConf
         self.ListOfGroups = {}  # Data structutre to store all groups
         self.log = log
-        self.GroupListFileName = None  # Filename of Group cashing file
+        self.GroupListFileName = None  # Filename of Group caching file
         self.ControllerIEEE = None
         self.ScanDevicesToBeDone = []  # List of Devices for which a GrpMemberShip request as to be performed
         self.GroupStatus = "Starting"  # Used by WebServer to display Status of Group!
@@ -135,25 +130,6 @@ class GroupsManagement(object):
         self.ListOfDomoticzWidget = ListOfDomoticzWidget
         self.pairing_in_progress = pairing_in_progress
         
-        # Check if we have to open the old format
-        if os.path.isfile(self.pluginconf.pluginConf["pluginData"] + "/GroupsList-%02d.pck" % hardwareID):
-            # We are in the Migration from Old Group Managemet to new.
-            self.GroupStatus = "Migration"
-            with open(self.pluginconf.pluginConf["pluginData"] + "/GroupsList-%02d.pck" % hardwareID, "rb") as handle:
-                self.ListOfGroups = pickle.load(handle)  # nosec
-
-            # Migrate to new Format:
-            GrpMgtv2Migration(self)
-
-            # Save it with new format
-            self.GroupListFileName = self.pluginconf.pluginConf["pluginData"] + "/GroupsList-%02d.json" % hardwareID
-            self.write_groups_list()
-
-            # Remove the old format
-            os.remove(self.pluginconf.pluginConf["pluginData"] + "/GroupsList-%02d.pck" % hardwareID)
-            del self.ListOfGroups
-            self.ListOfGroups = {}
-
         # Open file and load config
         self.GroupListFileName = self.pluginconf.pluginConf["pluginData"] + "/GroupsList-%02d.json" % hardwareID
         self.load_groups_list_from_json()
@@ -172,7 +148,7 @@ class GroupsManagement(object):
         # self.logging( 'Debug', 'hearbeat_group_mgt -    ScanDevicesToBeDone: %s' %( self.ScanDevicesToBeDone))
 
         # Check if we have some Scan to be done
-        for NwkId, Ep in self.ScanDevicesToBeDone:
+        for NwkId, Ep in list(self.ScanDevicesToBeDone):
             self.GroupStatus = "scan"
             if self.ControllerLink.loadTransmit() <= MAX_LOAD_ZIGATE:
                 self.ScanDevicesToBeDone.remove([NwkId, Ep])

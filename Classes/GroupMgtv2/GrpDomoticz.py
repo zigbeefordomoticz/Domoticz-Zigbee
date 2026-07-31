@@ -16,7 +16,7 @@ from Classes.GroupMgtv2.GrpCommands import (set_hue_saturation,
                                             set_kelvin_color, set_rgb_color)
 from Classes.GroupMgtv2.GrpDatabase import update_due_to_nwk_id_change
 from Modules.domoticzAbstractLayer import (
-    FreeUnit, domo_create_api, domo_delete_widget, domo_read_Name,
+    domo_create_api, domo_delete_widget, domo_read_Name,
     domo_read_nValue_sValue, domo_read_SwitchType_SubType_Type,
     domo_update_api, domo_update_name, domo_update_SwitchType_SubType_Type,
     find_first_unit_widget_from_deviceID)
@@ -34,7 +34,15 @@ from Zigbee.zclCommands import (zcl_group_level_move_to_level,
                                 zcl_group_window_covering_on,
                                 zcl_group_window_covering_stop)
 
+from dataclasses import dataclass
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+DEFAULT_GROUP_UNIT = 1  # As of 8.1.003, DomoticzEx, all groups will be using Unit 1 at creation (only legacy will rely on Unit)
+
 WIDGET_STYLE = {
+    # "Widget": (Type_, Subtype_, SwitchType_)
     "Plug": (244, 73, 0),
     "Switch": (244, 73, 0),
     "LvlControl": (244, 73, 7),
@@ -43,10 +51,10 @@ WIDGET_STYLE = {
     "WindowCovering": (244, 73, 13),
     "Venetian": (244, 73, 15),
     "VenetianInverted": (244, 73, 15),
-    "ColorControlWW": (241, 8, 7),
-    "ColorControlRGB": (241, 2, 7),
-    "ColorControlRGBWW": (241, 4, 7),
-    "ColorControlFull": (241, 7, 7),
+    "ColorControlWW": (241, 8, 7),            # Cold white + Warm white
+    "ColorControlRGB": (241, 2, 7),           # RGB
+    "ColorControlRGBWW": (241, 4, 7),         # RGB + cold white + warm white, either RGB or white can be lit
+    "ColorControlFull": (241, 7, 7),          # Like RGBWW, but allows combining RGB and white
 }
 
 WIDGET_STYLE_TO_DOMOTICZ_TYPEMAP = {
@@ -61,7 +69,6 @@ WIDGET_STYLE_TO_DOMOTICZ_TYPEMAP = {
     "ColorControlRGB": "RGB",
     "ColorControlRGBWW": "RGB_CW_WW",
     "ColorControlFull": "RGB_CW_WW_Z",
-
 }
 
 CLUSTER_MAPPING = {
@@ -78,6 +85,92 @@ CLUSTER_MAPPING = {
     "VenetianInverted": "0102",
 }
 
+_WIDGET_RANK = {
+    "Switch":             0,
+    "Plug":               1,
+    "LvlControl":         2,
+    "ColorControlWW":     3,
+    "ColorControlRGB":    4,
+    "ColorControlRGBWW":  5,
+    "ColorControl":       6,
+    "ColorControlFull":   6,  # same capability as ColorControl, keep whichever is current
+}
+
+_BLIND_TYPE_MAP = {
+    "BlindInverted": ("BlindPercentInverted", "LvlControl"),
+    "Blind":         ("BlindPercent",         "LvlControl"),
+}
+
+_COVERING_WIDGETS = {
+    "VenetianInverted", "VanneInverted", "CurtainInverted",
+    "Venetian",         "Vanne",         "Curtain",
+}
+
+_COVERING_GROUP_STYLE = ("VenetianInverted", "LvlControl")
+
+_COVERING_GROUP_STYLES = {"BlindPercentInverted", "BlindPercent", "VenetianInverted"}
+
+_DEFAULT_WIDGET_TYPE = "ColorControlFull"
+
+@dataclass
+class GroupAccumulator:
+    """Aggregates per-device state while iterating over the devices of a group."""
+
+    # On/Off counters
+    count_on: int = 0
+    count_off: int = 0
+    count_stop: int = 0
+
+    # Level (dimmers) — running sum + count, raw Zigbee 0–255
+    level_sum: int = 0
+    level_count: int = 0
+
+    # Covering (shutters/blinds) — running sum + count, normalized 0–100
+    covering_sum: int = 0
+    covering_count: int = 0
+
+    def add_on_off(self, on_off):
+        if on_off == 17:
+            self.count_stop += 1
+        elif on_off is not None and on_off != 0:
+            self.count_on += 1
+        elif on_off == 0:
+            self.count_off += 1
+
+    def add_level(self, raw_level):
+        self.level_sum += raw_level
+        self.level_count += 1
+
+    def add_covering(self, pct):
+        self.covering_sum += pct
+        self.covering_count += 1
+
+    @property
+    def has_covering(self):
+        return self.covering_count > 0
+
+    @property
+    def level(self):
+        """Average level (0–255) or None if no dimmer contributed."""
+        return round(self.level_sum / self.level_count) if self.level_count else None
+
+    @property
+    def covering(self):
+        """Average covering position (0–100) or None if no cover contributed."""
+        return round(self.covering_sum / self.covering_count) if self.covering_count else None
+    @property
+    def is_empty(self):
+        """True if no device contributed any usable state."""
+        return (
+            self.count_on == 0
+            and self.count_off == 0
+            and self.count_stop == 0
+            and self.level_count == 0
+            and self.covering_count == 0
+        )
+
+
+
 def create_domoticz_group_device(self, GroupName, GroupId):
     """ Create Device for just created group in Domoticz. """
     
@@ -88,20 +181,20 @@ def create_domoticz_group_device(self, GroupName, GroupId):
         return
 
     if find_first_unit_widget_from_deviceID(self, self.Devices, GroupId):
-        self.logging( "Log", f"createDomoticzGroupDevice - {GroupId} exists alreday in Domoticz"  )
+        self.logging( "Log", f"createDomoticzGroupDevice - {GroupId} exists already in Domoticz"  )
         return
 
     Type_, Subtype_, SwitchType_ = best_group_widget(self, GroupId)
     self.ListOfGroups[GroupId]['TypeName'] = get_typename(self, Type_, Subtype_, SwitchType_)
 
-    unit = FreeUnit(self, self.Devices, GroupId, 1)
-    idx = domo_create_api(self, self.Devices, GroupId, unit, GroupName, Type_=Type_, Subtype_=Subtype_, Switchtype_=SwitchType_, widgetOptions=None, Image=None)
-    self.logging("Debug", "createDomoticzGroupDevice - Unit: %s" % unit)
+    idx = domo_create_api(self, self.Devices, GroupId, DEFAULT_GROUP_UNIT, GroupName, Type_=Type_, Subtype_=Subtype_, Switchtype_=SwitchType_, widgetOptions=None, Image=None)
+    self.logging("Debug", "createDomoticzGroupDevice - Unit: %s" % DEFAULT_GROUP_UNIT)
     if idx == -1:
-        self.logging("Error", f"createDomoticzGroupDevice - failed to create Group device. {GroupName} with unit {unit}")
-        return
+        self.logging("Error", f"createDomoticzGroupDevice - failed to create Group device. {GroupName} with unit {DEFAULT_GROUP_UNIT}")
+        return None
 
     self.ListOfGroups[GroupId]["WidgetType"] = idx
+    return idx
 
 
 def LookForGroupAndCreateIfNeeded(self, GroupId):
@@ -118,8 +211,8 @@ def LookForGroupAndCreateIfNeeded(self, GroupId):
         self.ListOfGroups[GroupId]["GroupName"] = "Zigate Group %s" % GroupId
 
     GroupName = self.ListOfGroups[GroupId]["GroupName"]
-    create_domoticz_group_device(self, GroupName, GroupId)
-    update_domoticz_group_device_widget(self, GroupId)
+    if create_domoticz_group_device(self, GroupName, GroupId):
+        update_domoticz_group_device_widget(self, GroupId)
 
 
 def update_domoticz_group_device_widget_name(self, GroupName, GroupId):
@@ -149,8 +242,7 @@ def update_domoticz_group_device_widget(self, GroupId):
 
     unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
     if unit is None:
-        self.logging( "Debug", f"update_domoticz_group_device_widget_name - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}" )
-        LookForGroupAndCreateIfNeeded(self, GroupId)
+        self.logging( "Debug", f"update_domoticz_group_device_widget - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}" )
         return
 
     Type_, Subtype_, SwitchType_ = best_group_widget(self, GroupId)
@@ -170,11 +262,16 @@ def update_domoticz_group_device_widget(self, GroupId):
 
         return
 
-    # Old fashion we rely only on Type_, Subtype_, SwitchType_
+    # Old fashion: the abstract layer can only switch a widget through its TypeName,
+    # so resolve it from Type_/Subtype_/SwitchType_ and update both the widget and ListOfGroups.
     current_switchType, current_Subtype, current_Type = domo_read_SwitchType_SubType_Type(self, self.Devices, GroupId, unit)
-    self.logging("Debug", f"      Looking to update Unit: {unit} from {current_Type} {current_Subtype} {current_switchType} to {Type_} {Subtype_} {SwitchType_}")
+    new_typename = get_typename(self, Type_, Subtype_, SwitchType_)
+    current_typename = get_typename(self, current_switchType, current_Subtype, current_Type)
+    self.logging("Debug", f"      Looking to update Unit: {unit} from {current_Type} {current_Subtype} {current_switchType} ({current_typename}) to {Type_} {Subtype_} {SwitchType_} ({new_typename})")
 
-    domo_update_SwitchType_SubType_Type(self, self.Devices, GroupId, unit, Type_, Subtype_, SwitchType_)
+    if new_typename is not None and current_typename != new_typename:
+        self.ListOfGroups[GroupId]['TypeName'] = new_typename
+        domo_update_SwitchType_SubType_Type(self, self.Devices, GroupId, unit, Type_, Subtype_, SwitchType_, Typename_=new_typename)
 
 
 def get_typename(self, Type_, Subtype_, SwitchType_):
@@ -185,155 +282,265 @@ def get_typename(self, Type_, Subtype_, SwitchType_):
     return None
 
 
-def best_group_widget(self, GroupId):
+def my_best_widget_offer(current_widget, current_group_widget):
+    """
+    Return the least-capable widget between current_widget and
+    current_group_widget, i.e. the highest common feature set the
+    group can expose.
+    """
+    if current_group_widget in (None, current_widget):
+        return current_widget
 
+    rank_widget = _WIDGET_RANK.get(current_widget)
+    rank_group  = _WIDGET_RANK.get(current_group_widget)
+
+    if rank_widget is None:
+        return current_group_widget
+    if rank_group is None:
+        return current_widget
+
+    # When ranks are equal (e.g. ColorControl vs ColorControlFull),
+    # keep current_widget — no downgrade needed.
+    return current_widget if rank_widget <= rank_group else current_group_widget
+
+
+# ---------------------------------------------------------------------------
+# Methods
+# ---------------------------------------------------------------------------
+
+def negotiate_endpoint_widget(self, NwkId, device_info, device_ep_info, GroupWidgetStyle, group_widget_type_candidate):
+    """
+    Determine the best Domoticz widget style for a Zigbee group by inspecting
+    one device's endpoint cluster types and negotiating against the group's
+    current widget candidate.
+
+    The function iterates over the ClusterType entries of a single device
+    endpoint. For each cluster type it either:
+
+    - Returns immediately with a covering/blind widget style when the device
+      is identified as a blind or venetian/curtain actuator (these are
+      incompatible with generic level-control groups and take precedence).
+    - Updates ``group_widget_type_candidate`` by calling ``my_best_widget_offer``
+      to find the least-capable widget that still satisfies both the group
+      candidate and the current device's widget type.
+
+    Parameters
+    ----------
+    NwkId : str
+        Network address of the device being inspected, used for logging only.
+    device_info : dict
+        Top-level device record. Used as a fallback source for the ``"Type"``
+        field when not present on the endpoint.
+    device_ep_info : dict
+        Endpoint record for the device. Must contain a ``"ClusterType"`` dict
+        mapping Domoticz device unit numbers to widget type strings.
+        Optionally contains a ``"Type"`` field (``"/"``-separated) used to
+        identify blind variants.
+    GroupWidgetStyle : str
+        The Domoticz widget style currently assigned to the group (e.g.
+        ``"Switch"``, ``"ColorControlRGB"``). Returned unchanged unless a
+        covering device is detected.
+    group_widget_type_candidate : str or None
+        The best widget type accumulated so far across all devices in the
+        group. Updated in-place as each cluster type is evaluated.
+
+    Returns
+    -------
+    tuple[str, str]
+        ``(GroupWidgetStyle, group_widget_type_candidate)`` where:
+
+        - For blind devices: ``("BlindPercent", "LvlControl")`` or
+          ``("BlindPercentInverted", "LvlControl")``.
+        - For covering/venetian devices: ``("VenetianInverted", "LvlControl")``.
+        - Otherwise: the input ``GroupWidgetStyle`` paired with the
+          updated ``group_widget_type_candidate`` after capability negotiation.
+
+    Notes
+    -----
+    Blind and covering types cause an **immediate return** from the middle of
+    the loop, meaning subsequent cluster types on the same endpoint are not
+    evaluated. This is intentional: a covering actuator cannot participate in
+    a generic on/off or colour-control group.
+
+    ``my_best_widget_offer`` implements a capability partial order where the
+    least-capable widget wins, ensuring the group only exposes features that
+    every member device supports.
+    """
+    for DomoDeviceUnit, device_widget_type in device_ep_info["ClusterType"].items():
+        self.logging("Debug", f"negotiate_endpoint_widget {NwkId} unit={DomoDeviceUnit} widget={device_widget_type} candidate={group_widget_type_candidate}")
+
+        if device_widget_type is None:
+            continue
+
+        # --- Covering/blind devices: resolve device Type field and return immediately ---
+        if device_widget_type == "LvlControl":
+            device_type = device_ep_info.get("Type") or device_info.get("Type") or ""
+            type_parts = device_type.split("/")
+            for blind_key, result in _BLIND_TYPE_MAP.items():
+                if blind_key in type_parts:
+                    self.logging("Debug", f"negotiate_endpoint_widget {NwkId} - found blind type '{blind_key}'")
+                    return result
+
+        if device_widget_type in _COVERING_WIDGETS:
+            self.logging("Debug", f"negotiate_endpoint_widget {NwkId} - found covering widget '{device_widget_type}'")
+            return _COVERING_GROUP_STYLE
+
+        # --- Normal capability negotiation ---
+        if device_widget_type == group_widget_type_candidate:
+            continue
+
+        group_widget_type_candidate = my_best_widget_offer(device_widget_type, group_widget_type_candidate)
+        self.logging("Debug", f"negotiate_endpoint_widget {NwkId} - best offer -> {group_widget_type_candidate}")
+
+    return GroupWidgetStyle, group_widget_type_candidate
+
+
+def best_group_widget(self, GroupId):
+    """
+    Determine and persist the best Domoticz widget for a Zigbee group,
+    then return the corresponding Domoticz widget constant.
+
+    Iterates over every device endpoint registered in the group, delegating
+    per-endpoint capability negotiation to ``negotiate_endpoint_widget``.
+    The result is the least-capable widget type that all group members can
+    support, ensuring no device is asked to perform actions it cannot handle.
+
+    Short-circuits as soon as a covering/blind widget is confirmed, since
+    those are incompatible with any further capability negotiation.
+
+    If no device contributes a recognisable widget type (e.g. the group
+    contains only the coordinator or devices with no ClusterType), the
+    fallback is ``"ColorControlFull"``.
+
+    Parameters
+    ----------
+    GroupId : str
+        Key into ``self.ListOfGroups`` identifying the group to evaluate.
+
+    Returns
+    -------
+    int or str
+        The Domoticz widget constant from ``WIDGET_STYLE`` corresponding to
+        the resolved ``GroupWidgetStyle``. Falls back to
+        ``WIDGET_STYLE["ColorControlFull"]`` if the style is unrecognised.
+
+    Side Effects
+    ------------
+    Updates the following keys in ``self.ListOfGroups[GroupId]``:
+
+    - ``"GroupWidgetType"`` : the negotiated widget type string
+      (e.g. ``"LvlControl"``, ``"ColorControlRGB"``).
+    - ``"GroupWidgetStyle"`` : the display style string, which may differ
+      from the type for covering devices (e.g. ``"BlindPercent"``).
+    - ``"Cluster"``          : the Zigbee cluster derived from
+      ``CLUSTER_MAPPING``, used when sending group commands.
+    - ``"Tradfri Remote" / "Color Mode"`` : set to the widget type if not
+        already present, so IKEA remotes default to the group's colour mode.
+
+    Notes
+    -----
+    Devices with ``NwkId == "0000"`` (the coordinator) are skipped.
+    Devices absent from ``self.ListOfDevices`` are skipped with an explicit
+    warning log.
+
+    The distinction between ``GroupWidgetStyle`` and
+    ``group_widget_type_candidate`` is subtle:
+
+    - ``group_widget_type_candidate`` drives capability negotiation and is
+      stored as ``"GroupWidgetType"``.
+    - ``GroupWidgetStyle`` controls the Domoticz widget appearance and may
+      be overridden for covering devices; it falls back to
+      ``group_widget_type_candidate`` when no covering device was detected.
+    """
     group_widget_type_candidate = None
     GroupWidgetStyle = None
 
-    self.logging("Debug", "best_group_widget Device - %s" % str(self.ListOfGroups[GroupId]["Devices"]))
+    self.logging("Debug", f"best_group_widget Group={GroupId} devices={self.ListOfGroups[GroupId]['Devices']}")
+
     for NwkId, devEp, iterIEEE in self.ListOfGroups[GroupId]["Devices"]:
-        # We will scan each Device in the Group and try to indentify which Widget is associated to it
-        # Based on the list of Widget will try to identified the Most Features
-        self.logging("Debug", "best_group_widget Device - %s  %s  %s" % (NwkId, devEp, iterIEEE))
+        self.logging("Debug", f"best_group_widget processing NwkId={NwkId} ep={devEp} ieee={iterIEEE}")
+
         if NwkId == "0000":
             continue
 
-        self.logging("Debug", "bestGroupWidget - Group: %s processing %s" % (GroupId, NwkId))
         if NwkId not in self.ListOfDevices:
-            # We have some inconsistency !
+            self.logging("Warning", f"best_group_widget Group={GroupId} NwkId={NwkId} not in ListOfDevices — skipping (inconsistency)")
             continue
 
-        device_info = self.ListOfDevices.get(NwkId)
-        device_ep_info = self.ListOfDevices.get(NwkId, {}).get("Ep", {}).get(devEp, {})
+        device_info    = self.ListOfDevices[NwkId]
+        device_ep_info = device_info.get("Ep", {}).get(devEp, {})
+
         if "ClusterType" not in device_ep_info:
             continue
 
-        GroupWidgetStyle, group_widget_type_candidate = screen_device_list(self, NwkId, device_info, device_ep_info, GroupWidgetStyle, group_widget_type_candidate)
-        self.logging( "Debug", f"best_group_widget {NwkId} {devEp} {iterIEEE} --> {GroupWidgetStyle} {group_widget_type_candidate}")
+        GroupWidgetStyle, group_widget_type_candidate = negotiate_endpoint_widget(
+            self, NwkId, device_info, device_ep_info, GroupWidgetStyle, group_widget_type_candidate
+        )
+        self.logging("Debug", f"best_group_widget {NwkId} ep={devEp} -> style={GroupWidgetStyle} candidate={group_widget_type_candidate}")
 
-        # If GroupWidgetStyle is set then we stop here
-        if GroupWidgetStyle in ( "BlindPercentInverted", "BlindPercent", "VenetianInverted"):
+        if GroupWidgetStyle in _COVERING_GROUP_STYLES:
             break
-    
+
+    # --- Persist results ---
     if group_widget_type_candidate is None:
-        group_widget_type_candidate = "ColorControlFull"
-        
+        group_widget_type_candidate = _DEFAULT_WIDGET_TYPE
+
     self.ListOfGroups[GroupId]["GroupWidgetType"] = group_widget_type_candidate
-
-    # Update Tradfri Remote color mode
     self.ListOfGroups[GroupId].get("Tradfri Remote", {}).setdefault("Color Mode", group_widget_type_candidate)
-
-    # Update Cluster based on WidgetStyle
     self.ListOfGroups[GroupId]["Cluster"] = CLUSTER_MAPPING.get(group_widget_type_candidate, "")
 
-    self.logging( "Debug", "best_group_widget for GroupId: %s Found WidgetType: %s Widget: %s" % (
-        GroupId, group_widget_type_candidate, WIDGET_STYLE.get(group_widget_type_candidate, WIDGET_STYLE["ColorControlFull"])), )
+    self.logging("Debug", f"best_group_widget Group={GroupId} WidgetType={group_widget_type_candidate} Widget={WIDGET_STYLE.get(group_widget_type_candidate, WIDGET_STYLE[_DEFAULT_WIDGET_TYPE])}")
 
     if GroupWidgetStyle is None:
         GroupWidgetStyle = group_widget_type_candidate
-        
+
     self.ListOfGroups[GroupId]["GroupWidgetStyle"] = GroupWidgetStyle
-        
-    return WIDGET_STYLE.get(GroupWidgetStyle, WIDGET_STYLE["ColorControlFull"])
+
+    return WIDGET_STYLE.get(GroupWidgetStyle, WIDGET_STYLE[_DEFAULT_WIDGET_TYPE])
 
 
-def screen_device_list(self, NwkId, device_info, device_ep_info, GroupWidgetStyle, group_widget_type_candidate):
-    
-    for DomoDeviceUnit, device_widget_type in device_ep_info["ClusterType"].items():
-        self.logging("Debug", f"------------screen_device_list {NwkId} DomoDeviceUnit: {DomoDeviceUnit} device_widget_type: {device_widget_type}" )
-        if (device_widget_type is None):
-            continue
 
-        self.logging("Debug", f"------------screen_device_list {NwkId} group_widget_type_candidate: {group_widget_type_candidate} device_widget_type: {device_widget_type}" )
 
-        if device_widget_type == "LvlControl":
-            device_type = device_ep_info.get("Type") or device_info.get("Type")
-            if device_type is not None:
-                device_type = device_type.split('/')
-            self.logging("Debug", f"------------screen_device_list {NwkId} device_ep_type: {device_type}" )
-
-            if "BlindInverted" in device_type:
-                # Blinds control via cluster 0x0008
-                self.logging("Debug", "------------screen_device_list - Found BlindInverted!!")
-                return "BlindPercentInverted", "LvlControl"
-
-            elif "Blind" in device_type:
-                # Blinds control via cluster 0x0008
-                self.logging("Debug", "------------screen_device_list - Found Blind!!")
-                return "BlindPercent", "LvlControl"
-
-        if device_widget_type in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
-            # Those widgets are commanded via cluster Level Control
-            return "VenetianInverted", "LvlControl"
-
-        if (device_widget_type == group_widget_type_candidate):
-            continue
-
-        group_widget_type_candidate = my_best_widget_offer(self, device_widget_type, group_widget_type_candidate)
-        self.logging("Debug", f"------------screen_device_list - Found from my_best_widget_offer {group_widget_type_candidate}")
-        
-    return GroupWidgetStyle, group_widget_type_candidate
-
-  
-WIDGET_STYLE_RULES = {
-    "Switch": {"Plug", "LvlControl", "ColorControlWW", "ColorControlRGB", "ColorControlRGBWW", "ColorControl", "ColorControlFull"},
-    "Plug": {"Plug", "LvlControl", "ColorControlWW", "ColorControlRGB", "ColorControlRGBWW", "ColorControl", "ColorControlFull"},
-    "LvlControl": {"ColorControlWW", "ColorControlRGB", "ColorControlRGBWW", "ColorControl", "ColorControlFull"},
-    "ColorControlWW": {"ColorControlRGBWW"},
-    "ColorControlRGB": {"ColorControlRGBWW"},
-    "ColorControlRGBWW": set(),
-    "ColorControl": set(),
-    "ColorControlFull": set()  
-}
-
-def my_best_widget_offer(self, current_widget, current_group_widget):
-    """ Find the best suitable widget. looks at the overlap features. If you have a Switch and ColorRGB, you can only do switch actions"""
-    if current_group_widget in (None, current_widget):
-        return current_widget
-    
-    if current_widget not in WIDGET_STYLE_RULES:
-        return current_group_widget
-
-    if current_group_widget in WIDGET_STYLE_RULES and current_widget in WIDGET_STYLE_RULES[current_group_widget]:
-        return current_group_widget
-
-    return current_widget
-
+EXCLUDED_MODELS = {"TRADFRI remote control", "Remote Control N2"} | set(LEGRAND_REMOTES)
 
 def update_domoticz_group_device(self, GroupId):
     """
-    Update the Group status On/Off and Level , based on the attached devices
+    Recompute and push the On/Off + level state of a Zigbee group to Domoticz.
+
+    Iterates over all devices in the group, collects their individual states,
+    derives a combined nValue/sValue, and calls domo_update_api only when the
+    state has actually changed.
     """
     
     if int(GroupId,16) == self.pluginconf.pluginConf["pingViaGroup"]:
         self.logging("Debug", "update_domoticz_group_device - Skip PingViaGroup: %s" % GroupId)
         return
 
-    #####
     if GroupId not in self.ListOfGroups:
         self.logging("Error", "update_domoticz_group_device - unknown group: %s" % GroupId)
         return
 
-    if "Devices" not in self.ListOfGroups[GroupId]:
+    group_devices = self.ListOfGroups[GroupId].get("Devices")
+    if group_devices is None or len(group_devices) == 0:
         self.logging( "Debug", "update_domoticz_group_device - no Devices for that group: %s" % self.ListOfGroups[GroupId])
         return
 
     unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
     if unit is None:
-        self.logging( "Debug", f"update_domoticz_group_device_widget_name - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}" )
+        self.logging( "Debug", f"update_domoticz_group_device - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}" )
         LookForGroupAndCreateIfNeeded(self, GroupId)
         return
 
-    Cluster = self.ListOfGroups[GroupId].get("Cluster")
+    group_cluster = self.ListOfGroups[GroupId].get("Cluster")
 
-    countStop = countOn = countOff = 0
-    nValue = 0 if self.pluginconf.pluginConf["OnIfOneOn"] else 1
-    sValue = level = None
-    for NwkId, Ep, IEEE in self.ListOfGroups[GroupId]["Devices"]:
+    acc = GroupAccumulator()
+    switchType, Subtype, _ = domo_read_SwitchType_SubType_Type(self, self.Devices, GroupId, unit)
+
+    for NwkId, Ep, IEEE in group_devices:
+        # Check each device in the group and count On/Off/Stop and average level for dimmers and covering
         if NwkId not in self.ListOfDevices:
             self.logging( "Debug", "update_domoticz_group_device - Nwkid: %s/%s not found for GroupId: %s" %(
                 NwkId, IEEE, GroupId))
-
             if check_and_fix_missing_device(self, GroupId, NwkId, IEEE) is None:
                 self.logging( "Error", "update_domoticz_group_device - Nwkid: %s/%s not found for GroupId: %s" %(
                     NwkId, IEEE, GroupId))
@@ -344,122 +551,35 @@ def update_domoticz_group_device(self, GroupId):
             self.logging( "Debug", "update_domoticz_group_device - Nwkid: %s Ep: %s not found for GroupId: %s" %(
                 NwkId, Ep, GroupId))
             continue
-        if "Model" in self.ListOfDevices[NwkId]:
-            if self.ListOfDevices[NwkId]["Model"] in ("TRADFRI remote control", "Remote Control N2"):
-                continue
-            if self.ListOfDevices[NwkId]["Model"] in LEGRAND_REMOTES:
-                continue
 
-        # Cluster ON/OFF
-        if (
-            Cluster 
-            and Cluster in ("0006", "0008", "0300") 
-            and "0006" in self.ListOfDevices[NwkId]["Ep"][Ep]
-            and "0000" in self.ListOfDevices[NwkId]["Ep"][Ep]["0006"]
-            and is_hex(  str(self.ListOfDevices[NwkId]["Ep"][Ep]["0006"]["0000"]) )
-        ):
-            self.logging( "Debug", "update_domoticz_group_device - Cluster ON/OFF Group: %s NwkId: %s Ep: %s Value: %s" %( 
-                GroupId, NwkId, Ep, self.ListOfDevices[NwkId]["Ep"][Ep]["0006"]["0000"]))
-            if str(self.ListOfDevices[NwkId]["Ep"][Ep]["0006"]["0000"]) == "f0":
-                countStop += 1
-            elif int(self.ListOfDevices[NwkId]["Ep"][Ep]["0006"]["0000"]) != 0:
-                countOn += 1
-            else:
-                countOff += 1
+        model = self.ListOfDevices[NwkId].get("Model")
+        if model in EXCLUDED_MODELS:
+            continue
 
-        # Cluster Level Control
-        if (
-            Cluster 
-            and Cluster in ("0008", "0300") 
-            and "0008" in self.ListOfDevices[NwkId]["Ep"][Ep] 
-            and "0000" in self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]
-            and self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]["0000"] not in ( "", {} )
-        ):
-            lvl_value = self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]["0000"] if isinstance( self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]["0000"], int ) else int(self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]["0000"], 16)
-            self.logging( "Debug", "update_domoticz_group_device - Cluster Level Control Group: %s NwkId: %s Ep: %s Value: %s" %(
-                GroupId, NwkId, Ep, lvl_value))
-            level = lvl_value if level is None else (level + lvl_value) // 2
-        # Cluster Window Covering
-        if (
-            Cluster 
-            and Cluster == "0102" and "0102" in self.ListOfDevices[NwkId]["Ep"][Ep]
-            and "0008" in self.ListOfDevices[NwkId]["Ep"][Ep]["0102"]
-            and self.ListOfDevices[NwkId]["Ep"][Ep]["0102"]["0008"] not in ( "", {} )
-        ):
-            lvl_value = int(self.ListOfDevices[NwkId]["Ep"][Ep]["0102"]["0008"])
-            self.logging( "Debug", "update_domoticz_group_device - Cluster Window Covering Group: %s NwkId: %s Ep: %s Value: %s" %(
-                GroupId, NwkId, Ep, lvl_value))
-            level = lvl_value if level is None else (level + lvl_value) // 2
-            nValue, sValue = ValuesForVenetian(level)
+        _collect_device_state(self, NwkId, Ep, group_cluster, acc, switchType, GroupId)
 
-        self.logging( "Debug", "update_domoticz_group_device - Processing: Group: %s %s/%s On: %s, Off: %s Stop: %s, level: %s" % (
-            GroupId, NwkId, Ep, countOn, countOff, countStop, level), )
-
-    if countStop > 0:
-        nValue = 17
-    elif self.pluginconf.pluginConf["OnIfOneOn"]:
-        if countOn > 0:
-            nValue = 1
-    elif countOff > 0:
-        nValue = 0
-    self.logging( "Debug", "update_domoticz_group_device - Processing: Group: %s ==  > nValue: %s, level: %s" % (
-        GroupId, nValue, level), )
-
-
-    switchType, Subtype, _ = domo_read_SwitchType_SubType_Type(self, self.Devices, GroupId, unit)
-    # At that stage
-    # nValue == 0 if Off
-    # nValue == 1 if Open/On
-    # nValue == 17 if Stop
-    # level is None, so we use nValue/sValue
-    # level is not None; so we have a LvlControl
-    if nValue == 17:
-        # Stop
-        sValue = "0"
-        
-    elif sValue is None and level:
-        if switchType not in (13, 14, 15, 16):
-            # Not a Shutter/Blind
-            analogValue = level
-            if analogValue >= 255:
-                sValue = 100
-            else:
-                sValue = round((level * 100) / 255)
-                if sValue > 100:
-                    sValue = 100
-                if sValue == 0 and analogValue > 0:
-                    sValue = 1
-        else:
-            # Shutter/blind
-            if nValue == 0:  # we are in an Off mode
-                sValue = 0
-            else:
-                # We are on either full or not
-                sValue = round((level * 100) / 255)
-                if sValue >= 100:
-                    sValue = 100
-                    nValue = 1
-
-                elif sValue > 0 and sValue < 100:
-                    nValue = 2
-                else:
-                    nValue = 0
-        sValue = str(sValue)
-
-    elif sValue is None:
-        if nValue == 0:
-            if switchType not in (13, 14, 15, 16):
-                sValue = "Close"
-            else:
-                sValue = "Off"
-
-        else:
-            if switchType not in (13, 14, 15, 16):
-                sValue = "Open"
-            else:
-                sValue = "On"
+        self.logging("Debug", "update_domoticz_group_device - Processing: Group: %s with device: %s/%s On: %s, Off: %s Stop: %s, level: %s covering: %s" % (
+            GroupId, NwkId, Ep, acc.count_on, acc.count_off, acc.count_stop, acc.level, acc.covering_sum/acc.covering_count if acc.covering_count > 0 else 0))
 
     current_nValue, current_sValue = domo_read_nValue_sValue(self, self.Devices, GroupId, unit)
+
+    if acc.is_empty:   # count_on+off+stop == 0 and level_count == 0 and covering_count == 0
+        self.logging("Debug", f"update_domoticz_group_device - no usable device state for {GroupId}, skipping")
+        return
+
+    elif acc.has_covering:
+        # It is assumed that we cannot have a group with a mix of covering and non covering devices, 
+        # For covering we directly use the covering value to compute nValue and sValue, as it is the most relevant
+        # information for that type of device and should be the only one in the group
+        nValue, sValue = ValuesForVenetian(acc.covering)
+
+    else:
+        nValue, sValue = _compute_nvalue_svalue(
+            self, acc.level, switchType,
+            acc.count_on, acc.count_off, acc.count_stop,
+            GroupId, current_sValue
+        )
+            
     group_name = domo_read_Name( self, self.Devices, GroupId, unit )
     self.logging( "Debug", "update_domoticz_group_device - Processing: Group: %s ==  > from %s:%s to %s:%s" % (
         GroupId, current_nValue, current_sValue, nValue, sValue), )
@@ -469,24 +589,149 @@ def update_domoticz_group_device(self, GroupId):
         self.ListOfGroups[GroupId]["sValue"] = sValue
         self.ListOfGroups[GroupId]["prev_nValue"] = current_nValue
         self.ListOfGroups[GroupId]["prev_sValue"] = current_sValue
-
         self.ListOfGroups[GroupId]["Switchtype"] = switchType
-        self.ListOfGroups[GroupId]["Subtype"] = switchType
+        self.ListOfGroups[GroupId]["Subtype"] = Subtype
         self.logging("Log", f"UpdateGroup  - ({group_name:>15}) {nValue}:{sValue}")
         domo_update_api(self, self.Devices, GroupId, unit, nValue, sValue)
 
 
+def _collect_device_state(self, nwkid, ep, group_cluster, acc, switchType, group_id=None):
+    """
+    Read one device endpoint's Zigbee state and fold it into the group accumulator.
+
+    Mutates `acc` in place. Covering devices (cluster 0102, or 0008 on a covering
+    widget) short-circuit and only update covering; otherwise on_off and level are
+    folded in.
+    """
+    ep_data = self.ListOfDevices[nwkid]["Ep"][ep]
+
+    if group_cluster == "0102":
+        raw = ep_data.get("0102", {}).get("0008")
+        if raw not in (None, "", {}):
+            pct = int(raw) if isinstance(raw, int) else int(str(raw), 16)
+            acc.add_covering(pct)   # 0102 attr 0008 is already 0–100
+            return
+
+    if group_cluster == "0008" and _is_covering_switchType(switchType):
+        raw = ep_data.get("0008", {}).get("0000")
+        if raw not in (None, "", {}):
+            val = int(raw) if isinstance(raw, int) else int(str(raw), 16)
+            acc.add_covering(round((val * 100) / 255))   # 0–255 → 0–100
+            return
+
+    if group_cluster in ("0006", "0008", "0300"):
+        raw = ep_data.get("0006", {}).get("0000")
+        if raw is not None and is_hex(str(raw)):
+            if str(raw) == "f0":
+                acc.add_on_off(17)
+            elif int(raw) != 0:
+                acc.add_on_off(1)
+            else:
+                acc.add_on_off(0)
+
+    if group_cluster in ("0008", "0300"):
+        raw = ep_data.get("0008", {}).get("0000")
+        if raw not in (None, "", {}) and is_hex(str(raw)):
+            val = int(raw) if isinstance(raw, int) else int(str(raw), 16)
+            acc.add_level(val)
+
+
+def _compute_nvalue_svalue(self, level, switchType, count_on, count_off, count_stop, group_id, current_sValue=None):
+    """
+    Derive the Domoticz (nValue, sValue) pair for the group from aggregated counters.
+
+    nValue priority: Stop (17) > On/Off logic > Off (0).
+    sValue is computed from level (dimmers), covering position (shutters),
+    or falls back to "On"/"Off"/"Open"/"Close" for plain switches.
+    current_sValue is used only in Stop mode to preserve the last known position.
+    """
+    nValue = 0 if self.pluginconf.pluginConf["OnIfOneOn"] else 1
+    sValue = None
+
+    if count_stop > 0:
+        nValue = 17
+
+    elif self.pluginconf.pluginConf["OnIfOneOn"]:
+        if count_on > 0:
+            nValue = 1
+
+    elif count_off > 0:
+        nValue = 0
+
+    self.logging( "Debug", "update_domoticz_group_device - Processing: Group: %s ==  > nValue: %s, level: %s" % (
+        group_id, nValue, level), )
+
+    # At that stage
+    # nValue == 0 if Off
+    # nValue == 1 if Open/On
+    # nValue == 17 if Stop
+    # level is None, so we use nValue/sValue
+    # level is not None; so we have a LvlControl
+
+    if nValue == 17:
+        # Covering is on Stop Mode, we keep the last sValue as it is the only way to keep the current position of the covering
+        sValue = current_sValue if current_sValue is not None else "0"
+
+    elif sValue is None and level is not None:
+        if nValue == 0:
+            # Device Off, we set sValue to 0 for covering and Off for others
+            sValue = "Close" if _is_covering_switchType(switchType) else "Off"
+    
+        if not _is_covering_switchType(switchType):
+            sValue = _compute_nvalue_svalue_for_level_control(level)
+
+    elif sValue is None:
+        if nValue == 0:
+            sValue = "Close" if _is_covering_switchType(switchType) else "Off"
+        else:
+            sValue = "Open" if _is_covering_switchType(switchType) else "On"
+
+    return nValue, sValue
+
+
+def _compute_nvalue_svalue_for_level_control(level):
+    """
+    Convert a raw Zigbee level (0–255) to a Domoticz sValue percentage string.
+
+    Returns "1" as a minimum when the device reports non-zero but rounds to 0.
+    """
+    analogValue = level
+    if analogValue >= 255:
+        sValue = 100
+    else:
+        sValue = round((level * 100) / 255)
+        sValue = min(sValue, 100)
+        if sValue == 0 and analogValue > 0:
+            sValue = 1
+    return str(sValue)
+
+    
+def _is_covering_switchType(switchType):
+    """Return True if switchType corresponds to a shutter or blind (13–16)."""
+    return switchType in (13, 14, 15, 16)
+
+
+def ValuesForVenetian(level):
+    """
+    Convert a 0–100 percentage position to a Domoticz (nValue, sValue) for blinds/covers.
+
+    nValue: 0 = closed, 1 = fully open, 2 = intermediate.
+    Expects an already-normalized 0–100 value (see _collect_device_state).
+    """
+
+    if level == 0:
+        return 0, "0"
+
+    elif level >= 100:
+        return 1, "100"
+
+    else:
+        return 2, str(level)
+   
 def update_domoticz_group_name(self, GrpId, NewGrpName):
     update_domoticz_group_device_widget_name(self, NewGrpName, GrpId)
 
 
-def ValuesForVenetian(level):
-    if level == 0:
-        return 0, "0"
-    elif level == 100:
-        return 1, "100"
-    else:
-        return 2, str(level)
 
 
 def remove_domoticz_group_device(self, GroupId):
@@ -494,7 +739,7 @@ def remove_domoticz_group_device(self, GroupId):
 
     unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
     if unit is None and GroupId in self.ListOfGroups:
-        self.logging( "Debug", f"update_domoticz_group_device_widget_name - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}" )
+        self.logging( "Debug", f"remove_domoticz_group_device - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}" )
         return
     domo_delete_widget( self, self.Devices, GroupId, unit)
 
@@ -616,21 +861,21 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
             zcl_group_window_covering_on(self, GrpId, ZIGATE_EP, EPout)
             domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
 
-        if Command in ( "On", "Open",):
+        elif Command in ( "On", "Open",):
             nValue = 1
             sValue = "100"
             zcl_group_window_covering_off(self, GrpId, ZIGATE_EP, EPout)
             update_device_list_attribute(self, GrpId, "0102", 100)
             domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
 
-        if Command == "Stop":
+        elif Command == "Stop":
             nValue = 17
             sValue = "0"
             zcl_group_window_covering_stop(self, GrpId, ZIGATE_EP, EPout)
             update_device_list_attribute(self, GrpId, "0102", 50)
             domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
 
-        if Command == "Set Level":
+        elif Command == "Set Level":
             nValue = 2
             sValue = str(Level)
             if is_device_inverted(self, GrpId):
@@ -641,7 +886,7 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
             zcl_group_window_covering_level(self, GrpId, ZIGATE_EP, EPout, level="%02x" %Level)
             domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
 
-        resetDevicesHearttBeat(self, GrpId)
+        resetDevicesHeartBeat(self, GrpId)
         return
 
     # Old Fashon
@@ -762,13 +1007,13 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         # Update Device
         nValue = 1
         sValue = str(Level)
-        domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue, Color=Color_), 
+        domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue, Color=Color_)
 
     # Request to force ReadAttribute to each devices part of that group
-    resetDevicesHearttBeat(self, GrpId)
+    resetDevicesHeartBeat(self, GrpId)
 
 
-def resetDevicesHearttBeat(self, GrpId):
+def resetDevicesHeartBeat(self, GrpId):
 
     if not self.pluginconf.pluginConf["forceGroupDeviceRefresh"]:
         return
@@ -780,7 +1025,7 @@ def resetDevicesHearttBeat(self, GrpId):
                 NwkId = self.IEEE2NWK[Ieee]
             else:
                 self.logging(
-                    "Error", "resetDevicesHearttBeat - Hum Hum something wrong NwkId: %s Ieee %s" % (NwkId, Ieee)
+                    "Error", "resetDevicesHeartBeat - Hum Hum something wrong NwkId: %s Ieee %s" % (NwkId, Ieee)
                 )
 
         if NwkId in self.ListOfDevices:
@@ -815,5 +1060,4 @@ def is_device_inverted(self, GroupId):
 
 
 def get_group_latest_typename(self, GroupId):
-    
     return self.ListOfGroups[GroupId].get("TypeName")

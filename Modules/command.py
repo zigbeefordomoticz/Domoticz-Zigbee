@@ -31,7 +31,7 @@ from Modules.domoticzAbstractLayer import (domo_read_Name,
                                            is_dimmable_light,
                                            is_dimmable_switch)
 from Modules.domoTools import (RetreiveSignalLvlBattery,
-                               RetreiveWidgetTypeList, update_domoticz_widget)
+                               retrieve_widget_type_list, update_domoticz_widget)
 from Modules.fanControl import change_fan_mode
 from Modules.ias_ace_commands import (
     ias_keyboard_feedback_arm_response_all_zone_disarmed,
@@ -182,7 +182,7 @@ def domoticz_command(self, Devices, DeviceID, Unit, Nwkid, Command, Level, Color
     self.log.logging("Command", "Debug", f"mgtCommand ({Nwkid}) {DeviceID} {Unit} Name: {widget_name} Command: {Command} Level: {Level} Color: {Color}", Nwkid)
 
     SignalLevel, BatteryLevel = RetreiveSignalLvlBattery(self, Nwkid)
-    ClusterTypeList = RetreiveWidgetTypeList(self, Devices, DeviceID, Nwkid, Unit)
+    ClusterTypeList = retrieve_widget_type_list(self, Devices, DeviceID, Nwkid, Unit)
     
     if not ClusterTypeList or len(ClusterTypeList) != 1:
         self.log.logging("Command", "Error", f"Unexpected ClusterTypeList: {ClusterTypeList} for Nwkid: {Nwkid}")
@@ -515,7 +515,7 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
         and is_tst0601_data_points_defined
         ):
             self.log.logging( "Command", "Log", f"{Nwkid}/{EPout} Switch Off with Tuya dimmer.", Nwkid, )
-            ts0601_actuator(self, Nwkid, "switch", 0)
+            ts0601_actuator(self, Nwkid, "switch", 0, ep=EPout)
     else:
         # Remaining Slider widget
         _off_command_default(self, Nwkid, EPout, profalux, model_name)
@@ -731,7 +731,7 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         and is_tst0601_data_points_defined
         ):
             self.log.logging( "Command", "Log", f"{Nwkid}/{EPout} Switch On with Tuya dimmer.", Nwkid, )
-            ts0601_actuator(self, Nwkid, "switch", 1)
+            ts0601_actuator(self, Nwkid, "switch", 1, ep=EPout)
 
     elif profalux:
             move_withonoff = bool( get_device_config_param(self, Nwkid, "MoveWithOnOff") or get_deviceconf_parameter_value(self, model_name, "MoveWithOnOff", return_default=False) )

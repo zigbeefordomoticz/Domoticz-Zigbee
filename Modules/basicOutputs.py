@@ -68,16 +68,16 @@ def ZigatePermitToJoin(self, permit):
         # Enable Permit to join
         if self.permitTojoin["Duration"] != 255:
             if permit != 255:
-                self.log.logging("BasicOutput", "Status", "Z4D opened the Zigbee network for %s seconds " % permit)
+                self.log.logging("BasicOutput", "Status", "Z4D opens the Zigbee network for %s seconds" % permit)
             else:
-                self.log.logging("BasicOutput", "Status", "Z4D opened the Zigbee network for ever ")
+                self.log.logging("BasicOutput", "Status", "Z4D opens the Zigbee network for ever")
 
             self.permitTojoin["Starttime"] = int(time())
             self.permitTojoin["Duration"] = 0 if permit <= 5 else permit
     else:
         self.permitTojoin["Starttime"] = int(time())
         self.permitTojoin["Duration"] = 0
-        self.log.logging("BasicOutput", "Status", "Z4D closed the Zigbee network")
+        self.log.logging("BasicOutput", "Status", "Z4D closes the Zigbee network")
 
     PermitToJoin(self, "%02x" % permit)
 
@@ -135,14 +135,14 @@ def start_Zigate(self, Mode="Controller"):
         # self.log.logging( "BasicOutput", "Status", "Set Zigate as a Coordinator" )
         # send_zigatecmd_raw(self, "0023","00")
 
-        self.log.logging("BasicOutput", "Status", "Force ZiGate to Normal mode")
+        self.log.logging("BasicOutput", "Status", "Z4D forces ZiGate to Normal mode")
         zigate_set_mode(self, 0x00)
 
-        self.log.logging("BasicOutput", "Status", "Start network")
+        self.log.logging("BasicOutput", "Status", "Z4D starts network")
         zigate_start_nwk(self)
         #send_zigatecmd_raw(self, "0024", "")  # Start Network
 
-        self.log.logging("BasicOutput", "Status", "Set Zigate as a TimeServer")
+        self.log.logging("BasicOutput", "Status", "Z4D sets Zigate as a TimeServer")
         setTimeServer(self)
 
         self.log.logging("BasicOutput", "Debug", "Request network Status")
@@ -320,7 +320,7 @@ def channelChangeInitiate(self, channel):
 
 def channelChangeContinue(self):
 
-    self.log.logging("BasicOutput", "Status", "Restart network")
+    self.log.logging("BasicOutput", "Status", "Z4D restarts network")
     #send_zigatecmd_raw(self, "0024", "")  # Start Network
     zigate_start_nwk(self)
     #send_zigatecmd_raw(self, "0009", "")  # In order to get Zigate IEEE and NetworkID
@@ -415,7 +415,7 @@ def leaveMgtReJoin(self, saddr, ieee, rejoin=True):
         _rmv_children = "01"
         _dnt_rmv_children = "00"
 
-        self.log.logging("BasicOutput", "Status", "Request a rejoin of (%s/%s)" % (saddr, ieee), saddr)
+        self.log.logging("BasicOutput", "Status", "Z4D requests a rejoin of (%s/%s)" % (saddr, ieee), saddr)
         return zdp_management_leave_request(self, saddr, ieee, _rejoin, _dnt_rmv_children)
 
 
@@ -497,7 +497,7 @@ def removeZigateDevice(self, IEEE):
         return None
 
     nwkid = self.IEEE2NWK[IEEE]
-    self.log.logging("BasicOutput", "Status", "Remove from Zigate Device = " + " IEEE = " + str(IEEE), nwkid)
+    self.log.logging("BasicOutput", "Status", "Z4D removes from Zigate Device - IEEE = " + str(IEEE), nwkid)
 
     # Do we have to remove a Router or End Device ?
     if mainPoweredDevice(self, nwkid):

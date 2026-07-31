@@ -363,17 +363,13 @@ def interview_state_createDB(self, Devices, NWKID, RIA, status):
         self.ListOfDevices[NWKID]["ConfigSource"] = "DeviceConf"
 
     self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" % (RIA, NWKID))
-    IsCreated = False
     # Let's check if the IEEE is not known in Domoticz
-    
-    if is_device_ieee_in_domoticz_db(self, Devices, self.ListOfDevices[NWKID].get("IEEE")):
-        IsCreated = True
-        self.log.logging("Pairing", "Error", "There are alreday Widget(s) associated for this objet %s in Domoticz" % str(self.ListOfDevices[NWKID]) )
-        return
 
-    if not IsCreated:
-        full_provision_device(self, Devices, NWKID, RIA, status)
-        return
+    ieee = self.ListOfDevices[NWKID].get("IEEE")
+    if ieee and is_device_ieee_in_domoticz_db(self, Devices, ieee):
+        self.log.logging("Pairing", "Warning", f"There are already Widget(s) associated for this objet IEEE: {ieee} NwkId: {NWKID} in Domoticz; matching widgets will be reused (linked) instead of being duplicated" )
+
+    full_provision_device(self, Devices, NWKID, RIA, status)
 
 
 def create_device_without_Domoticz_Widgets( self, Nwkid):
@@ -397,7 +393,7 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
         profalux_fake_deviceModel(self, NWKID)
 
     CreateDomoDevice(self, Devices, NWKID)
-    if self.ListOfDevices[NWKID]["Status"] not in ("inDB", "failDB"):
+    if self.ListOfDevices[NWKID]["Status"] != "inDB" and not self.ListOfDevices[NWKID]["Status"].startswith("failDB"):
         # Something went wrong in the Widget creation
         self.log.logging("Pairing", "Error","processNotinDBDevices - Creat Domo Device Failed !!! for %s status: %s" % (NWKID, self.ListOfDevices[NWKID]["Status"]))
         self.ListOfDevices[NWKID]["Status"] = "UNKNOW"
@@ -747,7 +743,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
 
     if device_model == "TICMeter":
         # Retreive as much attribuutes
-        self.log.logging("Pairing", "Status", "Reading TICMeter and collecting all data")
+        self.log.logging("Pairing", "Status", "Z4D reads TICMeter and collects all data")
         read_attributes_gammatroniques_tic_meter(self, NWKID)
         read_attributes_ticmeter_tarif(self, NWKID)
         read_attributes_ticmeter_details(self, NWKID)

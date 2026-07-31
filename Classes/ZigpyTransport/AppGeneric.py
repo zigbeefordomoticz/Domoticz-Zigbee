@@ -176,6 +176,7 @@ from Classes.ZigpyTransport.instrumentation import write_capture_rx_frames
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8002_frame_content, build_plugin_8014_frame_content,
     build_plugin_8047_frame_content, build_plugin_8048_frame_content)
+from Classes.ZigpyTransport.supervisor import zigpy_heartbeat_activity
 from Classes.ZigpyTransport.Transport import ZigpyTransport
 
 LOGGER = logging.getLogger(__name__)
@@ -258,7 +259,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
             if _retrieved_backup is None:
                 await super(type(self),self).form_network()
             else:
-                self.log.logging( "Zigpy", "Status","++ Force Form: Restoring the most recent network backup")
+                self.log.logging("Zigpy", "Status", "++ Force Form: Restoring the most recent network backup")
                 await self.backups.restore_backup(  _retrieved_backup ) 
 
     # Load Network Information
@@ -271,16 +272,16 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         if not auto_form:
             raise
 
-        self.log.logging( "Zigpy", "Status","++ Forming a new network")
+        self.log.logging("Zigpy", "Status", "++ Forming a new network")
         await super(type(self),self).form_network()
 
         if _retrieved_backup is None:
             # Form a new network if we have no backup
-            self.log.logging( "Zigpy", "Status","++ Forming a new network with no backup")
+            self.log.logging("Zigpy", "Status", "++ Forming a new network with no backup")
             await self.form_network()
         else:
             # Otherwise, restore the most recent backup
-            self.log.logging( "Zigpy", "Status","++ Restoring the most recent network backup")
+            self.log.logging("Zigpy", "Status", "++ Restoring the most recent network backup")
             await self.backups.restore_backup( _retrieved_backup )
 
         await self.load_network_info(load_devices=True)
@@ -332,6 +333,45 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     if self.config[zigpy_conf.CONF_TOPO_SCAN_ENABLED]:
         # Config specifies the period in minutes, not seconds
         self.topology.start_periodic_scans( period=(60 * self.config[zigpy.config.CONF_TOPO_SCAN_PERIOD]) )
+
+
+async def watchdog_feed(self) -> None:
+    """
+
+    Feed the zigpy radio watchdog and notify the supervisor heartbeat.
+
+    Overrides ControllerApplication.watchdog_feed() to add a supervisor
+    liveness signal on every coordinator-level watchdog tick (~every 5s).
+    This keeps _last_heartbeat fresh on empty networks where no device
+    traffic reaches packet_received().
+
+    Transient TimeoutError from the coordinator (e.g. during heavy OTA
+    block transfer) are tolerated up to MAX_WATCHDOG_FAILURES consecutive
+    misses before propagating the error and triggering reconnection.
+    """
+    MAX_WATCHDOG_FAILURES = 3
+
+    try:
+        await super(type(self), self).watchdog_feed()
+        # Reset failure counter on success
+        self._watchdog_failure_count = 0
+    except TimeoutError as e:
+        count = getattr(self, '_watchdog_failure_count', 0) + 1
+        self._watchdog_failure_count = count
+        self.log.logging(
+            "TransportZigpy", "Warning",
+            f"watchdog_feed - coordinator did not respond (attempt {count}/{MAX_WATCHDOG_FAILURES}): {e}"
+        )
+        if count < MAX_WATCHDOG_FAILURES:
+            # Tolerate transient congestion (e.g. during OTA firmware transfer)
+            return
+        # Exceeded tolerance — propagate so zigpy triggers reconnection
+        self._watchdog_failure_count = 0
+        raise
+
+    _transport = getattr(self, 'zigpy_running_ref', None)
+    if _transport is not None and getattr(_transport, 'zigpy_loop', None) is not None:
+        _transport._last_heartbeat = _transport.zigpy_loop.time()
 
 
 async def shutdown(self, *, db: bool = True) -> None:
@@ -441,13 +481,22 @@ def connection_lost(self, exc: Exception) -> None:
             LOGGER.warning("+ Connection to the radio was lost, give time for recover ...")
             return
 
-        connection_lost_error( self, "NCP reset due to exceeded maximum ACK timeout count, plugin restart required" )
+        connection_lost_error( self, "NCP reset due to exceeded maximum ACK timeout count, plugin restart might be required" )
 
     elif isinstance(exc, (serial.serialutil.SerialException, asyncio.CancelledError)):
-        connection_lost_error( self, "Connection to coordinator lost, SerialError or CancelledError, plugin restart required" )
+        connection_lost_error( self, "Connection to coordinator lost, SerialError or CancelledError, plugin restart might be required" )
+
+
+    elif isinstance(exc, OSError):
+        # With the new serialx lib we get different exceptions when the serial port is disconnected or in use by another process, so let's catch OSError as well
+        connection_lost_error( self, "Connection to coordinator lost, OSError (device disconnected or in use by another process), plugin restart might be required" )
+
 
     elif isinstance(exc, (TimeoutError, asyncio.TimeoutError)):
-        connection_lost_error( self, "Connection to coordinator lost, TimeOut, plugin restart required" )
+        connection_lost_error( self, "Connection to coordinator lost, TimeOut, plugin restart might be required" )
+
+    else:
+        connection_lost_error(self, "Unexpected error type in connection_lost: %s %r, plugin restart might be required", type(exc), exc)
 
 
 def connection_lost_error(self, message: str) -> None:
@@ -469,7 +518,37 @@ def connection_lost_error(self, message: str) -> None:
     self.restarting = True
     self.current_error = "connection lost"
     LOGGER.error(message)
-    self.callBackRestartPlugin()
+
+    # If the in-process supervisor is active, let it handle recovery
+    # without triggering a full Domoticz plugin restart
+    # If the supervisor is active, let it handle recovery without a full plugin restart.
+    # _supervisor_running and zigpy_running_ref are injected onto self.app by _radio_startup().
+    supervisor_active = getattr(self, '_supervisor_running', False)
+    transport = getattr(self, 'zigpy_running_ref', None)
+
+    self.log.logging(
+        "TransportZigpyStack", "Debug",
+        f"connection_lost_error: supervisor_active={supervisor_active}, "
+        f"transport={'set' if transport is not None else 'None'}, "
+        f"writer_queue={'set' if (transport and transport.writer_queue) else 'None'}"
+    )
+
+    if supervisor_active and transport is not None:
+        LOGGER.warning("connection_lost — signalling supervisor for stack restart")
+        self.log.logging(
+            "TransportZigpyStack", "Debug",
+            "connection_lost_error: setting zigpy_running=False and sending STOP sentinel"
+        )
+        # Setting zigpy_running=False causes worker_loop to exit on its next tick.
+        # The STOP sentinel wakes get_next_command immediately (it polls at 100ms).
+        transport.zigpy_running = False
+        if transport.writer_queue:
+            with contextlib.suppress(Exception):
+                transport.writer_queue.put_nowait("STOP")
+    else:
+        LOGGER.warning("connection_lost — no active supervisor, requesting plugin restart")
+        self.log.logging("TransportZigpyStack", "Debug", "connection_lost_error: falling back to callBackRestartPlugin()")
+        self.callBackRestartPlugin()
 
 
 def _retrieve_previous_backup(self):
@@ -724,14 +803,16 @@ def measure_execution_time(func):
             func(self, packet)
 
         finally:
-            if t_start:
-                t_end = int(1000 * time.time())
-                t_elapse = t_end - t_start
-                self.statistics.add_rxTiming(t_elapse)  
-                self.log.logging("TransportZigpy", "Log", f"| (packet_received) | {t_elapse} | {packet.src.address.serialize()[::-1].hex()} | {packet.profile_id} | {packet.lqi} | {packet.rssi} |")
+            try:
+                if t_start:
+                    t_end = int(1000 * time.time())
+                    t_elapse = t_end - t_start
+                    self.statistics.add_rxTiming(t_elapse)  
+                    self.log.logging("TransportZigpy", "Log", f"| (packet_received) | {t_elapse} | {packet.src.address.serialize()[::-1].hex()} | {packet.profile_id} | {packet.lqi} | {packet.rssi} |")
+            except Exception as e:
+                self.log.logging("TransportZigpy", "Error", f"Error in measure_execution_time: {e}") 
+            
     return wrapper
-
-
 
 
 # ---------------------------------------------------------------------------
@@ -784,6 +865,7 @@ def _handle_zdo_cluster(self, cluster, sender, hex_message, packet):
     super(type(self), self).packet_received(packet)
     return True
 
+
 @measure_execution_time
 def packet_received(self, packet: zigpy_t.ZigbeePacket) -> None:
     """
@@ -804,7 +886,30 @@ def packet_received(self, packet: zigpy_t.ZigbeePacket) -> None:
            response; return without calling upstream.
        5b. Everything else → also call upstream.
     """
-    self.log.logging("TransportZigpy", "Debug", f"packet_received {packet}")
+    self.log.logging("TransportZigpy", "Debug", "packet_received %s" %(packet))
+
+    # Notify the watchdog that the stack is alive.
+    # zigpy_heartbeat_activity() expects the ZigpyTransport instance,
+    # not self (which is the App_* object).
+    _transport = getattr(self, 'zigpy_running_ref', None)
+    if _transport is not None and getattr(_transport, 'zigpy_loop', None) is not None:
+        now = _transport.zigpy_loop.time()
+        _transport._last_activity = now
+        _transport._last_heartbeat = now
+    else:
+        self.log.logging("TransportZigpyStack", "Debug", "packet_received: zigpy_running_ref not set — heartbeat skipped")
+        
+            
+    sender = packet.src.address.serialize()[::-1].hex()
+    addr_mode = int(packet.src.addr_mode) if packet.src.addr_mode is not None else None
+    profile = int(packet.profile_id) if packet.profile_id is not None else None
+    cluster = int(packet.cluster_id) if packet.cluster_id is not None else None
+    src_ep = int(packet.src_ep) if packet.src_ep is not None else None
+    dst_ep = int(packet.dst_ep) if packet.dst_ep is not None else None
+    source_route = packet.source_route
+
+    if source_route:
+        self.log.logging("trackReceivedRoute", "Log", f"packet_received from {sender} via {source_route}")
 
     # ── 1. Unpack fields ────────────────────────────────────────────────────
     f = _unpack_packet(packet)

@@ -42,7 +42,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form, force_form=force_form)
 
 
-    async def startup(self, statistics, HardwareID, pluginconf, use_of_zigpy_persistent_db, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackGetAllDevices=None, callBackBackup=None, callBackRestartPlugin=None, captureRxFrame=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+    async def startup(self, statistics, HardwareID, pluginconf, use_of_zigpy_persistent_db, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackGetAllDevices=None, callBackBackup=None, callBackRestartPlugin=None, callBackHeartbeat=None, captureRxFrame=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         """Starts a network, optionally forming one with random settings if necessary."""
 
         self.log = log
@@ -55,6 +55,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         self.callBackGetAllDevices = callBackGetAllDevices
         self.callBackBackup = callBackBackup
         self.callBackRestartPlugin = callBackRestartPlugin
+        self.callBackHeartbeat = callBackHeartbeat
         self.HardwareID = HardwareID
         self.captureRxFrame = captureRxFrame
         self.use_of_zigpy_persistent_db = use_of_zigpy_persistent_db
@@ -111,6 +112,9 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
     def connection_lost(self, exc: Exception) -> None:
         """Handle connection lost event."""
         Classes.ZigpyTransport.AppGeneric.connection_lost(self, exc)
+
+    async def watchdog_feed(self) -> None:
+        await Classes.ZigpyTransport.AppGeneric.watchdog_feed(self)
 
 
     async def register_endpoints(self):
@@ -182,13 +186,31 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         pass
 
 
-    async def set_extended_pan_id(self, extended_pan_ip): 
-        pass 
+    async def set_extended_pan_id(self, extended_pan_ip):
+        """Set the extended PAN ID and re-form the network."""
+        self.config[zigpy_conf.CONF_NWK][zigpy_conf.CONF_NWK_EXTENDED_PAN_ID] = extended_pan_ip
+        await self.startup(
+            self.statistics,
+            self.HardwareID,
+            self.pluginconf,
+            self.use_of_zigpy_persistent_db,
+            self.callBackFunction,
+            callBackUpdDevice=self.callBackUpdDevice,
+            callBackGetDevice=self.callBackGetDevice,
+            callBackBackup=self.callBackBackup,
+            callBackRestartPlugin=self.callBackRestartPlugin,
+            callBackHeartbeat=self.callBackHeartbeat,
+            captureRxFrame=self.captureRxFrame,
+            auto_form=True,
+            force_form=True,
+            log=self.log,
+            permit_to_join_timer=self.permit_to_join_timer,
+        )
 
 
-    async def set_channel(self):
-        pass        
-
+    async def set_channel(self, channel):
+        """Migrate the network to a new channel via zigpy channel migration."""
+        await self.move_network_to_channel(channel)
 
     async def remove_ieee(self, ieee):
         pass
@@ -200,7 +222,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
 
 
     async def network_interference_scan(self):
-        await Classes.ZigpyTransport.AppGeneric.network_interference_scan(self)
+        self.manual_interference_scan_task = await Classes.ZigpyTransport.AppGeneric.network_interference_scan(self)
 
 
     def get_topology(self):
@@ -216,7 +238,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
 
 
     async def start_topology_scan(self):
-        await self.topology.scan()
+        self.manual_topology_scan_task = await self.topology.scan()
 
 
     def is_bellows(self):

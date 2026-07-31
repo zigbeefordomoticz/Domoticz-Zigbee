@@ -121,7 +121,7 @@ def restartPluginViaDomoticzJsonApi(self, stop=False, erasePDM=False, url_base_a
         subprocess.Popen(
             cmd,
             start_new_session=True,
-            shell=False,
+            shell=False,               # nosec B603
             text=True,
         )  # nosec B603
 

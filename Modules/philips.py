@@ -23,11 +23,16 @@ from Modules.readAttributes import (ReadAttributeRequest_0006_0000,
 from Modules.tools import (checkAndStoreAttributeValue,get_device_config_param,
                            get_deviceconf_parameter_value, is_hex,
                            retreive_cmd_payload_from_8002)
+from Modules.tuyaTools import tuya_manufacturer_device
 from Modules.zigateConsts import ZIGATE_EP
 
 PHILIPS_POWERON_MODE = {0x00: "Off", 0x01: "On", 0xFF: "Previous state"}  # Off  # On  # Previous state
 
 def is_philips_device(self, nwkid):
+    # Some non-Philips devices (notably Tuya) misreport ManufacturerCode 0x100b, which is
+    # Signify/Philips's registered code. Exclude known Tuya devices before trusting it.
+    if tuya_manufacturer_device(self, nwkid):
+        return False
     return self.ListOfDevices[nwkid]["Manufacturer"] == "100b" or self.ListOfDevices[nwkid]["Manufacturer Name"] == "Philips"
 
 
