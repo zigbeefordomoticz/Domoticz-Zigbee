@@ -39,6 +39,12 @@ def rest_plugin_upgrade(self, verb, data, parameters):
     # Identify the current Python version
     python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
     self.logging("Log", f"Current Python version: {python_version}")
+    self.logging("Error", "************* IMPORTANT *************")
+    self.logging("Error", "The 'stable8' branch no longer receives new features, only critical fixes.")
+    self.logging("Error", "New development continues on 'stable9', built on the Domoticz Extended Framework.")
+    self.logging("Error", "To get further updates, run: Tools/plugin-switch-stable9.sh")
+    self.logging("Error", "This is a ONE-WAY move: there is no supported path back to 'stable8' afterwards.")
+    self.logging("Error", "************* IMPORTANT *************")
 
     self.logging("Log", "Plugin Upgrade starting: %s" %(upgrade_script))
     

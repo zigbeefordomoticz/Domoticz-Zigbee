@@ -187,16 +187,19 @@ print_version_info() {
     echo "Latest git commit: $(git log --pretty=oneline -1 || echo 'N/A')"
 }
 
-check_python_and_branch() {
+check_stable9_migration_notice() {
     SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-    CHECK_SCRIPT="$SCRIPT_DIR/check_python_and_branch.py"
+    NOTICE_SCRIPT="$SCRIPT_DIR/check_stable9_migration.py"
 
-    if [ -f "$CHECK_SCRIPT" ]; then
-        python3 "$CHECK_SCRIPT" --no-simulate
+    if [ -f "$NOTICE_SCRIPT" ]; then
+        # Informational only: remind the user that 'stable8' no longer receives
+        # feature updates and that switching to 'stable9' requires running
+        # Tools/plugin-switch-stable9.sh (a deliberate, one-way action).
+        python3 "$NOTICE_SCRIPT" --no-simulate --yes
         rc=$?
-        echo "check_python_and_branch.py exited with code $rc"
+        echo "check_stable9_migration.py exited with code $rc"
     else
-        echo "Warning: $CHECK_SCRIPT not found. Skipping Python branch check."
+        echo "Warning: $NOTICE_SCRIPT not found. Skipping stable9 migration notice."
     fi
 }
 
@@ -213,7 +216,7 @@ check_and_upgrade_pip
 update_python_modules
 update_git_config
 print_version_info
-check_python_and_branch
+check_stable9_migration_notice
 
 echo ""
 echo "Plugin upgrade process completed successfully."
