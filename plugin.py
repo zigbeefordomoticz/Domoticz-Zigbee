@@ -359,6 +359,13 @@ class BasePlugin:
 
         Domoticz.Status( "Welcome to Zigbee for Domoticz (Z4D) plugin. (c)pipiche38 - 2018 - 2025")
 
+        Domoticz.Error("************* IMPORTANT *************")
+        Domoticz.Error("The 'stable8' branch no longer receives new features, only critical fixes.")
+        Domoticz.Error("New development continues on 'stable9', built on the Domoticz Extended Framework.")
+        Domoticz.Error("To get further updates, run on the command line: Tools/plugin-switch-stable9.sh --i-understand")
+        Domoticz.Error("Any device paired after switching is created under the Extended Framework and is not usable back on 'stable8'.")
+        Domoticz.Error("************* IMPORTANT *************")
+
         # Print PYTHONPATH if set
         pythonpath = os.getenv('PYTHONPATH')
         if pythonpath:

@@ -249,25 +249,31 @@ is_docker() {
     fi
 }
 
-check_python_and_branch() {
+check_stable9_migration_notice() {
     # inside Tools/plugin-auto-upgrade.sh
 
     # Resolve the Tools directory relative to this script
     SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+    NOTICE_SCRIPT="$SCRIPT_DIR/check_stable9_migration.py"
 
-    # Make sure python3 exists
-    if ! command -v python3 >/dev/null 2>&1; then
-      echo "python3 not found in PATH. Please install Python 3.11+ to switch to stable8."
-      exit 1
+    if [ ! -f "$NOTICE_SCRIPT" ]; then
+        echo "Warning: $NOTICE_SCRIPT not found. Skipping stable9 migration notice."
+        return
     fi
 
-    # Run the check script in interactive (non-auto) mode.
-    # It will print version info and ask confirmation if appropriate.
-    python3 "$SCRIPT_DIR/check_python_and_branch.py" --no-simulate
+    if ! command -v python3 >/dev/null 2>&1; then
+      echo "python3 not found in PATH. Skipping stable9 migration notice."
+      return
+    fi
 
-    # capture the script exit code if you want to act on it:
+    # Display-only, no flags, no stdin expected: remind the user that
+    # 'stable8' no longer receives feature updates and that switching to
+    # 'stable9' requires explicitly running
+    # Tools/plugin-switch-stable9.sh --i-understand on the command line.
+    python3 "$NOTICE_SCRIPT"
+
     rc=$?
-    echo "check_python_and_branch.py exited with code $rc"
+    echo "check_stable9_migration.py exited with code $rc"
 }
 
 
@@ -275,7 +281,7 @@ check_python_and_branch() {
 PYTHON_VERSION="python${1:-3}"
 PIP_VERSION="python${1:-3}"
 
-check_python_and_branch
+check_stable9_migration_notice
 set_home
 print_env_details
 set_pip_options
