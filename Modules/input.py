@@ -28,6 +28,8 @@ All decoder calls are wrapped in a ``try/except`` block so that a single
 malformed message never takes down the whole receive loop.
 """
 
+import traceback
+
 from Z4D_decoders.z4d_decoder_Active_Ep_Rsp import Decode8045
 from Z4D_decoders.z4d_decoder_Attr_Discovery_Rsp import Decode8140
 from Z4D_decoders.z4d_decoder_bindings import Decode8030, Decode8031
@@ -281,5 +283,5 @@ def _decode_message(self, MsgType, Devices, Data, MsgData, MsgLQI):
         self.log.logging(
             "Input", "Error",
             f"_decode_message - unhandled exception while processing "
-            f"MsgType {MsgType}: {exc}",
+            f"MsgType {MsgType}: {exc}\n{traceback.format_exc()}",
         )
