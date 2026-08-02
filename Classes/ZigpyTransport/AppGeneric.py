@@ -942,7 +942,7 @@ def packet_received(self, packet: zigpy_t.ZigbeePacket) -> None:
         return
 
     # ── 5. General device packet → plugin 0x8002 frame
-    packet.lqi = packet.lqi or 0x00
+    packet.lqi = int(packet.lqi or 0x00)
     effective_profile = 0x0000 if (f["src_ep"] == f["dst_ep"] == 0x00) else f["profile"]
 
     if effective_profile and f["cluster"]:
