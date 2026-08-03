@@ -8,9 +8,10 @@ when a device acknowledges (Status 00) a Configure Reporting request but keeps
 reporting back a different Min/Max/Change (firmware silently clamps or ignores
 the request), check_and_redo_configure_reporting_if_needed() used to re-send a
 Configure Reporting (and possibly re-bind) on every ~1 minute heartbeat call,
-forever. It must now stop after MAX_CFG_RPT_MISMATCH_RETRY consecutive
-attempts, back off for CFG_RPT_MISMATCH_BACKOFF seconds, and resume once the
-device actually reports back a matching configuration.
+forever. It must now give up permanently after MAX_CFG_RPT_MISMATCH_RETRY
+consecutive attempts (no more resends until the next plugin restart), while
+still resuming immediately if the device reports back a matching
+configuration in the meantime.
 
 Classes.ConfigureReporting is imported inside a module-scoped fixture, against
 locally stubbed dependencies, and sys.modules is restored on teardown so
@@ -152,8 +153,8 @@ def test_mismatch_retries_are_bounded(cr_module, cr, monkeypatch):
     assert len(sent) == max_retry
 
 
-def test_backoff_releases_after_window_elapses(cr_module, cr, monkeypatch):
-    """Once CFG_RPT_MISMATCH_BACKOFF has elapsed, one more attempt is allowed."""
+def test_gives_up_permanently_until_restart(cr_module, cr, monkeypatch):
+    """After MAX_CFG_RPT_MISMATCH_RETRY, no more attempts are ever sent again for this run."""
     sent = []
     monkeypatch.setattr(cr_module, "configure_reporting_for_one_cluster", lambda *a, **k: sent.append(a))
 
@@ -162,9 +163,14 @@ def test_backoff_releases_after_window_elapses(cr_module, cr, monkeypatch):
         cr.check_and_redo_configure_reporting_if_needed(NWKID)
     assert len(sent) == max_retry
 
-    # Simulate the backoff window having elapsed
-    retry_state = cr.ListOfDevices[NWKID]["ConfigureReporting"]["Ep"][EP][CLUSTER]["MismatchRetry"]
-    retry_state["TimeStamp"] -= cr_module.CFG_RPT_MISMATCH_BACKOFF + 1
+    # No amount of extra heartbeats (or elapsed wall-clock time) brings it back
+    for _ in range(50):
+        cr.check_and_redo_configure_reporting_if_needed(NWKID)
+    assert len(sent) == max_retry
+
+    # A plugin restart clears the counter and gives the device a fresh round of attempts
+    from Modules.tools_datastruct import reset_mismatch_retry_datastruct
+    reset_mismatch_retry_datastruct(cr, "ConfigureReporting", NWKID)
 
     cr.check_and_redo_configure_reporting_if_needed(NWKID)
 
@@ -199,8 +205,9 @@ def test_allow_configure_reporting_retry_logs_give_up_once(cr_module):
     # The "giving up" Status log fires exactly once, on the attempt that hits the cap
     assert o.log.logging.call_count == 1
 
-    # Further calls within the backoff window are denied and do not log again
-    assert cr_module._allow_configure_reporting_retry(o, NWKID, EP, CLUSTER) is False
+    # Further calls are permanently denied and do not log again
+    for _ in range(10):
+        assert cr_module._allow_configure_reporting_retry(o, NWKID, EP, CLUSTER) is False
     assert o.log.logging.call_count == 1
 
 

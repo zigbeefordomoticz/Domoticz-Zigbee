@@ -45,10 +45,9 @@ CONFIGURE_REPORT_PERFORM_TIME = 21  # Reenforce will be done each xx hours
 
 # A device that acknowledges (Status 00) a Configure Reporting but then keeps reporting back
 # a different Min/Max/Change (firmware silently clamps or ignores the request) must not be
-# re-configured (and potentially re-bound) forever, once per heartbeat. Cap the number of
-# consecutive attempts and back off for a while before trying again.
-MAX_CFG_RPT_MISMATCH_RETRY = 3
-CFG_RPT_MISMATCH_BACKOFF = CONFIGURE_REPORT_PERFORM_TIME * 3600  # seconds
+# re-configured (and potentially re-bound) forever, once per heartbeat. Give up permanently
+# (until the next plugin restart, see reset_mismatch_retry_datastruct) after this many attempts.
+MAX_CFG_RPT_MISMATCH_RETRY = 2
 
 
 def get_max_cfg_rpt_attribute_value( self, nwkid=None):
@@ -528,29 +527,25 @@ class ConfigureReporting:
 
 def _allow_configure_reporting_retry(self, Nwkid, Ep, cluster):
     # Gate the "misconfigured reporting" Configure Reporting re-send: after
-    # MAX_CFG_RPT_MISMATCH_RETRY consecutive attempts, back off for CFG_RPT_MISMATCH_BACKOFF
-    # seconds instead of re-sending (and possibly re-binding) on every heartbeat forever.
+    # MAX_CFG_RPT_MISMATCH_RETRY consecutive attempts, give up for good (no more
+    # re-sends, no more re-binds) until the next plugin restart clears the counter
+    # via reset_mismatch_retry_datastruct(), or the device reports back a matching
+    # configuration via _clear_configure_reporting_retry().
     check_datastruct(self, STORE_CONFIGURE_REPORTING, Nwkid, Ep, cluster)
     retry = self.ListOfDevices[Nwkid][STORE_CONFIGURE_REPORTING]["Ep"][Ep][cluster].setdefault(
-        "MismatchRetry", {"Count": 0, "TimeStamp": 0, "Reported": False}
+        "MismatchRetry", {"Count": 0, "Reported": False}
     )
 
-    now = time.time()
     if retry["Count"] >= MAX_CFG_RPT_MISMATCH_RETRY:
-        if now < retry["TimeStamp"] + CFG_RPT_MISMATCH_BACKOFF:
-            return False
-        # Backoff window elapsed, give the device another round of attempts
-        retry["Count"] = 0
-        retry["Reported"] = False
+        return False
 
     retry["Count"] += 1
-    retry["TimeStamp"] = now
 
     if retry["Count"] >= MAX_CFG_RPT_MISMATCH_RETRY and not retry["Reported"]:
         self.logging(
             "Status",
             f"------ Z4D giving up on Configure Reporting for {Nwkid}/{Ep}/{cluster} after {MAX_CFG_RPT_MISMATCH_RETRY} attempts; "
-            f"device does not seem to honor the requested reporting configuration. Will retry in {CFG_RPT_MISMATCH_BACKOFF // 3600}h",
+            f"device does not seem to honor the requested reporting configuration. Will retry after the next plugin restart",
             nwkid=Nwkid,
         )
         retry["Reported"] = True
