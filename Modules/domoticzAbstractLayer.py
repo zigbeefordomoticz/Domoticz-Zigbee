@@ -594,7 +594,7 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue,
         return
 
     unit_obj = Devices[DeviceID_].Units[Unit_]
-    unit_obj.nValue = nValue
+    unit_obj.nValue = int(nValue)
     unit_obj.sValue = sValue
 
     # TimedOut lives on the Device, not the Unit

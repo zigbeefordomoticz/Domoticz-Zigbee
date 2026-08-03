@@ -795,9 +795,8 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
     if Attribute_ == "0007" and ClusterType == "FanControl" and WidgetType == "FanSpeed":
-        nValue = round(value, 1)
-        sValue = str(nValue)
-        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+        sValue = str(round(value, 1))
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
     if Attribute_ == "0001" and WidgetType == "OutDoorTemperature" and "OutDoorTemperature" in ClusterType:
         nValue = value
