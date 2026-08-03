@@ -26,8 +26,9 @@ from Modules.bindings import bindDevice, unbindDevice
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_CUSTOM_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
-from Modules.tools import (deviceconf_device, get_device_config_param,
-                           get_isqn_datastruct, get_list_isqn_attr_datastruct,
+from Modules.tools import (check_datastruct, deviceconf_device,
+                           get_device_config_param, get_isqn_datastruct,
+                           get_list_isqn_attr_datastruct,
                            get_list_isqn_int_attr_datastruct,
                            getClusterListforEP, is_ack_tobe_disabled,
                            is_attr_unvalid_datastruct, is_bind_ep, is_fake_ep,
@@ -41,6 +42,12 @@ from Zigbee.zclCommands import (zcl_configure_reporting_requestv2,
                                 zcl_read_report_config_request)
 
 CONFIGURE_REPORT_PERFORM_TIME = 21  # Reenforce will be done each xx hours
+
+# A device that acknowledges (Status 00) a Configure Reporting but then keeps reporting back
+# a different Min/Max/Change (firmware silently clamps or ignores the request) must not be
+# re-configured (and potentially re-bound) forever, once per heartbeat. Give up permanently
+# (until the next plugin restart, see reset_mismatch_retry_datastruct) after this many attempts.
+MAX_CFG_RPT_MISMATCH_RETRY = 2
 
 
 def get_max_cfg_rpt_attribute_value( self, nwkid=None):
@@ -486,19 +493,23 @@ class ConfigureReporting:
 
                         if x == "Change" and not analog_value(int(attribute_current_configuration['DataType'], 16)):
                             continue
-                        
+
                         if attribute_current_configuration[x] == '' or cluster_configuration[attribut][x] == '':
                             # We don't have a value for this attribute, so we cannot compare
                             continue
 
                         if int(attribute_current_configuration[x],16) == int(cluster_configuration[attribut][x],16):
                             continue
-                        
-                        if not wip_flap:
-                            self.logging("Status", f"------ Z4D detects misconfigured reporting for device {Nwkid} on ep {_ep} and cluster {_cluster}", nwkid=Nwkid)
-                        
-                        self.logging("Status", f" - Attribute {attribut} forces a Configure Reporting due to field {x} '{attribute_current_configuration[ x ]}' != '{cluster_configuration[ attribut ][ x]}'", nwkid=Nwkid)
-                        configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, True, cluster_configuration)
+
+                        if _allow_configure_reporting_retry(self, Nwkid, _ep, _cluster):
+                            if not wip_flap:
+                                self.logging("Status", f"------ Z4D detects misconfigured reporting for device {Nwkid} on ep {_ep} and cluster {_cluster}", nwkid=Nwkid)
+
+                            self.logging("Status", f" - Attribute {attribut} forces a Configure Reporting due to field {x} '{attribute_current_configuration[ x ]}' != '{cluster_configuration[ attribut ][ x]}'", nwkid=Nwkid)
+                            configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, True, cluster_configuration)
+                        else:
+                            self.logging("Debug", f"------ check_and_redo_configure_reporting_if_needed - {Nwkid} {_ep} {_cluster} {attribut} still mismatched on {x}, backing off after repeated failed attempts", nwkid=Nwkid)
+
                         wip_flap = True
                         cluster_update = True
                         break   # No need to check for an other difference
@@ -507,9 +518,51 @@ class ConfigureReporting:
                         # We need to move to the next cluster, as we have requested
                         # a cluster cfg reporting update
                         break
+                else:
+                    # Every attribute of this cluster matched the desired configuration: clear any backoff state
+                    _clear_configure_reporting_retry(self, Nwkid, _ep, _cluster)
         return wip_flap
-           
+
 ####
+
+def _allow_configure_reporting_retry(self, Nwkid, Ep, cluster):
+    # Gate the "misconfigured reporting" Configure Reporting re-send: after
+    # MAX_CFG_RPT_MISMATCH_RETRY consecutive attempts, give up for good (no more
+    # re-sends, no more re-binds) until the next plugin restart clears the counter
+    # via reset_mismatch_retry_datastruct(), or the device reports back a matching
+    # configuration via _clear_configure_reporting_retry().
+    check_datastruct(self, STORE_CONFIGURE_REPORTING, Nwkid, Ep, cluster)
+    retry = self.ListOfDevices[Nwkid][STORE_CONFIGURE_REPORTING]["Ep"][Ep][cluster].setdefault(
+        "MismatchRetry", {"Count": 0, "Reported": False}
+    )
+
+    if retry["Count"] >= MAX_CFG_RPT_MISMATCH_RETRY:
+        return False
+
+    retry["Count"] += 1
+
+    if retry["Count"] >= MAX_CFG_RPT_MISMATCH_RETRY and not retry["Reported"]:
+        self.logging(
+            "Status",
+            f"------ Z4D giving up on Configure Reporting for {Nwkid}/{Ep}/{cluster} after {MAX_CFG_RPT_MISMATCH_RETRY} attempts; "
+            f"device does not seem to honor the requested reporting configuration. Will retry after the next plugin restart",
+            nwkid=Nwkid,
+        )
+        retry["Reported"] = True
+
+    return True
+
+
+def _clear_configure_reporting_retry(self, Nwkid, Ep, cluster):
+    if (
+        Nwkid in self.ListOfDevices
+        and STORE_CONFIGURE_REPORTING in self.ListOfDevices[Nwkid]
+        and "Ep" in self.ListOfDevices[Nwkid][STORE_CONFIGURE_REPORTING]
+        and Ep in self.ListOfDevices[Nwkid][STORE_CONFIGURE_REPORTING]["Ep"]
+        and cluster in self.ListOfDevices[Nwkid][STORE_CONFIGURE_REPORTING]["Ep"][Ep]
+    ):
+        self.ListOfDevices[Nwkid][STORE_CONFIGURE_REPORTING]["Ep"][Ep][cluster].pop("MismatchRetry", None)
+
 
 def is_valid_cluster_attribute( self, Nwkid, _ep, _cluster, attribut):
     

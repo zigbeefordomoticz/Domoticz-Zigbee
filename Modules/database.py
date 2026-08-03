@@ -263,11 +263,15 @@ def LoadDeviceList(self):
             Modules.tools.reset_device_attribute(self, STORE_CONFIGURE_REPORTING, addr)
             Modules.tools.reset_device_attribute(self, STORE_READ_CONFIGURE_REPORTING, addr)
             
-        if ( 
-            STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[ addr ] 
+        if (
+            STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[ addr ]
             and "Request" in self.ListOfDevices[ addr ][STORE_READ_CONFIGURE_REPORTING]
         ):
             Modules.tools.reset_device_attribute(self, STORE_READ_CONFIGURE_REPORTING, addr)
+
+        # A plugin restart is a fresh start: drop any Configure Reporting mismatch backoff
+        # counters so devices get a clean set of retry attempts.
+        Modules.tools.reset_mismatch_retry_datastruct(self, STORE_CONFIGURE_REPORTING, addr)
 
         if (
             "Param" in self.ListOfDevices[addr] 

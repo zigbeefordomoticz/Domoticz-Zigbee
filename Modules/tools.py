@@ -116,6 +116,7 @@ from Modules.tools_datastruct import (  # noqa: F401
     reset_attr_datastruct,
     reset_cluster_datastruct,
     reset_device_attribute,
+    reset_mismatch_retry_datastruct,
     set_isqn_datastruct,
     set_request_datastruct,
     set_request_phase_datastruct,
