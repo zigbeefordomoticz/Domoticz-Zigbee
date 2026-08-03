@@ -81,11 +81,11 @@ def znp_extract_versioning_for_plugin(self, znp_model, znp_manuf, version):
     # It is assumed that the build is always on the right side in version
     build = (''.join(char for char in reversed(version) if char.isdigit()))[::-1]
     if "Z-Stack Home" in version:
-        firmware_branch = firmware_major_version = 22
+        firmware_branch = firmware_major_version = "22"
         firmware_version = "Z-Stack Home " + "(build %s)" %build
-        
+
     elif "Z-Stack 3.0.x" in version:
-        firmware_branch = firmware_major_version = 21
+        firmware_branch = firmware_major_version = "21"
         firmware_version = "Z-Stack 3.0.x " + "(build %s)" %build
 
     else:
