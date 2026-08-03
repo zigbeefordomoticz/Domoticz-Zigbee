@@ -39,6 +39,7 @@ from Modules.tools_datastruct import (
     reset_attr_datastruct,
     reset_cluster_datastruct,
     reset_device_attribute,
+    reset_mismatch_retry_datastruct,
     set_isqn_datastruct,
     set_request_datastruct,
     set_request_phase_datastruct,
@@ -351,3 +352,47 @@ class TestCleanOldDatastruct:
 
     def test_unknown_device_returns_false(self):
         assert clean_old_datastruct(_plugin(), DA, "dead", EP, CL, AT) is False
+
+
+# ---------------------------------------------------------------------------
+# reset_mismatch_retry_datastruct
+# ---------------------------------------------------------------------------
+
+class TestResetMismatchRetryDatastruct:
+    def test_clears_mismatch_retry_keeps_other_keys(self):
+        p = _ready_plugin()
+        cluster = p.ListOfDevices[NWKID][DA]["Ep"][EP][CL]
+        cluster["MismatchRetry"] = {"Count": 3, "TimeStamp": 12345, "Reported": True}
+        set_timestamp_datastruct(p, DA, NWKID, EP, CL, 999)
+        set_isqn_datastruct(p, DA, NWKID, EP, CL, AT, "0a")
+
+        reset_mismatch_retry_datastruct(p, DA, NWKID)
+
+        assert "MismatchRetry" not in cluster
+        # Untouched state used by the rest of the plugin
+        assert cluster["TimeStamp"] == 999
+        assert cluster["iSQN"][AT] == "0a"
+
+    def test_clears_across_multiple_ep_and_clusters(self):
+        p = _ready_plugin()
+        check_datastruct(p, DA, NWKID, "02", "0402")
+        p.ListOfDevices[NWKID][DA]["Ep"][EP][CL]["MismatchRetry"] = {"Count": 1, "TimeStamp": 1, "Reported": False}
+        p.ListOfDevices[NWKID][DA]["Ep"]["02"]["0402"]["MismatchRetry"] = {"Count": 2, "TimeStamp": 2, "Reported": True}
+
+        reset_mismatch_retry_datastruct(p, DA, NWKID)
+
+        assert "MismatchRetry" not in p.ListOfDevices[NWKID][DA]["Ep"][EP][CL]
+        assert "MismatchRetry" not in p.ListOfDevices[NWKID][DA]["Ep"]["02"]["0402"]
+
+    def test_no_mismatch_retry_present_is_a_no_op(self):
+        p = _ready_plugin()
+        # Should not raise even though "MismatchRetry" was never set
+        reset_mismatch_retry_datastruct(p, DA, NWKID)
+        assert "MismatchRetry" not in p.ListOfDevices[NWKID][DA]["Ep"][EP][CL]
+
+    def test_unknown_device_no_crash(self):
+        reset_mismatch_retry_datastruct(_plugin(), DA, "dead")
+
+    def test_device_without_the_attribute_no_crash(self):
+        p = _plugin({NWKID: {}})
+        reset_mismatch_retry_datastruct(p, DA, NWKID)

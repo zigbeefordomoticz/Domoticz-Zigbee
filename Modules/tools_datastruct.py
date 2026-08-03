@@ -274,6 +274,23 @@ def reset_device_attribute(self, Nwkid: str, attribute: str) -> None:
     self.ListOfDevices[Nwkid][attribute] = {}
 
 
+def reset_mismatch_retry_datastruct(self, DeviceAttribute, key):
+    """Drop any 'MismatchRetry' Configure Reporting backoff counters for every Ep/cluster of a device.
+
+    Called on plugin restart so devices get a fresh set of retry attempts instead of
+    carrying a stale backoff across restarts; leaves TimeStamp/iSQN/Attributes/ZigateRequest untouched.
+    """
+    if key not in self.ListOfDevices:
+        return
+    device_attr = self.ListOfDevices[key].get(DeviceAttribute)
+    if not device_attr or "Ep" not in device_attr:
+        return
+    for ep_clusters in device_attr["Ep"].values():
+        for cluster in ep_clusters.values():
+            if isinstance(cluster, dict):
+                cluster.pop("MismatchRetry", None)
+
+
 def clean_old_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId):
     if key not in self.ListOfDevices:
         return False
