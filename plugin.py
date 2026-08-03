@@ -1397,7 +1397,7 @@ def zigateInit_Phase3(self):
 
     if self.transport != "None" and Parameters["Mode3"] == "True" and self.ErasePDMDone and self.domoticzdb_Hardware:
         self.log.logging("Plugin", "Debug", "let's update Mode3 is needed")
-        self.domoticzdb_Hardware.disableErasePDM( self.WebUsername, self.WebPassword)
+        restartPluginViaDomoticzJsonApi(self, stop=False, erasePDM=False, url_base_api=Parameters["Mode5"])
 
     if self.InitPhase3:
         return
