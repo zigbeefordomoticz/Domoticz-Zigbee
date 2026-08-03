@@ -18,6 +18,13 @@ Release Numbering
 - Odd numbers --> Stable/9.1 (stable branch)
 - Even numbers  --> Beta/9.2 (dev branch)
 
+## August 2026 - stable9 9.1.002 (2026.8)
+
+- [Issue] - Fix infinite Configure Reporting mismatch loop; give up permanently after 2 consecutive mismatches instead of retrying forever (#1999)
+- [Issue] - Fix TypeError: 'float' object cannot be interpreted as an integer on PowerFactor/FanSpeed widget updates; coerce nValue at the Domoticz API boundary (#2003)
+- [Issue] - Fix TypeError at ZNP startup building the 0x8010 firmware version frame for CC2531 boards reporting "Z-Stack Home"/"Z-Stack 3.0.x" firmware (#2005)
+- [Issue] - Fix AttributeError on repeated onHeartbeat during ErasePDM restart (#2007)
+
 ## July 2026 - stable9 9.1.001 (2026.8)
 
 - [Technical] - Enable Domoticz 'Extended Framework' (DomoticzEx) as the plugin's primary framework, replacing the legacy Domoticz API (#1863, #1931)
