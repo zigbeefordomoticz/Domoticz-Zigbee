@@ -219,9 +219,8 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         self.log.logging(["Widget", "Electric"], "Debug", "PowerFactor %s WidgetType: %s Value: %s (%s)" % (
             NwkId, WidgetType, value, type(value)), NwkId)
 
-        nValue = round(value, 1)
-        sValue = str(nValue)
-        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+        sValue = str(round(value, 1))
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
     if "Power" in ClusterType:  # Instant Power/Watts
         # Power and Meter usage are triggered only with the Instant Power usage.
