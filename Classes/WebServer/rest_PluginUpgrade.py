@@ -51,12 +51,13 @@ def rest_plugin_upgrade(self, verb, data, parameters):
         shell=True,
         errors='backslashreplace'
     )
-    result = {"result": str(process.stdout), "ReturnCode": process.returncode }
-    
+    output = str(process.stdout) + str(process.stderr)
+    result = {"result": output, "ReturnCode": process.returncode }
+
     self.logging("Debug", "Result: %s" %str(result))
-    
+
     lines = {}
-    lines = result["result"].split("\n")
+    lines = output.split("\n")
     Logging_mode = "Log" if result["ReturnCode"] == 0 else "Error"
     for line in lines:
         self.logging( Logging_mode, "%s" %(line))
@@ -93,14 +94,19 @@ def certified_devices_update(self):
         self.logging( "Error", "Internet access is disable !!!")
         return { "result": "Internet access disabled !!!", "ReturnCode": -1}
 
-    if distro.id() in ("debian", "raspbian") and distro.version() >= '12':
+    try:
+        debian_major_version = int(distro.version().split(".")[0])
+    except (ValueError, IndexError):
+        debian_major_version = 0
+
+    if distro.id() in ("debian", "raspbian") and debian_major_version >= 12:
         CERTIFIED_DEVICES_UPGRADE_CMD = "python3 -m pip install z4d-certified-devices --upgrade --break-system-packages"
     else:
         CERTIFIED_DEVICES_UPGRADE_CMD = "python3 -m pip install z4d-certified-devices --upgrade"
 
     self.logging("Status", "Plugin looks to upgrade the Certified Device package")
-    
-    process = subprocess.run( 
+
+    process = subprocess.run(
         CERTIFIED_DEVICES_UPGRADE_CMD ,
         cwd=self.pluginParameters["HomeFolder"],
         universal_newlines=True,
@@ -109,14 +115,15 @@ def certified_devices_update(self):
         shell=True,
         errors='backslashreplace'
     )
-    result = {"result": str(process.stdout), "ReturnCode": process.returncode }
+    output = str(process.stdout) + str(process.stderr)
+    result = {"result": output, "ReturnCode": process.returncode }
     Logging_mode = "Log" if result["ReturnCode"] == 0 else "Error"
-    
+
     #_reload_device_conf(self)
     self.logging(Logging_mode, "Certified Device package upgrade results")
-    for line in result["result"].split("\n"):    
+    for line in output.split("\n"):
         self.logging( Logging_mode, "%s" %(line))
-        
+
     return result
   
    
