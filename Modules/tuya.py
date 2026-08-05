@@ -1487,12 +1487,36 @@ def SmartRelayStatus02(self, nwkid, mode):
     SmartRelayStatus_by_ep( self, nwkid, "02", mode)
 
 
-def SmartRelayStatus03(self, nwkid, mode): 
+def SmartRelayStatus03(self, nwkid, mode):
     SmartRelayStatus_by_ep( self, nwkid, "03", mode)
 
 
 def SmartRelayStatus04(self, nwkid, mode):
     SmartRelayStatus_by_ep( self, nwkid, "04", mode)
+
+
+TUYA_E001_POWER_ON_BEHAVIOR = {"off": 0x00, "on": 0x01, "previous": 0x02}
+
+def tuya_e001_power_on_behavior(self, nwkid, ep, mode):
+    value = TUYA_E001_POWER_ON_BEHAVIOR.get(mode, 0x02) if isinstance(mode, str) else int(mode)
+    write_attribute(self, nwkid, ZIGATE_EP, ep, "e001", "0000", "00",
+                    "d010", "30", "%02x" % value, ackIsDisabled=True)
+
+
+def tuya_e001_power_on_behavior_01(self, nwkid, mode):
+    tuya_e001_power_on_behavior(self, nwkid, "01", mode)
+
+
+def tuya_e001_power_on_behavior_02(self, nwkid, mode):
+    tuya_e001_power_on_behavior(self, nwkid, "02", mode)
+
+
+def tuya_e001_power_on_behavior_03(self, nwkid, mode):
+    tuya_e001_power_on_behavior(self, nwkid, "03", mode)
+
+
+def tuya_e001_power_on_behavior_04(self, nwkid, mode):
+    tuya_e001_power_on_behavior(self, nwkid, "04", mode)
 
 
 def _check_tuya_attribute(self, nwkid, ep, cluster, attribute ):
@@ -1929,6 +1953,10 @@ TUYA_DEVICE_PARAMETERS = {
     "SmartRelayStatus02": SmartRelayStatus02,
     "SmartRelayStatus03": SmartRelayStatus03,
     "SmartRelayStatus04": SmartRelayStatus04,
+    "TuyaE001PowerOnBehavior01": tuya_e001_power_on_behavior_01,
+    "TuyaE001PowerOnBehavior02": tuya_e001_power_on_behavior_02,
+    "TuyaE001PowerOnBehavior03": tuya_e001_power_on_behavior_03,
+    "TuyaE001PowerOnBehavior04": tuya_e001_power_on_behavior_04,
     "ZG204Z_MotionSensivity": tuya_motion_zg204l_sensitivity,
     "ZG204Z_MotionOccupancyTime": tuya_motion_zg204l_keeptime,
     "RadarMotionSensitivity": tuya_radar_motion_sensitivity,
