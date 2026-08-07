@@ -1498,9 +1498,10 @@ def SmartRelayStatus04(self, nwkid, mode):
 TUYA_E001_POWER_ON_BEHAVIOR = {"off": 0x00, "on": 0x01, "previous": 0x02}
 
 def tuya_e001_power_on_behavior(self, nwkid, ep, mode):
+    self.log.logging("Tuya", "Debug", "tuya_e001_power_on_behavior - %s %s %s" % (nwkid, ep, mode), nwkid)
     value = TUYA_E001_POWER_ON_BEHAVIOR.get(mode, 0x02) if isinstance(mode, str) else int(mode)
     write_attribute(self, nwkid, ZIGATE_EP, ep, "e001", "0000", "00",
-                    "d010", "30", "%02x" % value, ackIsDisabled=True)
+                    "d010", "30", "%02x" % value, ackIsDisabled=False, disableDefaultRSP=False)
 
 
 def tuya_e001_power_on_behavior_01(self, nwkid, mode):

@@ -523,8 +523,8 @@ def removeZigateDevice(self, IEEE):
 def read_attribute(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled=False):
     return zcl_read_attribute(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled)
 
-def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=False ):
-    i_sqn = zcl_write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=ackIsDisabled )
+def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=False, disableDefaultRSP=True ):
+    i_sqn = zcl_write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=ackIsDisabled, disableDefaultRSP=disableDefaultRSP )
     
     set_isqn_datastruct(self, "WriteAttributes", key, EPout, clusterID, attribute, i_sqn)
     set_request_datastruct( self, "WriteAttributes", key, EPout, clusterID, attribute, data_type, EPin, EPout, manuf_id, manuf_spec, data, ackIsDisabled, "requested", )
