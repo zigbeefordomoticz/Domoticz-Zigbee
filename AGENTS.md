@@ -44,6 +44,10 @@ Before writing or proposing any code change, verify ALL of the following:
 - [ ] No breaking changes
 - [ ] No persistent data format changes
 - [ ] Upgrades remain safe
+- [ ] Bumping `zigpy`/`bellows`/`zigpy-deconz`/`zigpy-znp`/`zigpy-blz` in `constraints.txt`? See
+      CLAUDE.md → "Bumping zigpy / zigpy-znp / zigpy-deconz / zigpy-blz / bellows in `constraints.txt`"
+      for the required per-library changelog + `Classes/ZigpyTransport` impact assessment — do not
+      treat it as a routine dependency update
 
 ### Logging & Errors
 - [ ] Logs are useful, not noisy
