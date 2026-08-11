@@ -1138,7 +1138,11 @@ def retreive_zigpy_topology_data(self):
     # Determine sync period based on existing data
     if self.zigpy_topology is None:
         return
-    
+
+    if self.zigpy_topology.ControllerLink.app is None:
+        # Radio is mid-restart (supervisor recovering from a comms failure); nothing to poll yet
+        return
+
     if self.zigpy_topology.is_zigpy_topology_in_progress():
         # Scan in progress
         self.zigpy_topology.new_scan_detected = True
