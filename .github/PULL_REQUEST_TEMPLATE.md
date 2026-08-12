@@ -1,79 +1,35 @@
 # Pull Request Template — Zigbee4Domoticz (Domoticz-Zigbee)
 
-Thank you for contributing! All PRs **must comply with the AGENTS.md guidance**:
-https://github.com/zigbeefordomoticz/Domoticz-Zigbee/blob/stable8/AGENTS.md
+## Summary
+
+*(One or two sentences: what does this PR do?)*
 
 ---
 
-## 📝 PR Type
+## Why
 
-- [ ] Bug Fix
-- [ ] Stability Improvement
-- [ ] Device Support
-- [ ] Documentation / Wiki Update
-- [ ] Other (specify below)
+*(The motivation — bug reference, user report, stability issue, missing feature. Why is this change needed?)*
 
 ---
 
-## 🔖 Target Branch
+## Scope
 
-**Production branch:** `stable8`  
-- [ ] This PR targets `stable8`
-- [ ] This PR targets a development/testing branch
-
-> ⚠️ Only bug fixes or backward-compatible enhancements are allowed on `stable8`.
+*(What's affected — modules/files touched, device models, radio backends, target branch.)*
 
 ---
 
-## ✅ Checklist Before Submitting
+## Details
 
-**Environment**
-- [ ] Python ≥ 3.11
-- [ ] Domoticz ≥ 2025.2
-
-**Code Guidelines**
-- [ ] `plugin.py` remains thin (orchestration only)
-- [ ] Core logic is in `Modules/` or `Zigbee/`
-- [ ] No UI changes (UI lives in separate repo)
-- [ ] No breaking persistent data changes
-- [ ] Async / threading patterns respected
-- [ ] Logs are informative and not excessive
-
-**Device Handling**
-- [ ] Device behavior uses certified JSON (z4d-certified-devices)
-- [ ] No hardcoding of devices
-- [ ] Backward compatibility maintained
-
-**Testing**
-- [ ] All relevant tests pass
-- [ ] Network, coordinator, and devices verified
-- [ ] Changes tested on at least one real coordinator
+*(Technical explanation of the change: what was changed and how.)*
 
 ---
 
-## 🔧 Description of Changes
+## Validation
 
-*(Provide a short, technical description of what is changed and why. Include references to any issues fixed.)*
-
----
-
-## ⚠️ Known Limitations / Risks
-
-*(List any potential backward-compatibility issues, network risks, or unstable behavior.)*
+*(How was this verified — manual testing, coordinator/devices used, steps to reproduce.)*
 
 ---
 
-## 🧪 Testing Notes
+## Unit Test Added
 
-- [ ] Describe steps to reproduce/test changes
-- [ ] Include any special setup required (coordinator type, devices)
-
----
-
-## 📌 Additional Notes for Reviewers / Agents
-
-- All changes must be **conservative, safe, and backward-compatible**
-- Changes impacting `Zigbee/` or async behavior must be **checked against all supported radios**
-- Changes impacting `Modules/` must **not interfere with core Zigbee async flow**
-- Human reviewers should check that **stable8 discipline** rules are followed
-
+*(Which tests were added or updated, and why. If none were added, explain why not.)*

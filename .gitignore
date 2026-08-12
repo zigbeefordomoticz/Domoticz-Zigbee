@@ -27,6 +27,7 @@ __pycache__/
 .pylintrc
 Tools/JennicModuleProgrammer/Build/JennicModuleProgrammer
 .vscode/.ropeproject/config.py
+worklog/
 
 
 
