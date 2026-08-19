@@ -47,9 +47,18 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 import urllib.error
 import urllib.request
 from typing import Optional, Tuple
+
+# Under sudo, LANG/LC_ALL are typically stripped (env_reset), so Python may
+# fall back to a non-UTF-8 stdout encoding (e.g. latin-1/ascii) even though
+# this script prints non-ASCII characters (em dash, French accents). Force
+# UTF-8 explicitly rather than depending on the ambient locale.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8")
 
 MIN_DOMOTICZ_VERSION = (2025, 1)  # DomoticzEx / Extended Framework available since 2025.1
 DEFAULT_IP = "127.0.0.1"
