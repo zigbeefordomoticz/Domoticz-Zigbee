@@ -32,8 +32,8 @@ from Modules.domoTools import (RetreiveSignalLvlBattery,
 from Modules.linky import linky_tarif_color, linky_tarif_color_ntarf
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import (get_device_config_param,
-                           get_deviceconf_parameter_value, str_round,
-                           zigpy_plugin_sanity_check)
+                           get_deviceconf_parameter_value, is_fake_ep,
+                           str_round, zigpy_plugin_sanity_check)
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL, ZIGATE_EP
 from Modules.zlinky import (ZLINK_CONF_MODEL, get_instant_power,
                             get_notification_day_color, get_tarif_color,
@@ -1688,8 +1688,13 @@ def is_time_to_domo_update(self, NwkId, Ep):
         return False
 
     if Ep not in self.ListOfDevices[NwkId]["Ep"]:
-        self.log.logging("Widget", "Error", "MajDomoDevice - %s/%s not known Endpoint" % (NwkId, Ep), NwkId)
-        return False
+        if is_fake_ep(self, NwkId, Ep):
+            # Fake/virtual Ep (e.g. domo_ep override) declared in the device config but never
+            # discovered over the air: create it on first use so the widget update can proceed.
+            self.ListOfDevices[NwkId]["Ep"][Ep] = {}
+        else:
+            self.log.logging("Widget", "Error", "MajDomoDevice - %s/%s not known Endpoint" % (NwkId, Ep), NwkId)
+            return False
 
     if ( 
         "Status" in self.ListOfDevices[NwkId] 
