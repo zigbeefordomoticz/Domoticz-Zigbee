@@ -197,6 +197,20 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
             return
 
+        if get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "TUYA_REMOTE", return_default=None):
+            # Stateless Tuya button remotes report their real clicks via the manufacturer-specific
+            # 0xFD/0xFC commands (see Decode8095), never through this attribute-report path. A plain
+            # OnOff attribute report here is just the device's own idle heartbeat and carries no new
+            # information; forwarding it would force a spurious Domoticz widget update on every report.
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
+            self.log.logging(
+                "Cluster",
+                "Debug",
+                "ReadCluster - ClusterId=0006 - dropping OnOff attribute report from Tuya remote %s/%s (Value: %s)" % (MsgSrcAddr, MsgSrcEp, MsgClusterData),
+                MsgSrcAddr,
+            )
+            return
+
         if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.ctrl_neutral1" and MsgSrcEp != "02":
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
