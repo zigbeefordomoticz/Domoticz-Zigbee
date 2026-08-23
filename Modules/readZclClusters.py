@@ -20,7 +20,8 @@ from DevicesModules import FUNCTION_MODULE, FUNCTION_WITH_ACTIONS_MODULE
 from Modules.batterieManagement import UpdateBatteryAttribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.tools import (checkAndStoreAttributeValue,
-                           get_device_config_param, getAttributeValue,
+                           get_device_config_param, get_deviceconf_parameter_value,
+                           getAttributeValue,
                            store_battery_percentage_time_stamp,
                            store_battery_voltage_time_stamp)
 from Modules.zclClusterHelpers import (decoding_attribute_data,
@@ -161,7 +162,24 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
                 store_battery_voltage_time_stamp( self, MsgSrcAddr)
 
         elif data_action == UPDATE_DOMO_DEVICE and majdomodevice_possiblevalues( self, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value ):
-            action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value )
+            if (
+                MsgClusterId == "0006"
+                and MsgAttrID == "0000"
+                and get_deviceconf_parameter_value(self, device_model, "TUYA_REMOTE", return_default=None)
+            ):
+                # Stateless Tuya button remotes (TS0041/TS0042/TS0043/TS0044/TS004F...) report their
+                # real clicks exclusively via the manufacturer-specific 0xFD/0xFC commands (handled in
+                # Decode8095), never via a plain OnOff attribute report. This report is just the
+                # device's own idle heartbeat and carries no new information; forwarding it would force
+                # a spurious Domoticz widget update (and re-fire any bound automation) on every report.
+                self.log.logging(
+                    "ZclClusters",
+                    "Debug",
+                    "process_cluster_attribute_response - dropping OnOff attribute report from Tuya remote %s/%s (Value: %s)" % (MsgSrcAddr, MsgSrcEp, value),
+                    nwkid=MsgSrcAddr,
+                )
+            else:
+                action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value )
             
         elif data_action == STORE_SPECIFIC_ATTRIBUTE:
             _storage_specificlvl1 = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, STORE_SPECIFIC_PLACE_LVL1, model=device_model )
