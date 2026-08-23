@@ -22,7 +22,7 @@ Before writing or proposing any code change, verify ALL of the following:
 ### Environment
 - [ ] Python ≥ 3.11
 - [ ] Domoticz ≥ 2025.2
-- [ ] Target branch is `stable8` for production
+- [ ] Target branch is `stable9` for production
 
 ### Architecture
 - [ ] `plugin.py` remains thin (orchestration only)
@@ -145,9 +145,9 @@ Domoticz (host)
 
 ---
 
-## 🌿 stable8 Branch Discipline
+## 🌿 stable9 Branch Discipline
 
-`stable8` is the **production branch**. It must be:
+`stable9` is the **production branch**. `stable8` (and earlier: `stable7`, `stable6`) are out of support and locked — no changes target them. It must be:
 - Upgrade-safe
 - Backward compatible
 - Stable for critical automations

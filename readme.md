@@ -53,8 +53,9 @@ The community maintains a list of certified Zigbee Device Objects at [https://zi
 In theory, any Zigbee devices that fully comply with the Zigbee 3.0, Zigbee Home Automation, and Zigbee Light Link specifications set by the Zigbee Alliance should be technically compatible with this project. However, it's worth noting that certain hardware manufacturers may not consistently adhere to all the specified requirements, resulting in partial or non-functional device behavior without custom integrations. Nevertheless, developers often find solutions or workarounds for non-standard features to address these issues.
 
 ## Branches
-- **stable7**: out of support (version 7.1.xxx).
-- **stable8**: Recommended for production use (version 8.1.xxx).
+- **stable9**: Recommended for production use (version 9.1.xxx).
+- **stable8**: out of support, locked (version 8.1.xxx).
+- **stable7**: out of support, locked (version 7.1.xxx).
 
 
 ## Troubleshooting

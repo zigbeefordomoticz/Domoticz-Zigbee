@@ -64,7 +64,7 @@ plugin.py (entry point, ~2000 lines)
 ### From AGENTS.md (Must Follow)
 
 **Stability Requirements:**
-- No breaking changes to stable8 branch
+- No breaking changes to stable9 branch
 - Preserve long-term backward compatibility
 - No persistent data format changes without migration
 - Upgrades must remain safe
@@ -89,7 +89,7 @@ plugin.py (entry point, ~2000 lines)
 **Environment:**
 - Python >= 3.11
 - Domoticz >= 2025.2 (2025.1 minimum)
-- Target stable8 branch for production changes
+- Target stable9 branch for production changes
 
 ## Development Workflow
 
@@ -312,7 +312,7 @@ Each backend (ZNP, EZSP, deCONZ, BLZ) has:
 
 **Before Proposing Changes:**
 - Read and follow AGENTS.md (mandatory)
-- Ensure changes are backward compatible (stable8 requirement)
+- Ensure changes are backward compatible (stable9 requirement)
 - No blocking calls in Zigpy thread
 - Test with `pytest . && flake8 .`
 - Keep plugin.py thin; move logic to Modules/
@@ -348,6 +348,7 @@ Each backend (ZNP, EZSP, deCONZ, BLZ) has:
 
 ## Version & Branch Info
 
-- **stable8**: Recommended for production (version 8.1.xxx)
-- **stable7**: Out of support (version 7.1.xxx)
-- Current version: 8.1.005 (2026.4)
+- **stable9**: Recommended for production (version 9.1.xxx)
+- **stable8**: Out of support, locked (version 8.1.xxx)
+- **stable7**: Out of support, locked (version 7.1.xxx)
+- Current version: 9.1.002 (2026.8)
