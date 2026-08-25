@@ -324,6 +324,12 @@ Each backend (ZNP, EZSP, deCONZ, BLZ) has:
 - Reference issues if applicable
 - Be descriptive; avoid generic messages
 
+**Before Running `git commit` (GPG signing):**
+- Commits in this repo are GPG-signed (`commit.gpgsign=true`). Claude Code's Bash tool has no real TTY, so gpg-agent/pinentry can fail to prompt for the key passphrase on the first signing attempt in a session (error: `gpg failed to sign the data`).
+- Before attempting the first commit in a session, ask the user to unlock the key from a real terminal window by running:
+  `"test" | gpg --clearsign -u EE19D8BB30B19ED276D7413D1F8D08C104E0238E`
+- Do not work around this by disabling signing (`--no-gpg-sign` or `commit.gpgsign=false`) — that bypasses a deliberate security control and must never be done without the user explicitly asking for it.
+
 **Safe Refactoring Areas:**
 - Utility functions in `Modules/tools.py`
 - Cluster helpers in `Modules/zclClusterHelpers.py`
