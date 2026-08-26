@@ -87,5 +87,11 @@ We extend our heartfelt gratitude to our generous donors whose contributions ena
 
 ## Star History
 
-[View the Star History chart for this repository](https://star-history.com/#zigbeefordomoticz/Domoticz-Zigbee&Date)
+<a href="https://www.star-history.com/?type=date&repos=zigbeefordomoticz%2FDomoticz-Zigbee">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=zigbeefordomoticz/Domoticz-Zigbee&type=date&theme=dark&legend=top-left&sealed_token=0d_edPbUAdbGjkwrBuxjFGULl17LCR0x3K-P6zo9iWmPoPKc-3BoQk13EBTnMmKw7Q2xhMYSGOVpMv0bQiyt2beVymLNlS3ecwvN3HdOwgWFdeSmjjt4cFBFK_lcBA5r_Nib1IWSUiNdTUTUkp4T7C4ipbMt7Ku5jOsXUlQptfAh5gPRhiwknZuD6r-V" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=zigbeefordomoticz/Domoticz-Zigbee&type=date&legend=top-left&sealed_token=0d_edPbUAdbGjkwrBuxjFGULl17LCR0x3K-P6zo9iWmPoPKc-3BoQk13EBTnMmKw7Q2xhMYSGOVpMv0bQiyt2beVymLNlS3ecwvN3HdOwgWFdeSmjjt4cFBFK_lcBA5r_Nib1IWSUiNdTUTUkp4T7C4ipbMt7Ku5jOsXUlQptfAh5gPRhiwknZuD6r-V" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=zigbeefordomoticz/Domoticz-Zigbee&type=date&legend=top-left&sealed_token=0d_edPbUAdbGjkwrBuxjFGULl17LCR0x3K-P6zo9iWmPoPKc-3BoQk13EBTnMmKw7Q2xhMYSGOVpMv0bQiyt2beVymLNlS3ecwvN3HdOwgWFdeSmjjt4cFBFK_lcBA5r_Nib1IWSUiNdTUTUkp4T7C4ipbMt7Ku5jOsXUlQptfAh5gPRhiwknZuD6r-V" />
+ </picture>
+</a>
 
