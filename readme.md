@@ -87,5 +87,5 @@ We extend our heartfelt gratitude to our generous donors whose contributions ena
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=zigbeefordomoticz/Domoticz-Zigbee&type=Date&legend=top-left)](https://star-history.com/#zigbeefordomoticz/Domoticz-Zigbee&Date)
+[View the Star History chart for this repository](https://star-history.com/#zigbeefordomoticz/Domoticz-Zigbee&Date)
 
