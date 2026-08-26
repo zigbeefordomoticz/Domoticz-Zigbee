@@ -85,3 +85,7 @@ We extend our heartfelt gratitude to our generous donors whose contributions ena
 * <img src="https://www.pipiche.fr//pp.svg" width="24" height="24" alt="Donate via Paypal"/> <a href="https://paypal.me/pipiche">Donate via PayPal</a>
 <br/>
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=zigbeefordomoticz/Domoticz-Zigbee&type=Date&legend=top-left)](https://star-history.com/#zigbeefordomoticz/Domoticz-Zigbee&Date)
+
