@@ -584,8 +584,21 @@ def zlinky_totalisateur(self, nwkid, attribute, value):
         self.log.logging("ZLinky", "Error", f"zlinky_totalisateur: {nwkid} has no cluster {CLUSTER_ID}")
         return
 
-    # Compute the total
-    total = sum(cluster.get(key, 0) for key in ZLINKY_INDEX_KEYS)
+    # Compute the total. Guard against a non-numeric stored value (e.g. a stale/corrupted
+    # entry left over from a pre-9.1 data format) so a single bad index does not keep the
+    # whole totalisateur - and so the Energy widget - stuck forever.
+    total = 0
+    for key in ZLINKY_INDEX_KEYS:
+        index_value = cluster.get(key, 0)
+        if not isinstance(index_value, (int, float)):
+            self.log.logging(
+                "ZLinky", "Error",
+                f"zlinky_totalisateur: {nwkid} attribute {key} has an unexpected value {index_value!r} "
+                f"({type(index_value).__name__}) instead of a number, resetting it to 0",
+            )
+            cluster[key] = 0
+            index_value = 0
+        total += index_value
 
     # Update and log
     if total < prev_total:
