@@ -89,13 +89,13 @@ def rawaps_read_attribute_req(self, nwkid, EpIn, EpOut, Cluster, direction, manu
 
 
 # Write Attributes
-def rawaps_write_attribute_req(self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=DEFAULT_ACK_MODE):
+def rawaps_write_attribute_req(self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=DEFAULT_ACK_MODE, disableDefaultRSP=True):
     self.log.logging("zclCommand", "Debug", "rawaps_write_attribute_req %s %s %s %s %s %s %s %s %s" % (nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data), nwkid)
     zcl_command_formated_logging( self, "Write_Attribute_Req (Raw)", nwkid, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled)
-    
+
     cmd = "02"
 
-    cluster_frame = 0b00010000  # The frame type sub-field SHALL be set to indicate a global command (0b00)
+    cluster_frame = 0b00010000 if disableDefaultRSP else 0b00000000  # The frame type sub-field SHALL be set to indicate a global command (0b00)
     if (
         manuf_spec == "01"
     ):  # The manufacturer specific sub-field SHALL be set to 0 if this command is being used to Write Attributes defined for any cluster in the ZCL or 1 if this command is being used to write manufacturer specific attributes
