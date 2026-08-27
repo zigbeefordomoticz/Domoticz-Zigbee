@@ -618,7 +618,8 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue,
                              f"domo_update_api: Cannot write Options {Options}: {e}", nwkid)
 
     try:
-        unit_obj.Update(Log=True, SuppressTriggers=SuppressTriggers, UpdateProperties=True)
+        unit_obj.Update(Log=True, SuppressTriggers=SuppressTriggers,
+                        UpdateProperties=True, UpdateOptions=(Options is not None))
     except Exception as e:
         self.log.logging("AbstractDz", "Error",
                          f"domo_update_api - Unit.Update() raised: {e}", nwkid)

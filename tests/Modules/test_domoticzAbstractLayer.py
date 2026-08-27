@@ -54,6 +54,7 @@ class _FakeUnit:
         self._deleted = False
         self._updated = False
         self._touched = False
+        self._last_update_kwargs = None
         # Back-reference set by _make_devices so Delete() can remove itself
         self._parent_device: "_FakeDevice | None" = None
 
@@ -67,11 +68,15 @@ class _FakeUnit:
         if self._parent_device is not None and self.Unit in self._parent_device.Units:
             del self._parent_device.Units[self.Unit]
 
-    def Update(self, Log=True, TypeName=None, SuppressTriggers=False, UpdateProperties=False):
+    def Update(self, Log=True, TypeName=None, SuppressTriggers=False, UpdateProperties=False, UpdateOptions=False):
         self._updated = True
         self._update_log = Log
         self._update_suppress_triggers = SuppressTriggers
         self._update_properties = UpdateProperties
+        self._last_update_kwargs = {
+            "Log": Log, "TypeName": TypeName, "UpdateProperties": UpdateProperties,
+            "UpdateOptions": UpdateOptions, "SuppressTriggers": SuppressTriggers,
+        }
         if TypeName is not None and UpdateProperties:
             self.TypeName = TypeName
 
@@ -711,6 +716,21 @@ class TestDomoUpdateApi(unittest.TestCase):
         devices = _make_devices(("ieee-1", [(1, {})]))
         # Should not raise KeyError
         domo.domo_update_api(obj, devices, "ieee-1", 1, 0, "Off")
+
+    def test_options_triggers_updateoptions_flag(self):
+        obj = _make_self()
+        devices = _make_devices(("ieee-1", [(1, {})]))
+        domo.domo_update_api(obj, devices, "ieee-1", 1, 0, "Off", Options={"EnergyMeterMode": "1"})
+        unit = devices["ieee-1"].Units[1]
+        self.assertEqual(unit.Options, {"EnergyMeterMode": "1"})
+        self.assertTrue(unit._last_update_kwargs["UpdateOptions"])
+
+    def test_no_options_does_not_set_updateoptions_flag(self):
+        obj = _make_self()
+        devices = _make_devices(("ieee-1", [(1, {})]))
+        domo.domo_update_api(obj, devices, "ieee-1", 1, 0, "Off")
+        unit = devices["ieee-1"].Units[1]
+        self.assertFalse(unit._last_update_kwargs["UpdateOptions"])
 
 
 # ---------------------------------------------------------------------------
