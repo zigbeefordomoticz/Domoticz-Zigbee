@@ -197,6 +197,23 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
             return
 
+        if get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "TUYA_REMOTE", return_default=None):
+            # Stateless Tuya button remotes report their real clicks via the manufacturer-specific
+            # 0xFD/0xFC commands (see Decode8095), never through this attribute-report path. A plain
+            # OnOff attribute report here is just the device's own idle heartbeat and carries no new
+            # information. Normally this attribute is intercepted upstream by the generic ZCL-config
+            # path (Conf/ZclDefinitions/0006.json -> process_cluster_attribute_response(), the actual
+            # fix for this is there); this guard only matters if that generic path is ever bypassed
+            # (e.g. ZclDefinitions missing/misconfigured), so cluster-specific dispatch stays safe too.
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
+            self.log.logging(
+                "Cluster",
+                "Debug",
+                "ReadCluster - ClusterId=0006 - dropping OnOff attribute report from Tuya remote %s/%s (Value: %s)" % (MsgSrcAddr, MsgSrcEp, MsgClusterData),
+                MsgSrcAddr,
+            )
+            return
+
         if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.ctrl_neutral1" and MsgSrcEp != "02":
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
