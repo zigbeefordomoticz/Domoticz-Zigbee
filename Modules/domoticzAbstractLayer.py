@@ -618,7 +618,7 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue,
                              f"domo_update_api: Cannot write Options {Options}: {e}", nwkid)
 
     try:
-        unit_obj.Update(Log=(not SuppressTriggers))
+        unit_obj.Update(Log=True, SuppressTriggers=SuppressTriggers, UpdateProperties=True)
     except Exception as e:
         self.log.logging("AbstractDz", "Error",
                          f"domo_update_api - Unit.Update() raised: {e}", nwkid)
@@ -660,7 +660,7 @@ def domo_update_SwitchType_SubType_Type(self, Devices, DeviceID_, Unit_,
 
     if Typename_:
         try:
-            Devices[DeviceID_].Units[Unit_].Update(TypeName=Typename_)
+            Devices[DeviceID_].Units[Unit_].Update(TypeName=Typename_, UpdateProperties=True)
         except Exception as e:
             self.log.logging("AbstractDz", "Error",
                              f"domo_update_SwitchType_SubType_Type - Update() raised: {e}")
