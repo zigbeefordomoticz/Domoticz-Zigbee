@@ -31,7 +31,6 @@ response_required_commands = {
     0x0000: {
         0x00,  # Read Attributes
         0x02,  # Read Reporting Config
-        0x0A,  # Discover Attributes
         0x0C,  # Discover Commands Received
         0x0E,  # Discover Commands Generated
     },
