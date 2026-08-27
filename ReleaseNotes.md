@@ -18,6 +18,20 @@ Release Numbering
 - Odd numbers --> Stable/9.1 (stable branch)
 - Even numbers  --> Beta/9.2 (dev branch)
 
+## August 2026 - stable9 9.1.003 (2026.9)
+
+- [Issue] - Fix ZLinky totalisateur crash on non-numeric index value (#2029)
+- [Issue] - Fix domo_update_api: pass UpdateOptions=True so widget Options persist (#2028)
+- [Issue] - Fix Unit.Update(): forward SuppressTriggers, persist properties (#2025)
+- [Issue] - Fix: send Default Response for Report Attributes (0x0A) commands (#2021)
+- [Issue] - Fix: widget update dropped for FakeEp (virtual) endpoints (#2019)
+- [Technical] - Upgrade zigpy radio backend libraries to latest versions (#2015, #2016)
+- [Issue] - Guard topology poll against app being None during radio restart (#2014)
+- [Issue] - Fix TypeError: deque not JSON serializable in non-optimized-device-configuration REST API (#2013)
+- [Feature] - Add Tuya e001 Power-On Behavior write handler (EP01-04) (#2012)
+- [Issue] - Quiet the benign startup KeyError storm from get_device() self-lookups (#2011, #2010)
+- [Issue] - Fix swallowed stderr and string-based Debian version check in plugin upgrade (#2009)
+
 ## August 2026 - stable9 9.1.002 (2026.8)
 
 - [Issue] - Fix infinite Configure Reporting mismatch loop; give up permanently after 2 consecutive mismatches instead of retrying forever (#1999)
