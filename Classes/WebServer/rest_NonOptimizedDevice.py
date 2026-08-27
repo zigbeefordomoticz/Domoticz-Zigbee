@@ -11,9 +11,18 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 import json
+from collections import deque
 
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
+
+
+def _json_default(obj):
+    if isinstance(obj, (deque, set, frozenset)):
+        return list(obj)
+    if isinstance(obj, bytes):
+        return obj.hex()
+    raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
 
 # curl  http://127.0.0.1:9440/rest-zigate/1/non-optimized-device-configuration/xyxz
 
@@ -34,7 +43,7 @@ def non_optmize_device_configuration(self, verb, data, parameters):
 
     self.logging("Debug", f"rest_non_optimized_device_configuration requested on {parameters[0]}")
 
-    _response["Data"] = json.dumps(construct_configuration_file(self, parameters[0]))
+    _response["Data"] = json.dumps(construct_configuration_file(self, parameters[0]), default=_json_default)
     
     self.logging("Debug", f"rest_non_optimized_device_configuration response_data {_response['Data']}")
     return _response

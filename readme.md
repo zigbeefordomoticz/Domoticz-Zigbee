@@ -2,10 +2,20 @@
 
 ![Zigbee for Domoticz](https://github.com/zigbeefordomoticz/Domoticz-Zigbee/blob/stable7/images/Z4D-200.png?raw=true )
 
-[![Percentage of issues still open](http://isitmaintained.com/badge/open/zigbeefordomoticz/Domoticz-Zigbee.svg)](http://isitmaintained.com/project/zigbeefordomoticz/Domoticz-Zigbee "Percentage of issues still open")
-[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/zigbeefordomoticz/Domoticz-Zigbee.svg)](http://isitmaintained.com/project/zigbeefordomoticz/Domoticz-Zigbee "Average time to resolve an issue")
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://paypal.me/pipiche "Donate via PayPal")
-[![CodeFactor](https://www.codefactor.io/repository/github/zigbeefordomoticz/domoticz-zigbee/badge/stable7)](https://www.codefactor.io/repository/github/zigbeefordomoticz/domoticz-zigbee/overview/stable7)
+<table style="width:auto; border-collapse:collapse; border:none;">
+<tr style="background:transparent;">
+<td style="border:none; padding:2px 6px;"><a href="https://github.com/zigbeefordomoticz/Domoticz-Zigbee/releases/latest" title="Latest Release"><img src="https://img.shields.io/github/v/release/zigbeefordomoticz/Domoticz-Zigbee?label=release" alt="Latest Release" /></a></td>
+<td style="border:none; padding:2px 6px;"><a href="https://github.com/zigbeefordomoticz/Domoticz-Zigbee/actions/workflows/Python-CI-Security-Scan.yml" title="CI Status (stable9)"><img src="https://img.shields.io/github/actions/workflow/status/zigbeefordomoticz/Domoticz-Zigbee/Python-CI-Security-Scan.yml?branch=stable9&label=CI" alt="CI" /></a></td>
+<td style="border:none; padding:2px 6px;"><a href="https://github.com/zigbeefordomoticz/Domoticz-Zigbee/blob/stable9/LICENSE.txt" title="License"><img src="https://img.shields.io/github/license/zigbeefordomoticz/Domoticz-Zigbee" alt="License" /></a></td>
+<td style="border:none; padding:2px 6px;"><a href="https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues" title="Open Issues"><img src="https://img.shields.io/github/issues/zigbeefordomoticz/Domoticz-Zigbee" alt="Open Issues" /></a></td>
+<td style="border:none; padding:2px 6px;"><a href="https://www.codefactor.io/repository/github/zigbeefordomoticz/domoticz-zigbee/overview/stable9" title="CodeFactor"><img src="https://www.codefactor.io/repository/github/zigbeefordomoticz/domoticz-zigbee/badge/stable9" alt="CodeFactor" /></a></td>
+</tr>
+<tr style="background:transparent;">
+<td style="border:none; padding:2px 6px;"><a href="http://isitmaintained.com/project/zigbeefordomoticz/Domoticz-Zigbee" title="Percentage of issues still open"><img src="http://isitmaintained.com/badge/open/zigbeefordomoticz/Domoticz-Zigbee.svg" alt="Percentage of issues still open" /></a></td>
+<td style="border:none; padding:2px 6px;"><a href="http://isitmaintained.com/project/zigbeefordomoticz/Domoticz-Zigbee" title="Average time to resolve an issue"><img src="http://isitmaintained.com/badge/resolution/zigbeefordomoticz/Domoticz-Zigbee.svg" alt="Average time to resolve an issue" /></a></td>
+<td style="border:none; padding:2px 6px;"><a href="https://paypal.me/pipiche" title="Donate via PayPal"><img src="https://img.shields.io/badge/Donate-PayPal-green.svg" alt="Donate" /></a></td>
+</tr>
+</table>
 
 **Zigbee for Domoticz** is a powerful Python plugin that integrates Zigbee devices into the [Domoticz](https://www.domoticz.com/) home automation system without requiring cloud applications. Evolving from the original Zigate plugin, it supports a wide range of Zigbee coordinators and approximately **500 certified Zigbee devices**, leveraging the [zigpy](https://github.com/zigpy/zigpy) libraries for enhanced compatibility and performance.
 
@@ -84,4 +94,14 @@ We extend our heartfelt gratitude to our generous donors whose contributions ena
 
 * <img src="https://www.pipiche.fr//pp.svg" width="24" height="24" alt="Donate via Paypal"/> <a href="https://paypal.me/pipiche">Donate via PayPal</a>
 <br/>
+
+## Star History
+
+<a href="https://www.star-history.com/?type=date&repos=zigbeefordomoticz%2FDomoticz-Zigbee">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=zigbeefordomoticz/Domoticz-Zigbee&type=date&theme=dark&legend=top-left&sealed_token=0d_edPbUAdbGjkwrBuxjFGULl17LCR0x3K-P6zo9iWmPoPKc-3BoQk13EBTnMmKw7Q2xhMYSGOVpMv0bQiyt2beVymLNlS3ecwvN3HdOwgWFdeSmjjt4cFBFK_lcBA5r_Nib1IWSUiNdTUTUkp4T7C4ipbMt7Ku5jOsXUlQptfAh5gPRhiwknZuD6r-V" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=zigbeefordomoticz/Domoticz-Zigbee&type=date&legend=top-left&sealed_token=0d_edPbUAdbGjkwrBuxjFGULl17LCR0x3K-P6zo9iWmPoPKc-3BoQk13EBTnMmKw7Q2xhMYSGOVpMv0bQiyt2beVymLNlS3ecwvN3HdOwgWFdeSmjjt4cFBFK_lcBA5r_Nib1IWSUiNdTUTUkp4T7C4ipbMt7Ku5jOsXUlQptfAh5gPRhiwknZuD6r-V" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=zigbeefordomoticz/Domoticz-Zigbee&type=date&legend=top-left&sealed_token=0d_edPbUAdbGjkwrBuxjFGULl17LCR0x3K-P6zo9iWmPoPKc-3BoQk13EBTnMmKw7Q2xhMYSGOVpMv0bQiyt2beVymLNlS3ecwvN3HdOwgWFdeSmjjt4cFBFK_lcBA5r_Nib1IWSUiNdTUTUkp4T7C4ipbMt7Ku5jOsXUlQptfAh5gPRhiwknZuD6r-V" />
+ </picture>
+</a>
 

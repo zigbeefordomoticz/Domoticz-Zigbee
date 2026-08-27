@@ -34,6 +34,8 @@ from threading import Thread
 import asyncio
 import random
 import sys
+import traceback
+from functools import partial
 
 from Classes.ZigpyTransport.supervisor import _cleanup, _supervisor
 from Classes.ZigpyTransport.zigpySend import \
@@ -53,6 +55,88 @@ REQUEST_TIMEOUT = 8   # This is a given time for the request to be sent
 WAITING_TIME_BETWEEN_REQUESTS = .100
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 VERIFY_KEY_DELAY = 6
+
+# ---------------------------------------------------------------------------
+# Event loop exception handling
+# ---------------------------------------------------------------------------
+
+def _is_benign_startup_get_device_keyerror(exc):
+    """
+    True if `exc` is the bare KeyError that AppGeneric.get_device() raises
+    (shared by every radio backend) when the *coordinator's own* self-lookup
+    (self._device, keyed by self.state.node_info.ieee — see zigpy/application.py
+    _device property) misses because the coordinator has not been registered
+    into zigpy's device table yet.
+
+    This is unrelated to remote devices joining/pairing: handle_join() — the
+    actual mechanism that registers a newly-paired device — calls get_device()
+    synchronously and catches KeyError inline in its own try/except, so it
+    never reaches this handler regardless of timing. Only the coordinator's
+    self-lookup, performed internally by zigpy/zigpy_znp from fire-and-forget
+    tasks that nobody awaits, surfaces here as an unretrieved task exception.
+
+    get_device() already logs a diagnostic Warning for this case before
+    raising, so the resulting "Task exception was never retrieved" ERROR
+    traceback adds no information — see issue #2010.
+    """
+    if not isinstance(exc, KeyError) or exc.args:
+        return False
+    tb = traceback.extract_tb(exc.__traceback__)
+    return bool(tb) and tb[-1].name == "get_device" and tb[-1].filename.endswith("AppGeneric.py")
+
+
+def _coordinator_registered(self):
+    """
+    True once the coordinator itself is present in zigpy's device table,
+    i.e. once self.app.get_device(ieee=self.app.state.node_info.ieee) — the
+    exact self-lookup zigpy/zigpy_znp perform internally as self._device —
+    would succeed.
+
+    This is the literal condition whose absence causes the benign startup
+    KeyError storm, so checking it directly (instead of guessing a grace
+    period) degrades gracefully for exactly as long as the race actually
+    lasts — no longer. It also re-arms itself naturally on every radio
+    reconnect, since each cycle gets a brand new App instance with an empty
+    device table (see radioStart.py, `self.app = App(config)`).
+    """
+    app = getattr(self, "app", None)
+    if app is None:
+        return False
+    try:
+        node_ieee = app.state.node_info.ieee
+    except AttributeError:
+        return False
+    return node_ieee is not None and node_ieee in app.devices
+
+
+def _zigpy_loop_exception_handler(self, loop, context):
+    """
+    Custom asyncio exception handler for the Zigpy event loop.
+
+    Downgrades the known-benign, self-healing coordinator-self-lookup
+    KeyError described in _is_benign_startup_get_device_keyerror() to a
+    Debug log line, but only while _coordinator_registered() is still
+    False, i.e. only for the duration of the actual startup race. As soon
+    as the coordinator is registered ("Green"), and for the entire runtime
+    afterwards — including normal device pairing — behaviour reverts to
+    unchanged: any exception, including this same KeyError shape should it
+    ever occur for an unrelated reason, is passed through to asyncio's
+    default handler.
+    """
+    exc = context.get("exception")
+    if (
+        exc is not None
+        and _is_benign_startup_get_device_keyerror(exc)
+        and not _coordinator_registered(self)
+    ):
+        self.log.logging(
+            "TransportZigpy", "Debug",
+            f"Suppressed benign startup get_device KeyError (device not yet pre-loaded): {context.get('message')}",
+        )
+        return
+
+    loop.default_exception_handler(context)
+
 
 # ---------------------------------------------------------------------------
 # Thread lifecycle
@@ -156,6 +240,10 @@ def zigpy_thread_function(self):
         - External shutdown is signalled via _zigpy_stop_requested (bool) which
           stop_zigpy_thread() sets from the Domoticz thread, plus a
           call_soon_threadsafe() on the current cycle's _shutdown_event.
+        - A custom exception handler is installed on the loop to downgrade
+          the known-benign startup KeyError from AppGeneric.get_device()
+          (see _zigpy_loop_exception_handler and issue #2010) instead of
+          letting it surface as a misleading ERROR-level traceback.
     """
     self.log.logging("TransportZigpy", "Debug", "zigpyThread starting")
 
@@ -164,6 +252,7 @@ def zigpy_thread_function(self):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     self.zigpy_loop = loop
+    loop.set_exception_handler(partial(_zigpy_loop_exception_handler, self))
 
     # Enable debug mode if specified in configuration
     if self.pluginconf.pluginConf.get("EventLoopInstrumentation", False):

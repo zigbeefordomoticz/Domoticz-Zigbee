@@ -308,6 +308,46 @@ Each backend (ZNP, EZSP, deCONZ, BLZ) has:
 - Check `self.pluginconf['Zigpy']` for backend type
 - Avoid backend-specific code in device modules; use generic API
 
+### Bumping zigpy / zigpy-znp / zigpy-deconz / zigpy-blz / bellows in `constraints.txt`
+
+These libraries are pinned in `constraints.txt` and every one of them has direct call surface in
+`Classes/ZigpyTransport/` — `AppGeneric.py` monkey-patches `zigpy.application.ControllerApplication`
+lifecycle methods (`initialize`, `shutdown`, `watchdog_feed`, `connection_lost`, `get_device`,
+`handle_join`, `handle_leave`, `handle_relays`, `packet_received`, `_load_db`), and
+`App_bellows`/`App_deconz`/`App_znp`/`App_blz` subclass each radio's `ControllerApplication`
+directly. This is the part of the codebase most exposed to an upstream API break — a version bump
+here is **not** a routine dependency update and needs its own investigation, not just a diff of
+`constraints.txt`.
+
+When preparing a version bump (whether or not you're also asked to build the PR body):
+
+1. **Diff the actual version range**, not just old→new. Pull each library's changelog/release notes
+   (GitHub releases page, `CHANGELOG.md`) for every intermediate version, not just the final one —
+   a squashed "latest" summary hides breaking changes that landed in an intermediate minor/major.
+2. **Grep this repo for every API surface the changelog touches** before writing risk notes from
+   memory. Concretely: which functions/classes named in the changelog does
+   `Classes/ZigpyTransport/*.py` actually import or call? For each `ControllerApplication` override
+   in `AppGeneric.py`, check whether the upstream method signature, the config keys it reads
+   (`zigpy.config.CONF_*`), or any inline-imported backend-specific types (e.g.
+   `bellows.ash.NcpFailure`, `bellows.types.named.NcpResetCode` used in `connection_lost()`) still
+   exist unchanged at the target version. Fetch the actual upstream source at the target tag to
+   verify — don't assume compatibility from a changelog summary.
+3. **Call out relocated/removed APIs explicitly** (e.g. a subsystem moving out of a package) and
+   state plainly whether this repo uses that subsystem at all — verified by grep, not assumption.
+4. **Note defensive code that may now be dead weight or newly justified** — e.g. `asyncio.wait_for`
+   timeouts wrapping `app.disconnect()`/`app.shutdown()` in `radioStart.py`, `supervisor.py`,
+   `workerLoop.py` look like workarounds for known upstream races; if a changelog entry fixes that
+   race, say so and flag it as worth re-observing post-bump, not something to rip out preemptively.
+5. **List new capabilities that are additions-only** (nothing in this repo references them yet) so
+   they don't get investigated as risk, but are visible as future feature candidates.
+6. **Write a risk/test-plan checklist per radio backend** (ZNP, EZSP/Bellows, deCONZ, BLZ) — a
+   generic "run the test suite" checklist is not sufficient for a radio-library bump; each backend
+   needs its own pairing/command/restart smoke test called out.
+
+This produces a PR body with: Summary → per-library version-by-version changelog → an impact
+assessment section titled against the concrete files/functions checked (not generic risk
+boilerplate) → a per-backend risk/test-plan checklist → files changed / commits included.
+
 ## Guidelines
 
 **Before Proposing Changes:**
@@ -323,6 +363,12 @@ Each backend (ZNP, EZSP, deCONZ, BLZ) has:
 - Follow existing patterns (see recent commits)
 - Reference issues if applicable
 - Be descriptive; avoid generic messages
+
+**Before Running `git commit` (GPG signing):**
+- Commits in this repo are GPG-signed (`commit.gpgsign=true`). Claude Code's Bash tool has no real TTY, so gpg-agent/pinentry can fail to prompt for the key passphrase on the first signing attempt in a session (error: `gpg failed to sign the data`).
+- Before attempting the first commit in a session, ask the user to unlock the key from a real terminal window by running:
+  `"test" | gpg --clearsign -u EE19D8BB30B19ED276D7413D1F8D08C104E0238E`
+- Do not work around this by disabling signing (`--no-gpg-sign` or `commit.gpgsign=false`) — that bypasses a deliberate security control and must never be done without the user explicitly asking for it.
 
 **Safe Refactoring Areas:**
 - Utility functions in `Modules/tools.py`

@@ -68,12 +68,17 @@ class _FakeUnit:
         if self._parent_device is not None and self.Unit in self._parent_device.Units:
             del self._parent_device.Units[self.Unit]
 
-    def Update(self, Log=True, TypeName=None, UpdateProperties=False, UpdateOptions=False, SuppressTriggers=False):
+    def Update(self, Log=True, TypeName=None, SuppressTriggers=False, UpdateProperties=False, UpdateOptions=False):
         self._updated = True
+        self._update_log = Log
+        self._update_suppress_triggers = SuppressTriggers
+        self._update_properties = UpdateProperties
         self._last_update_kwargs = {
             "Log": Log, "TypeName": TypeName, "UpdateProperties": UpdateProperties,
             "UpdateOptions": UpdateOptions, "SuppressTriggers": SuppressTriggers,
         }
+        if TypeName is not None and UpdateProperties:
+            self.TypeName = TypeName
 
     def Touch(self):
         self._touched = True
@@ -689,12 +694,21 @@ class TestDomoUpdateApi(unittest.TestCase):
         domo.domo_update_api(obj, devices, "ieee-1", 1, 0, "Off", TimedOut=1)
         self.assertEqual(devices["ieee-1"].TimedOut, 1)
 
-    def test_suppress_triggers_passes_log_false(self):
+    def test_suppress_triggers_is_forwarded(self):
         obj = _make_self()
         devices = _make_devices(("ieee-1", [(1, {})]))
         domo.domo_update_api(obj, devices, "ieee-1", 1, 0, "Off", SuppressTriggers=True)
-        # Update should still be called (just with Log=False)
-        self.assertTrue(devices["ieee-1"].Units[1]._updated)
+        unit = devices["ieee-1"].Units[1]
+        self.assertTrue(unit._updated)
+        self.assertTrue(unit._update_suppress_triggers)
+
+    def test_battery_level_update_sets_update_properties(self):
+        obj = _make_self()
+        devices = _make_devices(("ieee-1", [(1, {})]))
+        domo.domo_update_api(obj, devices, "ieee-1", 1, 0, "Off", BatteryLevel=50)
+        unit = devices["ieee-1"].Units[1]
+        self.assertEqual(unit.BatteryLevel, 50)
+        self.assertTrue(unit._update_properties)
 
     def test_ieee2nwk_miss_does_not_raise(self):
         obj = _make_self()
@@ -740,6 +754,27 @@ class TestDomoUpdateName(unittest.TestCase):
     def test_missing_device_does_not_raise(self):
         obj = _make_self()
         domo.domo_update_name(obj, {}, "ghost", 1, "Name")
+
+
+class TestDomoUpdateSwitchTypeSubTypeType(unittest.TestCase):
+
+    def test_typename_update_sets_update_properties(self):
+        obj = _make_self()
+        devices = _make_devices(("ieee-1", [(1, {})]))
+        domo.domo_update_SwitchType_SubType_Type(obj, devices, "ieee-1", 1, Typename_="Switch")
+        unit = devices["ieee-1"].Units[1]
+        self.assertEqual(unit.TypeName, "Switch")
+        self.assertTrue(unit._update_properties)
+
+    def test_no_typename_does_not_update(self):
+        obj = _make_self()
+        devices = _make_devices(("ieee-1", [(1, {})]))
+        domo.domo_update_SwitchType_SubType_Type(obj, devices, "ieee-1", 1)
+        self.assertFalse(devices["ieee-1"].Units[1]._updated)
+
+    def test_missing_device_does_not_raise(self):
+        obj = _make_self()
+        domo.domo_update_SwitchType_SubType_Type(obj, {}, "ghost", 1, Typename_="Switch")
 
 
 # ---------------------------------------------------------------------------

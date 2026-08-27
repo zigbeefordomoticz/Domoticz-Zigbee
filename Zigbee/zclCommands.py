@@ -65,10 +65,10 @@ def zcl_read_attribute(self, nwkid, EpIn, EpOut, Cluster, direction, manufacture
     return send_zigatecmd_zcl_ack(self, nwkid, "0100", data)
 
 
-def zcl_write_attribute(self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=DEFAULT_ACK_MODE):
+def zcl_write_attribute(self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=DEFAULT_ACK_MODE, disableDefaultRSP=True):
     self.log.logging("zclCommand", "Debug", "zcl_write_attribute %s %s %s %s %s %s %s %s %s" % (nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data),nwkid)
     zcl_command_formated_logging( self, "Write_Attribute_Req", nwkid, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled)
-   
+
     #  write_attribute unicast , all with ack in < 31d firmware, ack/noack works since 31d
     #
     direction = "00"
@@ -82,7 +82,7 @@ def zcl_write_attribute(self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec,
     datas += lenght + attribute + data_type + data
 
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
-        return rawaps_write_attribute_req(self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled)
+        return rawaps_write_attribute_req(self, nwkid, EPin, EPout, cluster, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled, disableDefaultRSP)
 
     # ATTENTION "0110" with firmware 31c are always call with Ack (overwriten by firmware)
     # if ackIsDisabled:

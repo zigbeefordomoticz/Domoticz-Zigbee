@@ -109,6 +109,22 @@ class TestMustSendDefaultResponse(unittest.TestCase):
         )
 
     # ------------------------------------------------------------
+    # Report Attributes (0x0A) has no dedicated response: unlike
+    # Read/Discover Attributes, it must fall back to a Default
+    # Response when the sender requests one (bit not set), otherwise
+    # the sender never gets acked and retransmits indefinitely.
+    # ------------------------------------------------------------
+    def test_report_attributes_requires_default_response(self):
+        self.assertTrue(
+            must_send_default_response(
+                frame_control=0x08,  # Disable Default Response bit NOT set
+                command_id=0x0A,     # Report Attributes
+                cluster_id=0x0000,
+                status=0x00
+            )
+        )
+
+    # ------------------------------------------------------------
     # Commands NOT in response-required table
     # ------------------------------------------------------------
     def test_unknown_cluster_default_response(self):
