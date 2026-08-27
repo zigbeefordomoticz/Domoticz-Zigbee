@@ -18,6 +18,10 @@ Release Numbering
 - Odd numbers --> Stable/9.1 (stable branch)
 - Even numbers  --> Beta/9.2 (dev branch)
 
+## August 2026 - stable9 9.1.004 (2026.10)
+
+- [Issue] - Fix: drop spurious OnOff Report Attributes from Tuya remote buttons (#2022)
+
 ## August 2026 - stable9 9.1.003 (2026.9)
 
 - [Issue] - Fix ZLinky totalisateur crash on non-numeric index value (#2029)
@@ -39,7 +43,7 @@ Release Numbering
 - [Issue] - Fix TypeError at ZNP startup building the 0x8010 firmware version frame for CC2531 boards reporting "Z-Stack Home"/"Z-Stack 3.0.x" firmware (#2005)
 - [Issue] - Fix AttributeError on repeated onHeartbeat during ErasePDM restart (#2007)
 
-## July 2026 - stable9 9.1.001 (2026.8)
+## July 2026 - stable9 9.1.001 (2026.7)
 
 - [Technical] - Enable Domoticz 'Extended Framework' (DomoticzEx) as the plugin's primary framework, replacing the legacy Domoticz API (#1863, #1931)
 - [Technical] - ZigpyTransport - new HA-grade supervisor for the zigpy thread, with watchdog retry tolerance and automatic recovery (#1935)
