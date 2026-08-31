@@ -553,7 +553,6 @@ class OTAManagement(object):
 
         fieldcontrol = int(Data[:2],16)
         logging(self, "Debug", f" Manuf: {Data[2:6]} Type: {Data[6:10]} Version: {Data[10:18]}")
-        logging(self, "Debug", f" Manuf: {int(Data[2:6], 16)} Type: {int(Data[6:10], 16)} Version: {int(Data[10:18], 16)}")
         manufcode = struct.unpack("H", bytes.fromhex(Data[2:6]))[0]
         imagetype = struct.unpack("H", bytes.fromhex(Data[6:10]))[0]
         currentVersion = struct.unpack("I", bytes.fromhex(Data[10:18]))[0]
@@ -561,7 +560,7 @@ class OTAManagement(object):
         if fieldcontrol:
             hardwareversion = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[18:22], 16)))[0]
 
-        logging(self, "Debug", "OTA Query Next Image request for %s/%s [%s] - %s %s %s %s" % (
+        logging(self, "Debug", "OTA Query Next Image request for %s/%s [%s] - Control: 0x%02X Manuf: 0x%04X Type: 0x%04X Version: 0x%08X" % (
             srcnwkid, srcep, Sqn, fieldcontrol, manufcode, imagetype, currentVersion ))
 
         ota_client = self.ListOfDevices.setdefault(srcnwkid, {}).setdefault("OTAClient", {})
@@ -592,7 +591,7 @@ class OTAManagement(object):
 
             elif srcnwkid in self.ListInUpdate["AuthorizedForUpdate"]:
                 # We are in the case were we get a request, but do not authorised selfserving OTA
-                logging(self, "Debug", f"OTA Query Next Image request - AuthorizedForUpdate fileversion: {fileversion} imagesize: {imagesize}")
+                logging(self, "Debug", f"OTA Query Next Image request - AuthorizedForUpdate fileversion: 0x{fileversion:08x} imagesize: {imagesize}")
 
                 return zcl_raw_ota_query_next_image_response(
                     self, Sqn, srcnwkid, ZIGATE_EP, srcep,
@@ -1175,15 +1174,15 @@ def logging(self, logType, message, nwkid=None):  # OK 13/10
 
 def is_image_for_query_next_image_request( self, nwkid, manuf_code, image_type, file_version, authorized_device_downgrade):
 
-    logging(self, "Debug", "is_image_for_query_next_image_request - %s %s %s Downgrade: %s" % (
+    logging(self, "Debug", "is_image_for_query_next_image_request - Manuf: 0x%04X Type: 0x%04X Version: 0x%08X Downgrade: %s" % (
         manuf_code, image_type, file_version, authorized_device_downgrade), nwkid)
 
     for brand_name in self.ListOfImages["Brands"]:
         logging(self, "Debug", "is_image_for_query_next_image_request - checking %s" %brand_name, nwkid)
         for file_name in self.ListOfImages["Brands"][brand_name]:
-            logging(self, "Debug", "    - filename %s Manuf: %s Image: %s Version: %s" %(
+            logging(self, "Debug", "    - filename %s Manuf: 0x%04X Image: 0x%04X Version: 0x%08X" %(
                 file_name,
-                self.ListOfImages["Brands"][brand_name][file_name]["intManufCode"], 
+                self.ListOfImages["Brands"][brand_name][file_name]["intManufCode"],
                 self.ListOfImages["Brands"][brand_name][file_name]["ImageType"],
                 self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]
                 ),
@@ -1202,7 +1201,7 @@ def is_image_for_query_next_image_request( self, nwkid, manuf_code, image_type, 
             if authorized_device_downgrade:
                 return self.ListOfImages["Brands"][brand_name][file_name]
 
-            logging(self, "Debug", "is_image_for_query_next_image_request - potential image type found:%s with version %s..." % (
+            logging(self, "Debug", "is_image_for_query_next_image_request - potential image type found:%s with version 0x%08X..." % (
                 brand_name, self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]), nwkid)
 
             # Compliance with Image Type
