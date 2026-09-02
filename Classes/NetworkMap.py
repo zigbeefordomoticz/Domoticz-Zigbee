@@ -53,7 +53,7 @@ class NetworkMap:
         self.log = log
         self.FirmwareVersion = None
         self.pairing_in_progress = pairing_in_progress
-        self.DeviceConfig = DeviceConfig
+        self.DeviceConf = DeviceConfig
 
         self._NetworkMapPhase = 0
         self.LQIreqInProgress = []
