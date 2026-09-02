@@ -1471,7 +1471,7 @@ def zigateInit_Phase3(self):
     # Create Network Energy object
     if self.networkenergy is None:
         self.networkenergy = NetworkEnergy(
-            self.zigbee_communication, self.pluginconf, self.ControllerLink, self.ListOfDevices, Devices, self.HardwareID, self.log, self.pairing_in_progress
+            self.zigbee_communication, self.pluginconf, self.ControllerLink, self.ListOfDevices, self.DeviceConf, Devices, self.HardwareID, self.log, self.pairing_in_progress
         )
 
     if self.networkenergy:
