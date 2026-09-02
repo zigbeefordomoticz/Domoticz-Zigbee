@@ -102,6 +102,53 @@ def test_device_listening_on_iddle_accepts_scan_class(factory):
     """) == "ok"
 
 
+def test_start_scan_rolls_back_topology_start_time_on_failure():
+    """A failing start_scan() must not leave the scan-in-progress marker behind.
+
+    While ListOfDevices["0000"]["TopologyStartTime"] is set,
+    remove_entry_from_all_tables() refuses to delete any report and the matching
+    report is filtered out of get_list_of_timestamps() -- so a scan that dies on
+    its first ZDP request would otherwise make the WebUI report list unusable
+    until the next successful scan.
+    """
+    assert _run("""
+        import Classes.NetworkMap as nm
+
+        instance = make_network_map()
+
+        def boom(_self):
+            raise RuntimeError("ZDP request failed")
+
+        nm._initNeighbours = boom
+
+        try:
+            instance.start_scan()
+        except RuntimeError:
+            pass
+        else:
+            raise AssertionError("start_scan() swallowed the failure")
+
+        assert "TopologyStartTime" not in instance.ListOfDevices["0000"], "marker leaked"
+        assert instance.NetworkMapPhase() == 0, "scan phase left in progress"
+        print("ok")
+    """) == "ok"
+
+
+def test_finish_scan_tolerates_missing_topology_start_time():
+    """finish_scan() must not raise KeyError if the marker is already gone."""
+    assert _run("""
+        import Classes.NetworkMap as nm
+
+        instance = make_network_map()
+        instance.pluginconf = type("Conf", (), {"pluginConf": {"TopologyV2": 1}})()
+        instance.Neighbours = {}
+
+        # No TopologyStartTime set at all
+        nm.finish_scan(instance)
+        print("ok")
+    """) == "ok"
+
+
 def test_zigpy_topology_exposes_deviceconf():
     pytest.importorskip("zigpy")
     assert _run("""
