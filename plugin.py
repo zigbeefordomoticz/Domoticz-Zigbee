@@ -475,8 +475,8 @@ class BasePlugin:
 
         if self.internet_available and self.pluginconf.pluginConf.get("CheckRequirements", True):
             Domoticz.Status("Z4D checks the Python modules requirements")
-            if check_requirements( Parameters[ "HomeFolder"] ):
-                # Check_requirements() return True if requirements not meet.
+            if not check_requirements( Parameters[ "HomeFolder"] ):
+                # check_requirements() returns False if requirements are not met.
                 self.onStop()
                 return
 
