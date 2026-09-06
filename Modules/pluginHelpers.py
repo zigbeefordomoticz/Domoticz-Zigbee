@@ -10,6 +10,9 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
+"""Misc plugin lifecycle helpers: Domoticz/firmware version checks, device-database
+housekeeping, and Python module requirements validation against constraints.txt."""
+
 import importlib.metadata
 import re
 import sys
@@ -22,6 +25,7 @@ from packaging.version import Version
 from Modules.domoticzAbstractLayer import domoticz_error_api
 from Modules.tools import how_many_devices
 
+# zigpy-family modules tracked by parse_constraints()/check_python_modules_version()
 PYTHON_MODULES = {
     "zigpy",
     "zigpy_znp",
@@ -30,6 +34,7 @@ PYTHON_MODULES = {
 }
 
 def networksize_update(self):
+    """Refresh the NetworkSize plugin parameter from the current device count."""
     self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
     routers, enddevices = how_many_devices(self)
     self.pluginParameters["NetworkSize"] = "Total: %s | Routers: %s | End Devices: %s" %(
@@ -37,7 +42,7 @@ def networksize_update(self):
 
 
 def decodeConnection(connection):
-
+    """Parse a Domoticz Connection.Description-style string into a dict."""
     decoded = {}
     for i in connection.strip().split(","):
         label, value = i.split(": ")
@@ -48,6 +53,7 @@ def decodeConnection(connection):
 
 
 def check_firmware_level(self):
+    """Validate the ZiGate firmware version and flag Pluzzy-specific firmware."""
     # Check Firmware version
     if int(self.FirmwareVersion.lower(),16) == 0x2100:
         self.log.logging("Plugin", "Status", "Firmware for Pluzzy devices")
@@ -66,15 +72,14 @@ def check_firmware_level(self):
 
 
 def update_DB_device_status_to_reinit( self ):
-
-    # This function is called because the ZiGate will be reset, and so it is expected that all devices will be reseted and repaired
-
+    """Mark every 'inDB' device as 'erasePDM' ahead of a ZiGate reset/re-pair."""
     for x in self.ListOfDevices:
         if 'Status' in self.ListOfDevices[ x ] and self.ListOfDevices[ x ]['Status'] == 'inDB':
             self.ListOfDevices[ x ]['Status'] = 'erasePDM'
 
 
 def get_domoticz_version( self, domoticz_version  ):
+    """Parse Domoticz's version string and populate self.DomoticzMajor/Minor/Build."""
     lst_version = domoticz_version.split(" ")
     if len(lst_version) == 1:
         return _old_fashon_domoticz(self, lst_version, domoticz_version)
@@ -92,7 +97,7 @@ def get_domoticz_version( self, domoticz_version  ):
 
 
 def _old_fashon_domoticz(self, lst_version, domoticz_version):
-    # No Build
+    """Handle the legacy Domoticz version format that carries no build number."""
     major, minor = lst_version[0].split(".")
     self.DomoticzBuild = 0
     _update_domoticz_firmware_data(self, major, minor)
@@ -107,18 +112,24 @@ def _old_fashon_domoticz(self, lst_version, domoticz_version):
 
 
 def _update_domoticz_firmware_data(self, major, minor):
+    """Store the parsed Domoticz major/minor version and mark it as new-fashion."""
     self.DomoticzMajor = int(major)
     self.DomoticzMinor = int(minor)
     self.VersionNewFashion = True
 
 
 def _domoticz_not_compatible(self):
+    """Stop the plugin because the running Domoticz version is unsupported."""
     self.VersionNewFashion = False
     self.onStop()
     return False
 
 
 def check_python_modules_version(self):
+    """Log an error for each loaded zigpy-family module that violates constraints.txt.
+
+    No-op (returns True) when the "internetAccess" plugin setting is enabled.
+    """
     if self.pluginconf.pluginConf["internetAccess"]:
         return True
 
@@ -134,6 +145,7 @@ def check_python_modules_version(self):
 
 
 def list_all_modules_loaded(self):
+    """Log every imported/installed Python module and its version, for debugging."""
     # Get a list of modules imported by the main script
     main_modules = set(sys.modules.keys())
 
@@ -153,6 +165,7 @@ def list_all_modules_loaded(self):
 
 
 def parse_constraints(home_folder):
+    """Read constraints.txt and return {module: SpecifierSet} for the zigpy-family modules in PYTHON_MODULES."""
     constraints_file = Path(home_folder) / "constraints.txt"
     constraints = {}
 
@@ -174,7 +187,11 @@ def parse_constraints(home_folder):
 
 
 def check_requirements(home_folder):
+    """Validate every constraints.txt entry against the installed package versions.
 
+    Returns True if all constraints are satisfied, False otherwise (logging the
+    specific package/constraint that failed via Domoticz.Error).
+    """
     constraints_file = Path(home_folder) / "constraints.txt"
 
     Domoticz.Status(
