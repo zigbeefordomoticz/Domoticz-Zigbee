@@ -133,7 +133,7 @@ def check_python_modules_version(self):
     if self.pluginconf.pluginConf["internetAccess"]:
         return True
 
-    constraints = parse_constraints(self.pluginParameters["HomeFolder"])
+    constraints = parse_constraints(self.pluginParameters["HomeFolder"], PYTHON_MODULES)
     for module, specifier in constraints.items():
         current_version = Version(importlib.metadata.version(module))
         if current_version not in specifier:
@@ -164,8 +164,13 @@ def list_all_modules_loaded(self):
     self.log.logging("Plugin", "Log", "=============================")
 
 
-def parse_constraints(home_folder):
-    """Read constraints.txt and return {module: SpecifierSet} for the zigpy-family modules in PYTHON_MODULES."""
+def parse_constraints(home_folder, packages=None):
+    """Read constraints.txt and return {package: SpecifierSet}.
+
+    Only entries whose package name is in `packages` are kept when it is
+    given; otherwise every entry in the file is returned. Raises
+    packaging.specifiers.InvalidSpecifier if a constraint cannot be parsed.
+    """
     constraints_file = Path(home_folder) / "constraints.txt"
     constraints = {}
 
@@ -178,12 +183,13 @@ def parse_constraints(home_folder):
 
             package = re.split(r"[<>!=~]+", line, maxsplit=1)[0].strip()
 
-            if package in PYTHON_MODULES:
-                constraint = line[len(package):].strip()
-                constraints[package] = SpecifierSet(constraint)
+            if not package or (packages is not None and package not in packages):
+                continue
+
+            constraint = line[len(package):].strip()
+            constraints[package] = SpecifierSet(constraint)
 
     return constraints
-
 
 
 def check_requirements(home_folder):
@@ -198,59 +204,43 @@ def check_requirements(home_folder):
         f"Z4D checks Python modules {constraints_file}"
     )
 
-    with constraints_file.open("r") as file:
+    try:
+        constraints = parse_constraints(home_folder)
+    except ValueError as error:
+        Domoticz.Error(f"Invalid version constraint in {constraints_file}: {error}")
+        return False
 
-        for line in file:
+    for package, specifier in constraints.items():
 
-            req_str = line.split("#", 1)[0].strip()
+        try:
+            installed_version = Version(importlib.metadata.version(package))
 
-            if not req_str:
-                continue
-
-            package = re.split(
-                r"[<>!=~]+",
-                req_str,
-                maxsplit=1,
-            )[0].strip()
-
-            if not package:
-                continue
-
-            constraint = req_str[len(package):].strip()
-
-            try:
-                installed_version = Version(
-                    importlib.metadata.version(package)
-                )
-
-                specifier = SpecifierSet(constraint)
-
-            except importlib.metadata.PackageNotFoundError:
-                Domoticz.Error(
-                    f"Python module {package} is not installed. "
-                    f"Required constraint: {req_str}"
-                )
-                return False
-
-            except ValueError as error:
-                Domoticz.Error(
-                    f"Invalid version constraint '{req_str}': {error}"
-                )
-                return False
-
-            if installed_version not in specifier:
-
-                Domoticz.Error(
-                    f"Python module {package} version "
-                    f"{installed_version} does not satisfy "
-                    f"constraint {constraint}"
-                )
-
-                return False
-
-            Domoticz.Status(
-                f"   - {package} {installed_version} "
-                f"satisfies {constraint}"
+        except importlib.metadata.PackageNotFoundError:
+            Domoticz.Error(
+                f"Python module {package} is not installed. "
+                f"Required constraint: {specifier}"
             )
+            return False
+
+        except ValueError as error:
+            Domoticz.Error(
+                f"Invalid installed version for {package}: {error}"
+            )
+            return False
+
+        if installed_version not in specifier:
+
+            Domoticz.Error(
+                f"Python module {package} version "
+                f"{installed_version} does not satisfy "
+                f"constraint {specifier}"
+            )
+
+            return False
+
+        Domoticz.Status(
+            f"   - {package} {installed_version} "
+            f"satisfies {specifier}"
+        )
 
     return True

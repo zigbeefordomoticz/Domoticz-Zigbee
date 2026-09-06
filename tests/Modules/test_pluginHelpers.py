@@ -115,7 +115,7 @@ def test_all_symbols_imported_by_plugin_are_exported():
 # parse_constraints
 # ---------------------------------------------------------------------------
 
-def test_parse_constraints_keeps_only_tracked_modules():
+def test_parse_constraints_returns_every_entry_by_default():
     assert _run(
         """
         home = make_home("\\n".join([
@@ -127,7 +127,22 @@ def test_parse_constraints_keeps_only_tracked_modules():
             "",
         ]))
         constraints = ph.parse_constraints(home)
-        assert set(constraints) == {"zigpy", "zigpy_znp", "bellows"}, constraints
+        assert set(constraints) == {"zigpy", "zigpy_znp", "unrelated-package", "bellows"}, constraints
+        print("ok")
+        """
+    ) == "ok"
+
+
+def test_parse_constraints_filters_to_given_packages():
+    assert _run(
+        """
+        home = make_home("\\n".join([
+            "zigpy==2.1.0",
+            "unrelated-package==9.9.9",
+            "bellows~=1.0",
+        ]))
+        constraints = ph.parse_constraints(home, ph.PYTHON_MODULES)
+        assert set(constraints) == {"zigpy", "bellows"}, constraints
         print("ok")
         """
     ) == "ok"
