@@ -2,7 +2,7 @@ zigpy==2.1.0
 zigpy_znp==1.1.0
 zigpy_deconz==1.0.0
 zigpy-blz==0.1.0
-bellows==1.0.0
+bellows==1.0.1
 pyserial>=3.5
 serialx>=1.4.0
 charset-normalizer==2.0.11
