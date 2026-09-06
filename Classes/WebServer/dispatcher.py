@@ -11,6 +11,7 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 import json
+import traceback
 
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
@@ -113,7 +114,14 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
 
     if command in self.REST_COMMANDS and verb in self.REST_COMMANDS[command]["Verbs"]:
         self.logging("Debug", f"do_rest - Verb: {verb}, Command: {command}, Param: {parameters} found, ready to execute")
-        HTTPresponse = execute_rest_command(self, verb, data, version, command, parameters)
+        try:
+            HTTPresponse = execute_rest_command(self, verb, data, version, command, parameters)
+        except Exception as e:
+            # Do not let an exception bubble up to handle_client(), which would close the socket
+            # without any HTTP response and leave the WebUI with a 'Error 0 Unknown Error'
+            self.logging("Error", f"do_rest - Verb: {verb}, Command: {command}, Param: {parameters} raised {type(e).__name__}: {e}")
+            self.logging("Error", f"{traceback.format_exc()}")
+            HTTPresponse = prepare_internal_error_message(self, command, e)
     else:
         self.logging("Error", f"do_rest - Verb: {verb}, Command: {command}, Param: {parameters} not found!")
 
@@ -155,6 +163,16 @@ def prepare_help_response(self):
     response["Data"] = json.dumps({
         x: {"Verbs": sorted(self.REST_COMMANDS[x]["Verbs"])} for x in self.REST_COMMANDS
     })
+    return response
+
+
+def prepare_internal_error_message(self, command, exception):
+    response = prepResponseMessage(self, setupHeadersResponse())
+    response.update({
+        "Status": "500 INTERNAL SERVER ERROR",
+        "Data": f"REST command {command} failed: {type(exception).__name__}: {exception}",
+    })
+    response["Headers"]["Content-Type"] = "text/plain; charset=utf-8"
     return response
 
 

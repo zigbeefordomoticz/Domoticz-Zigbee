@@ -27,7 +27,7 @@ class ZigpyTopology:
         self.ControllerLink = ZigateComm
         self.ListOfDevices = ListOfDevices
         self.IEEE2NWK = IEEE2NWK
-        self.DeviceConfig = DeviceConfig
+        self.DeviceConf = DeviceConfig
         self.Devices = Devices
         self.HardwareID = HardwareID
         self.log = log

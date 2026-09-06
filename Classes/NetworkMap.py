@@ -53,7 +53,7 @@ class NetworkMap:
         self.log = log
         self.FirmwareVersion = None
         self.pairing_in_progress = pairing_in_progress
-        self.DeviceConfig = DeviceConfig
+        self.DeviceConf = DeviceConfig
 
         self._NetworkMapPhase = 0
         self.LQIreqInProgress = []
@@ -79,13 +79,23 @@ class NetworkMap:
             self.Neighbours = {}
             
         self.ListOfDevices["0000"]["TopologyStartTime"] = int(time.time())
-        
-        _initNeighbours(self)
-        # Start on Zigate Controler
 
-        prettyPrintNeighbours(self)
-        self._NetworkMapPhase = 2
-        LQIreq(self)
+        try:
+            _initNeighbours(self)
+            # Start on Zigate Controler
+
+            prettyPrintNeighbours(self)
+            self._NetworkMapPhase = 2
+            LQIreq(self)
+
+        except Exception:
+            # Never leave the scan-in-progress marker behind: while TopologyStartTime is set,
+            # remove_entry_from_all_tables() refuses to delete any report and the matching
+            # report is filtered out of get_list_of_timestamps().
+            self.logging("Error", "start_scan - failed to start the Network Topology scan, rolling back")
+            self.ListOfDevices["0000"].pop("TopologyStartTime", None)
+            self._NetworkMapPhase = 0
+            raise
 
     def continue_scan(self):
 
@@ -273,12 +283,13 @@ def finish_scan(self):
     self.logging("Status", "--")
     prettyPrintNeighbours(self)
 
-    storeLQI = { int(self.ListOfDevices["0000"]["TopologyStartTime"]): dict(self.Neighbours) }
+    scan_timestamp = self.ListOfDevices["0000"].get("TopologyStartTime") or int(time.time())
+    storeLQI = { int(scan_timestamp): dict(self.Neighbours) }
 
     if not self.pluginconf.pluginConf["TopologyV2"]:
         save_report_to_file(self, storeLQI)
         
-    del self.ListOfDevices["0000"]["TopologyStartTime"]
+    self.ListOfDevices["0000"].pop("TopologyStartTime", None)
     
 def save_report_to_file(self, storeLQI):
     _filename = Path( self.pluginconf.pluginConf["pluginReports"] ) / ("NetworkTopology-v3-" + "%02d.json" % self.HardwareID)
