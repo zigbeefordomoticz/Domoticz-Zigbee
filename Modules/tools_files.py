@@ -8,9 +8,7 @@
 """File/utility helpers extracted from tools.py"""
 
 
-import contextlib
 import datetime
-import os.path
 import shutil
 from pathlib import Path
 
@@ -18,30 +16,38 @@ from pathlib import Path
 
 def _safe_file_transfer(source: str, dest: str, move: bool = True) -> None:
     """Move or copy a file with a text-mode fallback for resilience.
-
+    
     Attempts a binary-safe shutil move/copy first. If that fails,
     falls back to line-by-line UTF-8 text copy.
-
+    
     Args:
         source: Path to the source file.
         dest:   Destination file path.
         move:   If True (default), move the file; otherwise copy it.
-
+    
     Raises:
         RuntimeError: If both the shutil operation and the fallback fail.
     """
-    with contextlib.suppress(Exception):
-        shutil.move(source, dest) if move else shutil.copy(source, dest)
-        return
 
     try:
-        with open(source, "r", encoding="utf-8") as src, \
-             open(dest, "w", encoding="utf-8") as dst:
-            dst.writelines(src)
-    except Exception as fallback_error:
-        raise RuntimeError(
-            f"safe_file_transfer failed: {source!r} → {dest!r}: {fallback_error}"
-        ) from fallback_error
+        if move:
+            shutil.move(source, dest)
+        else:
+            shutil.copy2(source, dest)
+        return
+
+    except Exception as transfer_error:
+        try:
+            with open(source, "r", encoding="utf-8") as src, \
+                 open(dest, "w", encoding="utf-8") as dst:
+                dst.writelines(src)
+
+        except Exception as fallback_error:
+            raise RuntimeError(
+                f"safe_file_transfer failed: "
+                f"{source!r} → {dest!r}: "
+                f"{fallback_error}"
+            ) from transfer_error
 
 
 def rotate_file_versions(source: str | Path, nb_versions: int) -> None:
@@ -63,6 +69,11 @@ def rotate_file_versions(source: str | Path, nb_versions: int) -> None:
     source = Path(source)
 
     if nb_versions == 0:
+        return
+
+    if not source.is_file():
+        # When the source file doesn't exist, we can't rotate versions.
+        # This is happening when the plugin is first installed and the database file hasn't been created yet.
         return
 
     # Shift existing versions up: -02 → -03, -01 → -02
@@ -92,30 +103,29 @@ def night_shift_jobs( self ):
     end = datetime.time(23,59,59)
 
     if start <= current <= end:
-        self.log.logging("PluginTools", "Debug", "Inside of Night Shift period %s %s %s" %( start, current, end))
+        self.log.logging("PluginTools", "Debug", f"Inside of Night Shift period {start} {current} {end}")
         return True
 
     # Check against the second part of the night
     start = datetime.time(0, 0,0)
     end = datetime.time(6,0,0)
     if start <= current <= end:
-        self.log.logging("PluginTools", "Debug","Inside of Night Shift period %s %s %s" %( start, current, end))
+        self.log.logging("PluginTools", "Debug", f"Inside of Night Shift period {start} {current} {end}")
         return True
 
-    self.log.logging("PluginTools", "Debug", "Outside of Night Shift period %s %s %s" %( start, current, end))
     return False
 
 
 def print_stack( self ):
-    
+
     try:
         import inspect
     except Exception as e:
-        self.log.logging( "PluginTools", "Error", "Cannot import python module inspect")
+        self.log.logging( "PluginTools", "Error", f"Cannot import python module inspect {e}")
         return
-    
+
     for x in inspect.stack():
-        self.log.logging( "PluginTools", "Error", "[{:40}| {}:{}".format(x.function, x.filename, x.lineno))
+        self.log.logging("PluginTools", "Error", f"[{x.function:40}| {x.filename}:{x.lineno}")
 
 
 def how_many_devices(self):
@@ -132,4 +142,3 @@ def how_many_devices(self):
             enddevices += 1
 
     return routers, enddevices
-
