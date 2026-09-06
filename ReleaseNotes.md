@@ -18,6 +18,16 @@ Release Numbering
 - Odd numbers --> Stable/9.1 (stable branch)
 - Even numbers  --> Beta/9.2 (dev branch)
 
+## September 2026 - stable9 9.1.005 (2026.11)
+
+- [Issue] - Fix TypeError when radio backend reports lqi as a float (#1999, #2030)
+- [Issue] - Fix Network Topology / Network Energy scan failing on zigpy coordinators (#2033)
+- [Issue] - Prevent plugin crash on a fresh install: don't rotate a file that doesn't exist yet (#2034)
+- [Technical] - Fix Python module requirements check to correctly parse constraints.txt using packaging specifiers (#2035)
+- [Technical] - OTA: display Manuf/Type/Version as hex in log messages (#2031)
+- [Technical] - Bump bellows 1.0.0 -> 1.0.1 (#2032)
+- [Technical] - Disable the ZiGate firmware-update DNS TXT record check; the upstream DNS record has been removed and ZiGate is no longer actively supported (#2036)
+
 ## August 2026 - stable9 9.1.004 (2026.10)
 
 - [Issue] - Fix: drop spurious OnOff Report Attributes from Tuya remote buttons (#2022)
