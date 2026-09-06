@@ -1,4 +1,5 @@
 -c constraints.txt
+packaging
 zigpy
 zigpy-cli
 dnspython
@@ -10,8 +11,8 @@ zigpy-blz
 zigpy_deconz
 bellows
 requests
-distro
 pyserial
+serialx
 charset-normalizer
 jsonschema
 cryptography

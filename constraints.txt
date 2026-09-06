@@ -8,3 +8,4 @@ serialx>=1.4.0
 charset-normalizer==2.0.11
 jsonschema==4.17.3
 cryptography<=40.0.2
+packaging>=21.3

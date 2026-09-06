@@ -16,10 +16,18 @@ import sys
 from pathlib import Path
 
 import DomoticzEx as Domoticz
+from packaging.specifiers import SpecifierSet
+from packaging.version import Version
 
-from Modules.tools import how_many_devices
 from Modules.domoticzAbstractLayer import domoticz_error_api
+from Modules.tools import how_many_devices
 
+PYTHON_MODULES = {
+    "zigpy",
+    "zigpy_znp",
+    "zigpy_deconz",
+    "bellows",
+}
 
 def networksize_update(self):
     self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
@@ -114,72 +122,15 @@ def check_python_modules_version(self):
     if self.pluginconf.pluginConf["internetAccess"]:
         return True
 
-    zigpy_modules_version = parse_constraints(self.pluginParameters["HomeFolder"])
-    for module, expected_version in zigpy_modules_version.items():
-        current_version = importlib.metadata.version(module)
-        if current_version != expected_version:
-            self.log.logging("Plugin", "Error", "The Python module %s version %s loaded is not compatible. Expected version: %s" % (
-                module, current_version, expected_version))
+    constraints = parse_constraints(self.pluginParameters["HomeFolder"])
+    for module, specifier in constraints.items():
+        current_version = Version(importlib.metadata.version(module))
+        if current_version not in specifier:
+            self.log.logging("Plugin", "Error", "The Python module %s version %s loaded is not compatible. Expected: %s" % (
+                module, current_version, specifier))
             return False
 
     return True
-
-
-def check_requirements(home_folder):
-
-    requirements_file = Path(home_folder) / "constraints.txt"
-    Domoticz.Status("Z4D checks Python modules %s" % requirements_file)
-
-    with open(requirements_file, 'r') as file:
-        requirements_list = file.readlines()
-
-    for req_str in requirements_list:
-        req_str = req_str.strip()
-
-        package = re.split(r'[<>!=]+', req_str)[0].strip()
-        if package == "":
-            continue
-        version = None
-        try:
-            installed_version = importlib.metadata.version(package)
-
-            version = None
-            if '==' in req_str:
-                version = re.split('==', req_str)[1].strip()
-                if installed_version != version:
-                    python_module_with_wrong_version( req_str, version, installed_version)
-                    return True
-            elif '>=' in req_str:
-                version = re.split('>=', req_str)[1].strip()
-                if installed_version < version:
-                    python_module_with_wrong_version( req_str, version, installed_version)
-                    return True
-            elif '<=' in req_str:
-                version = re.split('<=', req_str)[1].strip()
-                if installed_version > version:
-                    python_module_with_wrong_version( req_str, version, installed_version)
-                    return True
-
-        except importlib.metadata.PackageNotFoundError as e:
-            Domoticz.Error(f"An unexpected error occurred while checking package {package} - {req_str} - {e}")
-            return True
-
-        except importlib.metadata.MetadataError as e:
-            Domoticz.Error(f"An unexpected error occurred while checking {package} - {req_str} - {e}")
-            return True
-
-        except Exception as e:
-            Domoticz.Error(f"An unexpected error occurred: {package} - {e}")
-            return True
-
-        Domoticz.Status(f"   - {req_str} version required {version} installed {installed_version}")
-    return False
-
-def python_module_with_wrong_version( req_str, version, installed_version):
-    Domoticz.Error(f"Looks like {req_str} Python module is not installed or does not meet the required version. Requires {version}, Installed {installed_version}." 
-                   f"Make sure to install the required Python3 module with the correct version.")
-    Domoticz.Error("Use the command:")
-    Domoticz.Error("sudo python3 -m pip install -r requirements.txt --upgrade")
 
 
 def list_all_modules_loaded(self):
@@ -202,34 +153,87 @@ def list_all_modules_loaded(self):
 
 
 def parse_constraints(home_folder):
-    modules_version = {
-        "zigpy": "",
-        "zigpy_znp": "",
-        "zigpy_deconz": "",
-        "bellows": ""
-    }
-
     constraints_file = Path(home_folder) / "constraints.txt"
-    with open(constraints_file, 'r') as file:
-        for line in file:
-            # Remove leading/trailing whitespace and newlines
-            line = line.strip()
+    constraints = {}
 
-            # Split line into module name and version
-            if '==' in line:
-                module, version = line.split('==')
-            elif '>=' in line:
-                module, version = line.split('>=')
-            elif '<=' in line:
-                module, version = line.split('<=')
-            else:
+    with constraints_file.open("r") as file:
+        for line in file:
+            line = line.split("#", 1)[0].strip()
+
+            if not line:
                 continue
 
-            # Check if the module is one we are interested in
-            if module in modules_version:
-                modules_version[module] = version
+            package = re.split(r"[<>!=~]+", line, maxsplit=1)[0].strip()
 
-    # Remove any entries where version is still empty
-    modules_version = {k: v for k, v in modules_version.items() if v}
+            if package in PYTHON_MODULES:
+                constraint = line[len(package):].strip()
+                constraints[package] = SpecifierSet(constraint)
 
-    return modules_version
+    return constraints
+
+
+
+def check_requirements(home_folder):
+
+    constraints_file = Path(home_folder) / "constraints.txt"
+
+    Domoticz.Status(
+        f"Z4D checks Python modules {constraints_file}"
+    )
+
+    with constraints_file.open("r") as file:
+
+        for line in file:
+
+            req_str = line.split("#", 1)[0].strip()
+
+            if not req_str:
+                continue
+
+            package = re.split(
+                r"[<>!=~]+",
+                req_str,
+                maxsplit=1,
+            )[0].strip()
+
+            if not package:
+                continue
+
+            constraint = req_str[len(package):].strip()
+
+            try:
+                installed_version = Version(
+                    importlib.metadata.version(package)
+                )
+
+                specifier = SpecifierSet(constraint)
+
+            except importlib.metadata.PackageNotFoundError:
+                Domoticz.Error(
+                    f"Python module {package} is not installed. "
+                    f"Required constraint: {req_str}"
+                )
+                return False
+
+            except ValueError as error:
+                Domoticz.Error(
+                    f"Invalid version constraint '{req_str}': {error}"
+                )
+                return False
+
+            if installed_version not in specifier:
+
+                Domoticz.Error(
+                    f"Python module {package} version "
+                    f"{installed_version} does not satisfy "
+                    f"constraint {constraint}"
+                )
+
+                return False
+
+            Domoticz.Status(
+                f"   - {package} {installed_version} "
+                f"satisfies {constraint}"
+            )
+
+    return True
