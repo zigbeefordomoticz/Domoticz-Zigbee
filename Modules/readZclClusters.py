@@ -525,7 +525,7 @@ def compute_attribute_value( self, nwkid, ep, cluster, attribut, value, _eval_in
                 self.log.logging("ZclClusters", "Debug", " . Updated formula: %s" %_eval_formula, nwkid)
 
         for x in custom_variable:
-            self.log.logging("ZclClusters", "Debug", " . custom_variable[ %s ] = %s" %( idx, custom_variable[ idx ]), nwkid)
+            self.log.logging("ZclClusters", "Debug", " . custom_variable[ %s ] = %s" %( x, custom_variable[ x ]), nwkid)
         
     if _eval_formula is not None and _eval_formula != "":
         try:
