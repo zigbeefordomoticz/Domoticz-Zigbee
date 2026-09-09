@@ -236,9 +236,11 @@ def _check_range( self, value, datatype, _range):
     
     if _range1 < _range2:
         return _range1 <= value <= _range2
-    
+
     if _range1 > _range2:
         return _range1 >= value >= _range2
+
+    return value == _range1
 
 
 def _get_model_name( self, nwkid):
@@ -255,11 +257,12 @@ def _cluster_manufacturer_function(self, ep, cluster, attribute, model):
         if manuf_specific_function:
             return manuf_specific_function
         
-        if ATTR_PARAM_MANUF_SPECIFIC_CLUSTER in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]:
-            return self.DeviceConf[ model ]['Ep'][ ep ][ cluster ][ATTR_PARAM_MANUF_SPECIFIC_CLUSTER]
+        cluster_entry = self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]
+        if isinstance(cluster_entry, dict) and cluster_entry.get(ATTR_PARAM_MANUF_SPECIFIC_CLUSTER):
+            return cluster_entry[ATTR_PARAM_MANUF_SPECIFIC_CLUSTER]
 
     # Let's try in the Generic cluster
-    if cluster in self.readZclClusters and ATTR_PARAM_MANUF_SPECIFIC_CLUSTER in self.readZclClusters[ cluster ]:
+    if self.readZclClusters.get(cluster, {}).get(ATTR_PARAM_MANUF_SPECIFIC_CLUSTER):
         # We have a Manufacturer Specific cluster
         return self.readZclClusters[ cluster ][ATTR_PARAM_MANUF_SPECIFIC_CLUSTER]
 
@@ -481,7 +484,13 @@ def majdomodevice_possiblevalues( self, MsgSrcEp, MsgClusterId, MsgAttrID, model
     _majdomodeviceValidValues = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, ATTR_PARAM_VALID_VALUES_DOMO_DEVICES, model=model)
     if _majdomodeviceValidValues is None:
         return True
-    eval_result = eval( _majdomodeviceValidValues )  # nosec B307
+
+    try:
+        eval_result = eval( _majdomodeviceValidValues )  # nosec B307
+    except (NameError, SyntaxError, TypeError, ValueError) as e:
+        self.log.logging("ZclClusters", "Error", "majdomodevice_possiblevalues - error evaluating >%s<(%s) against %s: %s" % (
+            value, type(value), _majdomodeviceValidValues, e))
+        return False
 
     self.log.logging("ZclClusters", "Debug", " . majdomodevice_possiblevalues: >%s<(%s) %s -> %s" %(
         value, type(value), eval_result, _majdomodeviceValidValues))
@@ -511,14 +520,14 @@ def compute_attribute_value( self, nwkid, ep, cluster, attribut, value, _eval_in
         for idx, x in enumerate(_eval_inputs):
             #  ATTR_PARAM_EVAL_CUSTOM_VARIABLES: {"scale": { "ClusterId": "0403", "AttributeId": "0014"}},
             if "ClusterId" in _eval_inputs[x] and "AttributeId" in _eval_inputs[x]:
-                cluster = _eval_inputs[x][ "ClusterId" ]
-                attribute = _eval_inputs[x][ "AttributeId" ]
-                custom_value = getAttributeValue(self, nwkid, ep, cluster, attribute)
+                input_cluster = _eval_inputs[x][ "ClusterId" ]
+                input_attribute = _eval_inputs[x][ "AttributeId" ]
+                custom_value = getAttributeValue(self, nwkid, ep, input_cluster, input_attribute)
 
-                self.log.logging("ZclClusters", "Debug", " EvalExpCustomVariables . %s/%s = %s" %( cluster, attribute, custom_value ), nwkid)
+                self.log.logging("ZclClusters", "Debug", " EvalExpCustomVariables . %s/%s = %s" %( input_cluster, input_attribute, custom_value ), nwkid)
                 if custom_value is None:
                     self.log.logging("ZclClusters", "Error", "process_cluster_attribute_response - unable to found Input variable: %s Cluster: %s Attribute: %s" %(
-                        x, cluster, attribute), nwkid)
+                        x, input_cluster, input_attribute), nwkid)
                     continue
                 custom_variable[ idx ] = custom_value
                 _eval_formula = _update_eval_formula( self, _eval_formula, x, "custom_variable[ %s ]" % idx)
