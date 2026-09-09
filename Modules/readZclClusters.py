@@ -130,7 +130,7 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
         func( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value )
 
     elif _eval_formula is not None or _function is not None:
-        value = compute_attribute_value( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value, _eval_inputs, _eval_formula, _function)
+        value = compute_attribute_value( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value, _eval_inputs, _eval_formula, _function, Source)
 
     _action_list = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "ActionList", model=device_model )
     formated_logging( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, device_model, _name, _datatype, _ranges, _special_values, _eval_formula, _action_list, _eval_inputs, _force_value, value)
@@ -480,7 +480,9 @@ def check_special_values( self, value, data_type, _special_values ):
     return flag
 
   
-def compute_attribute_value( self, nwkid, ep, cluster, attribut, value, _eval_inputs, _eval_formula, _function):
+def compute_attribute_value( self, nwkid, ep, cluster, attribut, value, _eval_inputs, _eval_formula, _function, Source=None):
+    # Source ("8100" Read Attribute Response vs "8102" Report Attributes) is exposed to EvalExp
+    # so a device config can compensate for a source-dependent quirk without touching the decoder.
 
     self.log.logging("ZclClusters", "Debug", "compute_attribute_value - _function: %s FUNCTION_MODULE: %s" %( _function, str(FUNCTION_MODULE) ), nwkid)
 
