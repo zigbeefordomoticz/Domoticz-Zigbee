@@ -26,6 +26,7 @@ The module enables:
 - Auto-shutdown of valves on water shortage
 - SWV-ZFE/ZFU manual irrigation session defaults, valve alarms and flow unit
 - Decoding the SWV-ZFE/ZFU manual default settings (0x501d) and irrigation schedule status (0x501f) reports
+- SWV-ZFE/ZFU irrigation plans (fc11 commands 0x06 set / 0x07 remove / 0x09 report)
 - Adjusting radio power modes (e.g., Turbo Mode)
 - Setting temperature unit (Celsius/Fahrenheit)
 - Performing temperature calibration
@@ -47,14 +48,19 @@ Repository:
 """
 
 
-from datetime import datetime, timedelta
+import time
+from datetime import datetime, timedelta, timezone
 
 from Modules.basicOutputs import write_attribute
-from Modules.tools import get_device_config_param
+from Modules.sendZigateCommand import raw_APS_request
+from Modules.tools import (get_and_inc_ZCL_SQN, get_device_config_param,
+                           is_ack_tobe_disabled,
+                           retreive_cmd_payload_from_8002)
 from Modules.zigateConsts import ZIGATE_EP
 
 SONOFF_MAUFACTURER_NAME = "SONOFF"
 SONOFF_MANUFACTURER_ID = "1286"
+SONOFF_MANUFACTURER_ID_LE = "8612"   # 0x1286 as sent in a manufacturer-specific ZCL header
 SONOFF_CLUSTER_ID = "fc11"
 SONOFF_ILLUMINATION_ATTRIBUTE = "2001"
 SONOFF_MAX_TEMP = "0003"
@@ -98,6 +104,20 @@ SONOFF_SWV_AMOUNT_UNIT_NAME = {0x00: "us_gallon", 0x01: "liter", 0x02: "imperial
 SONOFF_SWV_SCHEDULE_STATUS_START_STANDBY_LEN = 15
 SONOFF_SWV_SCHEDULE_STATUS_RUNNING_END_LEN = 21
 SONOFF_SWV_MANUAL_DEFAULT_SETTINGS_LEN = 12
+
+# fc11 cluster-specific commands (irrigation plans, see zigbee-herdsman-converters
+# irrigationPlanSettingsAndReport / irrigationPlanRemove)
+SONOFF_SWV_CMD_IRRIGATION_PLAN_SETTINGS = "06"   # 28-byte plan, device answers with a 1-byte status
+SONOFF_SWV_CMD_IRRIGATION_PLAN_REMOVE = "07"     # 1-byte plan index
+SONOFF_SWV_CMD_IRRIGATION_PLAN_REPORT = "09"     # 28-byte plan, device -> plugin
+SONOFF_SWV_IRRIGATION_PLAN_LEN = 28
+SONOFF_SWV_MAX_PLAN_INDEX = 5
+SONOFF_SWV_LOOP_TYPE = {"odd_days": 0x00, "even_days": 0x01, "day_interval": 0x02, "weekdays": 0x03}
+SONOFF_SWV_LOOP_TYPE_NAME = {v: k for k, v in SONOFF_SWV_LOOP_TYPE.items()}
+SONOFF_SWV_WEEK_DAYS = {"sunday": 0x01, "monday": 0x02, "tuesday": 0x04, "wednesday": 0x08, "thursday": 0x10, "friday": 0x20, "saturday": 0x40}
+SONOFF_SWV_PLAN_IRRIGATION_MODE = {"duration": 0x00, "capacity": 0x01, "duration_with_interval": 0x02}
+SONOFF_SPECIFIC_STORAGE = "Sonoff"                   # ListOfDevices[nwkid]["Sonoff"], as SpecifStoragelvl1 in the device configs
+SONOFF_SWV_IRRIGATION_PLAN_STORAGE = "IrrigationPlans"
 # The valve stamps its schedule with the Time cluster LocalTime (0x000a/0x0007) the plugin
 # serves: local wall-clock seconds since 2000-01-01, not UTC.
 ZIGBEE_EPOCH_LOCAL = datetime(2000, 1, 1)
@@ -271,6 +291,215 @@ def _swv_array_elements(value, element_counts):
     return data
 
 
+def _swv_send_cluster_command(self, nwkid, command, data):
+    """ fc11 manufacturer-specific cluster command, client -> server, default response requested """
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    payload = "05" + SONOFF_MANUFACTURER_ID_LE + sqn + command + data
+    self.log.logging("Sonoff", "Debug", "_swv_send_cluster_command - Nwkid: %s cmd: %s payload: %s" % (nwkid, command, payload), nwkid)
+    raw_APS_request(self, nwkid, "01", SONOFF_CLUSTER_ID, "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, nwkid))
+
+
+def _swv_plan_int(self, nwkid, plan, key, default, minimum, maximum):
+    """ Integer plan field with range check; None (and an error log) when invalid """
+    raw = plan.get(key, default)
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        value = None
+    if value is None or value < minimum or value > maximum:
+        self.log.logging("Sonoff", "Error", "SONOFF_SWV_IRRIGATION_PLAN invalid %s: %s (expected integer %s..%s)" % (key, raw, minimum, maximum), nwkid)
+        return None
+    return value
+
+
+def _swv_plan_week_days_mask(week_days):
+    """ Accept ["monday", "friday"] or {"monday": true, ...}; None when a day name is unknown """
+    if isinstance(week_days, dict):
+        week_days = [day for day, enabled in week_days.items() if enabled]
+    if not isinstance(week_days, (list, tuple)):
+        return None
+    mask = 0
+    for day in week_days:
+        if str(day).lower() not in SONOFF_SWV_WEEK_DAYS:
+            return None
+        mask |= SONOFF_SWV_WEEK_DAYS[str(day).lower()]
+    return mask
+
+
+def _swv_encode_irrigation_plan(self, nwkid, plan):
+    """ Build the 28-byte payload of fc11 command 0x06 from a plan dict (see SONOFF_SWV_IRRIGATION_PLAN).
+
+    Layout (big endian): plan index, enable, loop type word (mode << 8 | interval days or week-day mask),
+    enable date (local midnight, seconds since 2000-01-01), irrigation mode, start time (seconds from
+    local midnight), total duration, irrigation duration, interval duration, amount unit, amount,
+    fail-safe, create datetime (unix UTC seconds).
+    """
+    if not isinstance(plan, dict):
+        self.log.logging("Sonoff", "Error", "SONOFF_SWV_IRRIGATION_PLAN expects a dict per plan, got %s" % (plan,), nwkid)
+        return None
+
+    plan_index = _swv_plan_int(self, nwkid, plan, "plan_index", 0, 0, SONOFF_SWV_MAX_PLAN_INDEX)
+    total_duration = _swv_plan_int(self, nwkid, plan, "irrigation_total_duration", 10, 0, SONOFF_SWV_MAX_IRRIGATION_MINUTES)
+    irrigation_duration = _swv_plan_int(self, nwkid, plan, "irrigation_duration", 2, 1, 60)
+    interval_duration = _swv_plan_int(self, nwkid, plan, "interval_duration", 3, 1, 60)
+    amount = _swv_plan_int(self, nwkid, plan, "irrigation_amount", 30, 1, 10000)
+    fail_safe = _swv_plan_int(self, nwkid, plan, "fail_safe", 10, 0, SONOFF_SWV_MAX_IRRIGATION_MINUTES)
+    if None in (plan_index, total_duration, irrigation_duration, interval_duration, amount, fail_safe):
+        return None
+
+    loop_type = str(plan.get("loop_type_mode", "odd_days")).lower()
+    if loop_type not in SONOFF_SWV_LOOP_TYPE:
+        self.log.logging("Sonoff", "Error", "SONOFF_SWV_IRRIGATION_PLAN invalid loop_type_mode: %s (expected one of %s)" % (loop_type, sorted(SONOFF_SWV_LOOP_TYPE)), nwkid)
+        return None
+    loop_value = 0
+    if loop_type == "day_interval":
+        loop_value = _swv_plan_int(self, nwkid, plan, "loop_type_interval_days", 1, 1, 30)
+        if loop_value is None:
+            return None
+    elif loop_type == "weekdays":
+        loop_value = _swv_plan_week_days_mask(plan.get("loop_type_week_days", []))
+        if loop_value is None:
+            self.log.logging("Sonoff", "Error", "SONOFF_SWV_IRRIGATION_PLAN invalid loop_type_week_days: %s (expected day names, e.g. [\"monday\", \"friday\"])" % (plan.get("loop_type_week_days"),), nwkid)
+            return None
+
+    enable_date = plan.get("enable_date")
+    try:
+        enable_day = datetime.strptime(enable_date, "%Y-%m-%d") if enable_date else datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    except (TypeError, ValueError):
+        self.log.logging("Sonoff", "Error", "SONOFF_SWV_IRRIGATION_PLAN invalid enable_date: %s (expected YYYY-MM-DD)" % (enable_date,), nwkid)
+        return None
+    enable_seconds = int((enable_day - ZIGBEE_EPOCH_LOCAL).total_seconds())
+
+    start_time = plan.get("start_time")
+    try:
+        start = datetime.strptime(str(start_time), "%H:%M")
+    except ValueError:
+        self.log.logging("Sonoff", "Error", "SONOFF_SWV_IRRIGATION_PLAN invalid start_time: %s (expected HH:MM)" % (start_time,), nwkid)
+        return None
+    start_seconds = start.hour * 3600 + start.minute * 60
+
+    mode = str(plan.get("irrigation_mode", "duration")).lower()
+    if mode not in SONOFF_SWV_PLAN_IRRIGATION_MODE:
+        self.log.logging("Sonoff", "Error", "SONOFF_SWV_IRRIGATION_PLAN invalid irrigation_mode: %s (expected one of %s)" % (mode, sorted(SONOFF_SWV_PLAN_IRRIGATION_MODE)), nwkid)
+        return None
+
+    unit = str(plan.get("irrigation_amount_unit", "liter")).lower()
+    if unit not in SONOFF_SWV_AMOUNT_UNIT:
+        self.log.logging("Sonoff", "Error", "SONOFF_SWV_IRRIGATION_PLAN invalid irrigation_amount_unit: %s (expected one of %s)" % (unit, sorted(SONOFF_SWV_AMOUNT_UNIT)), nwkid)
+        return None
+
+    create_datetime = plan.get("create_datetime")
+    try:
+        created = int(datetime.fromisoformat(create_datetime).timestamp()) if create_datetime else int(time.time())
+    except (TypeError, ValueError):
+        self.log.logging("Sonoff", "Error", "SONOFF_SWV_IRRIGATION_PLAN invalid create_datetime: %s (expected ISO 8601)" % (create_datetime,), nwkid)
+        return None
+
+    return bytes(
+        [plan_index, 0x01 if plan.get("enable", plan.get("enable_state", True)) else 0x00]
+        + list(((SONOFF_SWV_LOOP_TYPE[loop_type] << 8) | loop_value).to_bytes(2, "big"))
+        + list(enable_seconds.to_bytes(4, "big"))
+        + [SONOFF_SWV_PLAN_IRRIGATION_MODE[mode]]
+        + list(start_seconds.to_bytes(4, "big"))
+        + list(total_duration.to_bytes(2, "big"))
+        + list(irrigation_duration.to_bytes(2, "big"))
+        + list(interval_duration.to_bytes(2, "big"))
+        + [SONOFF_SWV_AMOUNT_UNIT[unit]]
+        + list(amount.to_bytes(2, "big"))
+        + list(fail_safe.to_bytes(2, "big"))
+        + list(created.to_bytes(4, "big"))
+    )
+
+
+def sonoff_swv_irrigation_plan_settings(self, nwkid, value):
+    """ SWV-ZFE/ZFU: write one or several irrigation plans (fc11 command 0x06).
+
+    Param SONOFF_SWV_IRRIGATION_PLAN is a plan dict, or a list of plan dicts, with keys:
+      plan_index (0-5, default 0), enable (bool, default true),
+      loop_type_mode (odd_days|even_days|day_interval|weekdays, default odd_days),
+      loop_type_interval_days (1-30, day_interval only), loop_type_week_days (list of day names, weekdays only),
+      enable_date (YYYY-MM-DD, default today), start_time (HH:MM, required),
+      irrigation_mode (duration|capacity|duration_with_interval, default duration),
+      irrigation_total_duration (0-719 min, default 10), irrigation_duration (1-60 min, default 2),
+      interval_duration (1-60 min, default 3), irrigation_amount_unit (liter|us_gallon, default liter),
+      irrigation_amount (1-10000, default 30), fail_safe (0-719 min, default 10),
+      create_datetime (ISO 8601, default now)
+    The device answers each write with command 0x06 (status byte) and reports the stored plan with 0x09.
+    """
+    self.log.logging("Sonoff", "Debug", "sonoff_swv_irrigation_plan_settings - Nwkid: %s value: %s" % (nwkid, value), nwkid)
+    plans = value if isinstance(value, list) else [value]
+    for plan in plans:
+        data = _swv_encode_irrigation_plan(self, nwkid, plan)
+        if data is None:
+            continue
+        _swv_send_cluster_command(self, nwkid, SONOFF_SWV_CMD_IRRIGATION_PLAN_SETTINGS, data.hex())
+
+
+def sonoff_swv_irrigation_plan_remove(self, nwkid, value):
+    """ SWV-ZFE/ZFU: remove one or several irrigation plans by index (fc11 command 0x07) """
+    self.log.logging("Sonoff", "Debug", "sonoff_swv_irrigation_plan_remove - Nwkid: %s value: %s" % (nwkid, value), nwkid)
+    indexes = value if isinstance(value, list) else [value]
+    for index in indexes:
+        plan_index = _swv_plan_int(self, nwkid, {"plan_index": index}, "plan_index", None, 0, SONOFF_SWV_MAX_PLAN_INDEX)
+        if plan_index is None:
+            continue
+        _swv_send_cluster_command(self, nwkid, SONOFF_SWV_CMD_IRRIGATION_PLAN_REMOVE, "%02x" % plan_index)
+
+
+def _swv_decode_irrigation_plan(data):
+    """ 28-byte plan record (command 0x09, same layout as 0x06) -> dict; None when too short """
+    if len(data) < SONOFF_SWV_IRRIGATION_PLAN_LEN:
+        return None
+    loop_mode, loop_value = data[2], data[3]
+    start_seconds = int.from_bytes(data[9:13], "big")
+    return {
+        "plan_index": data[0],
+        "enable": data[1] == 0x01,
+        "loop_type_mode": SONOFF_SWV_LOOP_TYPE_NAME.get(loop_mode, loop_mode),
+        "loop_type_interval_days": loop_value if loop_mode == SONOFF_SWV_LOOP_TYPE["day_interval"] else 0,
+        "loop_type_week_days": [day for day, bit in SONOFF_SWV_WEEK_DAYS.items() if loop_mode == SONOFF_SWV_LOOP_TYPE["weekdays"] and loop_value & bit],
+        "enable_date": (ZIGBEE_EPOCH_LOCAL + timedelta(seconds=int.from_bytes(data[4:8], "big"))).strftime("%Y-%m-%d"),
+        "irrigation_mode": SONOFF_SWV_IRRIGATION_MODE_NAME.get(data[8], data[8]),
+        "start_time": "%02d:%02d" % (start_seconds // 3600, (start_seconds % 3600) // 60),
+        "irrigation_total_duration": int.from_bytes(data[13:15], "big"),
+        "irrigation_duration": int.from_bytes(data[15:17], "big"),
+        "interval_duration": int.from_bytes(data[17:19], "big"),
+        "irrigation_amount_unit": SONOFF_SWV_AMOUNT_UNIT_NAME.get(data[19], data[19]),
+        "irrigation_amount": int.from_bytes(data[20:22], "big"),
+        "fail_safe": int.from_bytes(data[22:24], "big"),
+        "create_datetime": datetime.fromtimestamp(int.from_bytes(data[24:28], "big"), timezone.utc).astimezone().isoformat(timespec="seconds"),
+    }
+
+
+def sonoffReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
+    """ fc11 cluster-specific commands from a Sonoff device (called from Modules/inRawAps.py) """
+    self.log.logging("Sonoff", "Debug", "sonoffReadRawAPS - Nwkid: %s Ep: %s Cluster: %s Payload: %s" % (srcNWKID, srcEp, ClusterID, MsgPayload), srcNWKID)
+    if ClusterID != SONOFF_CLUSTER_ID or srcNWKID not in self.ListOfDevices:
+        return
+    _default_response, _global_command, _sqn, _manufacturer_code, command, data = retreive_cmd_payload_from_8002(MsgPayload)
+    if command is None:
+        return
+
+    if command == SONOFF_SWV_CMD_IRRIGATION_PLAN_SETTINGS:
+        status = data[:2]
+        level = "Debug" if status == "00" else "Error"
+        self.log.logging("Sonoff", level, "sonoffReadRawAPS - Nwkid: %s irrigation plan settings (0x06) status: %s" % (srcNWKID, status), srcNWKID)
+
+    elif command == SONOFF_SWV_CMD_IRRIGATION_PLAN_REPORT:
+        plan = _swv_decode_irrigation_plan(bytes.fromhex(data))
+        if plan is None:
+            self.log.logging("Sonoff", "Error", "sonoffReadRawAPS - Nwkid: %s irrigation plan report (0x09) too short: %s" % (srcNWKID, data), srcNWKID)
+            return
+        self.log.logging("Sonoff", "Log", "sonoffReadRawAPS - Nwkid: %s irrigation plan report (0x09): %s" % (srcNWKID, plan), srcNWKID)
+        device = self.ListOfDevices[srcNWKID]
+        if not isinstance(device.get(SONOFF_SPECIFIC_STORAGE), dict):
+            device[SONOFF_SPECIFIC_STORAGE] = {}
+        device[SONOFF_SPECIFIC_STORAGE].setdefault(SONOFF_SWV_IRRIGATION_PLAN_STORAGE, {})[str(plan["plan_index"])] = plan
+
+    else:
+        self.log.logging("Sonoff", "Debug", "sonoffReadRawAPS - Nwkid: %s unhandled fc11 command %s data: %s" % (srcNWKID, command, data), srcNWKID)
+
+
 def sonoff_swv_decode_manual_default_settings(self, nwkid, ep, cluster, attribut, value):
     """ SWV-ZFE/ZFU: decode the 0x501d manual default settings array (EvalFunc).
 
@@ -417,6 +646,8 @@ SONOFF_DEVICE_PARAMETERS = {
     "SONOFF_SWV_ALARM_WATER_SHORTAGE_DURATION": sonoff_swv_valve_alarm_settings,
     "SONOFF_SWV_ALARM_WATER_LEAK_DURATION": sonoff_swv_valve_alarm_settings,
     "SONOFF_SWV_WATER_FLOW_UNIT": sonoff_swv_water_flow_unit,
+    "SONOFF_SWV_IRRIGATION_PLAN": sonoff_swv_irrigation_plan_settings,
+    "SONOFF_SWV_IRRIGATION_PLAN_REMOVE": sonoff_swv_irrigation_plan_remove,
     "SONOFF_ZBMICRO_RADIO_POWER_TURBO_MODE": zbmicro_radio_power_turbo_mode,
     "SONOFF_TEMP_CALIBRATION": sonoff_temperature_calibration,
     "SONOFF_TEMP_UNIT": sonoff_temperature_unit
