@@ -92,6 +92,13 @@ SONOFF_SWV_MAX_IRRIGATION_MINUTES = 719
 # irrigation plans and the 0x501f status reports use) is offered so a manual On can run bursts.
 SONOFF_SWV_IRRIGATION_MODE = {"duration": 0x00, "capacity": 0x01, "duration_with_interval": 0x02}
 SONOFF_SWV_MAX_BURST_MINUTES = 60      # per-burst irrigation and interval limits, as in the irrigation plans
+# Same floor as the irrigation plans (SONOFF_SWV_MIN_PLAN_IRRIGATION_MINUTES): the plan engine drops bursts
+# below 3 minutes, so do not ask the manual session for one either.
+SONOFF_SWV_MIN_BURST_MINUTES = 3
+# Every SONOFF_SWV_MANUAL_* / SONOFF_SWV_ALARM_* Param triggers a full write of the same array, so one
+# Param save fires the same write several times in a row; identical payloads within this window are sent once.
+SONOFF_SWV_ARRAY_WRITE_DEDUP_SECONDS = 10
+_swv_last_array_write = {}   # (nwkid, attribute) -> (payload, timestamp)
 SONOFF_SWV_DEFAULT_INTERVAL_MINUTES = 10   # filler upstream writes when the interval is meaningless
 # 0x501d amount unit byte (legacy mapping, valid on every firmware): 0 = US gallon, 1 = liter
 SONOFF_SWV_AMOUNT_UNIT = {"us_gallon": 0x00, "liter": 0x01}
@@ -117,6 +124,9 @@ SONOFF_SWV_CMD_IRRIGATION_PLAN_REPORT = "09"     # 28-byte plan, device -> plugi
 SONOFF_SWV_IRRIGATION_PLAN_LEN = 28
 ZCL_DEFAULT_RESPONSE_COMMAND = "0b"
 SONOFF_SWV_MAX_PLAN_INDEX = 5
+# Measured on an SWV-ZFE (fw 1.0.x): a plan whose irrigation duration is below 3 minutes is dropped by the
+# firmware without any response (no Default Response, no 0x501f report); 3 and above are acknowledged.
+SONOFF_SWV_MIN_PLAN_IRRIGATION_MINUTES = 3
 SONOFF_SWV_LOOP_TYPE = {"odd_days": 0x00, "even_days": 0x01, "day_interval": 0x02, "weekdays": 0x03}
 SONOFF_SWV_LOOP_TYPE_NAME = {v: k for k, v in SONOFF_SWV_LOOP_TYPE.items()}
 SONOFF_SWV_WEEK_DAYS = {"sunday": 0x01, "monday": 0x02, "tuesday": 0x04, "wednesday": 0x08, "thursday": 0x10, "friday": 0x20, "saturday": 0x40}
@@ -214,6 +224,18 @@ def _param_choice(self, nwkid, param, choices, default):
     return choices[value]
 
 
+def _swv_write_uint8_array(self, nwkid, attribute, elements):
+    """ Write an fc11 ARRAY(uint8) attribute, once per distinct payload within SONOFF_SWV_ARRAY_WRITE_DEDUP_SECONDS """
+    payload = _zcl_uint8_array(elements)
+    last_payload, last_time = _swv_last_array_write.get((nwkid, attribute), (None, 0))
+    now = time.time()
+    if payload == last_payload and now - last_time < SONOFF_SWV_ARRAY_WRITE_DEDUP_SECONDS:
+        self.log.logging("Sonoff", "Debug", "_swv_write_uint8_array - Nwkid: %s attribute %s already written %.1fs ago, skipping" % (nwkid, attribute, now - last_time), nwkid)
+        return
+    _swv_last_array_write[(nwkid, attribute)] = (payload, now)
+    write_attribute(self, nwkid, ZIGATE_EP, "01", SONOFF_CLUSTER_ID, SONOFF_MANUFACTURER_ID, "01", attribute, ZCL_ARRAY_DATA_TYPE, payload, ackIsDisabled=False)
+
+
 def sonoff_swv_manual_default_settings(self, nwkid, value):
     """ SWV-ZFE/ZFU: settings applied to a manual 'On' (single irrigation session).
 
@@ -224,13 +246,16 @@ def sonoff_swv_manual_default_settings(self, nwkid, value):
     In duration/capacity mode the total and irrigation durations are both SONOFF_SWV_MANUAL_IRRIGATION_DURATION
     and the interval is a filler. In duration_with_interval mode the session lasts
     SONOFF_SWV_MANUAL_IRRIGATION_TOTAL_DURATION (default: the duration), watering for
-    SONOFF_SWV_MANUAL_IRRIGATION_DURATION (1-60) then pausing SONOFF_SWV_MANUAL_IRRIGATION_INTERVAL (1-60) minutes.
+    SONOFF_SWV_MANUAL_IRRIGATION_DURATION (3-60) then pausing SONOFF_SWV_MANUAL_IRRIGATION_INTERVAL (1-60) minutes.
     """
     self.log.logging("Sonoff", "Debug", "sonoff_swv_manual_default_settings - Nwkid: %s value: %s" % (nwkid, value), nwkid)
 
     mode = _param_choice(self, nwkid, "SONOFF_SWV_MANUAL_IRRIGATION_MODE", SONOFF_SWV_IRRIGATION_MODE, SONOFF_SWV_IRRIGATION_MODE["duration"])
     interval_mode = mode == SONOFF_SWV_IRRIGATION_MODE["duration_with_interval"]
-    duration = _param_int(self, nwkid, "SONOFF_SWV_MANUAL_IRRIGATION_DURATION", 2, 1, SONOFF_SWV_MAX_BURST_MINUTES if interval_mode else SONOFF_SWV_MAX_IRRIGATION_MINUTES)
+    if interval_mode:
+        duration = _param_int(self, nwkid, "SONOFF_SWV_MANUAL_IRRIGATION_DURATION", SONOFF_SWV_MIN_BURST_MINUTES, SONOFF_SWV_MIN_BURST_MINUTES, SONOFF_SWV_MAX_BURST_MINUTES)
+    else:
+        duration = _param_int(self, nwkid, "SONOFF_SWV_MANUAL_IRRIGATION_DURATION", 2, 1, SONOFF_SWV_MAX_IRRIGATION_MINUTES)
     total_duration = _param_int(self, nwkid, "SONOFF_SWV_MANUAL_IRRIGATION_TOTAL_DURATION", duration, duration, SONOFF_SWV_MAX_IRRIGATION_MINUTES) if interval_mode else duration
     interval = _param_int(self, nwkid, "SONOFF_SWV_MANUAL_IRRIGATION_INTERVAL", SONOFF_SWV_DEFAULT_INTERVAL_MINUTES, 1, SONOFF_SWV_MAX_BURST_MINUTES)
     amount_unit = _param_choice(self, nwkid, "SONOFF_SWV_MANUAL_IRRIGATION_AMOUNT_UNIT", SONOFF_SWV_AMOUNT_UNIT, SONOFF_SWV_AMOUNT_UNIT["liter"])
@@ -247,7 +272,7 @@ def sonoff_swv_manual_default_settings(self, nwkid, value):
         + list(amount.to_bytes(2, "big"))
         + list(fail_safe.to_bytes(2, "big"))
     )
-    write_attribute(self, nwkid, ZIGATE_EP, "01", SONOFF_CLUSTER_ID, SONOFF_MANUFACTURER_ID, "01", SONOFF_SWV_MANUAL_DEFAULT_SETTINGS_ATTRIBUTE, ZCL_ARRAY_DATA_TYPE, _zcl_uint8_array(elements), ackIsDisabled=False)
+    _swv_write_uint8_array(self, nwkid, SONOFF_SWV_MANUAL_DEFAULT_SETTINGS_ATTRIBUTE, elements)
 
 
 def sonoff_swv_valve_alarm_settings(self, nwkid, value):
@@ -268,7 +293,7 @@ def sonoff_swv_valve_alarm_settings(self, nwkid, value):
     leak_duration = _param_int(self, nwkid, "SONOFF_SWV_ALARM_WATER_LEAK_DURATION", 1, 1, 3)
 
     elements = [enable_bits, shortage_duration, leak_duration, 0x00]
-    write_attribute(self, nwkid, ZIGATE_EP, "01", SONOFF_CLUSTER_ID, SONOFF_MANUFACTURER_ID, "01", SONOFF_SWV_VALVE_ALARM_SETTINGS_ATTRIBUTE, ZCL_ARRAY_DATA_TYPE, _zcl_uint8_array(elements), ackIsDisabled=False)
+    _swv_write_uint8_array(self, nwkid, SONOFF_SWV_VALVE_ALARM_SETTINGS_ATTRIBUTE, elements)
 
 
 def sonoff_swv_water_flow_unit(self, nwkid, unit):
@@ -352,7 +377,7 @@ def _swv_encode_irrigation_plan(self, nwkid, plan):
 
     plan_index = _swv_plan_int(self, nwkid, plan, "plan_index", 0, 0, SONOFF_SWV_MAX_PLAN_INDEX)
     total_duration = _swv_plan_int(self, nwkid, plan, "irrigation_total_duration", 10, 0, SONOFF_SWV_MAX_IRRIGATION_MINUTES)
-    irrigation_duration = _swv_plan_int(self, nwkid, plan, "irrigation_duration", 2, 1, 60)
+    irrigation_duration = _swv_plan_int(self, nwkid, plan, "irrigation_duration", SONOFF_SWV_MIN_PLAN_IRRIGATION_MINUTES, SONOFF_SWV_MIN_PLAN_IRRIGATION_MINUTES, 60)
     interval_duration = _swv_plan_int(self, nwkid, plan, "interval_duration", 3, 1, 60)
     amount = _swv_plan_int(self, nwkid, plan, "irrigation_amount", 30, 1, 10000)
     fail_safe = _swv_plan_int(self, nwkid, plan, "fail_safe", 10, 0, SONOFF_SWV_MAX_IRRIGATION_MINUTES)
@@ -432,7 +457,8 @@ def sonoff_swv_irrigation_plan_settings(self, nwkid, value):
       loop_type_interval_days (1-30, day_interval only), loop_type_week_days (list of day names, weekdays only),
       enable_date (YYYY-MM-DD, default today), start_time (HH:MM, required),
       irrigation_mode (duration|capacity|duration_with_interval, default duration),
-      irrigation_total_duration (0-719 min, default 10), irrigation_duration (1-60 min, default 2),
+      irrigation_total_duration (0-719 min, default 10), irrigation_duration (3-60 min, default 3; the
+      firmware silently drops plans with a shorter irrigation duration),
       interval_duration (1-60 min, default 3), irrigation_amount_unit (liter|us_gallon, default liter),
       irrigation_amount (1-10000, default 30), fail_safe (0-719 min, default 10),
       create_datetime (ISO 8601, default now)

@@ -64,6 +64,7 @@ def plugin(sonoff_module):
     self = MagicMock(name="plugin")
     self.log.logging = MagicMock(name="logging")
     sonoff_module.write_attribute.reset_mock()
+    sonoff_module._swv_last_array_write.clear()
     return self
 
 
@@ -150,6 +151,37 @@ def test_manual_default_settings_interval_mode_limits(sonoff_module, plugin):
 
     w = _written(sonoff_module)
     assert w["data"] == "20" + "0c00" + "02" + "003c" + "003c" + "0001" + "01" + "0000" + "003c"
+
+
+def test_manual_default_settings_interval_mode_burst_floor(sonoff_module, plugin):
+    _use_params(sonoff_module, {
+        "SONOFF_SWV_MANUAL_IRRIGATION_MODE": "duration_with_interval",
+        "SONOFF_SWV_MANUAL_IRRIGATION_DURATION": 2,        # below the 3-min firmware floor, raised
+        "SONOFF_SWV_MANUAL_IRRIGATION_TOTAL_DURATION": 30,
+        "SONOFF_SWV_MANUAL_IRRIGATION_INTERVAL": 5,
+    })
+
+    sonoff_module.sonoff_swv_manual_default_settings(plugin, "1234", 2)
+
+    w = _written(sonoff_module)
+    assert w["data"] == "20" + "0c00" + "02" + "001e" + "0003" + "0005" + "01" + "0000" + "001e"
+
+
+def test_manual_default_settings_written_once_per_param_save(sonoff_module, plugin):
+    # sanity_check_of_param calls the writer once per SONOFF_SWV_MANUAL_* key; identical payloads collapse to one write
+    _use_params(sonoff_module, {"SONOFF_SWV_MANUAL_IRRIGATION_DURATION": 719, "SONOFF_SWV_MANUAL_IRRIGATION_MODE": "duration"})
+
+    sonoff_module.sonoff_swv_manual_default_settings(plugin, "1234", 719)
+    sonoff_module.sonoff_swv_manual_default_settings(plugin, "1234", "duration")
+
+    assert sonoff_module.write_attribute.call_count == 1
+
+    # a different payload (or another device) is written
+    _use_params(sonoff_module, {"SONOFF_SWV_MANUAL_IRRIGATION_DURATION": 30})
+    sonoff_module.sonoff_swv_manual_default_settings(plugin, "1234", 30)
+    sonoff_module.sonoff_swv_manual_default_settings(plugin, "5678", 30)
+
+    assert sonoff_module.write_attribute.call_count == 3
 
 
 def test_manual_default_settings_total_and_interval_ignored_in_duration_mode(sonoff_module, plugin):
@@ -422,7 +454,8 @@ def test_irrigation_plan_defaults_and_day_interval(sonoff_module, plugin, raw_ap
     assert data[0:4] == bytes([0x00, 0x01, 0x02, 0x03])           # index 0, enabled, day_interval every 3 days
     assert data[8] == 0x00                                         # duration mode
     assert int.from_bytes(data[9:13], "big") == 21 * 3600
-    assert data[13:24] == bytes([0x00, 0x0a, 0x00, 0x02, 0x00, 0x03, 0x01, 0x00, 0x1e, 0x00, 0x0a])   # upstream defaults
+    # upstream defaults, except the irrigation duration raised to the 3-minute firmware floor
+    assert data[13:24] == bytes([0x00, 0x0a, 0x00, 0x03, 0x00, 0x03, 0x01, 0x00, 0x1e, 0x00, 0x0a])
     assert abs(int.from_bytes(data[24:28], "big") - int(sonoff_module.time.time())) < 5
 
 
@@ -443,6 +476,7 @@ def test_irrigation_plan_list_sends_each_plan(sonoff_module, plugin, raw_aps):
     {},                                                        # start_time missing
     {"start_time": "06:00", "plan_index": 6},                  # index out of range
     {"start_time": "06:00", "irrigation_duration": 61},        # > 60
+    {"start_time": "06:00", "irrigation_duration": 2},         # < 3: dropped silently by the firmware
     {"start_time": "06:00", "loop_type_mode": "monthly"},      # unknown loop type
     {"start_time": "06:00", "loop_type_mode": "weekdays", "loop_type_week_days": ["funday"]},
     {"start_time": "06:00", "enable_date": "13/09/2026"},
