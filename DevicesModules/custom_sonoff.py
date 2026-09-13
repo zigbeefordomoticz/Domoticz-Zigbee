@@ -115,6 +115,7 @@ SONOFF_SWV_CMD_IRRIGATION_PLAN_SETTINGS = "06"   # 28-byte plan, device answers 
 SONOFF_SWV_CMD_IRRIGATION_PLAN_REMOVE = "07"     # 1-byte plan index
 SONOFF_SWV_CMD_IRRIGATION_PLAN_REPORT = "09"     # 28-byte plan, device -> plugin
 SONOFF_SWV_IRRIGATION_PLAN_LEN = 28
+ZCL_DEFAULT_RESPONSE_COMMAND = "0b"
 SONOFF_SWV_MAX_PLAN_INDEX = 5
 SONOFF_SWV_LOOP_TYPE = {"odd_days": 0x00, "even_days": 0x01, "day_interval": 0x02, "weekdays": 0x03}
 SONOFF_SWV_LOOP_TYPE_NAME = {v: k for k, v in SONOFF_SWV_LOOP_TYPE.items()}
@@ -487,8 +488,16 @@ def sonoffReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP,
     self.log.logging("Sonoff", "Debug", "sonoffReadRawAPS - Nwkid: %s Ep: %s Cluster: %s Payload: %s" % (srcNWKID, srcEp, ClusterID, MsgPayload), srcNWKID)
     if ClusterID != SONOFF_CLUSTER_ID or srcNWKID not in self.ListOfDevices:
         return
-    _default_response, _global_command, _sqn, _manufacturer_code, command, data = retreive_cmd_payload_from_8002(MsgPayload)
+    _default_response, global_command, _sqn, _manufacturer_code, command, data = retreive_cmd_payload_from_8002(MsgPayload)
     if command is None:
+        return
+
+    if global_command:
+        # The valve acknowledges 0x06 / 0x07 with a manufacturer-specific ZCL Default Response: command id + status
+        if command == ZCL_DEFAULT_RESPONSE_COMMAND and data[:2] in (SONOFF_SWV_CMD_IRRIGATION_PLAN_SETTINGS, SONOFF_SWV_CMD_IRRIGATION_PLAN_REMOVE):
+            status = data[2:4]
+            level = "Log" if status == "00" else "Error"
+            self.log.logging("Sonoff", level, "sonoffReadRawAPS - Nwkid: %s irrigation plan command 0x%s status: %s" % (srcNWKID, data[:2], status), srcNWKID)
         return
 
     if command == SONOFF_SWV_CMD_IRRIGATION_PLAN_SETTINGS:
