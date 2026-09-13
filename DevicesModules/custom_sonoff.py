@@ -25,6 +25,7 @@ The module enables:
 - Handling real-time irrigation parameters (duration, volume)
 - Auto-shutdown of valves on water shortage
 - SWV-ZFE/ZFU manual irrigation session defaults, valve alarms and flow unit
+- Decoding the SWV-ZFE/ZFU irrigation schedule status report (0x501f)
 - Adjusting radio power modes (e.g., Turbo Mode)
 - Setting temperature unit (Celsius/Fahrenheit)
 - Performing temperature calibration
@@ -45,6 +46,8 @@ Repository:
     https://github.com/zigbeefordomoticz/Domoticz-Zigbee
 """
 
+
+from datetime import datetime, timedelta
 
 from Modules.basicOutputs import write_attribute
 from Modules.tools import get_device_config_param
@@ -74,6 +77,7 @@ SONOFF_WATER_CLOSE_VALVE_TIMEOUT_ATTRIBUTE = "5011"
 SONOFF_SWV_MANUAL_DEFAULT_SETTINGS_ATTRIBUTE = "501d"   # ARRAY(uint8)[12]
 SONOFF_SWV_VALVE_ALARM_SETTINGS_ATTRIBUTE = "5020"      # ARRAY(uint8)[4]
 SONOFF_SWV_UNIT_OF_WATER_FLOW_ATTRIBUTE = "5021"        # uint8
+SONOFF_SWV_IRRIGATION_SCHEDULE_STATUS_ATTRIBUTE = "501f"  # ARRAY(uint8)[15] (start/standby) or [21] (running/end)
 ZCL_ARRAY_DATA_TYPE = "48"
 ZCL_UINT8_DATA_TYPE = "20"
 
@@ -83,6 +87,19 @@ SONOFF_SWV_IRRIGATION_MODE = {"duration": 0x00, "capacity": 0x01}
 SONOFF_SWV_AMOUNT_UNIT = {"us_gallon": 0x00, "liter": 0x01}
 # 0x5021 unit of water flow (firmware >= 1.1.0): 0 = liter, 1 = US gallon, 2 = imperial gallon
 SONOFF_SWV_WATER_FLOW_UNIT = {"liter": 0x00, "us_gallon": 0x01, "imperial_gallon": 0x02}
+
+# 0x501f irrigation schedule status report (Sonoff documentation, mirrored by
+# zigbee-herdsman-converters irrigationScheduleStatus)
+SONOFF_SWV_SCHEDULE_STATUS = {0x00: "start", 0x01: "end", 0x02: "running", 0x03: "standby"}
+SONOFF_SWV_SCHEDULE_TYPE = {0x00: "automatic", 0x01: "manual"}
+SONOFF_SWV_IRRIGATION_MODE_NAME = {0x00: "duration", 0x01: "capacity", 0x02: "duration_with_interval"}
+# 0x501d/0x501f amount unit byte: 0 = US gallon, 1 = liter, 2 = imperial gallon (firmware >= 1.1.0)
+SONOFF_SWV_AMOUNT_UNIT_NAME = {0x00: "us_gallon", 0x01: "liter", 0x02: "imperial_gallon"}
+SONOFF_SWV_SCHEDULE_STATUS_START_STANDBY_LEN = 15
+SONOFF_SWV_SCHEDULE_STATUS_RUNNING_END_LEN = 21
+# The valve stamps its schedule with the Time cluster LocalTime (0x000a/0x0007) the plugin
+# serves: local wall-clock seconds since 2000-01-01, not UTC.
+ZIGBEE_EPOCH_LOCAL = datetime(2000, 1, 1)
 
 # Sonoff InchingController - ZBMicro model
 SONOFF_RADIO_POWER_TURBO_MODE = "0012"
@@ -228,6 +245,84 @@ def sonoff_swv_water_flow_unit(self, nwkid, unit):
         return
     self.log.logging("Sonoff", "Debug", "sonoff_swv_water_flow_unit - Nwkid: %s unit: %s" % (nwkid, unit), nwkid)
     write_attribute(self, nwkid, ZIGATE_EP, "01", SONOFF_CLUSTER_ID, SONOFF_MANUFACTURER_ID, "01", SONOFF_SWV_UNIT_OF_WATER_FLOW_ATTRIBUTE, ZCL_UINT8_DATA_TYPE, "%02x" % SONOFF_SWV_WATER_FLOW_UNIT[unit], ackIsDisabled=False)
+
+
+def _swv_local_time_to_iso(seconds):
+    """ 0x501f timestamp (local seconds since 2000-01-01) -> ISO 8601 with the plugin's local offset """
+    if seconds == 0:
+        return None
+    return (ZIGBEE_EPOCH_LOCAL + timedelta(seconds=seconds)).astimezone().isoformat(timespec="seconds")
+
+
+def _swv_schedule_status_elements(value):
+    """ Strip whatever ZCL ARRAY framing is left in front of the 0x501f elements.
+
+    The generic ARRAY decoder (Zigbee/zclDecoders.py extract_value_size) skips the element type
+    and the low count byte only, so the elements normally arrive prefixed by the high count
+    byte (0x00). Also accept a complete array (0x20 + LE count + elements) and bare elements.
+    """
+    data = bytes.fromhex(value)
+    if len(data) >= 3 and data[0] == 0x20 and len(data) == 3 + int.from_bytes(data[1:3], "little"):
+        return data[3:]
+    if len(data) in (SONOFF_SWV_SCHEDULE_STATUS_START_STANDBY_LEN + 1, SONOFF_SWV_SCHEDULE_STATUS_RUNNING_END_LEN + 1) and data[0] == 0x00:
+        return data[1:]
+    return data
+
+
+def sonoff_swv_irrigation_schedule_status(self, nwkid, ep, cluster, attribut, value):
+    """ SWV-ZFE/ZFU: decode the 0x501f irrigation schedule status report (EvalFunc).
+
+    Reported when a schedule starts, while it runs, when it ends (or is interrupted) and when
+    the valve is idle. start/standby reports carry 15 elements, running/end reports 21:
+      [0] status  [1] schedule index  [2] schedule type  [3] irrigation mode
+      [4..7] start time  [8..11] expected end time  ([12..15] actual end time, running/end only)
+      unit byte, expected amount (uint16), (actual amount (uint16), running/end only)
+    Multi-byte fields are big endian; amounts follow the reported unit byte.
+    """
+    self.log.logging("Sonoff", "Debug", "sonoff_swv_irrigation_schedule_status - Nwkid: %s value: %s" % (nwkid, value), nwkid)
+    try:
+        data = _swv_schedule_status_elements(value)
+    except (ValueError, TypeError):
+        self.log.logging("Sonoff", "Error", "sonoff_swv_irrigation_schedule_status - invalid 0x501f payload %s" % value, nwkid)
+        return None
+
+    if len(data) < 4:
+        self.log.logging("Sonoff", "Error", "sonoff_swv_irrigation_schedule_status - 0x501f payload too short (%s bytes): %s" % (len(data), value), nwkid)
+        return None
+
+    status = data[0]
+    if status not in SONOFF_SWV_SCHEDULE_STATUS:
+        self.log.logging("Sonoff", "Error", "sonoff_swv_irrigation_schedule_status - unknown 0x501f schedule status 0x%02x: %s" % (status, value), nwkid)
+        return None
+
+    with_actuals = status in (0x01, 0x02)   # end / running
+    expected_len = SONOFF_SWV_SCHEDULE_STATUS_RUNNING_END_LEN if with_actuals else SONOFF_SWV_SCHEDULE_STATUS_START_STANDBY_LEN
+    if len(data) < expected_len:
+        self.log.logging("Sonoff", "Error", "sonoff_swv_irrigation_schedule_status - 0x501f %s report has %s bytes, expected %s: %s" % (
+            SONOFF_SWV_SCHEDULE_STATUS[status], len(data), expected_len, value), nwkid)
+        return None
+
+    result = {
+        "schedule_status": SONOFF_SWV_SCHEDULE_STATUS[status],
+        "schedule_index": data[1],
+        "schedule_type": SONOFF_SWV_SCHEDULE_TYPE.get(data[2], data[2]),
+        "irrigation_mode": SONOFF_SWV_IRRIGATION_MODE_NAME.get(data[3], data[3]),
+        "start_time": _swv_local_time_to_iso(int.from_bytes(data[4:8], "big")),
+        "expected_end_time": _swv_local_time_to_iso(int.from_bytes(data[8:12], "big")),
+        "actual_end_time": None,
+        "actual_irrigation_amount": None,
+    }
+    idx = 12
+    if with_actuals:
+        result["actual_end_time"] = _swv_local_time_to_iso(int.from_bytes(data[12:16], "big"))
+        idx = 16
+    result["irrigation_amount_unit"] = SONOFF_SWV_AMOUNT_UNIT_NAME.get(data[idx], data[idx])
+    result["expected_irrigation_amount"] = int.from_bytes(data[idx + 1:idx + 3], "big")
+    if with_actuals:
+        result["actual_irrigation_amount"] = int.from_bytes(data[idx + 3:idx + 5], "big")
+
+    self.log.logging("Sonoff", "Debug", "sonoff_swv_irrigation_schedule_status - Nwkid: %s decoded: %s" % (nwkid, result), nwkid)
+    return result
 
 
 def zbmicro_radio_power_turbo_mode(self, nwkid, mode):

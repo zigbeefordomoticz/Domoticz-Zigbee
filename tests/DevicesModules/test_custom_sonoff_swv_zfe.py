@@ -174,3 +174,97 @@ def test_params_are_registered(sonoff_module):
         assert reg[key] is sonoff_module.sonoff_swv_valve_alarm_settings
     assert reg["SONOFF_SWV_WATER_FLOW_UNIT"] is sonoff_module.sonoff_swv_water_flow_unit
     assert reg["SONOFF_CHILD_LOCK"] is sonoff_module.sonoff_child_lock
+
+
+# ─── 0x501f irrigation schedule status (EvalFunc) ────────────────────────────
+#
+# Payloads are real "Foundation Cluster ... Attribute: 501f Type: 48" log lines from an
+# SWV-ZFE (2026-09-09, Europe/Paris): the generic ARRAY decoder leaves the high count
+# byte (00) in front of the elements.
+
+def _local_iso(seconds_since_2000):
+    from datetime import datetime, timedelta
+    return (datetime(2000, 1, 1) + timedelta(seconds=seconds_since_2000)).astimezone().isoformat(timespec="seconds")
+
+
+def _decode(sonoff_module, plugin, payload):
+    return sonoff_module.sonoff_swv_irrigation_schedule_status(plugin, "1234", "01", "fc11", "501f", payload)
+
+
+def test_schedule_status_running_report(sonoff_module, plugin):
+    res = _decode(sonoff_module, plugin, "0002000100323467e932346a413234682d0100000011")
+
+    assert res == {
+        "schedule_status": "running",
+        "schedule_index": 0,
+        "schedule_type": "manual",
+        "irrigation_mode": "duration",
+        "start_time": _local_iso(0x323467e9),          # 2026-09-09 18:54:33 local
+        "expected_end_time": _local_iso(0x32346a41),   # start + 600 s
+        "actual_end_time": _local_iso(0x3234682d),     # start + 68 s
+        "irrigation_amount_unit": "liter",
+        "expected_irrigation_amount": 0,
+        "actual_irrigation_amount": 17,
+    }
+    assert res["start_time"][:19] == "2026-09-09T18:54:33"
+
+
+def test_schedule_status_end_report(sonoff_module, plugin):
+    res = _decode(sonoff_module, plugin, "0001000100323467e932346a41323468480100000018")
+
+    assert res["schedule_status"] == "end"
+    assert res["actual_end_time"][:19] == "2026-09-09T18:56:08"
+    assert res["actual_irrigation_amount"] == 24
+
+
+def test_schedule_status_start_report_has_no_actuals(sonoff_module, plugin):
+    res = _decode(sonoff_module, plugin, "00000001003234688b32346ae3010000")
+
+    assert res == {
+        "schedule_status": "start",
+        "schedule_index": 0,
+        "schedule_type": "manual",
+        "irrigation_mode": "duration",
+        "start_time": _local_iso(0x3234688b),
+        "expected_end_time": _local_iso(0x32346ae3),
+        "actual_end_time": None,
+        "irrigation_amount_unit": "liter",
+        "expected_irrigation_amount": 0,
+        "actual_irrigation_amount": None,
+    }
+
+
+def test_schedule_status_standby_automatic_capacity(sonoff_module, plugin):
+    # status=standby, index=3, type=automatic, mode=capacity, unit=us_gallon, expected=0x0064
+    res = _decode(sonoff_module, plugin, "00" + "03030001" + "3234688b" + "32346ae3" + "00" + "0064")
+
+    assert (res["schedule_status"], res["schedule_index"], res["schedule_type"], res["irrigation_mode"]) == ("standby", 3, "automatic", "capacity")
+    assert (res["irrigation_amount_unit"], res["expected_irrigation_amount"]) == ("us_gallon", 100)
+
+
+def test_schedule_status_accepts_full_array_and_bare_elements(sonoff_module, plugin):
+    elements = "02000100323467e932346a413234682d0100000011"
+    bare = _decode(sonoff_module, plugin, elements)
+    full = _decode(sonoff_module, plugin, "20" + "1500" + elements)
+    stripped = _decode(sonoff_module, plugin, "00" + elements)
+
+    assert bare == full == stripped
+    assert bare["actual_irrigation_amount"] == 17
+
+
+def test_schedule_status_zero_timestamp_is_none(sonoff_module, plugin):
+    res = _decode(sonoff_module, plugin, "00" + "00000100" + "00000000" + "32346ae3" + "01" + "0000")
+
+    assert res["start_time"] is None
+    assert res["expected_end_time"] == _local_iso(0x32346ae3)
+
+
+@pytest.mark.parametrize("payload", [
+    "zz",                                    # not hex
+    "000200",                                # too short for the header
+    "0002000100323467e932346a41",            # running report truncated (< 21 bytes)
+    "00" + "09000100" + "3234688b" + "32346ae3" + "01" + "0000",   # unknown status
+])
+def test_schedule_status_rejects_bad_payloads(sonoff_module, plugin, payload):
+    assert _decode(sonoff_module, plugin, payload) is None
+    assert any(call.args[1] == "Error" for call in plugin.log.logging.call_args_list)
