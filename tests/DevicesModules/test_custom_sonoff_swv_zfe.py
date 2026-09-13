@@ -476,6 +476,26 @@ def test_read_raw_aps_plan_settings_status(sonoff_module, plugin, monkeypatch):
     assert any(call.args[1] == "Error" and "status: 01" in call.args[2] for call in plugin.log.logging.call_args_list)
 
 
+@pytest.mark.parametrize("data, level", [("0600", "Log"), ("0700", "Log"), ("0687", "Error")])
+def test_read_raw_aps_default_response_to_plan_commands(sonoff_module, plugin, monkeypatch, data, level):
+    # Real frame from an SWV-ZFE after a 0x06 write: 1c 8612 05 0b 0600 (global Default Response, manufacturer specific)
+    plugin.ListOfDevices = {"1234": {}}
+    monkeypatch.setattr(sonoff_module, "retreive_cmd_payload_from_8002", lambda payload: (True, True, "05", "1286", "0b", data))
+
+    sonoff_module.sonoffReadRawAPS(plugin, None, "1234", "01", "fc11", "0000", "01", "1c8612050b" + data)
+
+    assert any(call.args[1] == level and "command 0x%s status: %s" % (data[:2], data[2:]) in call.args[2] for call in plugin.log.logging.call_args_list)
+
+
+def test_read_raw_aps_ignores_other_global_commands(sonoff_module, plugin, monkeypatch):
+    plugin.ListOfDevices = {"1234": {}}
+    monkeypatch.setattr(sonoff_module, "retreive_cmd_payload_from_8002", lambda payload: (False, True, "05", "1286", "01", "1d5000"))
+
+    sonoff_module.sonoffReadRawAPS(plugin, None, "1234", "01", "fc11", "0000", "01", "1c8612050b0600")
+
+    assert not any(call.args[1] in ("Log", "Error") for call in plugin.log.logging.call_args_list)
+
+
 def test_read_raw_aps_ignores_other_clusters(sonoff_module, plugin, monkeypatch):
     plugin.ListOfDevices = {"1234": {}}
     spy = MagicMock()
