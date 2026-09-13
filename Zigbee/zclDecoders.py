@@ -831,9 +831,22 @@ def extract_value_size(self, Data, idx, DType ):
         idx += size
         return idx, size, value
 
+    if DType == "48" and len(Data[idx:]) >= 6:
+        # ZCL Array: element type (1 byte) + element count (uint16 LE) + elements.
+        # When every element has a fixed size (e.g. Sonoff SWV-ZFE fc11 arrays of uint8), take exactly
+        # that many bytes so the attributes following this one in the same frame are still decoded.
+        element_type = Data[idx : idx + 2]
+        nb_elements = int(Data[idx + 4 : idx + 6] + Data[idx + 2 : idx + 4], 16)
+        if element_type in SIZE_DATA_TYPE:
+            size = nb_elements * SIZE_DATA_TYPE[element_type] * 2
+            if len(Data[idx + 6 :]) >= size:
+                idx += 6
+                value = extract_value( Data, DType, idx, size)
+                return idx, size, value
+
     if DType in ("48", "4c"):
-        # Today found for attribute 0xff02 Xiaomi, just take all data
-        nbElement = Data[idx + 2 : idx + 4] + Data[idx : idx + 2]
+        # Structure (0x4c), or an array whose elements cannot be sized: take all the remaining data.
+        # Found for attribute 0xff02 Xiaomi. Note this skips the element type and the low count byte only.
         idx += 4
         size = len(Data) - idx
         value = extract_value( Data, DType, idx, size)
