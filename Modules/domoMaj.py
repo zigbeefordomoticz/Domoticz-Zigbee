@@ -118,6 +118,17 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         self.log.logging("Widget", "Debug", "------> IRCodeText : %s" % sValue, NwkId)
         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
+    if ClusterType == "TextStatus" and WidgetType == "TextStatus":
+        # Generic free-text status widget: value is the text itself, or a dict carrying it under "text"
+        # (a dict without "text" means the producer has nothing new to display).
+        sValue = value.get("text") if isinstance(value, dict) else value
+        if sValue in (None, ""):
+            self.log.logging("Widget", "Debug", "------> TextStatus: nothing to display", NwkId)
+            return
+        self.log.logging("Widget", "Debug", "------> TextStatus : %s" % sValue, NwkId)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
+        return
+
     if WidgetType == "LiquidLevel" and ClusterType == "LiquidLevel" and Attribute_ == "":
         # LiquidLevel
         self.log.logging("Widget", "Debug", "------> LiquidLevel : %s" % value, NwkId)
