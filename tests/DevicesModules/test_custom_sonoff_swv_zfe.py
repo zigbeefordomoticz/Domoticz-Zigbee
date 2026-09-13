@@ -285,6 +285,13 @@ def test_decode_manual_default_settings_read_from_device(sonoff_module, plugin):
     }
 
 
+def test_decode_manual_default_settings_ignores_swallowed_following_attributes(sonoff_module, plugin):
+    # Real read through the legacy ARRAY decoder: 501d followed by the raw 501c and 501b records
+    res = sonoff_module.sonoff_swv_decode_manual_default_settings(plugin, "1234", "01", "fc11", "501d", "000002cf02cf000a01000002cf1c500023000000001b50002300000000")
+
+    assert res["irrigation_duration"] == 719 and res["fail_safe"] == 719
+
+
 def test_decode_manual_default_settings_round_trips_our_write(sonoff_module, plugin):
     _use_params(sonoff_module, {
         "SONOFF_SWV_MANUAL_IRRIGATION_DURATION": 30,
@@ -310,4 +317,29 @@ def test_decode_manual_default_settings_round_trips_our_write(sonoff_module, plu
 @pytest.mark.parametrize("payload", ["zz", "00" + "00000a"])
 def test_decode_manual_default_settings_rejects_bad_payloads(sonoff_module, plugin, payload):
     assert sonoff_module.sonoff_swv_decode_manual_default_settings(plugin, "1234", "01", "fc11", "501d", payload) is None
+    assert any(call.args[1] == "Error" for call in plugin.log.logging.call_args_list)
+
+
+# ─── 0x5020 valve alarm settings read-back (EvalFunc) ────────────────────────
+
+@pytest.mark.parametrize("payload", [
+    "0007050105",   # legacy framing: leading count byte, then the 4 elements (+ the firmware's trailing byte)
+    "07050105",     # sized by the fixed ARRAY decoder
+    "0007050105" + "1850004848040000000000",   # legacy framing with the following attribute swallowed
+])
+def test_decode_valve_alarm_settings(sonoff_module, plugin, payload):
+    res = sonoff_module.sonoff_swv_decode_valve_alarm_settings(plugin, "1234", "01", "fc11", "5020", payload)
+
+    assert res == {
+        "enable_bits": 0x07,
+        "enable_alarm_water_shortage": True,
+        "enable_alarm_water_leak": True,
+        "enable_water_shortage_auto_close": False,
+        "alarm_water_shortage_duration": 5,
+        "alarm_water_leak_duration": 1,
+    }
+
+
+def test_decode_valve_alarm_settings_rejects_short_payload(sonoff_module, plugin):
+    assert sonoff_module.sonoff_swv_decode_valve_alarm_settings(plugin, "1234", "01", "fc11", "5020", "0705") is None
     assert any(call.args[1] == "Error" for call in plugin.log.logging.call_args_list)
