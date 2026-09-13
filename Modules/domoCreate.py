@@ -504,11 +504,22 @@ def CreateDomoDevice(self, Devices, NWKID):
                 create_xcube_widgets(self, Devices, NWKID, DeviceID_IEEE, Ep, t)
                 break
 
-            if create_native_widget( self, Devices, NWKID, DeviceID_IEEE, Ep, t):
+            native_result = create_native_widget( self, Devices, NWKID, DeviceID_IEEE, Ep, t)
+            if native_result:
                 continue
 
-            if create_switch_selector_widget( self, Devices, NWKID, DeviceID_IEEE, Ep, t):
+            selector_result = create_switch_selector_widget( self, Devices, NWKID, DeviceID_IEEE, Ep, t)
+            if selector_result:
                 continue
+
+            if native_result is False and selector_result is False:
+                # Neither helper recognized this Type at all (as opposed to recognizing it and
+                # failing to create the widget, which is already logged as an Error above).
+                self.log.logging(
+                    "WidgetCreation", "Error",
+                    "CreateDomoDevice - Unrecognized widget Type '%s' for %s Ep: %s; no widget created. "
+                    "Check device configuration Type spelling against known widget types." % (t, DeviceID_IEEE, Ep),
+                    NWKID)
 
 
     # for Ep
