@@ -14,7 +14,9 @@ from DevicesModules.custom_Chameleon import chameleon_stge
 from DevicesModules.custom_konke import konke_onoff
 from DevicesModules.custom_legrand import legrand_operating_time
 from DevicesModules.custom_schneider import schneider_touch_screen_cluster
-from DevicesModules.custom_sonoff import sonoff_swv_irrigation_schedule_status
+from DevicesModules.custom_sonoff import (
+    sonoff_swv_decode_manual_default_settings,
+    sonoff_swv_irrigation_schedule_status)
 from DevicesModules.custom_zlinky import zlinky_clusters
 from Modules.lumi import Lumi_lumi_motion_ac02, lumi_lock, lumi_private_cluster
 from Modules.zclClusterHelpers import (CurrentPositionLiftPercentage,
@@ -57,6 +59,7 @@ FUNCTION_MODULE = {
     # Decode STGE status
     "chameleon_stge": chameleon_stge,
 
-    # Sonoff SWV-ZFE/ZFU irrigation schedule status (fc11/501f)
+    # Sonoff SWV-ZFE/ZFU manual default settings (fc11/501d) and irrigation schedule status (fc11/501f)
+    "sonoff_swv_decode_manual_default_settings": sonoff_swv_decode_manual_default_settings,
     "sonoff_swv_irrigation_schedule_status": sonoff_swv_irrigation_schedule_status,
 }

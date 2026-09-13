@@ -25,7 +25,7 @@ The module enables:
 - Handling real-time irrigation parameters (duration, volume)
 - Auto-shutdown of valves on water shortage
 - SWV-ZFE/ZFU manual irrigation session defaults, valve alarms and flow unit
-- Decoding the SWV-ZFE/ZFU irrigation schedule status report (0x501f)
+- Decoding the SWV-ZFE/ZFU manual default settings (0x501d) and irrigation schedule status (0x501f) reports
 - Adjusting radio power modes (e.g., Turbo Mode)
 - Setting temperature unit (Celsius/Fahrenheit)
 - Performing temperature calibration
@@ -97,6 +97,7 @@ SONOFF_SWV_IRRIGATION_MODE_NAME = {0x00: "duration", 0x01: "capacity", 0x02: "du
 SONOFF_SWV_AMOUNT_UNIT_NAME = {0x00: "us_gallon", 0x01: "liter", 0x02: "imperial_gallon"}
 SONOFF_SWV_SCHEDULE_STATUS_START_STANDBY_LEN = 15
 SONOFF_SWV_SCHEDULE_STATUS_RUNNING_END_LEN = 21
+SONOFF_SWV_MANUAL_DEFAULT_SETTINGS_LEN = 12
 # The valve stamps its schedule with the Time cluster LocalTime (0x000a/0x0007) the plugin
 # serves: local wall-clock seconds since 2000-01-01, not UTC.
 ZIGBEE_EPOCH_LOCAL = datetime(2000, 1, 1)
@@ -254,19 +255,53 @@ def _swv_local_time_to_iso(seconds):
     return (ZIGBEE_EPOCH_LOCAL + timedelta(seconds=seconds)).astimezone().isoformat(timespec="seconds")
 
 
-def _swv_schedule_status_elements(value):
-    """ Strip whatever ZCL ARRAY framing is left in front of the 0x501f elements.
+def _swv_array_elements(value, element_counts):
+    """ Strip whatever ZCL ARRAY(uint8) framing is left in front of the elements.
 
     The generic ARRAY decoder (Zigbee/zclDecoders.py extract_value_size) skips the element type
     and the low count byte only, so the elements normally arrive prefixed by the high count
     byte (0x00). Also accept a complete array (0x20 + LE count + elements) and bare elements.
+    element_counts lists the element counts this attribute is known to carry.
     """
     data = bytes.fromhex(value)
     if len(data) >= 3 and data[0] == 0x20 and len(data) == 3 + int.from_bytes(data[1:3], "little"):
         return data[3:]
-    if len(data) in (SONOFF_SWV_SCHEDULE_STATUS_START_STANDBY_LEN + 1, SONOFF_SWV_SCHEDULE_STATUS_RUNNING_END_LEN + 1) and data[0] == 0x00:
+    if data and data[0] == 0x00 and (len(data) - 1) in element_counts:
         return data[1:]
     return data
+
+
+def sonoff_swv_decode_manual_default_settings(self, nwkid, ep, cluster, attribut, value):
+    """ SWV-ZFE/ZFU: decode the 0x501d manual default settings array (EvalFunc).
+
+      [0] mode  [1..2] total duration (min)  [3..4] irrigation duration (min)  [5..6] interval (min)
+      [7] amount unit  [8..9] amount  [10..11] fail-safe timeout (min)
+    Big endian. The valve reads back with [3..4] zeroed, so like upstream fall back to the
+    total duration when the irrigation duration is 0.
+    """
+    self.log.logging("Sonoff", "Debug", "sonoff_swv_decode_manual_default_settings - Nwkid: %s value: %s" % (nwkid, value), nwkid)
+    try:
+        data = _swv_array_elements(value, (SONOFF_SWV_MANUAL_DEFAULT_SETTINGS_LEN,))
+    except (ValueError, TypeError):
+        self.log.logging("Sonoff", "Error", "sonoff_swv_decode_manual_default_settings - invalid 0x501d payload %s" % value, nwkid)
+        return None
+
+    if len(data) < SONOFF_SWV_MANUAL_DEFAULT_SETTINGS_LEN:
+        self.log.logging("Sonoff", "Error", "sonoff_swv_decode_manual_default_settings - 0x501d payload has %s bytes, expected %s: %s" % (
+            len(data), SONOFF_SWV_MANUAL_DEFAULT_SETTINGS_LEN, value), nwkid)
+        return None
+
+    total_duration = int.from_bytes(data[1:3], "big")
+    irrigation_duration = int.from_bytes(data[3:5], "big")
+    result = {
+        "irrigation_mode": SONOFF_SWV_IRRIGATION_MODE_NAME.get(data[0], data[0]),
+        "irrigation_duration": irrigation_duration or total_duration,
+        "irrigation_amount_unit": SONOFF_SWV_AMOUNT_UNIT_NAME.get(data[7], data[7]),
+        "irrigation_amount": int.from_bytes(data[8:10], "big"),
+        "fail_safe": int.from_bytes(data[10:12], "big"),
+    }
+    self.log.logging("Sonoff", "Debug", "sonoff_swv_decode_manual_default_settings - Nwkid: %s decoded: %s" % (nwkid, result), nwkid)
+    return result
 
 
 def sonoff_swv_irrigation_schedule_status(self, nwkid, ep, cluster, attribut, value):
@@ -281,7 +316,7 @@ def sonoff_swv_irrigation_schedule_status(self, nwkid, ep, cluster, attribut, va
     """
     self.log.logging("Sonoff", "Debug", "sonoff_swv_irrigation_schedule_status - Nwkid: %s value: %s" % (nwkid, value), nwkid)
     try:
-        data = _swv_schedule_status_elements(value)
+        data = _swv_array_elements(value, (SONOFF_SWV_SCHEDULE_STATUS_START_STANDBY_LEN, SONOFF_SWV_SCHEDULE_STATUS_RUNNING_END_LEN))
     except (ValueError, TypeError):
         self.log.logging("Sonoff", "Error", "sonoff_swv_irrigation_schedule_status - invalid 0x501f payload %s" % value, nwkid)
         return None
