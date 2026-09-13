@@ -34,7 +34,12 @@ def _ensure_stub(name, **attrs):
 @pytest.fixture(scope="module")
 def sonoff_module():
     _ensure_stub("Modules.basicOutputs", write_attribute=MagicMock(name="write_attribute"))
-    _ensure_stub("Modules.tools", get_device_config_param=MagicMock(name="get_device_config_param", return_value=None))
+    _ensure_stub("Modules.sendZigateCommand", raw_APS_request=MagicMock(name="raw_APS_request"))
+    _ensure_stub("Modules.tools",
+                 get_device_config_param=MagicMock(name="get_device_config_param", return_value=None),
+                 get_and_inc_ZCL_SQN=MagicMock(name="get_and_inc_ZCL_SQN", return_value="2a"),
+                 is_ack_tobe_disabled=MagicMock(name="is_ack_tobe_disabled", return_value=False),
+                 retreive_cmd_payload_from_8002=MagicMock(name="retreive_cmd_payload_from_8002"))
     _ensure_stub("Modules.zigateConsts", ZIGATE_EP="01")
 
     # DevicesModules/__init__.py imports every custom_* module (and their real
@@ -311,3 +316,171 @@ def test_decode_manual_default_settings_round_trips_our_write(sonoff_module, plu
 def test_decode_manual_default_settings_rejects_bad_payloads(sonoff_module, plugin, payload):
     assert sonoff_module.sonoff_swv_decode_manual_default_settings(plugin, "1234", "01", "fc11", "501d", payload) is None
     assert any(call.args[1] == "Error" for call in plugin.log.logging.call_args_list)
+
+
+# ─── fc11 command 0x06 / 0x07 irrigation plans ───────────────────────────────
+
+@pytest.fixture
+def raw_aps(sonoff_module, monkeypatch):
+    mock = MagicMock(name="raw_APS_request")
+    monkeypatch.setattr(sonoff_module, "raw_APS_request", mock)
+    monkeypatch.setattr(sonoff_module, "get_and_inc_ZCL_SQN", MagicMock(return_value="2a"))
+    monkeypatch.setattr(sonoff_module, "is_ack_tobe_disabled", MagicMock(return_value=False))
+    return mock
+
+
+def _sent(raw_aps):
+    assert raw_aps.call_count == 1
+    args = raw_aps.call_args.args
+    # self, nwkid, ep, cluster, profile, payload
+    assert (args[2], args[3], args[4]) == ("01", "fc11", "0104")
+    return args[5]
+
+
+def test_irrigation_plan_full_dict(sonoff_module, plugin, raw_aps):
+    plan = {
+        "plan_index": 2,
+        "enable": True,
+        "loop_type_mode": "weekdays",
+        "loop_type_week_days": ["monday", "wednesday", "friday"],
+        "enable_date": "2026-09-13",
+        "start_time": "06:30",
+        "irrigation_mode": "duration_with_interval",
+        "irrigation_total_duration": 120,
+        "irrigation_duration": 10,
+        "interval_duration": 5,
+        "irrigation_amount_unit": "liter",
+        "irrigation_amount": 200,
+        "fail_safe": 0,
+        "create_datetime": "2026-09-13T12:00:00+00:00",
+    }
+
+    sonoff_module.sonoff_swv_irrigation_plan_settings(plugin, "1234", plan)
+
+    payload = _sent(raw_aps)
+    # ZCL header: manufacturer-specific cluster command, manuf 0x1286 LE, sqn, cmd 0x06
+    assert payload[:10] == "05" + "8612" + "2a" + "06"
+    data = bytes.fromhex(payload[10:])
+    assert len(data) == 28
+    enable_seconds = int((sonoff_module.datetime(2026, 9, 13) - sonoff_module.ZIGBEE_EPOCH_LOCAL).total_seconds())
+    assert data == bytes(
+        [0x02, 0x01, 0x03, 0x02 | 0x08 | 0x20]
+        + list(enable_seconds.to_bytes(4, "big"))
+        + [0x02]
+        + list((6 * 3600 + 30 * 60).to_bytes(4, "big"))
+        + [0x00, 0x78, 0x00, 0x0a, 0x00, 0x05, 0x01, 0x00, 0xc8, 0x00, 0x00]
+        + list(int(sonoff_module.datetime(2026, 9, 13, 12, 0, 0, tzinfo=sonoff_module.timezone.utc).timestamp()).to_bytes(4, "big"))
+    )
+
+
+def test_irrigation_plan_defaults_and_day_interval(sonoff_module, plugin, raw_aps):
+    sonoff_module.sonoff_swv_irrigation_plan_settings(plugin, "1234", {"start_time": "21:00", "loop_type_mode": "day_interval", "loop_type_interval_days": 3})
+
+    data = bytes.fromhex(_sent(raw_aps)[10:])
+    assert data[0:4] == bytes([0x00, 0x01, 0x02, 0x03])           # index 0, enabled, day_interval every 3 days
+    assert data[8] == 0x00                                         # duration mode
+    assert int.from_bytes(data[9:13], "big") == 21 * 3600
+    assert data[13:24] == bytes([0x00, 0x0a, 0x00, 0x02, 0x00, 0x03, 0x01, 0x00, 0x1e, 0x00, 0x0a])   # upstream defaults
+    assert abs(int.from_bytes(data[24:28], "big") - int(sonoff_module.time.time())) < 5
+
+
+def test_irrigation_plan_list_sends_each_plan(sonoff_module, plugin, raw_aps):
+    sonoff_module.sonoff_swv_irrigation_plan_settings(plugin, "1234", [
+        {"plan_index": 0, "start_time": "06:00"},
+        {"plan_index": 1, "start_time": "20:00", "enable": False},
+    ])
+
+    assert raw_aps.call_count == 2
+    first, second = (bytes.fromhex(c.args[5][10:]) for c in raw_aps.call_args_list)
+    assert (first[0], first[1]) == (0, 1)
+    assert (second[0], second[1]) == (1, 0)
+
+
+@pytest.mark.parametrize("plan", [
+    {"start_time": "25:00"},                                   # bad time
+    {},                                                        # start_time missing
+    {"start_time": "06:00", "plan_index": 6},                  # index out of range
+    {"start_time": "06:00", "irrigation_duration": 61},        # > 60
+    {"start_time": "06:00", "loop_type_mode": "monthly"},      # unknown loop type
+    {"start_time": "06:00", "loop_type_mode": "weekdays", "loop_type_week_days": ["funday"]},
+    {"start_time": "06:00", "enable_date": "13/09/2026"},
+    {"start_time": "06:00", "irrigation_mode": "flood"},
+    "not a dict",
+])
+def test_irrigation_plan_rejects_invalid(sonoff_module, plugin, raw_aps, plan):
+    sonoff_module.sonoff_swv_irrigation_plan_settings(plugin, "1234", plan)
+
+    assert raw_aps.call_count == 0
+    assert any(call.args[1] == "Error" for call in plugin.log.logging.call_args_list)
+
+
+def test_irrigation_plan_remove(sonoff_module, plugin, raw_aps):
+    sonoff_module.sonoff_swv_irrigation_plan_remove(plugin, "1234", [1, 4])
+
+    payloads = [c.args[5] for c in raw_aps.call_args_list]
+    assert payloads == ["05" + "8612" + "2a" + "07" + "01", "05" + "8612" + "2a" + "07" + "04"]
+
+
+def test_irrigation_plan_remove_rejects_bad_index(sonoff_module, plugin, raw_aps):
+    sonoff_module.sonoff_swv_irrigation_plan_remove(plugin, "1234", 9)
+
+    assert raw_aps.call_count == 0
+
+
+# ─── fc11 command 0x06 status / 0x09 plan report ─────────────────────────────
+
+def _raw_aps_payload(command, data):
+    return "0d" + "8612" + "2a" + command + data   # server -> client, manufacturer specific
+
+
+def test_read_raw_aps_stores_plan_report(sonoff_module, plugin, monkeypatch):
+    plugin.ListOfDevices = {"1234": {"Sonoff": 5}}   # pre-existing scalar from a level-1-only config
+    # index 1, enabled, weekdays mon+fri, enable date 2026-09-13, duration_with_interval, 06:30,
+    # total 120, duration 10, interval 5, liter, 200, fail-safe 0, created 2026-09-13T12:00:00Z
+    enable_seconds = int((sonoff_module.datetime(2026, 9, 13) - sonoff_module.ZIGBEE_EPOCH_LOCAL).total_seconds())
+    created = int(sonoff_module.datetime(2026, 9, 13, 12, 0, 0, tzinfo=sonoff_module.timezone.utc).timestamp())
+    record = bytes([0x01, 0x01, 0x03, 0x22] + list(enable_seconds.to_bytes(4, "big")) + [0x02]
+                   + list((6 * 3600 + 30 * 60).to_bytes(4, "big"))
+                   + [0x00, 0x78, 0x00, 0x0a, 0x00, 0x05, 0x01, 0x00, 0xc8, 0x00, 0x00]
+                   + list(created.to_bytes(4, "big"))).hex()
+    monkeypatch.setattr(sonoff_module, "retreive_cmd_payload_from_8002", lambda payload: (None, False, "2a", "1286", "09", record))
+
+    sonoff_module.sonoffReadRawAPS(plugin, None, "1234", "01", "fc11", "0000", "01", _raw_aps_payload("09", record))
+
+    stored = plugin.ListOfDevices["1234"]["Sonoff"]["IrrigationPlans"]["1"]
+    assert stored == {
+        "plan_index": 1,
+        "enable": True,
+        "loop_type_mode": "weekdays",
+        "loop_type_interval_days": 0,
+        "loop_type_week_days": ["monday", "friday"],
+        "enable_date": "2026-09-13",
+        "irrigation_mode": "duration_with_interval",
+        "start_time": "06:30",
+        "irrigation_total_duration": 120,
+        "irrigation_duration": 10,
+        "interval_duration": 5,
+        "irrigation_amount_unit": "liter",
+        "irrigation_amount": 200,
+        "fail_safe": 0,
+        "create_datetime": sonoff_module.datetime.fromtimestamp(created, sonoff_module.timezone.utc).astimezone().isoformat(timespec="seconds"),
+    }
+
+
+def test_read_raw_aps_plan_settings_status(sonoff_module, plugin, monkeypatch):
+    plugin.ListOfDevices = {"1234": {}}
+    monkeypatch.setattr(sonoff_module, "retreive_cmd_payload_from_8002", lambda payload: (None, False, "2a", "1286", "06", "01"))
+
+    sonoff_module.sonoffReadRawAPS(plugin, None, "1234", "01", "fc11", "0000", "01", _raw_aps_payload("06", "01"))
+
+    assert any(call.args[1] == "Error" and "status: 01" in call.args[2] for call in plugin.log.logging.call_args_list)
+
+
+def test_read_raw_aps_ignores_other_clusters(sonoff_module, plugin, monkeypatch):
+    plugin.ListOfDevices = {"1234": {}}
+    spy = MagicMock()
+    monkeypatch.setattr(sonoff_module, "retreive_cmd_payload_from_8002", spy)
+
+    sonoff_module.sonoffReadRawAPS(plugin, None, "1234", "01", "0006", "0000", "01", "010a00")
+
+    assert spy.call_count == 0

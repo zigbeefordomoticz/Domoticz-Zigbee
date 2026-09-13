@@ -29,6 +29,12 @@ from Modules.tuyaTools import tuya_manufacturer_device
 from Modules.zosungIR import zosung_ir_read_raw_aps
 
 # Requires Zigate firmware > 3.1d
+def sonoff_read_raw_aps(self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload):
+    # Imported lazily: DevicesModules pulls in every custom_* module, keep it out of the startup import chain
+    from DevicesModules.custom_sonoff import sonoffReadRawAPS
+    sonoffReadRawAPS(self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
+
+
 CALLBACK_TABLE = {
     # Manuf : ( callbackDeviceAwake_xxxxx function )
     "117c": ikeaReadRawAPS,
@@ -38,6 +44,7 @@ CALLBACK_TABLE = {
     "115f": lumiReadRawAPS,
     "100b": philipsReadRawAPS,
     "1002": tuyaReadRawAPS,
+    "1286": sonoff_read_raw_aps,
     CASAIA_MANUF_CODE: casaiaReadRawAPS,
 }
 
@@ -54,6 +61,7 @@ CALLBACK_TABLE2 = {
     "OWON": casaiaReadRawAPS,
     "CASAIA": casaiaReadRawAPS,
     "HEIMAN": heimanReadRawAPS,
+    "SONOFF": sonoff_read_raw_aps,
 }
 
 
