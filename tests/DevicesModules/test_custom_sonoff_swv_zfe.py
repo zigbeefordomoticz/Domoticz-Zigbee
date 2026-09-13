@@ -122,6 +122,48 @@ def test_manual_default_settings_clamps_and_rejects_bad_values(sonoff_module, pl
     assert len(error_logs) == 2
 
 
+def test_manual_default_settings_duration_with_interval(sonoff_module, plugin):
+    # 2 h session: 10 min bursts, 5 min pauses
+    _use_params(sonoff_module, {
+        "SONOFF_SWV_MANUAL_IRRIGATION_MODE": "duration_with_interval",
+        "SONOFF_SWV_MANUAL_IRRIGATION_TOTAL_DURATION": 120,
+        "SONOFF_SWV_MANUAL_IRRIGATION_DURATION": 10,
+        "SONOFF_SWV_MANUAL_IRRIGATION_INTERVAL": 5,
+    })
+
+    sonoff_module.sonoff_swv_manual_default_settings(plugin, "1234", 5)
+
+    w = _written(sonoff_module)
+    # mode=2, total=120, burst=10, interval=5, liter, amount 0, fail-safe defaults to the total
+    assert w["data"] == "20" + "0c00" + "02" + "0078" + "000a" + "0005" + "01" + "0000" + "0078"
+
+
+def test_manual_default_settings_interval_mode_limits(sonoff_module, plugin):
+    _use_params(sonoff_module, {
+        "SONOFF_SWV_MANUAL_IRRIGATION_MODE": "duration_with_interval",
+        "SONOFF_SWV_MANUAL_IRRIGATION_DURATION": 90,       # burst > 60, clamped
+        "SONOFF_SWV_MANUAL_IRRIGATION_TOTAL_DURATION": 30,  # < burst, raised to the burst
+        "SONOFF_SWV_MANUAL_IRRIGATION_INTERVAL": 0,        # < 1, clamped
+    })
+
+    sonoff_module.sonoff_swv_manual_default_settings(plugin, "1234", "duration_with_interval")
+
+    w = _written(sonoff_module)
+    assert w["data"] == "20" + "0c00" + "02" + "003c" + "003c" + "0001" + "01" + "0000" + "003c"
+
+
+def test_manual_default_settings_total_and_interval_ignored_in_duration_mode(sonoff_module, plugin):
+    _use_params(sonoff_module, {
+        "SONOFF_SWV_MANUAL_IRRIGATION_DURATION": 719,
+        "SONOFF_SWV_MANUAL_IRRIGATION_TOTAL_DURATION": 30,
+    })
+
+    sonoff_module.sonoff_swv_manual_default_settings(plugin, "1234", 719)
+
+    w = _written(sonoff_module)
+    assert w["data"] == "20" + "0c00" + "00" + "02cf" + "02cf" + "000a" + "01" + "0000" + "02cf"
+
+
 # ─── 0x5020 valve alarm settings ──────────────────────────────────────────────
 
 def test_valve_alarm_settings_defaults(sonoff_module, plugin):

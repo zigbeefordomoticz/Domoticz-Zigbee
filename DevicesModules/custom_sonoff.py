@@ -88,7 +88,11 @@ ZCL_ARRAY_DATA_TYPE = "48"
 ZCL_UINT8_DATA_TYPE = "20"
 
 SONOFF_SWV_MAX_IRRIGATION_MINUTES = 719
-SONOFF_SWV_IRRIGATION_MODE = {"duration": 0x00, "capacity": 0x01}
+# 0x501d mode byte. Upstream only writes duration/capacity; duration_with_interval (the mode the
+# irrigation plans and the 0x501f status reports use) is offered so a manual On can run bursts.
+SONOFF_SWV_IRRIGATION_MODE = {"duration": 0x00, "capacity": 0x01, "duration_with_interval": 0x02}
+SONOFF_SWV_MAX_BURST_MINUTES = 60      # per-burst irrigation and interval limits, as in the irrigation plans
+SONOFF_SWV_DEFAULT_INTERVAL_MINUTES = 10   # filler upstream writes when the interval is meaningless
 # 0x501d amount unit byte (legacy mapping, valid on every firmware): 0 = US gallon, 1 = liter
 SONOFF_SWV_AMOUNT_UNIT = {"us_gallon": 0x00, "liter": 0x01}
 # 0x5021 unit of water flow (firmware >= 1.1.0): 0 = liter, 1 = US gallon, 2 = imperial gallon
@@ -215,20 +219,27 @@ def sonoff_swv_manual_default_settings(self, nwkid, value):
     The valve always closes by itself at the end of the session; the factory default is 2 minutes.
     All SONOFF_SWV_MANUAL_* params are folded into the single 0x501d array, so any of them triggers a full write.
     Layout (big endian): mode, total duration, irrigation duration, interval, amount unit, amount, fail-safe timeout.
+
+    In duration/capacity mode the total and irrigation durations are both SONOFF_SWV_MANUAL_IRRIGATION_DURATION
+    and the interval is a filler. In duration_with_interval mode the session lasts
+    SONOFF_SWV_MANUAL_IRRIGATION_TOTAL_DURATION (default: the duration), watering for
+    SONOFF_SWV_MANUAL_IRRIGATION_DURATION (1-60) then pausing SONOFF_SWV_MANUAL_IRRIGATION_INTERVAL (1-60) minutes.
     """
     self.log.logging("Sonoff", "Debug", "sonoff_swv_manual_default_settings - Nwkid: %s value: %s" % (nwkid, value), nwkid)
 
-    duration = _param_int(self, nwkid, "SONOFF_SWV_MANUAL_IRRIGATION_DURATION", 2, 1, SONOFF_SWV_MAX_IRRIGATION_MINUTES)
     mode = _param_choice(self, nwkid, "SONOFF_SWV_MANUAL_IRRIGATION_MODE", SONOFF_SWV_IRRIGATION_MODE, SONOFF_SWV_IRRIGATION_MODE["duration"])
+    interval_mode = mode == SONOFF_SWV_IRRIGATION_MODE["duration_with_interval"]
+    duration = _param_int(self, nwkid, "SONOFF_SWV_MANUAL_IRRIGATION_DURATION", 2, 1, SONOFF_SWV_MAX_BURST_MINUTES if interval_mode else SONOFF_SWV_MAX_IRRIGATION_MINUTES)
+    total_duration = _param_int(self, nwkid, "SONOFF_SWV_MANUAL_IRRIGATION_TOTAL_DURATION", duration, duration, SONOFF_SWV_MAX_IRRIGATION_MINUTES) if interval_mode else duration
+    interval = _param_int(self, nwkid, "SONOFF_SWV_MANUAL_IRRIGATION_INTERVAL", SONOFF_SWV_DEFAULT_INTERVAL_MINUTES, 1, SONOFF_SWV_MAX_BURST_MINUTES)
     amount_unit = _param_choice(self, nwkid, "SONOFF_SWV_MANUAL_IRRIGATION_AMOUNT_UNIT", SONOFF_SWV_AMOUNT_UNIT, SONOFF_SWV_AMOUNT_UNIT["liter"])
     amount = _param_int(self, nwkid, "SONOFF_SWV_MANUAL_IRRIGATION_AMOUNT", 0, 0, 10000)
-    # Safety timeout mostly matters in capacity mode; default it to the duration so a session can never run longer than requested
-    fail_safe = _param_int(self, nwkid, "SONOFF_SWV_MANUAL_FAIL_SAFE", duration, 0, SONOFF_SWV_MAX_IRRIGATION_MINUTES)
-    interval = 10  # fixed upstream
+    # Safety timeout mostly matters in capacity mode; default it to the session length so it can never run longer than requested
+    fail_safe = _param_int(self, nwkid, "SONOFF_SWV_MANUAL_FAIL_SAFE", total_duration, 0, SONOFF_SWV_MAX_IRRIGATION_MINUTES)
 
     elements = (
         [mode]
-        + list(duration.to_bytes(2, "big"))
+        + list(total_duration.to_bytes(2, "big"))
         + list(duration.to_bytes(2, "big"))
         + list(interval.to_bytes(2, "big"))
         + [amount_unit]
@@ -637,6 +648,8 @@ SONOFF_DEVICE_PARAMETERS = {
     "SONOFF_CHILD_LOCK": sonoff_child_lock,
     "SONOFF_SWV_MANUAL_IRRIGATION_DURATION": sonoff_swv_manual_default_settings,
     "SONOFF_SWV_MANUAL_IRRIGATION_MODE": sonoff_swv_manual_default_settings,
+    "SONOFF_SWV_MANUAL_IRRIGATION_TOTAL_DURATION": sonoff_swv_manual_default_settings,
+    "SONOFF_SWV_MANUAL_IRRIGATION_INTERVAL": sonoff_swv_manual_default_settings,
     "SONOFF_SWV_MANUAL_IRRIGATION_AMOUNT_UNIT": sonoff_swv_manual_default_settings,
     "SONOFF_SWV_MANUAL_IRRIGATION_AMOUNT": sonoff_swv_manual_default_settings,
     "SONOFF_SWV_MANUAL_FAIL_SAFE": sonoff_swv_manual_default_settings,
