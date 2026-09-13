@@ -389,18 +389,51 @@ def test_status_text_date_shown_when_not_today(sonoff_module):
     assert sonoff_module._swv_hhmm(None, now) == ""
 
 
-def test_status_reported_on_change_and_once_a_minute(sonoff_module, plugin, monkeypatch):
+START = "00000001003234688b32346ae3010000"                  # start report (Domoticz On)
+
+
+def test_status_reported_on_change_and_at_the_configured_interval(sonoff_module, plugin, monkeypatch):
+    _use_params(sonoff_module, {"SONOFF_SWV_STATUS_REPORT_INTERVAL": 300})
     clock = [1000.0]
     monkeypatch.setattr(sonoff_module.time, "time", lambda: clock[0])
 
     first = _status(sonoff_module, plugin, RUNNING)          # status change (None -> running): reported
-    clock[0] += 6
-    second = _status(sonoff_module, plugin, RUNNING)         # same status, 6 s later: throttled
     clock[0] += 60
-    third = _status(sonoff_module, plugin, RUNNING)          # 66 s after the last report: reported
+    second = _status(sonoff_module, plugin, RUNNING)         # same status, 60 s later: throttled (interval 300)
+    clock[0] += 250
+    third = _status(sonoff_module, plugin, RUNNING)          # 310 s after the last report: reported
     clock[0] += 1
     fourth = _status(sonoff_module, plugin, END)             # status change: reported immediately
 
     assert "text" in first and "text" not in second and "text" in third and "text" in fourth
     assert len(_log_lines(plugin)) == 3
     assert second["actual_irrigation_amount"] == 68          # the decoded record is still returned (and stored)
+
+
+def test_status_interval_defaults_to_five_minutes(sonoff_module, plugin, monkeypatch):
+    clock = [1000.0]
+    monkeypatch.setattr(sonoff_module.time, "time", lambda: clock[0])
+
+    _status(sonoff_module, plugin, RUNNING)
+    clock[0] += 299
+    assert "text" not in _status(sonoff_module, plugin, RUNNING)
+    clock[0] += 1
+    assert "text" in _status(sonoff_module, plugin, RUNNING)
+
+
+def test_switch_on_and_off_are_never_throttled(sonoff_module, plugin, monkeypatch):
+    # Off right after a throttled running report, then On again 1 s later: every transition is reported
+    clock = [1000.0]
+    monkeypatch.setattr(sonoff_module.time, "time", lambda: clock[0])
+
+    assert "text" in _status(sonoff_module, plugin, START)      # On  -> start
+    clock[0] += 1
+    assert "text" in _status(sonoff_module, plugin, RUNNING)    # ... running
+    clock[0] += 5
+    assert "text" not in _status(sonoff_module, plugin, RUNNING)
+    clock[0] += 1
+    assert "text" in _status(sonoff_module, plugin, END)        # Off -> end
+    assert "text" in _status(sonoff_module, plugin, STANDBY)    # ... standby
+    clock[0] += 1
+    assert "text" in _status(sonoff_module, plugin, START)      # On again -> start
+    assert len(_log_lines(plugin)) == 5
