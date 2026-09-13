@@ -59,6 +59,7 @@ def plugin(sonoff_module):
     self = MagicMock(name="plugin")
     self.log.logging = MagicMock(name="logging")
     sonoff_module.write_attribute.reset_mock()
+    sonoff_module._swv_status_last_report.clear()
     return self
 
 
@@ -188,7 +189,11 @@ def _local_iso(seconds_since_2000):
 
 
 def _decode(sonoff_module, plugin, payload):
-    return sonoff_module.sonoff_swv_irrigation_schedule_status(plugin, "1234", "01", "fc11", "501f", payload)
+    res = sonoff_module.sonoff_swv_irrigation_schedule_status(plugin, "1234", "01", "fc11", "501f", payload)
+    if res is not None:
+        res = dict(res)
+        res.pop("text", None)   # covered by the TextStatus tests below
+    return res
 
 
 def test_schedule_status_running_report(sonoff_module, plugin):
@@ -343,3 +348,59 @@ def test_decode_valve_alarm_settings(sonoff_module, plugin, payload):
 def test_decode_valve_alarm_settings_rejects_short_payload(sonoff_module, plugin):
     assert sonoff_module.sonoff_swv_decode_valve_alarm_settings(plugin, "1234", "01", "fc11", "5020", "0705") is None
     assert any(call.args[1] == "Error" for call in plugin.log.logging.call_args_list)
+
+
+# ─── 0x501f human readable status (log line + TextStatus widget) ─────────────
+
+RUNNING = "0002000100323953db32395632323954e30100000044"   # 2026-09-13 running, 68 L
+END = "0001000100323953db3239563232395633010000009a"       # 2026-09-13 end, 154 L
+STANDBY = "03000002323a50e8323a534001001e"                 # plan 0, Mon 2026-09-14 06:30 -> 06:40
+
+
+def _status(sonoff_module, plugin, payload):
+    return sonoff_module.sonoff_swv_irrigation_schedule_status(plugin, "1234", "01", "fc11", "501f", payload)
+
+
+def _log_lines(plugin):
+    return [call.args[2] for call in plugin.log.logging.call_args_list if call.args[1] == "Log"]
+
+
+def test_status_text_running(sonoff_module, plugin, monkeypatch):
+    monkeypatch.setattr(sonoff_module, "_swv_hhmm", lambda iso, now=None: iso[11:16] if iso else "")
+
+    res = _status(sonoff_module, plugin, RUNNING)
+
+    assert res["text"] == "Running (manual, duration) since 12:30, 68 L, expected end 12:40"
+    assert _log_lines(plugin) == ["Irrigation 1234: " + res["text"]]
+
+
+def test_status_text_end_and_standby(sonoff_module, plugin, monkeypatch):
+    monkeypatch.setattr(sonoff_module, "_swv_hhmm", lambda iso, now=None: iso[11:16] if iso else "")
+
+    assert _status(sonoff_module, plugin, END)["text"] == "Ended 12:40 after 10 min, 154 L (manual, duration)"
+    assert _status(sonoff_module, plugin, STANDBY)["text"] == "Idle, next: automatic plan 0 (duration with interval) 06:30 to 06:40"
+
+
+def test_status_text_date_shown_when_not_today(sonoff_module):
+    from datetime import datetime
+    now = datetime.fromisoformat("2026-09-13T17:00:00+02:00")
+    assert sonoff_module._swv_hhmm("2026-09-13T06:30:00+02:00", now) == "06:30"
+    assert sonoff_module._swv_hhmm("2026-09-14T06:30:00+02:00", now) == "Mon 14/09 06:30"
+    assert sonoff_module._swv_hhmm(None, now) == ""
+
+
+def test_status_reported_on_change_and_once_a_minute(sonoff_module, plugin, monkeypatch):
+    clock = [1000.0]
+    monkeypatch.setattr(sonoff_module.time, "time", lambda: clock[0])
+
+    first = _status(sonoff_module, plugin, RUNNING)          # status change (None -> running): reported
+    clock[0] += 6
+    second = _status(sonoff_module, plugin, RUNNING)         # same status, 6 s later: throttled
+    clock[0] += 60
+    third = _status(sonoff_module, plugin, RUNNING)          # 66 s after the last report: reported
+    clock[0] += 1
+    fourth = _status(sonoff_module, plugin, END)             # status change: reported immediately
+
+    assert "text" in first and "text" not in second and "text" in third and "text" in fourth
+    assert len(_log_lines(plugin)) == 3
+    assert second["actual_irrigation_amount"] == 68          # the decoded record is still returned (and stored)

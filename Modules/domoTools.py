@@ -491,6 +491,7 @@ CLUSTER_TO_TYPE = {
     "rmt1": "Ikea_Round_5b", 
     "LiquidLevel": "LiquidLevel",
     "IRCode": "IRCode",
+    "TextStatus": "TextStatus",
     "LiquidDepth": "LiquidDepth",
     "LumiLock": "LumiLock", 
     "Strenght": "Strenght",
