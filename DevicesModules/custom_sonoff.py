@@ -114,9 +114,11 @@ SONOFF_SWV_IRRIGATION_MODE_NAME = {0x00: "duration", 0x01: "capacity", 0x02: "du
 # 0x501d/0x501f amount unit byte: 0 = US gallon, 1 = liter, 2 = imperial gallon (firmware >= 1.1.0)
 SONOFF_SWV_AMOUNT_UNIT_NAME = {0x00: "us_gallon", 0x01: "liter", 0x02: "imperial_gallon"}
 SONOFF_SWV_SCHEDULE_STATUS_START_STANDBY_LEN = 15
-# The irrigation status is logged and pushed to the TextStatus widget on every status change, and at most
-# every SONOFF_SWV_STATUS_REPORT_SECONDS while a session is running (the valve reports every ~6 s).
-SONOFF_SWV_STATUS_REPORT_SECONDS = 60
+# The irrigation status is logged and pushed to the TextStatus widget on every status change (a Domoticz
+# On/Off produces start->running and end->standby transitions, so those are always reported), and otherwise
+# at most every SONOFF_SWV_STATUS_REPORT_INTERVAL seconds (Param, default 5 min; the valve reports every ~6 s
+# while running).
+SONOFF_SWV_STATUS_REPORT_DEFAULT_SECONDS = 300
 _swv_status_last_report = {}   # nwkid -> (schedule_status, timestamp)
 SONOFF_SWV_SCHEDULE_STATUS_RUNNING_END_LEN = 21
 SONOFF_SWV_MANUAL_DEFAULT_SETTINGS_LEN = 12
@@ -649,10 +651,11 @@ def _swv_schedule_status_text(status):
     return "Idle, next: %s (%s) %s to %s" % (kind, mode, start, expected_end)
 
 
-def _swv_schedule_status_report_due(nwkid, schedule_status, now):
-    """ True on a status change, or once every SONOFF_SWV_STATUS_REPORT_SECONDS while the status is unchanged """
+def _swv_schedule_status_report_due(self, nwkid, schedule_status, now):
+    """ True on a status change (never throttled), or once every SONOFF_SWV_STATUS_REPORT_INTERVAL seconds otherwise """
     last_status, last_time = _swv_status_last_report.get(nwkid, (None, 0))
-    if schedule_status != last_status or now - last_time >= SONOFF_SWV_STATUS_REPORT_SECONDS:
+    interval = _param_int(self, nwkid, "SONOFF_SWV_STATUS_REPORT_INTERVAL", SONOFF_SWV_STATUS_REPORT_DEFAULT_SECONDS, 0, 86400)
+    if schedule_status != last_status or now - last_time >= interval:
         _swv_status_last_report[nwkid] = (schedule_status, now)
         return True
     return False
@@ -713,8 +716,9 @@ def sonoff_swv_irrigation_schedule_status(self, nwkid, ep, cluster, attribut, va
     self.log.logging("Sonoff", "Debug", "sonoff_swv_irrigation_schedule_status - Nwkid: %s decoded: %s" % (nwkid, result), nwkid)
 
     # Human readable status: logged, and handed to the TextStatus widget under "text" (upd_domo_device with
-    # "UpdDomoDeviceWithCluster": "TextStatus"), on every status change and at most once a minute otherwise.
-    if _swv_schedule_status_report_due(nwkid, result["schedule_status"], time.time()):
+    # "UpdDomoDeviceWithCluster": "TextStatus"), on every status change and at most once per
+    # SONOFF_SWV_STATUS_REPORT_INTERVAL otherwise.
+    if _swv_schedule_status_report_due(self, nwkid, result["schedule_status"], time.time()):
         result["text"] = _swv_schedule_status_text(result)
         self.log.logging("Sonoff", "Log", "Irrigation %s: %s" % (nwkid, result["text"]), nwkid)
     return result
