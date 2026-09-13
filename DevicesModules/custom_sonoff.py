@@ -25,7 +25,8 @@ The module enables:
 - Handling real-time irrigation parameters (duration, volume)
 - Auto-shutdown of valves on water shortage
 - SWV-ZFE/ZFU manual irrigation session defaults, valve alarms and flow unit
-- Decoding the SWV-ZFE/ZFU manual default settings (0x501d) and irrigation schedule status (0x501f) reports
+- Decoding the SWV-ZFE/ZFU manual default settings (0x501d), valve alarm settings (0x5020) and irrigation
+  schedule status (0x501f) reports
 - SWV-ZFE/ZFU irrigation plans (fc11 commands 0x06 set / 0x07 remove / 0x09 report)
 - Adjusting radio power modes (e.g., Turbo Mode)
 - Setting temperature unit (Celsius/Fahrenheit)
@@ -115,6 +116,7 @@ SONOFF_SWV_AMOUNT_UNIT_NAME = {0x00: "us_gallon", 0x01: "liter", 0x02: "imperial
 SONOFF_SWV_SCHEDULE_STATUS_START_STANDBY_LEN = 15
 SONOFF_SWV_SCHEDULE_STATUS_RUNNING_END_LEN = 21
 SONOFF_SWV_MANUAL_DEFAULT_SETTINGS_LEN = 12
+SONOFF_SWV_VALVE_ALARM_SETTINGS_LEN = 4
 
 # fc11 cluster-specific commands (irrigation plans, see zigbee-herdsman-converters
 # irrigationPlanSettingsAndReport / irrigationPlanRemove)
@@ -323,7 +325,9 @@ def _swv_array_elements(value, element_counts):
     data = bytes.fromhex(value)
     if len(data) >= 3 and data[0] == 0x20 and len(data) == 3 + int.from_bytes(data[1:3], "little"):
         return data[3:]
-    if data and data[0] == 0x00 and (len(data) - 1) in element_counts:
+    if data and data[0] == 0x00 and len(data) - 1 >= min(element_counts):
+        # high count byte left by the legacy decoder; whatever follows the elements (the next attribute of
+        # the same frame, swallowed by that decoder) is ignored by the callers, which read fixed offsets
         return data[1:]
     return data
 
@@ -576,6 +580,36 @@ def sonoff_swv_decode_manual_default_settings(self, nwkid, ep, cluster, attribut
         "fail_safe": int.from_bytes(data[10:12], "big"),
     }
     self.log.logging("Sonoff", "Debug", "sonoff_swv_decode_manual_default_settings - Nwkid: %s decoded: %s" % (nwkid, result), nwkid)
+    return result
+
+
+def sonoff_swv_decode_valve_alarm_settings(self, nwkid, ep, cluster, attribut, value):
+    """ SWV-ZFE/ZFU: decode the 0x5020 valve alarm settings array (EvalFunc).
+
+      [0] enable bits (bit0 water shortage alarm, bit1 water leak alarm, bit3 auto-close on shortage, as
+          written by zigbee-herdsman-converters; the raw byte is kept as the firmware sets bits it does not
+          document), [1] shortage alarm duration (min), [2] leak alarm duration (min), [3] reserved
+    """
+    self.log.logging("Sonoff", "Debug", "sonoff_swv_decode_valve_alarm_settings - Nwkid: %s value: %s" % (nwkid, value), nwkid)
+    try:
+        data = _swv_array_elements(value, (SONOFF_SWV_VALVE_ALARM_SETTINGS_LEN,))
+    except (ValueError, TypeError):
+        self.log.logging("Sonoff", "Error", "sonoff_swv_decode_valve_alarm_settings - invalid 0x5020 payload %s" % value, nwkid)
+        return None
+    if len(data) < SONOFF_SWV_VALVE_ALARM_SETTINGS_LEN:
+        self.log.logging("Sonoff", "Error", "sonoff_swv_decode_valve_alarm_settings - 0x5020 payload has %s bytes, expected %s: %s" % (
+            len(data), SONOFF_SWV_VALVE_ALARM_SETTINGS_LEN, value), nwkid)
+        return None
+
+    result = {
+        "enable_bits": data[0],
+        "enable_alarm_water_shortage": bool(data[0] & 0x01),
+        "enable_alarm_water_leak": bool(data[0] & 0x02),
+        "enable_water_shortage_auto_close": bool(data[0] & 0x08),
+        "alarm_water_shortage_duration": data[1],
+        "alarm_water_leak_duration": data[2],
+    }
+    self.log.logging("Sonoff", "Debug", "sonoff_swv_decode_valve_alarm_settings - Nwkid: %s decoded: %s" % (nwkid, result), nwkid)
     return result
 
 
