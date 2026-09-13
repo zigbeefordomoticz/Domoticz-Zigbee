@@ -10,6 +10,7 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
+import ast
 import json
 import mimetypes
 import os
@@ -1638,17 +1639,34 @@ def validateJSON(self, jsonData, nwkid=None):
         return {}
     
 def decode_device_param(self, nwkid, param):
+    """ Param as edited in the Device Management page: JSON, or the Python repr the page was given (str(dict)). """
     if not param:
         return {}
+    if isinstance(param, dict):
+        return param
 
+    param = remove_last_comma(param)
     try:
-        return json.loads(replace_single_quotes_with_double(remove_last_comma(param)))
-
+        value = json.loads(replace_single_quotes_with_double(param))
+        if isinstance(value, dict):
+            return value
+        json_error = "not a JSON object"
     except json.JSONDecodeError as err:
-        _device_name = get_device_nickname(self, NwkId=nwkid)
-        self.logging("Error", "When updating Device Management, Device: %s/%s got a wrong Parameter syntax for >%s< (%s) - %s.\n Make sure to use JSON syntax" % (
-            _device_name, nwkid, param, type(param), err))
-        return {}
+        json_error = err
+
+    # The page is fed str(self.ListOfDevices[x]["Param"]), so an untouched Param comes back as a Python
+    # literal (single quotes, True/False/None); ast.literal_eval parses it without executing anything.
+    try:
+        value = ast.literal_eval(param)
+        if isinstance(value, dict):
+            return value
+    except (ValueError, SyntaxError, TypeError, MemoryError, RecursionError):
+        pass
+
+    _device_name = get_device_nickname(self, NwkId=nwkid)
+    self.logging("Error", "When updating Device Management, Device: %s/%s got a wrong Parameter syntax for >%s< (%s) - %s.\n Make sure to use JSON syntax" % (
+        _device_name, nwkid, param, type(param), json_error))
+    return {}
 
 
 def replace_single_quotes_with_double(json_string):
