@@ -113,6 +113,9 @@ SONOFF_SWV_CMD_IRRIGATION_PLAN_REPORT = "09"     # 28-byte plan, device -> plugi
 SONOFF_SWV_IRRIGATION_PLAN_LEN = 28
 ZCL_DEFAULT_RESPONSE_COMMAND = "0b"
 SONOFF_SWV_MAX_PLAN_INDEX = 5
+# Measured on an SWV-ZFE (fw 1.0.x): a plan whose irrigation duration is below 3 minutes is dropped by the
+# firmware without any response (no Default Response, no 0x501f report); 3 and above are acknowledged.
+SONOFF_SWV_MIN_PLAN_IRRIGATION_MINUTES = 3
 SONOFF_SWV_LOOP_TYPE = {"odd_days": 0x00, "even_days": 0x01, "day_interval": 0x02, "weekdays": 0x03}
 SONOFF_SWV_LOOP_TYPE_NAME = {v: k for k, v in SONOFF_SWV_LOOP_TYPE.items()}
 SONOFF_SWV_WEEK_DAYS = {"sunday": 0x01, "monday": 0x02, "tuesday": 0x04, "wednesday": 0x08, "thursday": 0x10, "friday": 0x20, "saturday": 0x40}
@@ -341,7 +344,7 @@ def _swv_encode_irrigation_plan(self, nwkid, plan):
 
     plan_index = _swv_plan_int(self, nwkid, plan, "plan_index", 0, 0, SONOFF_SWV_MAX_PLAN_INDEX)
     total_duration = _swv_plan_int(self, nwkid, plan, "irrigation_total_duration", 10, 0, SONOFF_SWV_MAX_IRRIGATION_MINUTES)
-    irrigation_duration = _swv_plan_int(self, nwkid, plan, "irrigation_duration", 2, 1, 60)
+    irrigation_duration = _swv_plan_int(self, nwkid, plan, "irrigation_duration", SONOFF_SWV_MIN_PLAN_IRRIGATION_MINUTES, SONOFF_SWV_MIN_PLAN_IRRIGATION_MINUTES, 60)
     interval_duration = _swv_plan_int(self, nwkid, plan, "interval_duration", 3, 1, 60)
     amount = _swv_plan_int(self, nwkid, plan, "irrigation_amount", 30, 1, 10000)
     fail_safe = _swv_plan_int(self, nwkid, plan, "fail_safe", 10, 0, SONOFF_SWV_MAX_IRRIGATION_MINUTES)
@@ -421,7 +424,8 @@ def sonoff_swv_irrigation_plan_settings(self, nwkid, value):
       loop_type_interval_days (1-30, day_interval only), loop_type_week_days (list of day names, weekdays only),
       enable_date (YYYY-MM-DD, default today), start_time (HH:MM, required),
       irrigation_mode (duration|capacity|duration_with_interval, default duration),
-      irrigation_total_duration (0-719 min, default 10), irrigation_duration (1-60 min, default 2),
+      irrigation_total_duration (0-719 min, default 10), irrigation_duration (3-60 min, default 3; the
+      firmware silently drops plans with a shorter irrigation duration),
       interval_duration (1-60 min, default 3), irrigation_amount_unit (liter|us_gallon, default liter),
       irrigation_amount (1-10000, default 30), fail_safe (0-719 min, default 10),
       create_datetime (ISO 8601, default now)

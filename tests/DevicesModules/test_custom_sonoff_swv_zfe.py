@@ -380,7 +380,8 @@ def test_irrigation_plan_defaults_and_day_interval(sonoff_module, plugin, raw_ap
     assert data[0:4] == bytes([0x00, 0x01, 0x02, 0x03])           # index 0, enabled, day_interval every 3 days
     assert data[8] == 0x00                                         # duration mode
     assert int.from_bytes(data[9:13], "big") == 21 * 3600
-    assert data[13:24] == bytes([0x00, 0x0a, 0x00, 0x02, 0x00, 0x03, 0x01, 0x00, 0x1e, 0x00, 0x0a])   # upstream defaults
+    # upstream defaults, except the irrigation duration raised to the 3-minute firmware floor
+    assert data[13:24] == bytes([0x00, 0x0a, 0x00, 0x03, 0x00, 0x03, 0x01, 0x00, 0x1e, 0x00, 0x0a])
     assert abs(int.from_bytes(data[24:28], "big") - int(sonoff_module.time.time())) < 5
 
 
@@ -401,6 +402,7 @@ def test_irrigation_plan_list_sends_each_plan(sonoff_module, plugin, raw_aps):
     {},                                                        # start_time missing
     {"start_time": "06:00", "plan_index": 6},                  # index out of range
     {"start_time": "06:00", "irrigation_duration": 61},        # > 60
+    {"start_time": "06:00", "irrigation_duration": 2},         # < 3: dropped silently by the firmware
     {"start_time": "06:00", "loop_type_mode": "monthly"},      # unknown loop type
     {"start_time": "06:00", "loop_type_mode": "weekdays", "loop_type_week_days": ["funday"]},
     {"start_time": "06:00", "enable_date": "13/09/2026"},
