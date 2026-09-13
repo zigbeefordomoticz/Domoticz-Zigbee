@@ -1227,6 +1227,12 @@ SIMPLE_WIDGET = {
     "Temp+Hum+Baro": {
         "widgetType": "Temp+Hum+Baro"
     },
+    "TextStatus": {
+        # Free-text status (Domoticz Text sensor); fed through MajDomoDevice(..., "TextStatus", text)
+        "Type": 243,
+        "Subtype": 19,
+        "Switchtype": 0,
+    },
     "TempSetCurrent": {
         "Type": 242,
         "Subtype": 1

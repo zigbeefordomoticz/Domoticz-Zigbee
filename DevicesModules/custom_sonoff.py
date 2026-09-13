@@ -114,6 +114,10 @@ SONOFF_SWV_IRRIGATION_MODE_NAME = {0x00: "duration", 0x01: "capacity", 0x02: "du
 # 0x501d/0x501f amount unit byte: 0 = US gallon, 1 = liter, 2 = imperial gallon (firmware >= 1.1.0)
 SONOFF_SWV_AMOUNT_UNIT_NAME = {0x00: "us_gallon", 0x01: "liter", 0x02: "imperial_gallon"}
 SONOFF_SWV_SCHEDULE_STATUS_START_STANDBY_LEN = 15
+# The irrigation status is logged and pushed to the TextStatus widget on every status change, and at most
+# every SONOFF_SWV_STATUS_REPORT_SECONDS while a session is running (the valve reports every ~6 s).
+SONOFF_SWV_STATUS_REPORT_SECONDS = 60
+_swv_status_last_report = {}   # nwkid -> (schedule_status, timestamp)
 SONOFF_SWV_SCHEDULE_STATUS_RUNNING_END_LEN = 21
 SONOFF_SWV_MANUAL_DEFAULT_SETTINGS_LEN = 12
 SONOFF_SWV_VALVE_ALARM_SETTINGS_LEN = 4
@@ -613,6 +617,47 @@ def sonoff_swv_decode_valve_alarm_settings(self, nwkid, ep, cluster, attribut, v
     return result
 
 
+def _swv_hhmm(iso, now=None):
+    """ 'HH:MM' from an ISO timestamp, prefixed with the date when it is not today; '' for None """
+    if not iso:
+        return ""
+    stamp = datetime.fromisoformat(iso)
+    now = now or datetime.now(stamp.tzinfo)
+    return stamp.strftime("%H:%M") if stamp.date() == now.date() else stamp.strftime("%a %d/%m %H:%M")
+
+
+def _swv_minutes_between(start_iso, end_iso):
+    if not start_iso or not end_iso:
+        return None
+    return int(round((datetime.fromisoformat(end_iso) - datetime.fromisoformat(start_iso)).total_seconds() / 60))
+
+
+def _swv_schedule_status_text(status):
+    """ One-line, human readable summary of a decoded 0x501f record (log line and TextStatus widget) """
+    kind = "%s%s" % (status["schedule_type"], "" if status["schedule_type"] == "manual" else " plan %s" % status["schedule_index"])
+    mode = str(status["irrigation_mode"]).replace("_", " ")
+    unit = {"liter": "L", "us_gallon": "gal", "imperial_gallon": "imp gal"}.get(status["irrigation_amount_unit"], str(status["irrigation_amount_unit"]))
+    start, expected_end = _swv_hhmm(status["start_time"]), _swv_hhmm(status["expected_end_time"])
+    if status["schedule_status"] == "running":
+        return "Running (%s, %s) since %s, %s %s, expected end %s" % (kind, mode, start, status["actual_irrigation_amount"], unit, expected_end)
+    if status["schedule_status"] == "end":
+        minutes = _swv_minutes_between(status["start_time"], status["actual_end_time"])
+        return "Ended %s after %s min, %s %s (%s, %s)" % (_swv_hhmm(status["actual_end_time"]), minutes, status["actual_irrigation_amount"], unit, kind, mode)
+    if status["schedule_status"] == "start":
+        return "Started %s (%s, %s), expected end %s" % (start, kind, mode, expected_end)
+    # standby: the next scheduled occurrence
+    return "Idle, next: %s (%s) %s to %s" % (kind, mode, start, expected_end)
+
+
+def _swv_schedule_status_report_due(nwkid, schedule_status, now):
+    """ True on a status change, or once every SONOFF_SWV_STATUS_REPORT_SECONDS while the status is unchanged """
+    last_status, last_time = _swv_status_last_report.get(nwkid, (None, 0))
+    if schedule_status != last_status or now - last_time >= SONOFF_SWV_STATUS_REPORT_SECONDS:
+        _swv_status_last_report[nwkid] = (schedule_status, now)
+        return True
+    return False
+
+
 def sonoff_swv_irrigation_schedule_status(self, nwkid, ep, cluster, attribut, value):
     """ SWV-ZFE/ZFU: decode the 0x501f irrigation schedule status report (EvalFunc).
 
@@ -666,6 +711,12 @@ def sonoff_swv_irrigation_schedule_status(self, nwkid, ep, cluster, attribut, va
         result["actual_irrigation_amount"] = int.from_bytes(data[idx + 3:idx + 5], "big")
 
     self.log.logging("Sonoff", "Debug", "sonoff_swv_irrigation_schedule_status - Nwkid: %s decoded: %s" % (nwkid, result), nwkid)
+
+    # Human readable status: logged, and handed to the TextStatus widget under "text" (upd_domo_device with
+    # "UpdDomoDeviceWithCluster": "TextStatus"), on every status change and at most once a minute otherwise.
+    if _swv_schedule_status_report_due(nwkid, result["schedule_status"], time.time()):
+        result["text"] = _swv_schedule_status_text(result)
+        self.log.logging("Sonoff", "Log", "Irrigation %s: %s" % (nwkid, result["text"]), nwkid)
     return result
 
 
