@@ -268,3 +268,46 @@ def test_schedule_status_zero_timestamp_is_none(sonoff_module, plugin):
 def test_schedule_status_rejects_bad_payloads(sonoff_module, plugin, payload):
     assert _decode(sonoff_module, plugin, payload) is None
     assert any(call.args[1] == "Error" for call in plugin.log.logging.call_args_list)
+
+
+# ─── 0x501d manual default settings read-back (EvalFunc) ─────────────────────
+
+def test_decode_manual_default_settings_read_from_device(sonoff_module, plugin):
+    # Real read: mode=duration, total=10 min, irrigation duration/interval zeroed, liter, 0 L, no fail-safe
+    res = sonoff_module.sonoff_swv_decode_manual_default_settings(plugin, "1234", "01", "fc11", "501d", "0000000a000000000100000000")
+
+    assert res == {
+        "irrigation_mode": "duration",
+        "irrigation_duration": 10,
+        "irrigation_amount_unit": "liter",
+        "irrigation_amount": 0,
+        "fail_safe": 0,
+    }
+
+
+def test_decode_manual_default_settings_round_trips_our_write(sonoff_module, plugin):
+    _use_params(sonoff_module, {
+        "SONOFF_SWV_MANUAL_IRRIGATION_DURATION": 30,
+        "SONOFF_SWV_MANUAL_IRRIGATION_MODE": "capacity",
+        "SONOFF_SWV_MANUAL_IRRIGATION_AMOUNT_UNIT": "us_gallon",
+        "SONOFF_SWV_MANUAL_IRRIGATION_AMOUNT": 100,
+        "SONOFF_SWV_MANUAL_FAIL_SAFE": 45,
+    })
+    sonoff_module.sonoff_swv_manual_default_settings(plugin, "1234", "capacity")
+    written = _written(sonoff_module)["data"]   # full array: 20 + 0c00 + elements
+
+    res = sonoff_module.sonoff_swv_decode_manual_default_settings(plugin, "1234", "01", "fc11", "501d", written)
+
+    assert res == {
+        "irrigation_mode": "capacity",
+        "irrigation_duration": 30,
+        "irrigation_amount_unit": "us_gallon",
+        "irrigation_amount": 100,
+        "fail_safe": 45,
+    }
+
+
+@pytest.mark.parametrize("payload", ["zz", "00" + "00000a"])
+def test_decode_manual_default_settings_rejects_bad_payloads(sonoff_module, plugin, payload):
+    assert sonoff_module.sonoff_swv_decode_manual_default_settings(plugin, "1234", "01", "fc11", "501d", payload) is None
+    assert any(call.args[1] == "Error" for call in plugin.log.logging.call_args_list)
