@@ -422,7 +422,8 @@ def test_irrigation_plan_defaults_and_day_interval(sonoff_module, plugin, raw_ap
     assert data[0:4] == bytes([0x00, 0x01, 0x02, 0x03])           # index 0, enabled, day_interval every 3 days
     assert data[8] == 0x00                                         # duration mode
     assert int.from_bytes(data[9:13], "big") == 21 * 3600
-    assert data[13:24] == bytes([0x00, 0x0a, 0x00, 0x02, 0x00, 0x03, 0x01, 0x00, 0x1e, 0x00, 0x0a])   # upstream defaults
+    # upstream defaults, except the irrigation duration raised to the 3-minute firmware floor
+    assert data[13:24] == bytes([0x00, 0x0a, 0x00, 0x03, 0x00, 0x03, 0x01, 0x00, 0x1e, 0x00, 0x0a])
     assert abs(int.from_bytes(data[24:28], "big") - int(sonoff_module.time.time())) < 5
 
 
@@ -443,6 +444,7 @@ def test_irrigation_plan_list_sends_each_plan(sonoff_module, plugin, raw_aps):
     {},                                                        # start_time missing
     {"start_time": "06:00", "plan_index": 6},                  # index out of range
     {"start_time": "06:00", "irrigation_duration": 61},        # > 60
+    {"start_time": "06:00", "irrigation_duration": 2},         # < 3: dropped silently by the firmware
     {"start_time": "06:00", "loop_type_mode": "monthly"},      # unknown loop type
     {"start_time": "06:00", "loop_type_mode": "weekdays", "loop_type_week_days": ["funday"]},
     {"start_time": "06:00", "enable_date": "13/09/2026"},
@@ -516,6 +518,26 @@ def test_read_raw_aps_plan_settings_status(sonoff_module, plugin, monkeypatch):
     sonoff_module.sonoffReadRawAPS(plugin, None, "1234", "01", "fc11", "0000", "01", _raw_aps_payload("06", "01"))
 
     assert any(call.args[1] == "Error" and "status: 01" in call.args[2] for call in plugin.log.logging.call_args_list)
+
+
+@pytest.mark.parametrize("data, level", [("0600", "Log"), ("0700", "Log"), ("0687", "Error")])
+def test_read_raw_aps_default_response_to_plan_commands(sonoff_module, plugin, monkeypatch, data, level):
+    # Real frame from an SWV-ZFE after a 0x06 write: 1c 8612 05 0b 0600 (global Default Response, manufacturer specific)
+    plugin.ListOfDevices = {"1234": {}}
+    monkeypatch.setattr(sonoff_module, "retreive_cmd_payload_from_8002", lambda payload: (True, True, "05", "1286", "0b", data))
+
+    sonoff_module.sonoffReadRawAPS(plugin, None, "1234", "01", "fc11", "0000", "01", "1c8612050b" + data)
+
+    assert any(call.args[1] == level and "command 0x%s status: %s" % (data[:2], data[2:]) in call.args[2] for call in plugin.log.logging.call_args_list)
+
+
+def test_read_raw_aps_ignores_other_global_commands(sonoff_module, plugin, monkeypatch):
+    plugin.ListOfDevices = {"1234": {}}
+    monkeypatch.setattr(sonoff_module, "retreive_cmd_payload_from_8002", lambda payload: (False, True, "05", "1286", "01", "1d5000"))
+
+    sonoff_module.sonoffReadRawAPS(plugin, None, "1234", "01", "fc11", "0000", "01", "1c8612050b0600")
+
+    assert not any(call.args[1] in ("Log", "Error") for call in plugin.log.logging.call_args_list)
 
 
 def test_read_raw_aps_ignores_other_clusters(sonoff_module, plugin, monkeypatch):
