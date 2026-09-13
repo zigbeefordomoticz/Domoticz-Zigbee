@@ -837,8 +837,11 @@ def extract_value_size(self, Data, idx, DType ):
         # that many bytes so the attributes following this one in the same frame are still decoded.
         element_type = Data[idx : idx + 2]
         nb_elements = int(Data[idx + 4 : idx + 6] + Data[idx + 2 : idx + 4], 16)
-        if element_type in SIZE_DATA_TYPE:
-            size = nb_elements * SIZE_DATA_TYPE[element_type] * 2
+        # Sonoff SWV-ZFE declares its uint8 arrays 0x5018/0x5020 with element type 0x48 (array) and one byte
+        # per element; no supported device carries a genuine array of arrays, so size those as bytes too.
+        element_size = 1 if element_type == "48" else SIZE_DATA_TYPE.get(element_type)
+        if element_size:
+            size = nb_elements * element_size * 2
             if len(Data[idx + 6 :]) >= size:
                 idx += 6
                 value = extract_value( Data, DType, idx, size)

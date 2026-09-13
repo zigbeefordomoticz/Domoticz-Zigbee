@@ -43,6 +43,8 @@ CASES = {
     "count_larger_than_frame_falls_back": ("20" + "ff00" + "0102", 0, "48", (4, 6, "000102")),
     "unsized_elements_fall_back": ("42" + "0100" + "03616263", 0, "48", (4, 10, "0003616263")),
     "structure_keeps_legacy": ("0200" + "10" + "01" + "21" + "3412", 0, "4c", (4, 10, "1001213412")),
+    # Sonoff SWV-ZFE 0x5020 as read from the device: element type 0x48, 4 one-byte elements, followed by 0x5018
+    "sonoff_array_element_type_0x48": ("48" + "0400" + "07050105" + "1850" + "00" + "48" + "48" + "0400" + "00000000", 0, "48", (6, 8, "07050105")),
 }
 
 
