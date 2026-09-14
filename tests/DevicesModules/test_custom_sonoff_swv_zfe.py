@@ -66,6 +66,7 @@ def plugin(sonoff_module):
     sonoff_module.write_attribute.reset_mock()
     sonoff_module._swv_last_array_write.clear()
     sonoff_module._swv_status_last_report.clear()
+    sonoff_module._swv_flow_window.clear()
     return self
 
 
@@ -271,7 +272,8 @@ def _decode(sonoff_module, plugin, payload):
     res = sonoff_module.sonoff_swv_irrigation_schedule_status(plugin, "1234", "01", "fc11", "501f", payload)
     if res is not None:
         res = dict(res)
-        res.pop("text", None)   # covered by the TextStatus tests below
+        res.pop("text", None)        # covered by the TextStatus tests below
+        res.pop("flow_l_min", None)  # covered by the Flow widget tests below
     return res
 
 
@@ -645,7 +647,7 @@ def test_status_text_running(sonoff_module, plugin, monkeypatch):
 def test_status_text_end_and_standby(sonoff_module, plugin, monkeypatch):
     monkeypatch.setattr(sonoff_module, "_swv_hhmm", lambda iso, now=None: iso[11:16] if iso else "")
 
-    assert _status(sonoff_module, plugin, END)["text"] == "Ended 12:40 after 10 min, 154 L (manual, duration)"
+    assert _status(sonoff_module, plugin, END)["text"] == "Ended 12:40 after 10 min, 154 L, avg 15.4 L/min (manual, duration)"
     assert _status(sonoff_module, plugin, STANDBY)["text"] == "Idle, next: automatic plan 0 (duration with interval) 06:30 to 06:40"
 
 
@@ -705,3 +707,73 @@ def test_switch_on_and_off_are_never_throttled(sonoff_module, plugin, monkeypatc
     clock[0] += 1
     assert "text" in _status(sonoff_module, plugin, START)      # On again -> start
     assert len(_log_lines(plugin)) == 5
+
+
+# ─── 0x501f water flow (Flow widget) ──────────────────────────────────────────
+#
+# A real 25 s manual session (2026-09-14 18:06:40 -> 18:07:05, Europe/Paris) as reported by the
+# valve, elements only (the sized ARRAY decoder strips the framing): the running reports carry the
+# cumulative amount and the time it was measured at.
+
+SESSION_START = "00000102323af430323b2c70010000"
+SESSION_RUNNING = (
+    "02000102323af430323b2c70323af4300100000000",   # +0 s, 0 L
+    "02000102323af430323b2c70323af4360100000001",   # +6 s, 1 L
+    "02000102323af430323b2c70323af43d0100000003",   # +13 s, 3 L
+    "02000102323af430323b2c70323af4430100000004",   # +19 s, 4 L
+)
+SESSION_END = "01000102323af430323b2c70323af4490100000006"      # +25 s, 6 L
+
+
+def _flows(sonoff_module, plugin, payloads):
+    return [_status(sonoff_module, plugin, p).get("flow_l_min") for p in payloads]
+
+
+def test_flow_rate_over_the_configured_window(sonoff_module, plugin):
+    _use_params(sonoff_module, {"SONOFF_SWV_FLOW_RATE_INTERVAL": 10})
+
+    flows = _flows(sonoff_module, plugin, (SESSION_START,) + SESSION_RUNNING + (SESSION_END,))
+
+    # start: 0 (valve not running yet); +0 opens the window; +6 too early; +13: 3 L in 13 s; window
+    # reopened at +13 so +19 is too early; end: 0 (valve closed)
+    assert flows == [0, None, None, 13.8, None, 0]
+
+
+def test_flow_rate_defaults_to_one_minute_window(sonoff_module, plugin):
+    _use_params(sonoff_module, {})
+
+    assert _flows(sonoff_module, plugin, SESSION_RUNNING) == [None, None, None, None]
+
+    # a 6 L / 60 s sample closes the default window: 6 L/min
+    later = "02000102323af430323b2c70323af46c0100000006"       # +60 s, 6 L
+    assert _status(sonoff_module, plugin, later)["flow_l_min"] == 6.0
+
+
+def test_flow_rate_converts_gallons_to_liters(sonoff_module, plugin):
+    _use_params(sonoff_module, {"SONOFF_SWV_FLOW_RATE_INTERVAL": 10})
+    gallons = [p[:32] + "00" + p[34:] for p in SESSION_RUNNING]     # unit byte (element 16) 0x00 = US gallon
+
+    flows = _flows(sonoff_module, plugin, gallons)
+
+    assert flows[2] == round(3 * 3.785411784 * 60 / 13, 1)           # 52.4 L/min
+
+
+def test_flow_rate_window_reopens_on_a_new_session(sonoff_module, plugin):
+    _use_params(sonoff_module, {"SONOFF_SWV_FLOW_RATE_INTERVAL": 10})
+    _flows(sonoff_module, plugin, SESSION_RUNNING)
+
+    # a later session whose start report was missed: the amount drops, the window restarts
+    new_session = ("02000102323b2c70323b3d40323b2c700100000000", "02000102323b2c70323b3d40323b2c7e0100000005")   # +0 s 0 L, +14 s 5 L
+    assert _flows(sonoff_module, plugin, new_session) == [None, round(5 * 60 / 14, 1)]
+
+
+def test_flow_rate_shown_in_the_status_text(sonoff_module, plugin, monkeypatch):
+    monkeypatch.setattr(sonoff_module, "_swv_hhmm", lambda iso, now=None: iso[11:16] if iso else "")
+    _use_params(sonoff_module, {"SONOFF_SWV_FLOW_RATE_INTERVAL": 10, "SONOFF_SWV_STATUS_REPORT_INTERVAL": 0})
+
+    texts = [_status(sonoff_module, plugin, p)["text"] for p in SESSION_RUNNING + (SESSION_END,)]
+
+    assert texts[0] == "Running (manual, duration with interval) since 18:06, 0 L, expected end 22:06"
+    assert texts[2] == "Running (manual, duration with interval) since 18:06, 3 L, 13.8 L/min, expected end 22:06"
+    assert texts[3] == "Running (manual, duration with interval) since 18:06, 4 L, 13.8 L/min, expected end 22:06"   # last measured
+    assert texts[4] == "Ended 18:07 after 0 min, 6 L, avg 14.4 L/min (manual, duration with interval)"
