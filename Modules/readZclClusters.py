@@ -465,8 +465,14 @@ def action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, Msg
     self.log.logging( "ZclClusters", "Debug", "     _majdomo_formater: %s %s -> %s" %(_majdomo_formater, value, majValue), nwkid=MsgSrcAddr)
 
     _majdomo_cluster = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, ATTR_PARAM_UPD_DOMO_DEVICE_WITH_CLUSTER, model=device_model)
-    majCluster = _majdomo_cluster if _majdomo_cluster is not None else MsgClusterId
-    self.log.logging( "ZclClusters", "Debug", "     _majdomo_cluster: %s" %_majdomo_cluster, nwkid=MsgSrcAddr)
+    # One attribute may feed several widgets: a list, or "TextStatus/Flow", updates each of them with the same value
+    if _majdomo_cluster is None:
+        majClusters = [MsgClusterId]
+    elif isinstance(_majdomo_cluster, list):
+        majClusters = _majdomo_cluster
+    else:
+        majClusters = str(_majdomo_cluster).split("/")
+    self.log.logging( "ZclClusters", "Debug", "     _majdomo_cluster: %s -> %s" %(_majdomo_cluster, majClusters), nwkid=MsgSrcAddr)
 
     _majdomo_attribute = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, ATTR_PARAM_UPD_DOMO_DEVICE_WITH_ATTRIBUTE, model=device_model)
     majAttribute = _majdomo_attribute if _majdomo_attribute is not None else ""
@@ -476,7 +482,8 @@ def action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, Msg
     target_ep = _majdomo_endpoint if _majdomo_endpoint is not None else MsgSrcEp
     self.log.logging( "ZclClusters", "Debug", "     _majdomo_ep: %s -> %s" %(_majdomo_endpoint, target_ep), nwkid=MsgSrcAddr)
 
-    MajDomoDevice(self, Devices, MsgSrcAddr, target_ep, majCluster, majValue, Attribute_=majAttribute)
+    for majCluster in majClusters:
+        MajDomoDevice(self, Devices, MsgSrcAddr, target_ep, majCluster, majValue, Attribute_=majAttribute)
 
 
 def majdomodevice_possiblevalues( self, MsgSrcEp, MsgClusterId, MsgAttrID, model, value):

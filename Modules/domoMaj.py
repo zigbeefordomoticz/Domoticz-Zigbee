@@ -409,9 +409,16 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
 
     if ClusterType == "Flow" and WidgetType == "Flow":
-        sValue = "%s" %value
+        # Domoticz Waterflow (L/min): value is the flow itself, or a dict carrying it under "flow_l_min"
+        # (a dict without it means the producer has nothing new to display).
+        flow = value.get("flow_l_min") if isinstance(value, dict) else value
+        if flow is None:
+            self.log.logging("Widget", "Debug", "Waterflow measurement ------> nothing to display", NwkId)
+            return
+        sValue = "%s" %flow
         self.log.logging("Widget", "Debug", "Waterflow measurement ------>  : %s" %sValue, NwkId)
         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+        return
 
     if "Voltage" in ClusterType and (WidgetType == "Voltage" and Attribute_ == ""):
         nValue = round(float(value), 2)
