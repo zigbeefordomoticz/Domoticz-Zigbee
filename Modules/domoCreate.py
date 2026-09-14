@@ -1142,6 +1142,7 @@ SIMPLE_WIDGET = {
         "widgetType": "Custom",
         "Options": "1;ppm"
     },
+    "WaterVolume": { "widgetType": "Custom", "Options": "1;L" },   # a water volume in liters (e.g. a valve's daily irrigation volume)
     "phMeter": { "widgetType": "Custom", "Options": "1;pH" },
     "ec": { "widgetType": "Custom", "Options": "1;µS/cm" },
     "orp": { "widgetType": "Custom", "Options": "1;mV" },
@@ -1226,6 +1227,12 @@ SIMPLE_WIDGET = {
     },
     "Temp+Hum+Baro": {
         "widgetType": "Temp+Hum+Baro"
+    },
+    "TextStatus": {
+        # Free-text status (Domoticz Text sensor); fed through MajDomoDevice(..., "TextStatus", text)
+        "Type": 243,
+        "Subtype": 19,
+        "Switchtype": 0,
     },
     "TempSetCurrent": {
         "Type": 242,

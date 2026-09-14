@@ -130,7 +130,7 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
         func( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value )
 
     elif _eval_formula is not None or _function is not None:
-        value = compute_attribute_value( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value, _eval_inputs, _eval_formula, _function)
+        value = compute_attribute_value( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value, _eval_inputs, _eval_formula, _function, Source)
 
     _action_list = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "ActionList", model=device_model )
     formated_logging( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, device_model, _name, _datatype, _ranges, _special_values, _eval_formula, _action_list, _eval_inputs, _force_value, value)
@@ -445,8 +445,14 @@ def action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, Msg
     self.log.logging( "ZclClusters", "Debug", "     _majdomo_formater: %s %s -> %s" %(_majdomo_formater, value, majValue), nwkid=MsgSrcAddr)
 
     _majdomo_cluster = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "UpdDomoDeviceWithCluster", model=device_model)
-    majCluster = _majdomo_cluster if _majdomo_cluster is not None else MsgClusterId
-    self.log.logging( "ZclClusters", "Debug", "     _majdomo_cluster: %s" %_majdomo_cluster, nwkid=MsgSrcAddr)
+    # One attribute may feed several widgets: a list, or "TextStatus/Flow", updates each of them with the same value
+    if _majdomo_cluster is None:
+        majClusters = [MsgClusterId]
+    elif isinstance(_majdomo_cluster, list):
+        majClusters = _majdomo_cluster
+    else:
+        majClusters = str(_majdomo_cluster).split("/")
+    self.log.logging( "ZclClusters", "Debug", "     _majdomo_cluster: %s -> %s" %(_majdomo_cluster, majClusters), nwkid=MsgSrcAddr)
 
     _majdomo_attribute = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "UpdDomoDeviceWithAttribute", model=device_model)
     majAttribute = _majdomo_attribute if _majdomo_attribute is not None else ""
@@ -456,7 +462,8 @@ def action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, Msg
     target_ep = _majdomo_endpoint if _majdomo_endpoint is not None else MsgSrcEp
     self.log.logging( "ZclClusters", "Debug", "     _majdomo_ep: %s -> %s" %(_majdomo_endpoint, target_ep), nwkid=MsgSrcAddr)
 
-    MajDomoDevice(self, Devices, MsgSrcAddr, target_ep, majCluster, majValue, Attribute_=majAttribute)
+    for majCluster in majClusters:
+        MajDomoDevice(self, Devices, MsgSrcAddr, target_ep, majCluster, majValue, Attribute_=majAttribute)
 
 
 def majdomodevice_possiblevalues( self, MsgSrcEp, MsgClusterId, MsgAttrID, model, value):
@@ -480,7 +487,9 @@ def check_special_values( self, value, data_type, _special_values ):
     return flag
 
   
-def compute_attribute_value( self, nwkid, ep, cluster, attribut, value, _eval_inputs, _eval_formula, _function):
+def compute_attribute_value( self, nwkid, ep, cluster, attribut, value, _eval_inputs, _eval_formula, _function, Source=None):
+    # Source ("8100" Read Attribute Response vs "8102" Report Attributes) is exposed to EvalExp
+    # so a device config can compensate for a source-dependent quirk without touching the decoder.
 
     self.log.logging("ZclClusters", "Debug", "compute_attribute_value - _function: %s FUNCTION_MODULE: %s" %( _function, str(FUNCTION_MODULE) ), nwkid)
 
