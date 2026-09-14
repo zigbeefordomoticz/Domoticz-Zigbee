@@ -84,6 +84,18 @@ def test_water_volume_updates_the_custom_sensor(domoMaj_module, monkeypatch):
     assert update.call_args.args[4:6] == (0, "21")
 
 
+def test_water_volume_dict_value_updates_the_custom_sensor(domoMaj_module, monkeypatch):
+    update = _update(domoMaj_module, monkeypatch, "WaterVolume", "WaterVolume", {"text": "Running", "water_volume_l": 33.5})
+
+    assert update.call_args.args[4:6] == (0, "33.5")
+
+
+def test_water_volume_dict_without_volume_leaves_the_widget_untouched(domoMaj_module, monkeypatch):
+    update = _update(domoMaj_module, monkeypatch, "WaterVolume", "WaterVolume", {"text": "Running"})
+
+    update.assert_not_called()
+
+
 def test_water_volume_ignores_other_widgets(domoMaj_module, monkeypatch):
     update = _update(domoMaj_module, monkeypatch, "WaterVolume", "Flow", 21)
 
