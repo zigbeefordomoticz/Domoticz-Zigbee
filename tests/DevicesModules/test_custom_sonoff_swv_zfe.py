@@ -61,6 +61,7 @@ def plugin(sonoff_module):
     sonoff_module.write_attribute.reset_mock()
     sonoff_module._swv_status_last_report.clear()
     sonoff_module._swv_flow_window.clear()
+    sonoff_module._swv_daily_volume.clear()
     return self
 
 
@@ -195,6 +196,7 @@ def _decode(sonoff_module, plugin, payload):
         res = dict(res)
         res.pop("text", None)        # covered by the TextStatus tests below
         res.pop("flow_l_min", None)  # covered by the Flow widget tests below
+        res.pop("water_volume_l", None)  # covered by the daily volume tests below
     return res
 
 
@@ -509,3 +511,37 @@ def test_flow_rate_shown_in_the_status_text(sonoff_module, plugin, monkeypatch):
     assert texts[2] == "Running (manual, duration with interval) since 18:06, 3 L, 13.8 L/min, expected end 22:06"
     assert texts[3] == "Running (manual, duration with interval) since 18:06, 4 L, 13.8 L/min, expected end 22:06"   # last measured
     assert texts[4] == "Ended 18:07 after 0 min, 6 L, avg 14.4 L/min (manual, duration with interval)"
+
+
+# ─── daily irrigation volume (WaterVolume widget) ─────────────────────────────
+
+def _daily(sonoff_module, plugin, payloads):
+    return [_status(sonoff_module, plugin, p)["water_volume_l"] for p in payloads]
+
+
+def test_daily_volume_accumulates_ended_sessions_and_the_running_one(sonoff_module, plugin, monkeypatch):
+    monkeypatch.setattr(sonoff_module, "_swv_today", lambda: "2026-09-14")
+
+    # first session of the day: start, running samples, end (6 L)
+    assert _daily(sonoff_module, plugin, (SESSION_START,) + SESSION_RUNNING + (SESSION_END,)) == [0, 0, 1, 3, 4, 6]
+    # idle report keeps the total; a second identical session adds to it while running and once ended
+    assert _daily(sonoff_module, plugin, (STANDBY_TODAY, SESSION_START) + SESSION_RUNNING[2:] + (SESSION_END,)) == [6, 6, 9, 10, 12]
+
+
+def test_daily_volume_resets_on_a_new_day(sonoff_module, plugin, monkeypatch):
+    monkeypatch.setattr(sonoff_module, "_swv_today", lambda: "2026-09-14")
+    _daily(sonoff_module, plugin, (SESSION_END,))                       # 6 L on 2026-09-14
+
+    monkeypatch.setattr(sonoff_module, "_swv_today", lambda: "2026-09-15")
+    assert _status(sonoff_module, plugin, STANDBY_TODAY)["water_volume_l"] == 0       # first idle report of the 15th
+    assert _status(sonoff_module, plugin, RUNNING)["water_volume_l"] == 68             # a 2026-09-13 report: its own day (68 L running)
+
+
+def test_daily_volume_counts_gallons_in_liters(sonoff_module, plugin, monkeypatch):
+    monkeypatch.setattr(sonoff_module, "_swv_today", lambda: "2026-09-14")
+    gallons_end = SESSION_END[:32] + "00" + SESSION_END[34:]           # 6 US gallons
+
+    assert _status(sonoff_module, plugin, gallons_end)["water_volume_l"] == round(6 * 3.785411784, 1)
+
+
+STANDBY_TODAY = "03000002323cf3e8323cf64001001e"                    # plan 0, Wed 2026-09-16 06:30 -> 06:40 (2026-09-14 report)

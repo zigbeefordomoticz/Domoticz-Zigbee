@@ -755,8 +755,14 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
         
     if ClusterType == "WaterVolume" and WidgetType == "WaterVolume":
-        self.log.logging("Widget", "Debug", "------>  WaterVolume: %s L" % (value,), NwkId)
-        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(value), BatteryLevel, SignalLevel)
+        # Domoticz Custom sensor (L): value is the volume itself, or a dict carrying it under "water_volume_l"
+        # (a dict without it means the producer has nothing new to display).
+        volume = value.get("water_volume_l") if isinstance(value, dict) else value
+        if volume is None:
+            self.log.logging("Widget", "Debug", "------>  WaterVolume: nothing to display", NwkId)
+            return
+        self.log.logging("Widget", "Debug", "------>  WaterVolume: %s L" % (volume,), NwkId)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(volume), BatteryLevel, SignalLevel)
         return
 
     if ClusterType == "phMeter" and WidgetType == "phMeter":
