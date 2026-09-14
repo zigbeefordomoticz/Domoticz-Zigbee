@@ -754,6 +754,11 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         svalue = str(value)
         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
         
+    if ClusterType == "WaterVolume" and WidgetType == "WaterVolume":
+        self.log.logging("Widget", "Debug", "------>  WaterVolume: %s L" % (value,), NwkId)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(value), BatteryLevel, SignalLevel)
+        return
+
     if ClusterType == "phMeter" and WidgetType == "phMeter":
         self.log.logging("Widget", "Debug", "------>  pH: %s" % (value,), NwkId)
         svalue = str(value)
