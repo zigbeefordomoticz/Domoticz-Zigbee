@@ -398,7 +398,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             self.log.logging(["Widget","Electric"], "Debug", f"- {device_id_ieee} {device_unit} Instant Power via Attribute: '{Attribute_}' received {value}")
             process_instant_power(self, model_name, WidgetType, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel)
 
-    if "WaterCounter" in ClusterType and WidgetType == "WaterCounter":
+    if ClusterType == "WaterCounter" and WidgetType == "WaterCounter":
         # /json.htm?type=command&param=udevice&idx=IDX&nvalue=0&svalue=INCREMENT
         # INCREMENT = Integer of the increment of the counter. 
         # For Counters the standard counter dividers apply (menu setup - settings - tab counters)
