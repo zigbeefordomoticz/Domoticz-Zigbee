@@ -127,6 +127,10 @@ _swv_status_last_report = {}   # nwkid -> (schedule_status, timestamp)
 SONOFF_SWV_FLOW_RATE_DEFAULT_SECONDS = 60
 SONOFF_SWV_LITERS_PER_UNIT = {"liter": 1.0, "us_gallon": 3.785411784, "imperial_gallon": 4.54609}
 _swv_flow_window = {}   # nwkid -> (sample time (unix s), liters, last flow L/min or None)
+# Daily irrigation volume (liters, local date) computed from the 0x501f reports: the sessions ended today plus the
+# running one. The valve's own fc11/0x500f DailyIrrigationVolume was seen not to move for hours, so it is not used.
+# Kept in memory: a plugin restart starts the day again at the running session.
+_swv_daily_volume = {}   # nwkid -> {"date": ISO date, "ended": liters, "running": liters}
 SONOFF_SWV_SCHEDULE_STATUS_RUNNING_END_LEN = 21
 SONOFF_SWV_MANUAL_DEFAULT_SETTINGS_LEN = 12
 SONOFF_SWV_VALVE_ALARM_SETTINGS_LEN = 4
@@ -683,6 +687,33 @@ def _swv_flow_rate(self, nwkid, status):
     return flow
 
 
+def _swv_today():
+    return datetime.now().astimezone().date().isoformat()
+
+
+def _swv_daily_volume_liters(self, nwkid, status):
+    """ Liters irrigated today for the WaterVolume widget: ended sessions since local midnight + the running one.
+
+    Running/end reports are dated by the valve's actual_end_time; the day of an idle report is the plugin's,
+    so the widget drops to 0 on the first report of a new day. A session crossing midnight is counted on
+    the day it ends.
+    """
+    kind = status["schedule_status"]
+    with_actuals = kind in ("running", "end") and status["actual_end_time"]
+    day = datetime.fromisoformat(status["actual_end_time"]).astimezone().date().isoformat() if with_actuals else _swv_today()
+    daily = _swv_daily_volume.get(nwkid)
+    if daily is None or daily["date"] != day:
+        daily = _swv_daily_volume[nwkid] = {"date": day, "ended": 0.0, "running": 0.0}
+    if kind == "running" and with_actuals:
+        daily["running"] = _swv_liters(status)
+    elif kind == "end" and with_actuals:
+        daily["ended"] += _swv_liters(status)
+        daily["running"] = 0.0
+    elif kind == "start":
+        daily["running"] = 0.0
+    return round(daily["ended"] + daily["running"], 1)
+
+
 def _swv_schedule_status_text(status, flow=None):
     """ One-line, human readable summary of a decoded 0x501f record (log line and TextStatus widget);
     flow is the last measured L/min of a running session, when known """
@@ -769,11 +800,13 @@ def sonoff_swv_irrigation_schedule_status(self, nwkid, ep, cluster, attribut, va
     self.log.logging("Sonoff", "Debug", "sonoff_swv_irrigation_schedule_status - Nwkid: %s decoded: %s" % (nwkid, result), nwkid)
 
     # Flow (L/min): handed to the Flow widget under "flow_l_min" (upd_domo_device with
-    # "UpdDomoDeviceWithCluster": "TextStatus/Flow") once per SONOFF_SWV_FLOW_RATE_INTERVAL while running,
-    # 0 otherwise; absent when nothing new has been measured.
+    # "UpdDomoDeviceWithCluster": "TextStatus/Flow/WaterVolume") once per SONOFF_SWV_FLOW_RATE_INTERVAL while
+    # running, 0 otherwise; absent when nothing new has been measured.
     flow = _swv_flow_rate(self, nwkid, result)
     if flow is not None:
         result["flow_l_min"] = flow
+    # Daily volume (L): handed to the WaterVolume widget under "water_volume_l" on every report
+    result["water_volume_l"] = _swv_daily_volume_liters(self, nwkid, result)
 
     # Human readable status: logged, and handed to the TextStatus widget under "text", on every status change
     # and at most once per SONOFF_SWV_STATUS_REPORT_INTERVAL otherwise.
