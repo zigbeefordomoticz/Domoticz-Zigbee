@@ -68,6 +68,7 @@ def plugin(sonoff_module):
     sonoff_module._swv_status_last_report.clear()
     sonoff_module._swv_flow_window.clear()
     sonoff_module._swv_daily_volume.clear()
+    sonoff_module._swv_water_counter.clear()
     return self
 
 
@@ -276,6 +277,7 @@ def _decode(sonoff_module, plugin, payload):
         res.pop("text", None)        # covered by the TextStatus tests below
         res.pop("flow_l_min", None)  # covered by the Flow widget tests below
         res.pop("water_volume_l", None)  # covered by the daily volume tests below
+        res.pop("water_counter_l", None)  # covered by the WaterCounter tests below
     return res
 
 
@@ -813,3 +815,43 @@ def test_daily_volume_counts_gallons_in_liters(sonoff_module, plugin, monkeypatc
 
 
 STANDBY_TODAY = "03000002323cf3e8323cf64001001e"                    # plan 0, Wed 2026-09-16 06:30 -> 06:40 (2026-09-14 report)
+
+
+# ─── WaterCounter increments (Domoticz incremental counter) ───────────────────
+#
+# Second session of 2026-09-14 (18:34:20 -> 18:34:53, 7 L), same valve.
+
+SESSION2_RUNNING = (
+    "02000102323afaac323b32ec323afaac0100000000",   # +0 s, 0 L
+    "02000102323afaac323b32ec323afab20100000001",   # +6 s, 1 L
+    "02000102323afaac323b32ec323afab90100000003",   # +13 s, 3 L
+)
+SESSION2_END = "01000102323afaac323b32ec323afacd0100000007"     # +33 s, 7 L
+
+
+def _increments(sonoff_module, plugin, payloads):
+    return [_status(sonoff_module, plugin, p).get("water_counter_l") for p in payloads]
+
+
+def test_water_counter_gets_the_volume_delta_of_each_report(sonoff_module, plugin):
+    assert _increments(sonoff_module, plugin, (SESSION_START,) + SESSION_RUNNING + (SESSION_END,)) == [None, None, 1, 2, 1, 2]
+
+
+def test_water_counter_ignores_repeated_and_idle_reports(sonoff_module, plugin):
+    _increments(sonoff_module, plugin, (SESSION_END,))
+
+    # the same end report again (or a read of the last status), then standby: nothing to add
+    assert _increments(sonoff_module, plugin, (SESSION_END, STANDBY_TODAY)) == [None, None]
+
+
+def test_water_counter_restarts_with_a_new_session(sonoff_module, plugin):
+    _increments(sonoff_module, plugin, SESSION_RUNNING + (SESSION_END,))          # 6 L counted
+
+    # a new session (other start_time) counts from 0 again, even when its first report was missed
+    assert _increments(sonoff_module, plugin, SESSION2_RUNNING[1:] + (SESSION2_END,)) == [1, 2, 4]
+
+
+def test_water_counter_in_liters_for_gallon_sessions(sonoff_module, plugin):
+    gallons_end = SESSION_END[:32] + "00" + SESSION_END[34:]           # 6 US gallons in one report
+
+    assert _status(sonoff_module, plugin, gallons_end)["water_counter_l"] == round(6 * 3.785411784, 1)
