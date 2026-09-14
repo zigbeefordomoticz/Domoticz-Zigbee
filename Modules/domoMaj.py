@@ -404,9 +404,16 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         # For Counters the standard counter dividers apply (menu setup - settings - tab counters)
         # will increment the counter value by 1. 
         # To reset an incremental counter, set the svalue to a negative integer equal to the current total of the counter. 
-        sValue = "%s" %value
+        # value is the increment itself, or a dict carrying it under "water_counter_l" (a dict without it means
+        # the producer has nothing to add).
+        increment = value.get("water_counter_l") if isinstance(value, dict) else value
+        if increment is None:
+            self.log.logging("Widget", "Debug", "WaterCounter ------> nothing to add", NwkId)
+            return
+        sValue = "%s" %increment
         self.log.logging("Widget", "Debug", "WaterCounter ------>  : %s" %sValue, NwkId)
         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+        return
 
     if ClusterType == "Flow" and WidgetType == "Flow":
         # Domoticz Waterflow (L/min): value is the flow itself, or a dict carrying it under "flow_l_min"

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Tests for the WaterVolume (Domoticz Custom sensor, liters) branch of
-Modules/domoMaj.py:_domo_maj_one_cluster_type_entry, fed e.g. by the Sonoff SWV-ZFE
-fc11/0x500f DailyIrrigationVolume attribute.
+Tests for the WaterVolume (Domoticz Custom sensor, liters) and WaterCounter (Domoticz incremental
+counter) branches of Modules/domoMaj.py:_domo_maj_one_cluster_type_entry, fed e.g. by the Sonoff
+SWV-ZFE 0x501f record (daily volume under "water_volume_l", increment under "water_counter_l").
 """
 
 import sys
@@ -106,3 +106,21 @@ def test_widget_is_declared_as_a_custom_sensor_in_liters():
     src = open("Modules/domoCreate.py").read()
     assert '"WaterVolume": { "widgetType": "Custom", "Options": "1;L" }' in src
     assert '"WaterVolume": "WaterVolume"' in open("Modules/domoTools.py").read()
+
+
+def test_water_counter_value_is_the_increment(domoMaj_module, monkeypatch):
+    update = _update(domoMaj_module, monkeypatch, "WaterCounter", "WaterCounter", 14)
+
+    assert update.call_args.args[4:6] == (0, "14")
+
+
+def test_water_counter_dict_value_is_the_increment(domoMaj_module, monkeypatch):
+    update = _update(domoMaj_module, monkeypatch, "WaterCounter", "WaterCounter", {"water_volume_l": 33, "water_counter_l": 2})
+
+    assert update.call_args.args[4:6] == (0, "2")
+
+
+def test_water_counter_dict_without_increment_adds_nothing(domoMaj_module, monkeypatch):
+    update = _update(domoMaj_module, monkeypatch, "WaterCounter", "WaterCounter", {"water_volume_l": 33})
+
+    update.assert_not_called()
