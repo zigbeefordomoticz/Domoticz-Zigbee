@@ -493,6 +493,7 @@ CLUSTER_TO_TYPE = {
     "IRCode": "IRCode",
     "TextStatus": "TextStatus",
     "Flow": "Flow",
+    "WaterVolume": "WaterVolume",
     "LiquidDepth": "LiquidDepth",
     "LumiLock": "LumiLock", 
     "Strenght": "Strenght",

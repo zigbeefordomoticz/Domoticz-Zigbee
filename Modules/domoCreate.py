@@ -1153,6 +1153,7 @@ SIMPLE_WIDGET = {
         "widgetType": "Custom",
         "Options": "1;ppm"
     },
+    "WaterVolume": { "widgetType": "Custom", "Options": "1;L" },   # a water volume in liters (e.g. a valve's daily irrigation volume)
     "phMeter": { "widgetType": "Custom", "Options": "1;pH" },
     "ec": { "widgetType": "Custom", "Options": "1;µS/cm" },
     "orp": { "widgetType": "Custom", "Options": "1;mV" },
