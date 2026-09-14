@@ -104,6 +104,13 @@ SONOFF_SWV_SCHEDULE_STATUS_START_STANDBY_LEN = 15
 # while running).
 SONOFF_SWV_STATUS_REPORT_DEFAULT_SECONDS = 300
 _swv_status_last_report = {}   # nwkid -> (schedule_status, timestamp)
+# Water flow (L/min) derived from the running 0x501f reports: volume delta between two samples at least
+# SONOFF_SWV_FLOW_RATE_INTERVAL seconds apart (Param, default 60 s). The reported amount has a 1 unit resolution,
+# so a longer window is more accurate but slower to react. Handed to the Flow widget under "flow_l_min" once per
+# window and as 0 when the session ends; the session average is given in the "end" status text.
+SONOFF_SWV_FLOW_RATE_DEFAULT_SECONDS = 60
+SONOFF_SWV_LITERS_PER_UNIT = {"liter": 1.0, "us_gallon": 3.785411784, "imperial_gallon": 4.54609}
+_swv_flow_window = {}   # nwkid -> (sample time (unix s), liters, last flow L/min or None)
 SONOFF_SWV_SCHEDULE_STATUS_RUNNING_END_LEN = 21
 SONOFF_SWV_MANUAL_DEFAULT_SETTINGS_LEN = 12
 SONOFF_SWV_VALVE_ALARM_SETTINGS_LEN = 4
@@ -360,17 +367,63 @@ def _swv_minutes_between(start_iso, end_iso):
     return int(round((datetime.fromisoformat(end_iso) - datetime.fromisoformat(start_iso)).total_seconds() / 60))
 
 
-def _swv_schedule_status_text(status):
-    """ One-line, human readable summary of a decoded 0x501f record (log line and TextStatus widget) """
+def _swv_iso_to_unix(iso):
+    return datetime.fromisoformat(iso).timestamp() if iso else None
+
+
+def _swv_liters(status):
+    return status["actual_irrigation_amount"] * SONOFF_SWV_LITERS_PER_UNIT.get(status["irrigation_amount_unit"], 1.0)
+
+
+def _swv_session_average_flow(status):
+    """ L/min over the whole session of an end report; None when the timestamps do not allow it """
+    start, end = _swv_iso_to_unix(status["start_time"]), _swv_iso_to_unix(status["actual_end_time"])
+    if start is None or end is None or end <= start:
+        return None
+    return round(_swv_liters(status) * 60 / (end - start), 1)
+
+
+def _swv_flow_rate(self, nwkid, status):
+    """ Flow in L/min for the Flow widget: the volume delta over the last SONOFF_SWV_FLOW_RATE_INTERVAL seconds
+    of a running session (None while the window is still open), 0 whenever the valve is not running.
+
+    While running, actual_end_time is the time the reported amount was measured at, so the rate is computed
+    on the valve's own clock and does not depend on when the report reached the plugin.
+    """
+    if status["schedule_status"] != "running":
+        _swv_flow_window.pop(nwkid, None)
+        return 0
+    now, liters = _swv_iso_to_unix(status["actual_end_time"]), _swv_liters(status)
+    if now is None:
+        return None
+    since, since_liters, _ = _swv_flow_window.get(nwkid, (None, None, None))
+    if since is None or now < since or liters < since_liters:
+        # first sample of the window (or a new session seen without its start report): open a window
+        _swv_flow_window[nwkid] = (now, liters, None)
+        return None
+    interval = _param_int(self, nwkid, "SONOFF_SWV_FLOW_RATE_INTERVAL", SONOFF_SWV_FLOW_RATE_DEFAULT_SECONDS, 10, 3600)
+    if now - since < interval:
+        return None
+    flow = round((liters - since_liters) * 60 / (now - since), 1)
+    _swv_flow_window[nwkid] = (now, liters, flow)
+    return flow
+
+
+def _swv_schedule_status_text(status, flow=None):
+    """ One-line, human readable summary of a decoded 0x501f record (log line and TextStatus widget);
+    flow is the last measured L/min of a running session, when known """
     kind = "%s%s" % (status["schedule_type"], "" if status["schedule_type"] == "manual" else " plan %s" % status["schedule_index"])
     mode = str(status["irrigation_mode"]).replace("_", " ")
     unit = {"liter": "L", "us_gallon": "gal", "imperial_gallon": "imp gal"}.get(status["irrigation_amount_unit"], str(status["irrigation_amount_unit"]))
     start, expected_end = _swv_hhmm(status["start_time"]), _swv_hhmm(status["expected_end_time"])
     if status["schedule_status"] == "running":
-        return "Running (%s, %s) since %s, %s %s, expected end %s" % (kind, mode, start, status["actual_irrigation_amount"], unit, expected_end)
+        flow_text = "" if flow is None else ", %s L/min" % flow
+        return "Running (%s, %s) since %s, %s %s%s, expected end %s" % (kind, mode, start, status["actual_irrigation_amount"], unit, flow_text, expected_end)
     if status["schedule_status"] == "end":
         minutes = _swv_minutes_between(status["start_time"], status["actual_end_time"])
-        return "Ended %s after %s min, %s %s (%s, %s)" % (_swv_hhmm(status["actual_end_time"]), minutes, status["actual_irrigation_amount"], unit, kind, mode)
+        average = _swv_session_average_flow(status)
+        average_text = "" if average is None else ", avg %s L/min" % average
+        return "Ended %s after %s min, %s %s%s (%s, %s)" % (_swv_hhmm(status["actual_end_time"]), minutes, status["actual_irrigation_amount"], unit, average_text, kind, mode)
     if status["schedule_status"] == "start":
         return "Started %s (%s, %s), expected end %s" % (start, kind, mode, expected_end)
     # standby: the next scheduled occurrence
@@ -441,11 +494,17 @@ def sonoff_swv_irrigation_schedule_status(self, nwkid, ep, cluster, attribut, va
 
     self.log.logging("Sonoff", "Debug", "sonoff_swv_irrigation_schedule_status - Nwkid: %s decoded: %s" % (nwkid, result), nwkid)
 
-    # Human readable status: logged, and handed to the TextStatus widget under "text" (upd_domo_device with
-    # "UpdDomoDeviceWithCluster": "TextStatus"), on every status change and at most once per
-    # SONOFF_SWV_STATUS_REPORT_INTERVAL otherwise.
+    # Flow (L/min): handed to the Flow widget under "flow_l_min" (upd_domo_device with
+    # "UpdDomoDeviceWithCluster": "TextStatus/Flow") once per SONOFF_SWV_FLOW_RATE_INTERVAL while running,
+    # 0 otherwise; absent when nothing new has been measured.
+    flow = _swv_flow_rate(self, nwkid, result)
+    if flow is not None:
+        result["flow_l_min"] = flow
+
+    # Human readable status: logged, and handed to the TextStatus widget under "text", on every status change
+    # and at most once per SONOFF_SWV_STATUS_REPORT_INTERVAL otherwise.
     if _swv_schedule_status_report_due(self, nwkid, result["schedule_status"], time.time()):
-        result["text"] = _swv_schedule_status_text(result)
+        result["text"] = _swv_schedule_status_text(result, _swv_flow_window.get(nwkid, (None, None, None))[2])
         self.log.logging("Sonoff", "Log", "Irrigation %s: %s" % (nwkid, result["text"]), nwkid)
     return result
 
