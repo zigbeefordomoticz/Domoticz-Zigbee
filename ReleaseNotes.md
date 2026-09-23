@@ -18,6 +18,16 @@ Release Numbering
 - Odd numbers --> Stable/9.1 (stable branch)
 - Even numbers  --> Beta/9.2 (dev branch)
 
+## September 2026 - stable9 9.1.006 (2026.12)
+
+- [Feature] - Sonoff SWV-ZFE/ZFU smart water valve: full support - manual irrigation settings (duration, capacity, duration with interval), valve alarm settings, water flow unit, irrigation plans, and live Status text, Flow (L/min), daily Volume and Water Counter widgets derived from the irrigation status reports (#2048)
+- [Feature] - New generic widget types `TextStatus` (Text) and `WaterVolume` (Custom sensor, L); `UpdDomoDeviceWithCluster` can now feed several widgets from one attribute (#2048)
+- [Issue] - Fix ZCL Array (0x48) decoding swallowing the attributes that follow it in a multi-attribute frame (#2048)
+- [Issue] - Device Management: accept device Params saved in Python-literal form (True/False/None) (#2048)
+- [Issue] - Fix latent correctness issues in ZCL attribute processing (equal-bounds Range check, unguarded ValidValuesDomoDevices eval, wrong cluster id in EvalExp error logs) (#2037)
+- [Technical] - Log an error when a device configuration contains an unrecognized widget Type instead of silently dropping it (#2038)
+- [Technical] - Extract ZCL attribute/cluster JSON parameter keys into named constants (#2037)
+
 ## September 2026 - stable9 9.1.005 (2026.11)
 
 - [Issue] - Fix TypeError when radio backend reports lqi as a float (#1999, #2030)
