@@ -46,7 +46,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install bandit black codespell flake8 isort mypy pytest pyupgrade
+          # pyflakes 4.0.0 breaks flake8 7.4.0 at startup (FlakesChecker has no attribute 'builtIns' when --builtins is used);
+          # drop the pin once a flake8 release supports pyflakes 4.
+          pip install bandit black codespell flake8 "pyflakes<4" isort mypy pytest pyupgrade
 
       - name: Bandit security scan
         run: bandit -r .
