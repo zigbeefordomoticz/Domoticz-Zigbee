@@ -118,6 +118,17 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         self.log.logging("Widget", "Debug", "------> IRCodeText : %s" % sValue, NwkId)
         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
+    if ClusterType == "TextStatus" and WidgetType == "TextStatus":
+        # Generic free-text status widget: value is the text itself, or a dict carrying it under "text"
+        # (a dict without "text" means the producer has nothing new to display).
+        sValue = value.get("text") if isinstance(value, dict) else value
+        if sValue in (None, ""):
+            self.log.logging("Widget", "Debug", "------> TextStatus: nothing to display", NwkId)
+            return
+        self.log.logging("Widget", "Debug", "------> TextStatus : %s" % sValue, NwkId)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
+        return
+
     if WidgetType == "LiquidLevel" and ClusterType == "LiquidLevel" and Attribute_ == "":
         # LiquidLevel
         self.log.logging("Widget", "Debug", "------> LiquidLevel : %s" % value, NwkId)
@@ -387,20 +398,34 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             self.log.logging(["Widget","Electric"], "Debug", f"- {device_id_ieee} {device_unit} Instant Power via Attribute: '{Attribute_}' received {value}")
             process_instant_power(self, model_name, WidgetType, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel)
 
-    if "WaterCounter" in ClusterType and WidgetType == "WaterCounter":
+    if ClusterType == "WaterCounter" and WidgetType == "WaterCounter":
         # /json.htm?type=command&param=udevice&idx=IDX&nvalue=0&svalue=INCREMENT
         # INCREMENT = Integer of the increment of the counter. 
         # For Counters the standard counter dividers apply (menu setup - settings - tab counters)
         # will increment the counter value by 1. 
         # To reset an incremental counter, set the svalue to a negative integer equal to the current total of the counter. 
-        sValue = "%s" %value
+        # value is the increment itself, or a dict carrying it under "water_counter_l" (a dict without it means
+        # the producer has nothing to add).
+        increment = value.get("water_counter_l") if isinstance(value, dict) else value
+        if increment is None:
+            self.log.logging("Widget", "Debug", "WaterCounter ------> nothing to add", NwkId)
+            return
+        sValue = "%s" %increment
         self.log.logging("Widget", "Debug", "WaterCounter ------>  : %s" %sValue, NwkId)
         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+        return
 
     if ClusterType == "Flow" and WidgetType == "Flow":
-        sValue = "%s" %value
+        # Domoticz Waterflow (L/min): value is the flow itself, or a dict carrying it under "flow_l_min"
+        # (a dict without it means the producer has nothing new to display).
+        flow = value.get("flow_l_min") if isinstance(value, dict) else value
+        if flow is None:
+            self.log.logging("Widget", "Debug", "Waterflow measurement ------> nothing to display", NwkId)
+            return
+        sValue = "%s" %flow
         self.log.logging("Widget", "Debug", "Waterflow measurement ------>  : %s" %sValue, NwkId)
         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+        return
 
     if "Voltage" in ClusterType and (WidgetType == "Voltage" and Attribute_ == ""):
         nValue = round(float(value), 2)
@@ -736,6 +761,17 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         svalue = str(value)
         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
         
+    if ClusterType == "WaterVolume" and WidgetType == "WaterVolume":
+        # Domoticz Custom sensor (L): value is the volume itself, or a dict carrying it under "water_volume_l"
+        # (a dict without it means the producer has nothing new to display).
+        volume = value.get("water_volume_l") if isinstance(value, dict) else value
+        if volume is None:
+            self.log.logging("Widget", "Debug", "------>  WaterVolume: nothing to display", NwkId)
+            return
+        self.log.logging("Widget", "Debug", "------>  WaterVolume: %s L" % (volume,), NwkId)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(volume), BatteryLevel, SignalLevel)
+        return
+
     if ClusterType == "phMeter" and WidgetType == "phMeter":
         self.log.logging("Widget", "Debug", "------>  pH: %s" % (value,), NwkId)
         svalue = str(value)
