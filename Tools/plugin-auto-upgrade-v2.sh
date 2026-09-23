@@ -210,10 +210,11 @@ detect_package_manager
 install_packages
 check_and_activate_venv
 check_and_upgrade_pip
-update_python_modules
 update_git_config
+update_python_modules
 print_version_info
 check_python_and_branch
+
 
 echo ""
 echo "Plugin upgrade process completed successfully."
