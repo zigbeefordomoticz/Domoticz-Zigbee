@@ -214,20 +214,6 @@ def gmms_ticmeter_set_refresh_time(self, nwkid, refresh_rate):
     self.log.logging("GammaTroniques", "Debug", "gmms_ticmeter_set_refresh_time - Nwkid: %s trigger a read attribute to check the new value" % (nwkid))
     read_attribute( self, nwkid, ZIGATE_EP, "01", TICMETER_CLUSTER, "00", "00", "0000", 0x01, TICMETER_REFRESH_TIME_ATTRIBUTE, ackIsDisabled=False)
 
-def gmms_ticmeter_check_hphc_indexes(self, nwkid, _value):
-    """Validate LINKY_IDX_HC/LINKY_IDX_HP, the attributes carrying HC and HP for the P1Meter_HPHC widget (applied in domoMaj)."""
-    from Modules.domoMaj import resolve_p1meter_hphc_indexes
-
-    param = self.ListOfDevices.get(nwkid, {}).get("Param", {})
-    indexes, error = resolve_p1meter_hphc_indexes(param.get("LINKY_IDX_HC"), param.get("LINKY_IDX_HP"))
-    if error:
-        self.log.logging("GammaTroniques", "Error", f"gmms_ticmeter_check_hphc_indexes - Nwkid: {nwkid} {error}. Fallback to default order {indexes}", nwkid)
-    else:
-        self.log.logging("GammaTroniques", "Debug", f"gmms_ticmeter_check_hphc_indexes - Nwkid: {nwkid} P1Meter_HPHC HC/HP from {indexes}", nwkid)
-
-
 GMMS_TIC_METER_DEVICE_PARAMETERS = {
     "TICMeterRefresh": gmms_ticmeter_set_refresh_time,
-    "LINKY_IDX_HC": {"callable": gmms_ticmeter_check_hphc_indexes, "description": "Attribute 0100 (EASF01) or 0102 (EASF02) carrying HC, shown as Usage1 (T1) of the P1Meter_HPHC widget. Requires LINKY_IDX_HP, default 0100"},
-    "LINKY_IDX_HP": {"callable": gmms_ticmeter_check_hphc_indexes, "description": "Attribute 0100 (EASF01) or 0102 (EASF02) carrying HP, shown as Usage2 (T2) of the P1Meter_HPHC widget. Requires LINKY_IDX_HC, default 0102"},
 }

@@ -132,3 +132,85 @@ def test_instant_power_backfills_usages_in_the_configured_order(domoMaj_module, 
         plugin, "P1Meter_HPHC", "050f", "750", {}, IEEE, 7, 0, "0;0;0;0;0;0", NWKID, EP, 255, 12)
 
     assert update.call_args.args[5] == "2000;1000;0;0;750.0;0"
+
+
+SWAP_PARAMS = {"LINKY_IDX_HC": "0102", "LINKY_IDX_HP": "0100"}
+
+
+@pytest.mark.parametrize("params, ep, expected", [
+    ({}, "01", ("0100", "0102")),
+    ({}, "f2", ("0104", "0106")),
+    ({}, "f3", ("0108", "010a")),
+    (SWAP_PARAMS, "01", ("0102", "0100")),
+    (SWAP_PARAMS, "f2", ("0106", "0104")),
+    (SWAP_PARAMS, "f3", ("010a", "0108")),
+    ({"LINKY_IDX_HC": "0102"}, "f2", ("0104", "0106")),
+    (SWAP_PARAMS, "f4", None),
+])
+def test_zlinky_p1meter_indexes(domoMaj_module, monkeypatch, params, ep, expected):
+    monkeypatch.setattr(domoMaj_module, "get_device_config_param", lambda self, nwkid, name: params.get(name))
+
+    assert domoMaj_module.get_zlinky_p1meter_indexes(MagicMock(), NWKID, ep) == expected
+
+
+def _zlinky_update(domoMaj_module, monkeypatch, params, ep, attribute, value):
+    update = MagicMock(name="update_domoticz_widget")
+    monkeypatch.setattr(domoMaj_module, "update_domoticz_widget", update)
+    monkeypatch.setattr(domoMaj_module, "get_device_config_param", lambda self, nwkid, name: params.get(name))
+    monkeypatch.setattr(domoMaj_module, "ZLINK_CONF_MODEL", ("ZLinky_TIC-standard-mono",))
+    monkeypatch.setattr(domoMaj_module, "get_tarif_color", lambda *args: "Blue")
+    monkeypatch.setattr(domoMaj_module, "get_instant_power", lambda *args: 500)
+    monkeypatch.setattr(domoMaj_module, "retreive_device_unit", lambda *args: 7)
+    monkeypatch.setattr(domoMaj_module, "domo_read_nValue_sValue", lambda *args: (0, "111;222;0;0;0;0"))
+    monkeypatch.setattr(domoMaj_module, "retrieve_data_from_current", lambda *args: [111, 222, 0, 0, 0, 0])
+    monkeypatch.setattr(domoMaj_module, "domo_read_SwitchType_SubType_Type", lambda *args: (0, 1, 250))
+    monkeypatch.setattr(domoMaj_module, "RetreiveSignalLvlBattery", lambda *args: (12, 255))
+    plugin = MagicMock()
+    plugin.ListOfDevices = {NWKID: {"Model": "ZLinky_TIC-standard-mono", "Param": params}}
+    domoMaj_module._domo_maj_one_cluster_type_entry(
+        plugin, {}, NWKID, ep, IEEE, "ZLinky_TIC-standard-mono", "Power", [(ep, 42, "P1Meter_ZL")], "0702", value, attribute, "", ep, 42, "P1Meter_ZL")
+    return update
+
+
+@pytest.mark.parametrize("params, ep, attribute, expected", [
+    ({}, "01", "0100", "1000;222;0;0;500;0"),
+    ({}, "01", "0102", "111;1000;0;0;500;0"),
+    (SWAP_PARAMS, "01", "0102", "1000;222;0;0;500;0"),
+    (SWAP_PARAMS, "01", "0100", "111;1000;0;0;500;0"),
+    ({}, "f2", "0104", "1000;222;0;0;0.0;0"),
+    (SWAP_PARAMS, "f2", "0106", "1000;222;0;0;0.0;0"),
+    (SWAP_PARAMS, "f3", "0108", "111;1000;0;0;0.0;0"),
+])
+def test_zlinky_p1meter_zl_usage_slot(domoMaj_module, monkeypatch, params, ep, attribute, expected):
+    update = _zlinky_update(domoMaj_module, monkeypatch, params, ep, attribute, 1000)
+
+    update.assert_called_once()
+    assert update.call_args.args[5] == expected
+
+
+@pytest.mark.parametrize("ep, attribute", [("01", "0104"), ("f2", "0100"), ("f3", "0106"), ("f4", "0100")])
+def test_zlinky_p1meter_zl_ignores_index_of_another_ep(domoMaj_module, monkeypatch, ep, attribute):
+    update = _zlinky_update(domoMaj_module, monkeypatch, SWAP_PARAMS, ep, attribute, 1000)
+
+    update.assert_not_called()
+
+
+@pytest.mark.parametrize("params, current_tarif, attribute, triggers", [
+    ({}, "HC..", "0100", False),
+    ({}, "HC..", "0102", True),
+    ({}, "HP..", "0100", True),
+    (SWAP_PARAMS, "HC..", "0102", False),
+    (SWAP_PARAMS, "HC..", "0100", True),
+    (SWAP_PARAMS, "HP..", "0102", True),
+    (SWAP_PARAMS, "HP..", "0100", False),
+])
+def test_chameleon_color_transition_follows_hc_hp_params(domoMaj_module, monkeypatch, params, current_tarif, attribute, triggers):
+    read = MagicMock(name="read_attribute")
+    monkeypatch.setattr(domoMaj_module, "read_attribute", read)
+    monkeypatch.setattr(domoMaj_module, "get_device_config_param", lambda self, nwkid, name: params.get(name))
+    plugin = MagicMock()
+    plugin.ListOfDevices = {NWKID: {"Model": "ERL Z3", "Param": params, "Chameleon": {"NGTF/OPTARIF": "HC", "PTEC/LTARF": current_tarif}}}
+
+    domoMaj_module.check_and_update_chameleon_erz3_linky_color_if_needed(plugin, NWKID, attribute)
+
+    assert read.called == triggers

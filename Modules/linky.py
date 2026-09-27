@@ -334,3 +334,21 @@ def collect_ticmeter_linky(self, nwkid):
         Modules.readAttributes.read_attributes_ticmeter_details(self, nwkid)
 
         ticmeter_data["GlobalReadInProgress"] = now
+
+
+def linky_check_hphc_indexes(self, nwkid, _value):
+    """Validate LINKY_IDX_HC/LINKY_IDX_HP, the attributes carrying HC and HP for the P1Meter_HPHC and P1Meter_ZL widgets (applied in domoMaj)."""
+    from Modules.domoMaj import resolve_p1meter_hphc_indexes
+
+    param = self.ListOfDevices.get(nwkid, {}).get("Param", {})
+    indexes, error = resolve_p1meter_hphc_indexes(param.get("LINKY_IDX_HC"), param.get("LINKY_IDX_HP"))
+    if error:
+        self.log.logging("Electric", "Error", f"linky_check_hphc_indexes - Nwkid: {nwkid} {error}. Fallback to default HC/HP {indexes}", nwkid)
+    else:
+        self.log.logging("Electric", "Debug", f"linky_check_hphc_indexes - Nwkid: {nwkid} HC/HP from {indexes}", nwkid)
+
+
+LINKY_DEVICE_PARAMETERS = {
+    "LINKY_IDX_HC": {"callable": linky_check_hphc_indexes, "description": "Linky: attribute 0100 (EASF01) or 0102 (EASF02) carrying HC, shown as Usage1 (T1). Requires LINKY_IDX_HP, default 0100"},
+    "LINKY_IDX_HP": {"callable": linky_check_hphc_indexes, "description": "Linky: attribute 0100 (EASF01) or 0102 (EASF02) carrying HP, shown as Usage2 (T2). Requires LINKY_IDX_HC, default 0102"},
+}
