@@ -277,16 +277,12 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
 
         if (WidgetType == "P1Meter_ZL" and model_name in ZLINK_CONF_MODEL and Attribute_ in ( "0100", "0102", "0104", "0106", "0108", "010a")):
 
-            if Attribute_ != "050f" and Ep == "01" and Attribute_ not in ("0100", "0102"):
-                # Ep = 01, so we store Base, or HP,HC, or BBRHCJB, BBRHPJB
+            # Ep 01 stores Base, or HC/HP, or BBRHCJB/BBRHPJB, Ep f2 BBRHCJW/BBRHPJW, Ep f3 BBRHCJR/BBRHPJR
+            zlinky_indexes = get_zlinky_p1meter_indexes(self, NwkId, Ep)
+            if zlinky_indexes is None or Attribute_ not in zlinky_indexes:
                 return
-            if Attribute_ != "050f" and Ep == "f2" and Attribute_ not in ("0104", "0106"):
-                # Ep = f2, so we store BBRHCJW, BBRHPJW
-                return
-            if Attribute_ != "050f" and Ep == "f3" and Attribute_ not in ("0108", "010a"):
-                # Ep == f3, so we store BBRHCJR, BBRHPJR
-                return
-            
+            usage1_attribute, usage2_attribute = zlinky_indexes
+
             tarif_color = get_tarif_color( self, NwkId )
 
             self.log.logging(["ZLinky","Electric"], "Debug", "------>  P1Meter_ZL : %s Attribute: %s  Color: %s (%s)" % (
@@ -301,8 +297,8 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             # We are so receiving a usage update
             self.log.logging( ["ZLinky","Electric"], "Debug", "------>  P1Meter_ZL : Trigger by Index Update %s Ep: %s" % (Attribute_, Ep), NwkId, )
             cons = get_instant_power(self, NwkId)
-            if Attribute_ in ("0000", "0100", "0104", "0108"):
-                # Usage 1
+            if Attribute_ == usage1_attribute:
+                # Usage 1 / HC
                 usage1 = int(round(float(value), 0))
                 usage2 = cur_usage2
                 return1 = cur_return1
@@ -311,8 +307,8 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                     # Skip update as there is no consumption
                     return
 
-            elif Attribute_ in ("0102", "0106", "010a"):
-                # Usage 2
+            elif Attribute_ == usage2_attribute:
+                # Usage 2 / HP
                 usage1 = cur_usage1
                 usage2 = int(round(float(value), 0))
                 return1 = cur_return1
@@ -1442,6 +1438,21 @@ def get_p1meter_hphc_indexes(self, NwkId):
     return indexes
 
 
+# ZLinky P1Meter_ZL default (HC attribute for Usage1, HP attribute for Usage2) per Ep: 01 Blue/Base/HCHP, f2 White, f3 Red
+ZLINKY_P1METER_DEFAULT_INDEXES = {"01": ("0100", "0102"), "f2": ("0104", "0106"), "f3": ("0108", "010a")}
+
+
+def get_zlinky_p1meter_indexes(self, NwkId, Ep):
+    """Return (HC attribute for Usage1, HP attribute for Usage2) of the ZLinky P1Meter_ZL widget on Ep, None if not an index Ep.
+
+    When LINKY_IDX_HC / LINKY_IDX_HP swap EASF01/EASF02, the same swap is applied to the pair of each Tempo color Ep.
+    """
+    indexes = ZLINKY_P1METER_DEFAULT_INDEXES.get(Ep)
+    if indexes is None or get_p1meter_hphc_indexes(self, NwkId) == P1METER_HPHC_DEFAULT_INDEXES:
+        return indexes
+    return indexes[::-1]
+
+
 def process_p1meters_meter_with_summation(self, widget_type, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel):
     """Handles P1Meter_HPHC processing based on the Attribute type."""
     self.log.logging(["Widget", "Electric"], "Debug", f"------> process_p1meters_meter_with_summation : {widget_type} {Attribute_} {value} ({type(value)})", NwkId)
@@ -2062,7 +2073,7 @@ def check_and_update_chameleon_erz3_linky_color_if_needed(self, nwkid, attribute
     nwkid : str
         The Zigbee network identifier of the device.
     attribute : str
-        The attribute ID being updated (e.g., "0100" for HC, "0102" for HP).
+        The attribute ID being updated (by default "0100" for HC, "0102" for HP, see LINKY_IDX_HC / LINKY_IDX_HP).
 
     Logic
     -----
@@ -2109,12 +2120,13 @@ def check_and_update_chameleon_erz3_linky_color_if_needed(self, nwkid, attribute
     contract_tarif = chameleon_attributes.get("NGTF/OPTARIF")
     current_tarif = chameleon_attributes.get("PTEC/LTARF")
 
-    # Condition: missing tarif OR tariff transition detected
+    # Condition: missing tarif OR tariff transition detected (an HP index moves while in HC, or the opposite)
+    hc_attribute, hp_attribute = get_p1meter_hphc_indexes(self, nwkid)
     triger_read_attributes = (
         ( current_tarif is None)
         or (contract_tarif is None)
-        or (current_tarif in HC and attribute == "0102")
-        or (current_tarif in HP and attribute == "0100") )
+        or (current_tarif in HC and attribute == hp_attribute)
+        or (current_tarif in HP and attribute == hc_attribute) )
 
     self.log.logging(["Widget", "Electric"], "Debug", f"check_and_update_chameleon_erz3_linky_color_if_needed for {nwkid} current_tarif: {current_tarif} contract_tarif: {contract_tarif} triger_read_attributes {triger_read_attributes}", nwkid)
     
