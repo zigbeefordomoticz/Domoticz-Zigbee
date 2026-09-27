@@ -1399,6 +1399,48 @@ def process_instant_power(self, model_name, WidgetType, Attribute_, value, Devic
     update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
 
+# P1Meter_HPHC default mapping: Usage1 (T1) <- 0x0702/0x0100 (HCHC / EASF01), Usage2 (T2) <- 0x0702/0x0102 (HCHP / EASF02)
+P1METER_HPHC_DEFAULT_INDEXES = ("0100", "0102")
+
+
+def _normalize_hphc_index(value):
+    """Normalize a Param value such as "0102", "0x0102" or 102 into a 4 digits lowercase attribute id."""
+    value = str(value).strip().lower()
+    if value.startswith("0x"):
+        value = value[2:]
+    return value.zfill(4)
+
+
+def resolve_p1meter_hphc_indexes(param_idx1, param_idx2):
+    """Return ( (attribute for Usage1, attribute for Usage2), error ).
+
+    The device Params LINKY_HPHC_IDX1 / LINKY_HPHC_IDX2 override the default order only if both are defined
+    and are a permutation of 0100/0102. Otherwise the default mapping is returned with a reason (None if no override).
+    """
+    if param_idx1 is None and param_idx2 is None:
+        return P1METER_HPHC_DEFAULT_INDEXES, None
+
+    if param_idx1 is None or param_idx2 is None:
+        return P1METER_HPHC_DEFAULT_INDEXES, "LINKY_HPHC_IDX1 and LINKY_HPHC_IDX2 must both be defined"
+
+    indexes = (_normalize_hphc_index(param_idx1), _normalize_hphc_index(param_idx2))
+    if sorted(indexes) != sorted(P1METER_HPHC_DEFAULT_INDEXES):
+        return P1METER_HPHC_DEFAULT_INDEXES, f"LINKY_HPHC_IDX1/IDX2 must be 0100 and 0102 in any order, got {param_idx1}/{param_idx2}"
+
+    return indexes, None
+
+
+def get_p1meter_hphc_indexes(self, NwkId):
+    """Return (attribute for Usage1, attribute for Usage2) of the P1Meter_HPHC widget for that device."""
+    indexes, error = resolve_p1meter_hphc_indexes(
+        get_device_config_param(self, NwkId, "LINKY_HPHC_IDX1"),
+        get_device_config_param(self, NwkId, "LINKY_HPHC_IDX2"),
+    )
+    if error:
+        self.log.logging(["Widget", "Electric"], "Debug", f"get_p1meter_hphc_indexes - {error}, fallback to default {indexes}", NwkId)
+    return indexes
+
+
 def process_p1meters_meter_with_summation(self, widget_type, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel):
     """Handles P1Meter_HPHC processing based on the Attribute type."""
     self.log.logging(["Widget", "Electric"], "Debug", f"------> process_p1meters_meter_with_summation : {widget_type} {Attribute_} {value} ({type(value)})", NwkId)
@@ -1427,12 +1469,13 @@ def process_p1meters_meter_with_summation(self, widget_type, Attribute_, value, 
         sValue = f"{instant_power};{parsed_value}"
 
     elif widget_type.startswith("P1Meter"):
-        if Attribute_ in ["0000", "0100"]:
-            # Usage1 / HC
+        usage1_attribute, usage2_attribute = get_p1meter_hphc_indexes(self, NwkId)
+        if Attribute_ in ("0000", usage1_attribute):
+            # Usage1 (default HC)
             sValue = f"{parsed_value};{cur_usage2};{cur_return1};{cur_return2};{instant_power};{cur_prod}"
 
-        elif Attribute_ == "0102":
-            # Usage 2 / HP
+        elif Attribute_ == usage2_attribute:
+            # Usage 2 (default HP)
             sValue = f"{cur_usage1};{parsed_value};{cur_return1};{cur_return2};{instant_power};{cur_prod}"
 
     self.log.logging(["Widget", "Electric"], "Debug", f"------------> process_p1meters_meter_with_summation - {device_id_ieee} {device_unit} {widget_type} {sValue}", NwkId)
@@ -1447,7 +1490,7 @@ def process_p1meters_meter_with_summation(self, widget_type, Attribute_, value, 
 
         self.log.logging(["Widget", "Electric"], "Debug", f"process_p1meters_meter_with_summation - Checking Linky color update for {device_id_ieee} {device_unit} {widget_type} {parsed_value} versus {cur_usage1}/{cur_usage2} ({type(cur_usage1)}-{type(cur_usage1)}/{type(cur_usage2)})", NwkId)
 
-        if (Attribute_ == "0100" and parsed_value != cur_usage1) or (Attribute_ == "0102" and parsed_value != cur_usage2):
+        if (Attribute_ == usage1_attribute and parsed_value != cur_usage1) or (Attribute_ == usage2_attribute and parsed_value != cur_usage2):
             self.log.logging(["Widget", "Electric"], "Debug", f"process_p1meters_meter_with_summation - Checking Linky color update for {device_id_ieee} {device_unit} {widget_type} {sValue}", NwkId)
             if self.ListOfDevices.get(NwkId, {}).get("Model") in {"ERL Z3", "Linky Energy Sensor", }:
                 check_and_update_chameleon_erz3_linky_color_if_needed(  self, NwkId, Attribute_ )
@@ -1460,10 +1503,11 @@ def process_p1meters_meter_with_instant_power(self, widget_type, Attribute_, val
     # Retrieve previous data
     if widget_type.startswith("P1Meter"):
         cur_usage1, cur_usage2, cur_return1, cur_return2, _, cur_prod = retrieve_data_from_current( self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0;0" )
+        usage1_attribute, usage2_attribute = get_p1meter_hphc_indexes(self, NwkId)
         if cur_usage1 == '0':
-            cur_usage1 = '%s' %(_retreive_summation_power(self, NwkId, Ep, summation_attribute="0100") or 0)
+            cur_usage1 = '%s' %(_retreive_summation_power(self, NwkId, Ep, summation_attribute=usage1_attribute) or 0)
         if cur_usage2 == '0':
-            cur_usage2 = '%s' %(_retreive_summation_power(self, NwkId, Ep, summation_attribute="0102") or 0)
+            cur_usage2 = '%s' %(_retreive_summation_power(self, NwkId, Ep, summation_attribute=usage2_attribute) or 0)
 
     elif widget_type == "Meter":
         _, currrent_usage= retrieve_data_from_current( self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0" )
