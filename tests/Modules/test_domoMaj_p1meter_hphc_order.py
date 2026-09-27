@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Tests for the P1Meter_HPHC index order of Modules/domoMaj.py (issue #2050): by default Usage1 (T1) is fed by
-0x0702/0x0100 and Usage2 (T2) by 0x0702/0x0102. The device Params LINKY_HPHC_IDX1 / LINKY_HPHC_IDX2 can swap
-them, but only when both are defined and valid; otherwise the default order is kept.
+Tests for the P1Meter_HPHC HC/HP attributes of Modules/domoMaj.py (issue #2050): by default HC, Usage1 (T1), is fed by
+0x0702/0x0100 and HP, Usage2 (T2), by 0x0702/0x0102. The device Params LINKY_IDX_HC / LINKY_IDX_HP can swap
+them, but only when both are defined and valid; otherwise the default mapping is kept.
 """
 
 import sys
@@ -65,7 +65,7 @@ DEFAULT = ("0100", "0102")
 SWAPPED = ("0102", "0100")
 
 
-@pytest.mark.parametrize("idx1, idx2, expected, has_error", [
+@pytest.mark.parametrize("idx_hc, idx_hp, expected, has_error", [
     (None, None, DEFAULT, False),
     ("0100", "0102", DEFAULT, False),
     ("0102", "0100", SWAPPED, False),
@@ -78,8 +78,8 @@ SWAPPED = ("0102", "0100")
     ("0100", "0104", DEFAULT, True),
     ("", "", DEFAULT, True),
 ])
-def test_resolve_p1meter_hphc_indexes(domoMaj_module, idx1, idx2, expected, has_error):
-    indexes, error = domoMaj_module.resolve_p1meter_hphc_indexes(idx1, idx2)
+def test_resolve_p1meter_hphc_indexes(domoMaj_module, idx_hc, idx_hp, expected, has_error):
+    indexes, error = domoMaj_module.resolve_p1meter_hphc_indexes(idx_hc, idx_hp)
 
     assert indexes == expected
     assert (error is not None) == has_error
@@ -100,21 +100,21 @@ def _summation_update(domoMaj_module, monkeypatch, params, attribute, value):
     return update.call_args.args[5]
 
 
-@pytest.mark.parametrize("params", [{}, {"LINKY_HPHC_IDX1": "0102"}, {"LINKY_HPHC_IDX1": "0102", "LINKY_HPHC_IDX2": "0104"}])
+@pytest.mark.parametrize("params", [{}, {"LINKY_IDX_HC": "0102"}, {"LINKY_IDX_HC": "0102", "LINKY_IDX_HP": "0104"}])
 def test_default_order_when_params_missing_or_invalid(domoMaj_module, monkeypatch, params):
     assert _summation_update(domoMaj_module, monkeypatch, params, "0100", 1000) == "1000;222;0;0;500;0"
     assert _summation_update(domoMaj_module, monkeypatch, params, "0102", 2000) == "111;2000;0;0;500;0"
 
 
 def test_swapped_order_with_both_params(domoMaj_module, monkeypatch):
-    params = {"LINKY_HPHC_IDX1": "0102", "LINKY_HPHC_IDX2": "0100"}
+    params = {"LINKY_IDX_HC": "0102", "LINKY_IDX_HP": "0100"}
 
     assert _summation_update(domoMaj_module, monkeypatch, params, "0102", 2000) == "2000;222;0;0;500;0"
     assert _summation_update(domoMaj_module, monkeypatch, params, "0100", 1000) == "111;1000;0;0;500;0"
 
 
 def test_total_index_still_feeds_usage1_of_p1meter(domoMaj_module, monkeypatch):
-    params = {"LINKY_HPHC_IDX1": "0102", "LINKY_HPHC_IDX2": "0100"}
+    params = {"LINKY_IDX_HC": "0102", "LINKY_IDX_HP": "0100"}
 
     assert _summation_update(domoMaj_module, monkeypatch, params, "0000", 3000) == "3000;222;0;0;500;0"
 
@@ -122,7 +122,7 @@ def test_total_index_still_feeds_usage1_of_p1meter(domoMaj_module, monkeypatch):
 def test_instant_power_backfills_usages_in_the_configured_order(domoMaj_module, monkeypatch):
     update = MagicMock(name="update_domoticz_widget")
     monkeypatch.setattr(domoMaj_module, "update_domoticz_widget", update)
-    params = {"LINKY_HPHC_IDX1": "0102", "LINKY_HPHC_IDX2": "0100"}
+    params = {"LINKY_IDX_HC": "0102", "LINKY_IDX_HP": "0100"}
     monkeypatch.setattr(domoMaj_module, "get_device_config_param", lambda self, nwkid, name: params.get(name))
     monkeypatch.setattr(domoMaj_module, "retrieve_data_from_current", lambda *args: ["0", "0", "0", "0", "0", "0"])
     plugin = MagicMock()

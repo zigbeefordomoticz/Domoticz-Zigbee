@@ -1411,30 +1411,31 @@ def _normalize_hphc_index(value):
     return value.zfill(4)
 
 
-def resolve_p1meter_hphc_indexes(param_idx1, param_idx2):
-    """Return ( (attribute for Usage1, attribute for Usage2), error ).
+def resolve_p1meter_hphc_indexes(param_idx_hc, param_idx_hp):
+    """Return ( (HC attribute for Usage1, HP attribute for Usage2), error ).
 
-    The device Params LINKY_HPHC_IDX1 / LINKY_HPHC_IDX2 override the default order only if both are defined
-    and are a permutation of 0100/0102. Otherwise the default mapping is returned with a reason (None if no override).
+    The device Params LINKY_IDX_HC / LINKY_IDX_HP tell which of 0100/0102 carries HC and HP. They override the default
+    only if both are defined and are a permutation of 0100/0102. Otherwise the default mapping is returned with a
+    reason (None if no override).
     """
-    if param_idx1 is None and param_idx2 is None:
+    if param_idx_hc is None and param_idx_hp is None:
         return P1METER_HPHC_DEFAULT_INDEXES, None
 
-    if param_idx1 is None or param_idx2 is None:
-        return P1METER_HPHC_DEFAULT_INDEXES, "LINKY_HPHC_IDX1 and LINKY_HPHC_IDX2 must both be defined"
+    if param_idx_hc is None or param_idx_hp is None:
+        return P1METER_HPHC_DEFAULT_INDEXES, "LINKY_IDX_HC and LINKY_IDX_HP must both be defined"
 
-    indexes = (_normalize_hphc_index(param_idx1), _normalize_hphc_index(param_idx2))
+    indexes = (_normalize_hphc_index(param_idx_hc), _normalize_hphc_index(param_idx_hp))
     if sorted(indexes) != sorted(P1METER_HPHC_DEFAULT_INDEXES):
-        return P1METER_HPHC_DEFAULT_INDEXES, f"LINKY_HPHC_IDX1/IDX2 must be 0100 and 0102 in any order, got {param_idx1}/{param_idx2}"
+        return P1METER_HPHC_DEFAULT_INDEXES, f"LINKY_IDX_HC/LINKY_IDX_HP must be 0100 and 0102 in any order, got {param_idx_hc}/{param_idx_hp}"
 
     return indexes, None
 
 
 def get_p1meter_hphc_indexes(self, NwkId):
-    """Return (attribute for Usage1, attribute for Usage2) of the P1Meter_HPHC widget for that device."""
+    """Return (HC attribute for Usage1, HP attribute for Usage2) of the P1Meter_HPHC widget for that device."""
     indexes, error = resolve_p1meter_hphc_indexes(
-        get_device_config_param(self, NwkId, "LINKY_HPHC_IDX1"),
-        get_device_config_param(self, NwkId, "LINKY_HPHC_IDX2"),
+        get_device_config_param(self, NwkId, "LINKY_IDX_HC"),
+        get_device_config_param(self, NwkId, "LINKY_IDX_HP"),
     )
     if error:
         self.log.logging(["Widget", "Electric"], "Debug", f"get_p1meter_hphc_indexes - {error}, fallback to default {indexes}", NwkId)
@@ -1471,11 +1472,11 @@ def process_p1meters_meter_with_summation(self, widget_type, Attribute_, value, 
     elif widget_type.startswith("P1Meter"):
         usage1_attribute, usage2_attribute = get_p1meter_hphc_indexes(self, NwkId)
         if Attribute_ in ("0000", usage1_attribute):
-            # Usage1 (default HC)
+            # Usage1 / HC
             sValue = f"{parsed_value};{cur_usage2};{cur_return1};{cur_return2};{instant_power};{cur_prod}"
 
         elif Attribute_ == usage2_attribute:
-            # Usage 2 (default HP)
+            # Usage 2 / HP
             sValue = f"{cur_usage1};{parsed_value};{cur_return1};{cur_return2};{instant_power};{cur_prod}"
 
     self.log.logging(["Widget", "Electric"], "Debug", f"------------> process_p1meters_meter_with_summation - {device_id_ieee} {device_unit} {widget_type} {sValue}", NwkId)
