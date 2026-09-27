@@ -348,7 +348,20 @@ def linky_check_hphc_indexes(self, nwkid, _value):
         self.log.logging("Electric", "Debug", f"linky_check_hphc_indexes - Nwkid: {nwkid} HC/HP from {indexes}", nwkid)
 
 
+def linky_check_hphc_order(self, nwkid, _value):
+    """Validate LINKY_HPHC_ORDER, which of HC / HP is shown in Usage1 (T1) of the P1Meter_HPHC and P1Meter_ZL widgets (applied in domoMaj)."""
+    from Modules.domoMaj import resolve_p1meter_hphc_order
+
+    param = self.ListOfDevices.get(nwkid, {}).get("Param", {})
+    order, error = resolve_p1meter_hphc_order(param.get("LINKY_HPHC_ORDER"))
+    if error:
+        self.log.logging("Electric", "Error", f"linky_check_hphc_order - Nwkid: {nwkid} {error}. Fallback to {order}", nwkid)
+    else:
+        self.log.logging("Electric", "Debug", f"linky_check_hphc_order - Nwkid: {nwkid} Usage1/Usage2 order {order}", nwkid)
+
+
 LINKY_DEVICE_PARAMETERS = {
-    "LINKY_IDX_HC": {"callable": linky_check_hphc_indexes, "description": "Linky: attribute 0100 (EASF01) or 0102 (EASF02) carrying HC, shown as Usage1 (T1). Requires LINKY_IDX_HP, default 0100"},
-    "LINKY_IDX_HP": {"callable": linky_check_hphc_indexes, "description": "Linky: attribute 0100 (EASF01) or 0102 (EASF02) carrying HP, shown as Usage2 (T2). Requires LINKY_IDX_HC, default 0102"},
+    "LINKY_IDX_HC": {"callable": linky_check_hphc_indexes, "description": "Linky: attribute 0100 (EASF01) or 0102 (EASF02) counting HC on the meter. Requires LINKY_IDX_HP, default 0100"},
+    "LINKY_IDX_HP": {"callable": linky_check_hphc_indexes, "description": "Linky: attribute 0100 (EASF01) or 0102 (EASF02) counting HP on the meter. Requires LINKY_IDX_HC, default 0102"},
+    "LINKY_HPHC_ORDER": {"callable": linky_check_hphc_order, "description": "Linky: HC_HP (default) shows HC in Usage1 (T1) and HP in Usage2 (T2), HP_HC shows HP in Usage1 (T1) and HC in Usage2 (T2)"},
 }

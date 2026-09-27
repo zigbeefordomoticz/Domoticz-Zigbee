@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 Tests for the P1Meter_HPHC HC/HP attributes of Modules/domoMaj.py (issue #2050): by default HC, Usage1 (T1), is fed by
-0x0702/0x0100 and HP, Usage2 (T2), by 0x0702/0x0102. The device Params LINKY_IDX_HC / LINKY_IDX_HP can swap
-them, but only when both are defined and valid; otherwise the default mapping is kept.
+0x0702/0x0100 and HP, Usage2 (T2), by 0x0702/0x0102. The device Params LINKY_IDX_HC / LINKY_IDX_HP declare which
+attribute counts HC and HP on the meter, only when both are defined and valid; otherwise the default mapping is kept.
+LINKY_HPHC_ORDER = HP_HC shows HP in Usage1 (T1) and HC in Usage2 (T2), whatever attributes carry them.
 """
 
 import sys
@@ -210,6 +211,80 @@ def test_chameleon_color_transition_follows_hc_hp_params(domoMaj_module, monkeyp
     monkeypatch.setattr(domoMaj_module, "get_device_config_param", lambda self, nwkid, name: params.get(name))
     plugin = MagicMock()
     plugin.ListOfDevices = {NWKID: {"Model": "ERL Z3", "Param": params, "Chameleon": {"NGTF/OPTARIF": "HC", "PTEC/LTARF": current_tarif}}}
+
+    domoMaj_module.check_and_update_chameleon_erz3_linky_color_if_needed(plugin, NWKID, attribute)
+
+    assert read.called == triggers
+
+
+ORDER_PARAMS = {"LINKY_HPHC_ORDER": "HP_HC"}
+BOTH_PARAMS = {**SWAP_PARAMS, **ORDER_PARAMS}
+
+
+@pytest.mark.parametrize("param_order, expected, has_error", [
+    (None, "HC_HP", False),
+    ("HC_HP", "HC_HP", False),
+    ("HP_HC", "HP_HC", False),
+    (" hp_hc ", "HP_HC", False),
+    ("HPHC", "HC_HP", True),
+    ("", "HC_HP", True),
+])
+def test_resolve_p1meter_hphc_order(domoMaj_module, param_order, expected, has_error):
+    order, error = domoMaj_module.resolve_p1meter_hphc_order(param_order)
+
+    assert order == expected
+    assert (error is not None) == has_error
+
+
+@pytest.mark.parametrize("params, expected", [
+    ({}, DEFAULT),
+    (SWAP_PARAMS, SWAPPED),
+    (ORDER_PARAMS, SWAPPED),
+    (BOTH_PARAMS, DEFAULT),
+    ({"LINKY_HPHC_ORDER": "bogus"}, DEFAULT),
+])
+def test_p1meter_usage_indexes_combine_hc_hp_and_order(domoMaj_module, monkeypatch, params, expected):
+    monkeypatch.setattr(domoMaj_module, "get_device_config_param", lambda self, nwkid, name: params.get(name))
+
+    assert domoMaj_module.get_p1meter_usage_indexes(MagicMock(), NWKID) == expected
+
+
+def test_hp_first_order_with_default_meter_mapping(domoMaj_module, monkeypatch):
+    # Meter counts HC on 0100 and HP on 0102, Domoticz T1 price is the HP one
+    assert _summation_update(domoMaj_module, monkeypatch, ORDER_PARAMS, "0102", 2000) == "2000;222;0;0;500;0"
+    assert _summation_update(domoMaj_module, monkeypatch, ORDER_PARAMS, "0100", 1000) == "111;1000;0;0;500;0"
+
+
+def test_hp_first_order_with_swapped_meter_mapping(domoMaj_module, monkeypatch):
+    # Meter counts HC on 0102 and HP on 0100, Domoticz T1 price is the HP one
+    assert _summation_update(domoMaj_module, monkeypatch, BOTH_PARAMS, "0100", 1000) == "1000;222;0;0;500;0"
+    assert _summation_update(domoMaj_module, monkeypatch, BOTH_PARAMS, "0102", 2000) == "111;2000;0;0;500;0"
+
+
+@pytest.mark.parametrize("params, ep, expected", [
+    (ORDER_PARAMS, "01", ("0102", "0100")),
+    (ORDER_PARAMS, "f2", ("0106", "0104")),
+    (ORDER_PARAMS, "f3", ("010a", "0108")),
+    (BOTH_PARAMS, "f2", ("0104", "0106")),
+])
+def test_zlinky_p1meter_indexes_follow_order(domoMaj_module, monkeypatch, params, ep, expected):
+    monkeypatch.setattr(domoMaj_module, "get_device_config_param", lambda self, nwkid, name: params.get(name))
+
+    assert domoMaj_module.get_zlinky_p1meter_indexes(MagicMock(), NWKID, ep) == expected
+
+
+@pytest.mark.parametrize("current_tarif, attribute, triggers", [
+    ("HC..", "0100", False),
+    ("HC..", "0102", True),
+    ("HP..", "0102", False),
+    ("HP..", "0100", True),
+])
+def test_chameleon_color_transition_ignores_display_order(domoMaj_module, monkeypatch, current_tarif, attribute, triggers):
+    read = MagicMock(name="read_attribute")
+    monkeypatch.setattr(domoMaj_module, "read_attribute", read)
+    monkeypatch.setattr(domoMaj_module, "get_device_config_param", lambda self, nwkid, name: ORDER_PARAMS.get(name))
+    plugin = MagicMock()
+    plugin.ListOfDevices = {NWKID: {"Model": "ERL Z3", "Param": ORDER_PARAMS, "Chameleon": {"NGTF/OPTARIF": "HC", "PTEC/LTARF": current_tarif}}}
 
     domoMaj_module.check_and_update_chameleon_erz3_linky_color_if_needed(plugin, NWKID, attribute)
 

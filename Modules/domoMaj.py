@@ -298,7 +298,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             self.log.logging( ["ZLinky","Electric"], "Debug", "------>  P1Meter_ZL : Trigger by Index Update %s Ep: %s" % (Attribute_, Ep), NwkId, )
             cons = get_instant_power(self, NwkId)
             if Attribute_ == usage1_attribute:
-                # Usage 1 / HC
+                # Usage 1 / HC (HP with LINKY_HPHC_ORDER = HP_HC)
                 usage1 = int(round(float(value), 0))
                 usage2 = cur_usage2
                 return1 = cur_return1
@@ -308,7 +308,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                     return
 
             elif Attribute_ == usage2_attribute:
-                # Usage 2 / HP
+                # Usage 2 / HP (HC with LINKY_HPHC_ORDER = HP_HC)
                 usage1 = cur_usage1
                 usage2 = int(round(float(value), 0))
                 return1 = cur_return1
@@ -1428,7 +1428,7 @@ def resolve_p1meter_hphc_indexes(param_idx_hc, param_idx_hp):
 
 
 def get_p1meter_hphc_indexes(self, NwkId):
-    """Return (HC attribute for Usage1, HP attribute for Usage2) of the P1Meter_HPHC widget for that device."""
+    """Return (HC attribute, HP attribute) of that Linky device, from LINKY_IDX_HC / LINKY_IDX_HP."""
     indexes, error = resolve_p1meter_hphc_indexes(
         get_device_config_param(self, NwkId, "LINKY_IDX_HC"),
         get_device_config_param(self, NwkId, "LINKY_IDX_HP"),
@@ -1438,17 +1438,44 @@ def get_p1meter_hphc_indexes(self, NwkId):
     return indexes
 
 
-# ZLinky P1Meter_ZL default (HC attribute for Usage1, HP attribute for Usage2) per Ep: 01 Blue/Base/HCHP, f2 White, f3 Red
+# LINKY_HPHC_ORDER: which of HC / HP is shown in Usage1 (T1) of the P1Meter widgets. HC_HP is the Domoticz default.
+P1METER_HPHC_ORDERS = ("HC_HP", "HP_HC")
+P1METER_HPHC_DEFAULT_ORDER = "HC_HP"
+
+
+def resolve_p1meter_hphc_order(param_order):
+    """Return ( "HC_HP" or "HP_HC", error ). The default HC_HP is returned with a reason if the Param is invalid."""
+    if param_order is None:
+        return P1METER_HPHC_DEFAULT_ORDER, None
+
+    order = str(param_order).strip().upper()
+    if order not in P1METER_HPHC_ORDERS:
+        return P1METER_HPHC_DEFAULT_ORDER, f"LINKY_HPHC_ORDER must be one of {'/'.join(P1METER_HPHC_ORDERS)}, got {param_order}"
+
+    return order, None
+
+
+def get_p1meter_usage_indexes(self, NwkId):
+    """Return (attribute for Usage1, attribute for Usage2) of the P1Meter widgets: HC/HP attributes put in LINKY_HPHC_ORDER."""
+    hc_attribute, hp_attribute = get_p1meter_hphc_indexes(self, NwkId)
+    order, error = resolve_p1meter_hphc_order(get_device_config_param(self, NwkId, "LINKY_HPHC_ORDER"))
+    if error:
+        self.log.logging(["Widget", "Electric"], "Debug", f"get_p1meter_usage_indexes - {error}, fallback to {order}", NwkId)
+    return (hp_attribute, hc_attribute) if order == "HP_HC" else (hc_attribute, hp_attribute)
+
+
+# ZLinky P1Meter_ZL default (attribute for Usage1, attribute for Usage2) per Ep: 01 Blue/Base/HCHP, f2 White, f3 Red
 ZLINKY_P1METER_DEFAULT_INDEXES = {"01": ("0100", "0102"), "f2": ("0104", "0106"), "f3": ("0108", "010a")}
 
 
 def get_zlinky_p1meter_indexes(self, NwkId, Ep):
-    """Return (HC attribute for Usage1, HP attribute for Usage2) of the ZLinky P1Meter_ZL widget on Ep, None if not an index Ep.
+    """Return (attribute for Usage1, attribute for Usage2) of the ZLinky P1Meter_ZL widget on Ep, None if not an index Ep.
 
-    When LINKY_IDX_HC / LINKY_IDX_HP swap EASF01/EASF02, the same swap is applied to the pair of each Tempo color Ep.
+    When LINKY_IDX_HC / LINKY_IDX_HP and LINKY_HPHC_ORDER swap the EASF01/EASF02 slots, the same swap is applied to the
+    pair of each Tempo color Ep.
     """
     indexes = ZLINKY_P1METER_DEFAULT_INDEXES.get(Ep)
-    if indexes is None or get_p1meter_hphc_indexes(self, NwkId) == P1METER_HPHC_DEFAULT_INDEXES:
+    if indexes is None or get_p1meter_usage_indexes(self, NwkId) == P1METER_HPHC_DEFAULT_INDEXES:
         return indexes
     return indexes[::-1]
 
@@ -1481,13 +1508,13 @@ def process_p1meters_meter_with_summation(self, widget_type, Attribute_, value, 
         sValue = f"{instant_power};{parsed_value}"
 
     elif widget_type.startswith("P1Meter"):
-        usage1_attribute, usage2_attribute = get_p1meter_hphc_indexes(self, NwkId)
+        usage1_attribute, usage2_attribute = get_p1meter_usage_indexes(self, NwkId)
         if Attribute_ in ("0000", usage1_attribute):
-            # Usage1 / HC
+            # Usage1 / HC (HP with LINKY_HPHC_ORDER = HP_HC)
             sValue = f"{parsed_value};{cur_usage2};{cur_return1};{cur_return2};{instant_power};{cur_prod}"
 
         elif Attribute_ == usage2_attribute:
-            # Usage 2 / HP
+            # Usage 2 / HP (HC with LINKY_HPHC_ORDER = HP_HC)
             sValue = f"{cur_usage1};{parsed_value};{cur_return1};{cur_return2};{instant_power};{cur_prod}"
 
     self.log.logging(["Widget", "Electric"], "Debug", f"------------> process_p1meters_meter_with_summation - {device_id_ieee} {device_unit} {widget_type} {sValue}", NwkId)
@@ -1515,7 +1542,7 @@ def process_p1meters_meter_with_instant_power(self, widget_type, Attribute_, val
     # Retrieve previous data
     if widget_type.startswith("P1Meter"):
         cur_usage1, cur_usage2, cur_return1, cur_return2, _, cur_prod = retrieve_data_from_current( self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0;0" )
-        usage1_attribute, usage2_attribute = get_p1meter_hphc_indexes(self, NwkId)
+        usage1_attribute, usage2_attribute = get_p1meter_usage_indexes(self, NwkId)
         if cur_usage1 == '0':
             cur_usage1 = '%s' %(_retreive_summation_power(self, NwkId, Ep, summation_attribute=usage1_attribute) or 0)
         if cur_usage2 == '0':
