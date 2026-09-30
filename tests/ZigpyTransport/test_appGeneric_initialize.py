@@ -223,3 +223,37 @@ class TestValidateNetworkSettings:
         result = _run(validate=True, state_pan=0x9999)
         assert result["error"] is None
         assert "start_network" in result["calls"]
+
+
+# ─── #3: a failed forced form / restore is logged, startup goes on ───────────
+
+class TestForceForm:
+
+    def test_failed_restore_is_logged_and_startup_continues(self):
+        result = _run(force_form=True, plugin_pan=PLUGIN_BACKUP_PAN, state_pan=PLUGIN_BACKUP_PAN, restore_fails=True)
+        assert result["error"] is None
+        assert "start_network" in result["calls"]
+        errors = _errors(result)
+        assert len(errors) == 1
+        assert "restore the most recent network backup" in errors[0]
+        assert "restore failed" in errors[0]
+
+    def test_failed_form_is_logged_and_startup_continues(self):
+        result = _run(force_form=True, form_fails=True)
+        assert result["error"] is None
+        assert "start_network" in result["calls"]
+        errors = _errors(result)
+        assert len(errors) == 1
+        assert "form a new network" in errors[0]
+
+    def test_successful_restore_logs_no_error(self):
+        result = _run(force_form=True, plugin_pan=PLUGIN_BACKUP_PAN, state_pan=PLUGIN_BACKUP_PAN)
+        assert result["error"] is None
+        assert _restores(result) == ["restore_backup:%04x" % PLUGIN_BACKUP_PAN]
+        assert _errors(result) == []
+
+    def test_successful_form_without_backup(self):
+        result = _run(force_form=True)
+        assert result["error"] is None
+        assert result["calls"].count("form_network") == 1
+        assert _errors(result) == []
