@@ -255,12 +255,17 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
 
     # If We need to Create a new Zigbee network annd restore the last backup
     if force_form:
-        with contextlib.suppress(Exception):
+        try:
             if _retrieved_backup is None:
                 await super(type(self),self).form_network()
             else:
                 self.log.logging("Zigpy", "Status", "++ Force Form: Restoring the most recent network backup")
-                await self.backups.restore_backup(  _retrieved_backup ) 
+                await self.backups.restore_backup(  _retrieved_backup )
+        except Exception as e:
+            # Non-fatal: startup goes on with whatever network the radio currently holds
+            action = "form a new network" if _retrieved_backup is None else "restore the most recent network backup"
+            self.log.logging("TransportZigpy", "Error", "Force Form: failed to %s (%r), continuing with the network currently on the radio" % (action, e))
+            LOGGER.error("Force Form failed", exc_info=e)
 
     # Load Network Information
     try:
