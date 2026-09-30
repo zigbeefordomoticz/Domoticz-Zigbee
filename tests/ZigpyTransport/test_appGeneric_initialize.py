@@ -257,3 +257,46 @@ class TestForceForm:
         assert result["error"] is None
         assert result["calls"].count("form_network") == 1
         assert _errors(result) == []
+
+
+# ─── #5: backup source — plugin file first, zigpy database as fallback ───────
+
+class TestRetrievePreviousBackup:
+
+    def test_auto_restore_disabled_returns_nothing(self):
+        result = _run(mode="retrieve", autoRestore=0, plugin_pan=PLUGIN_BACKUP_PAN, db_pans=[DB_BACKUP_PAN])
+        assert result["backup_pan"] is None
+        assert result["manager_pans"] == [DB_BACKUP_PAN]
+
+    def test_plugin_backup_file_is_preferred_and_registered(self):
+        result = _run(mode="retrieve", plugin_pan=PLUGIN_BACKUP_PAN, db_pans=[DB_BACKUP_PAN])
+        assert result["backup_pan"] == PLUGIN_BACKUP_PAN
+        assert result["manager_pans"] == [DB_BACKUP_PAN, PLUGIN_BACKUP_PAN]
+        assert any("plugin backup file" in msg for _, msg in result["logs"])
+
+    def test_falls_back_to_most_recent_zigpy_db_backup(self):
+        result = _run(mode="retrieve", db_pans=[0x3333, DB_BACKUP_PAN])
+        assert result["backup_pan"] == DB_BACKUP_PAN
+        # Already known to the backup manager: not added a second time
+        assert result["manager_pans"] == [0x3333, DB_BACKUP_PAN]
+        assert any("zigpy database" in msg for _, msg in result["logs"])
+
+    def test_no_backup_anywhere_returns_nothing(self):
+        result = _run(mode="retrieve")
+        assert result["backup_pan"] is None
+        assert result["manager_pans"] == []
+
+    def test_eui64_overwrite_flag_applies_to_zigpy_db_backup(self):
+        result = _run(mode="retrieve", overwrite_ieee=1, db_pans=[DB_BACKUP_PAN])
+        assert result["backup_pan"] == DB_BACKUP_PAN
+        assert result["overwrite_flag"] is True
+
+    def test_eui64_overwrite_flag_not_set_by_default(self):
+        result = _run(mode="retrieve", plugin_pan=PLUGIN_BACKUP_PAN)
+        assert result["overwrite_flag"] is None
+
+    def test_empty_radio_is_restored_from_zigpy_db_backup(self):
+        result = _run(network_formed=False, db_pans=[DB_BACKUP_PAN], state_pan=DB_BACKUP_PAN, validate=True)
+        assert result["error"] is None
+        assert "form_network" not in result["calls"]
+        assert _restores(result) == ["restore_backup:%04x" % DB_BACKUP_PAN]

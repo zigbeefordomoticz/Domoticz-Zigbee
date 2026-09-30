@@ -96,9 +96,10 @@ Coordinator Backup and Restore
 On shutdown, a full coordinator backup (including the device list) is
 created via zigpy's backup API and handed to the plugin layer through
 self.callBackBackup(). On startup, if 'autoRestore' is set in plugin
-config, the most recent backup is retrieved and passed to
-self.backups.restore_backup() before network formation, allowing the
-coordinator's PAN ID, extended PAN ID, network key and device list to
+config, the most recent backup is retrieved (the plugin backup file first,
+the zigpy persistent database as fallback) and passed to
+self.backups.restore_backup() instead of forming a new network, allowing
+the coordinator's PAN ID, extended PAN ID, network key and device list to
 survive a coordinator replacement.
 
 The 'OverWriteCoordinatorIEEEOnlyOnce' config key injects the EZSP-specific
@@ -556,22 +557,40 @@ def connection_lost_error(self, message: str) -> None:
 
 
 def _retrieve_previous_backup(self):
-    _retrieved_backup = None
-    if "autoRestore" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoRestore"]:
-        # In case of a fresh coordinator, let's load the latest backup
-        _retrieved_backup = do_retrieve_backup( self )
-        if _retrieved_backup:
-            _retrieved_backup = NetworkBackup.from_dict( _retrieved_backup )
+    """
+    Return the coordinator backup to restore from, or None.
 
-        if _retrieved_backup:
-            if self.pluginconf.pluginConf[ "OverWriteCoordinatorIEEEOnlyOnce"]:
-                self.log.logging("TransportZigpy", "Log", "Allow eui64 overwrite only once !!!")
-                _retrieved_backup.network_info.stack_specific.setdefault("ezsp", {})[ "i_understand_i_can_update_eui64_only_once_and_i_still_want_to_do_it"] = True
+    Only when 'autoRestore' is enabled. The plugin backup file
+    (Coordinator-XX.backup) is preferred; when there is none, fall back to
+    the most recent backup held in the zigpy persistent database (loaded by
+    _load_db() before startup, so empty when the persistent DB is disabled).
+    """
+    if not self.pluginconf.pluginConf.get("autoRestore"):
+        return None
 
-            self.log.logging("TransportZigpy", "Debug", "Last backup retreived: %s" % _retrieved_backup )
-            self.backups.add_backup( backup=_retrieved_backup )
+    # In case of a fresh coordinator, let's load the latest backup
+    _retrieved_backup = do_retrieve_backup( self )
+    if _retrieved_backup:
+        _retrieved_backup = NetworkBackup.from_dict( _retrieved_backup )
+        source = "plugin backup file"
+        self.backups.add_backup( backup=_retrieved_backup )
+    else:
+        # Already registered in the backup manager, no add_backup() needed
+        _retrieved_backup = self.backups.most_recent_backup()
+        source = "zigpy database"
+
+    if _retrieved_backup is None:
+        self.log.logging("TransportZigpy", "Log", "No coordinator backup available (plugin backup file nor zigpy database)")
+        return None
+
+    self.log.logging("TransportZigpy", "Log", "Coordinator backup retrieved from %s" % source)
+    if self.pluginconf.pluginConf[ "OverWriteCoordinatorIEEEOnlyOnce"]:
+        self.log.logging("TransportZigpy", "Log", "Allow eui64 overwrite only once !!!")
+        _retrieved_backup.network_info.stack_specific.setdefault("ezsp", {})[ "i_understand_i_can_update_eui64_only_once_and_i_still_want_to_do_it"] = True
+
+    self.log.logging("TransportZigpy", "Debug", "Last backup retreived: %s" % _retrieved_backup )
     return _retrieved_backup
-   
+
 
 def _dump_zigpy_devices(self):
     """Log every device currently in the zigpy device table (ieee, nwk)."""
