@@ -214,21 +214,48 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     """
     Start the Zigbee network on the connected radio.
 
-    Overrides ControllerApplication.initialize() to add plugin-specific
-    behaviour around network startup:
+    Overrides ControllerApplication.initialize() (reference: zigpy 2.3.0,
+    unchanged since 2.2.0). Sequence, with the deltas to upstream:
 
-    - Starts the firmware watchdog at a 5-second period (overriding the
-      upstream default of 30 seconds) if watchdog is enabled in config.
-    - Optionally restores the most recent coordinator backup before forming
-      the network, controlled by the 'autoRestore' plugin configuration key.
-    - If force_form is True, re-forms the network (or restores a backup if
-      one exists) before loading network info.
-    - If auto_form is True and no network exists, forms a new network or
-      restores from the most recent backup.
-    - Validates that the current radio state is compatible with the stored
-      backup when CONF_NWK_VALIDATE_SETTINGS is enabled.
-    - Adjusts TX power to stay within the regulatory domain maximum.
-    - Starts periodic topology scans if enabled in config.
+    1. Feed the firmware watchdog and start the watchdog loop, if enabled
+       in config (radioStart.py always enables it). The period is the radio
+       library's _watchdog_period (zigpy 30s, bellows 10s, deCONZ 30s,
+       BLZ 60s, ZNP inherits zigpy). Delta: 1s sleep after starting the loop.
+    2. Retrieve the backup to restore from: _retrieve_previous_backup().
+       Delta: upstream uses self.backups.most_recent_backup() (zigpy DB);
+       here the plugin backup file comes first, the zigpy DB is the
+       fallback, and nothing is retrieved unless 'autoRestore' is set.
+    3. Plugin only: if force_form, form a new network (no backup) or
+       restore the backup. A failure is logged and startup continues.
+    4. load_network_info(). On NetworkNotFormed and auto_form, form a new
+       network (no backup) or restore the backup, never both.
+       Delta: then load_network_info(load_devices=True) again.
+    5. If CONF_NWK_VALIDATE_SETTINGS (off by default, never set by the
+       plugin), raise NetworkSettingsInconsistent when the radio state is
+       not compatible with the retrieved backup.
+    6. start_network().
+    7. Clamp and apply the TX power to the regulatory domain maximum.
+    8. Plugin only: _preload_devices_from_plugin_db().
+    9. _persist_coordinator_model_strings_in_db().
+    10. Start periodic topology scans if CONF_TOPO_SCAN_ENABLED.
+
+    Steps of upstream initialize() that are NOT performed here:
+
+    - permit(0) after start_network(), which closes joining on radios that
+      erroneously permit joins on startup (tolerating
+      MAC_CHANNEL_ACCESS_FAILURE). Done at the plugin application layer
+      instead: plugin.py zigateInit_Phase2() calls ZigatePermitToJoin(0)
+      when 'resetPermit2Join' is set (default on).
+    - self.backups.start_periodic_backups() when CONF_NWK_BACKUP_ENABLED.
+      Replaced by the plugin's own schedule: plugin.py
+      _trigger_coordinator_backup() sends COORDINATOR-BACKUP at most once a day
+      during night-shift jobs when 'autoBackup' is set, handled by
+      workerLoop.py -> App*.coordinator_backup().
+    - self.ota.start_periodic_broadcasts() when OTA and OTA broadcast are
+      enabled. Not needed: radioStart.py forces zigpy OTA off (the plugin
+      runs its own OTA).
+
+    Re-check this list against upstream on every zigpy version bump.
 
     Args:
         auto_form:  If True, automatically form a new network when none is
