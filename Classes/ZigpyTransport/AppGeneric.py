@@ -96,9 +96,10 @@ Coordinator Backup and Restore
 On shutdown, a full coordinator backup (including the device list) is
 created via zigpy's backup API and handed to the plugin layer through
 self.callBackBackup(). On startup, if 'autoRestore' is set in plugin
-config, the most recent backup is retrieved and passed to
-self.backups.restore_backup() before network formation, allowing the
-coordinator's PAN ID, extended PAN ID, network key and device list to
+config, the most recent backup is retrieved (the plugin backup first,
+the zigpy persistent database as fallback) and passed to
+self.backups.restore_backup() instead of forming a new network, allowing
+the coordinator's PAN ID, extended PAN ID, network key and device list to
 survive a coordinator replacement.
 
 The 'OverWriteCoordinatorIEEEOnlyOnce' config key injects the EZSP-specific
@@ -213,21 +214,48 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     """
     Start the Zigbee network on the connected radio.
 
-    Overrides ControllerApplication.initialize() to add plugin-specific
-    behaviour around network startup:
+    Overrides ControllerApplication.initialize() (reference: zigpy 2.3.0,
+    unchanged since 2.2.0). Sequence, with the deltas to upstream:
 
-    - Starts the firmware watchdog at a 5-second period (overriding the
-      upstream default of 30 seconds) if watchdog is enabled in config.
-    - Optionally restores the most recent coordinator backup before forming
-      the network, controlled by the 'autoRestore' plugin configuration key.
-    - If force_form is True, re-forms the network (or restores a backup if
-      one exists) before loading network info.
-    - If auto_form is True and no network exists, forms a new network or
-      restores from the most recent backup.
-    - Validates that the current radio state is compatible with the stored
-      backup when CONF_NWK_VALIDATE_SETTINGS is enabled.
-    - Adjusts TX power to stay within the regulatory domain maximum.
-    - Starts periodic topology scans if enabled in config.
+    1. Feed the firmware watchdog and start the watchdog loop, if enabled
+       in config (radioStart.py always enables it). The period is the radio
+       library's _watchdog_period (zigpy 30s, bellows 10s, deCONZ 30s,
+       BLZ 60s, ZNP inherits zigpy). Delta: 1s sleep after starting the loop.
+    2. Retrieve the backup to restore from: _retrieve_previous_backup().
+       Delta: upstream uses self.backups.most_recent_backup() (zigpy DB);
+       here the plugin backup (file or Domoticz records) comes first, the zigpy DB is the
+       fallback, and nothing is retrieved unless 'autoRestore' is set.
+    3. Plugin only: if force_form, form a new network (no backup) or
+       restore the backup. A failure is logged and startup continues.
+    4. load_network_info(). On NetworkNotFormed and auto_form, form a new
+       network (no backup) or restore the backup, never both.
+       Delta: then load_network_info(load_devices=True) again.
+    5. If CONF_NWK_VALIDATE_SETTINGS (off by default, never set by the
+       plugin), raise NetworkSettingsInconsistent when the radio state is
+       not compatible with the retrieved backup.
+    6. start_network().
+    7. Clamp and apply the TX power to the regulatory domain maximum.
+    8. Plugin only: _preload_devices_from_plugin_db().
+    9. _persist_coordinator_model_strings_in_db().
+    10. Start periodic topology scans if CONF_TOPO_SCAN_ENABLED.
+
+    Steps of upstream initialize() that are NOT performed here:
+
+    - permit(0) after start_network(), which closes joining on radios that
+      erroneously permit joins on startup (tolerating
+      MAC_CHANNEL_ACCESS_FAILURE). Done at the plugin application layer
+      instead: plugin.py zigateInit_Phase2() calls ZigatePermitToJoin(0)
+      when 'resetPermit2Join' is set (default on).
+    - self.backups.start_periodic_backups() when CONF_NWK_BACKUP_ENABLED.
+      Replaced by the plugin's own schedule: plugin.py
+      _trigger_coordinator_backup() sends COORDINATOR-BACKUP at most once a day
+      during night-shift jobs when 'autoBackup' is set, handled by
+      workerLoop.py -> App*.coordinator_backup().
+    - self.ota.start_periodic_broadcasts() when OTA and OTA broadcast are
+      enabled. Not needed: radioStart.py forces zigpy OTA off (the plugin
+      runs its own OTA).
+
+    Re-check this list against upstream on every zigpy version bump.
 
     Args:
         auto_form:  If True, automatically form a new network when none is
@@ -255,12 +283,17 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
 
     # If We need to Create a new Zigbee network annd restore the last backup
     if force_form:
-        with contextlib.suppress(Exception):
+        try:
             if _retrieved_backup is None:
                 await super(type(self),self).form_network()
             else:
                 self.log.logging("Zigpy", "Status", "++ Force Form: Restoring the most recent network backup")
-                await self.backups.restore_backup(  _retrieved_backup ) 
+                await self.backups.restore_backup(  _retrieved_backup )
+        except Exception as e:
+            # Non-fatal: startup goes on with whatever network the radio currently holds
+            action = "form a new network" if _retrieved_backup is None else "restore the most recent network backup"
+            self.log.logging("TransportZigpy", "Error", "Force Form: failed to %s (%r), continuing with the network currently on the radio" % (action, e))
+            LOGGER.error("Force Form failed", exc_info=e)
 
     # Load Network Information
     try:
@@ -272,9 +305,8 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         if not auto_form:
             raise
 
-        self.log.logging("Zigpy", "Status", "++ Forming a new network")
-        await super(type(self),self).form_network()
-
+        # Form OR restore, never both: form_network() is not overridden by any
+        # radio library, so an extra call here would form the network twice.
         if _retrieved_backup is None:
             # Form a new network if we have no backup
             self.log.logging("Zigpy", "Status", "++ Forming a new network with no backup")
@@ -290,7 +322,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     if (
         self.config[zigpy_conf.CONF_NWK_VALIDATE_SETTINGS]
         and _retrieved_backup is not None
-        and not new_state.is_compatible_with(self.backups)
+        and not new_state.is_compatible_with(_retrieved_backup)
     ):
         raise zigpy.exceptions.NetworkSettingsInconsistent(
             f"Radio network settings are not compatible with most recent backup!\n"
@@ -552,22 +584,41 @@ def connection_lost_error(self, message: str) -> None:
 
 
 def _retrieve_previous_backup(self):
-    _retrieved_backup = None
-    if "autoRestore" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoRestore"]:
-        # In case of a fresh coordinator, let's load the latest backup
-        _retrieved_backup = do_retrieve_backup( self )
-        if _retrieved_backup:
-            _retrieved_backup = NetworkBackup.from_dict( _retrieved_backup )
+    """
+    Return the coordinator backup to restore from, or None.
 
-        if _retrieved_backup:
-            if self.pluginconf.pluginConf[ "OverWriteCoordinatorIEEEOnlyOnce"]:
-                self.log.logging("TransportZigpy", "Log", "Allow eui64 overwrite only once !!!")
-                _retrieved_backup.network_info.stack_specific.setdefault("ezsp", {})[ "i_understand_i_can_update_eui64_only_once_and_i_still_want_to_do_it"] = True
+    Only when 'autoRestore' is enabled. The plugin backup is preferred: the
+    most recent of Coordinator-XX.backup and the copy kept in the Domoticz
+    records (Modules.zigpyBackup); when there is none, fall back to
+    the most recent backup held in the zigpy persistent database (loaded by
+    _load_db() before startup, so empty when the persistent DB is disabled).
+    """
+    if not self.pluginconf.pluginConf.get("autoRestore"):
+        return None
 
-            self.log.logging("TransportZigpy", "Debug", "Last backup retreived: %s" % _retrieved_backup )
-            self.backups.add_backup( backup=_retrieved_backup )
+    # In case of a fresh coordinator, let's load the latest backup
+    _retrieved_backup = do_retrieve_backup( self )
+    if _retrieved_backup:
+        _retrieved_backup = NetworkBackup.from_dict( _retrieved_backup )
+        source = "plugin backup (file or Domoticz records)"
+        self.backups.add_backup( backup=_retrieved_backup )
+    else:
+        # Already registered in the backup manager, no add_backup() needed
+        _retrieved_backup = self.backups.most_recent_backup()
+        source = "zigpy database"
+
+    if _retrieved_backup is None:
+        self.log.logging("TransportZigpy", "Log", "No coordinator backup available (plugin backup nor zigpy database)")
+        return None
+
+    self.log.logging("TransportZigpy", "Log", "Coordinator backup retrieved from %s" % source)
+    if self.pluginconf.pluginConf[ "OverWriteCoordinatorIEEEOnlyOnce"]:
+        self.log.logging("TransportZigpy", "Log", "Allow eui64 overwrite only once !!!")
+        _retrieved_backup.network_info.stack_specific.setdefault("ezsp", {})[ "i_understand_i_can_update_eui64_only_once_and_i_still_want_to_do_it"] = True
+
+    self.log.logging("TransportZigpy", "Debug", "Last backup retreived: %s" % _retrieved_backup )
     return _retrieved_backup
-   
+
 
 def _dump_zigpy_devices(self):
     """Log every device currently in the zigpy device table (ieee, nwk)."""
