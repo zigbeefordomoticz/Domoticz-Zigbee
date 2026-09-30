@@ -289,7 +289,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     if (
         self.config[zigpy_conf.CONF_NWK_VALIDATE_SETTINGS]
         and _retrieved_backup is not None
-        and not new_state.is_compatible_with(self.backups)
+        and not new_state.is_compatible_with(_retrieved_backup)
     ):
         raise zigpy.exceptions.NetworkSettingsInconsistent(
             f"Radio network settings are not compatible with most recent backup!\n"
