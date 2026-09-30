@@ -197,3 +197,29 @@ class TestNetworkNotFormed:
         assert "form_network" not in result["calls"]
         assert _restores(result) == []
         assert "start_network" in result["calls"]
+
+
+# ─── #2: settings validation compares against the retrieved backup ───────────
+
+class TestValidateNetworkSettings:
+
+    def test_compatible_state_starts_the_network(self):
+        result = _run(validate=True, plugin_pan=PLUGIN_BACKUP_PAN, state_pan=PLUGIN_BACKUP_PAN)
+        assert result["error"] is None
+        assert "start_network" in result["calls"]
+
+    def test_incompatible_state_raises_settings_inconsistent(self):
+        # Previously compared against the BackupManager and crashed with AttributeError
+        result = _run(validate=True, plugin_pan=PLUGIN_BACKUP_PAN, state_pan=0x9999)
+        assert result["error"] == "NetworkSettingsInconsistent"
+        assert "start_network" not in result["calls"]
+
+    def test_validation_disabled_ignores_incompatible_state(self):
+        result = _run(validate=False, plugin_pan=PLUGIN_BACKUP_PAN, state_pan=0x9999)
+        assert result["error"] is None
+        assert "start_network" in result["calls"]
+
+    def test_no_backup_skips_validation(self):
+        result = _run(validate=True, state_pan=0x9999)
+        assert result["error"] is None
+        assert "start_network" in result["calls"]
