@@ -272,7 +272,7 @@ class TestRetrievePreviousBackup:
         result = _run(mode="retrieve", plugin_pan=PLUGIN_BACKUP_PAN, db_pans=[DB_BACKUP_PAN])
         assert result["backup_pan"] == PLUGIN_BACKUP_PAN
         assert result["manager_pans"] == [DB_BACKUP_PAN, PLUGIN_BACKUP_PAN]
-        assert any("plugin backup file" in msg for _, msg in result["logs"])
+        assert any("plugin backup (file or Domoticz records)" in msg for _, msg in result["logs"])
 
     def test_falls_back_to_most_recent_zigpy_db_backup(self):
         result = _run(mode="retrieve", db_pans=[0x3333, DB_BACKUP_PAN])

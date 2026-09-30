@@ -96,7 +96,7 @@ Coordinator Backup and Restore
 On shutdown, a full coordinator backup (including the device list) is
 created via zigpy's backup API and handed to the plugin layer through
 self.callBackBackup(). On startup, if 'autoRestore' is set in plugin
-config, the most recent backup is retrieved (the plugin backup file first,
+config, the most recent backup is retrieved (the plugin backup first,
 the zigpy persistent database as fallback) and passed to
 self.backups.restore_backup() instead of forming a new network, allowing
 the coordinator's PAN ID, extended PAN ID, network key and device list to
@@ -223,7 +223,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
        BLZ 60s, ZNP inherits zigpy). Delta: 1s sleep after starting the loop.
     2. Retrieve the backup to restore from: _retrieve_previous_backup().
        Delta: upstream uses self.backups.most_recent_backup() (zigpy DB);
-       here the plugin backup file comes first, the zigpy DB is the
+       here the plugin backup (file or Domoticz records) comes first, the zigpy DB is the
        fallback, and nothing is retrieved unless 'autoRestore' is set.
     3. Plugin only: if force_form, form a new network (no backup) or
        restore the backup. A failure is logged and startup continues.
@@ -587,8 +587,9 @@ def _retrieve_previous_backup(self):
     """
     Return the coordinator backup to restore from, or None.
 
-    Only when 'autoRestore' is enabled. The plugin backup file
-    (Coordinator-XX.backup) is preferred; when there is none, fall back to
+    Only when 'autoRestore' is enabled. The plugin backup is preferred: the
+    most recent of Coordinator-XX.backup and the copy kept in the Domoticz
+    records (Modules.zigpyBackup); when there is none, fall back to
     the most recent backup held in the zigpy persistent database (loaded by
     _load_db() before startup, so empty when the persistent DB is disabled).
     """
@@ -599,7 +600,7 @@ def _retrieve_previous_backup(self):
     _retrieved_backup = do_retrieve_backup( self )
     if _retrieved_backup:
         _retrieved_backup = NetworkBackup.from_dict( _retrieved_backup )
-        source = "plugin backup file"
+        source = "plugin backup (file or Domoticz records)"
         self.backups.add_backup( backup=_retrieved_backup )
     else:
         # Already registered in the backup manager, no add_backup() needed
@@ -607,7 +608,7 @@ def _retrieve_previous_backup(self):
         source = "zigpy database"
 
     if _retrieved_backup is None:
-        self.log.logging("TransportZigpy", "Log", "No coordinator backup available (plugin backup file nor zigpy database)")
+        self.log.logging("TransportZigpy", "Log", "No coordinator backup available (plugin backup nor zigpy database)")
         return None
 
     self.log.logging("TransportZigpy", "Log", "Coordinator backup retrieved from %s" % source)
