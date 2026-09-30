@@ -272,9 +272,8 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         if not auto_form:
             raise
 
-        self.log.logging("Zigpy", "Status", "++ Forming a new network")
-        await super(type(self),self).form_network()
-
+        # Form OR restore, never both: form_network() is not overridden by any
+        # radio library, so an extra call here would form the network twice.
         if _retrieved_backup is None:
             # Form a new network if we have no backup
             self.log.logging("Zigpy", "Status", "++ Forming a new network with no backup")
