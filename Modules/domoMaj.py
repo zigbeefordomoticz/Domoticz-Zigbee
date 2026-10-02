@@ -242,7 +242,11 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         if (Attribute_ in ("", "050f") or ClusterId == "000c") and WidgetType in ( "Power", "Meter", "P1Meter", "P1Meter_HPHC"):  # kWh
             self.log.logging(["Widget","Electric"], "Debug", "------> %s Processing Instant Power  : %s for %s" % (NwkId, value, WidgetType), NwkId)
 
-            if (( isinstance( value, (int, float)) and value < 0) or (float(value) < 0) ) and is_PowerNegative_widget( ClusterTypeList):
+            if (
+                (( isinstance( value, (int, float)) and value < 0) or (float(value) < 0) )
+                and is_PowerNegative_widget( ClusterTypeList)
+                and not (WidgetType == "P1Meter" and is_p1meter_import_export(self, NwkId))
+            ):
                 self.log.logging(["Widget","Electric"], "Debug", "------>There is a PowerNegative widget and the value is negative. Skiping here", NwkId)
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "0", BatteryLevel, SignalLevel)
                 return
@@ -350,6 +354,11 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             sValue = "%s" %int(value)
             self.log.logging(["Widget", "Electric"], "Debug", "------>Energie injectée totale  : %s" % sValue, NwkId)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
+
+        elif WidgetType == "P1Meter" and Attribute_ in ("0000", "0001") and is_p1meter_import_export(self, NwkId):
+            # Import/export meter: delivered (0x0000) feeds Usage1, received (0x0001) feeds Return1
+            self.log.logging(["Widget","Electric"], "Debug", "------>  P1Meter import/export - %s : %s (%s)" % (Attribute_, value, type(value)), NwkId)
+            process_p1meters_meter_with_summation(self, WidgetType, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel)
 
         elif WidgetType in ( "Meter", "P1Meter") and Attribute_ == "0000" and model_name not in ZLINK_CONF_MODEL:
             # Only Usage 1 ( Total Index)
@@ -1399,6 +1408,24 @@ def process_instant_power(self, model_name, WidgetType, Attribute_, value, Devic
     update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
 
+def is_p1meter_import_export(self, NwkId):
+    """True when the device Param P1METER_IMPORT_EXPORT is set: the P1Meter widget is a single tariff import/export meter.
+
+    Usage1 <- 0x0702/0x0000 (delivered), Return1 <- 0x0702/0x0001 (received), and a negative instant power is shown as
+    production instead of consumption. Usage2/Return2 are left untouched and 0x0702/0x0100-0x0102 (Linky HC/HP indexes)
+    are never used to backfill them, as on such meters those attributes mean something else (e.g. per phase energy).
+    ZLinky models are excluded, they have their own index handling.
+    """
+    if self.ListOfDevices.get(NwkId, {}).get("Model") in ZLINK_CONF_MODEL:
+        return False
+    return str(get_device_config_param(self, NwkId, "P1METER_IMPORT_EXPORT")).strip().lower() in ("1", "true", "yes", "on")
+
+
+def split_p1meter_instant_power(instant_power):
+    """Return (consumption, production) for a P1Meter widget, from a signed instant power (negative when exporting)."""
+    return (instant_power, 0) if instant_power >= 0 else (0, -instant_power)
+
+
 def process_p1meters_meter_with_summation(self, widget_type, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel):
     """Handles P1Meter_HPHC processing based on the Attribute type."""
     self.log.logging(["Widget", "Electric"], "Debug", f"------> process_p1meters_meter_with_summation : {widget_type} {Attribute_} {value} ({type(value)})", NwkId)
@@ -1425,6 +1452,16 @@ def process_p1meters_meter_with_summation(self, widget_type, Attribute_, value, 
     if widget_type == "Meter":
         # It is assumed that we come with Attribute 0x0000
         sValue = f"{instant_power};{parsed_value}"
+
+    elif widget_type == "P1Meter" and Attribute_ in ("0000", "0001") and is_p1meter_import_export(self, NwkId):
+        # Restricted to 0x0000 / 0x0001: P1Meter_HPHC also comes here as "P1Meter", with 0x0100 / 0x0102
+        consumption, production = split_p1meter_instant_power(instant_power)
+        if Attribute_ == "0000":
+            # Delivered (imported) energy feeds Usage1
+            sValue = f"{parsed_value};{cur_usage2};{cur_return1};{cur_return2};{consumption};{production}"
+        else:
+            # Received (exported) energy feeds Return1
+            sValue = f"{cur_usage1};{cur_usage2};{parsed_value};{cur_return2};{consumption};{production}"
 
     elif widget_type.startswith("P1Meter"):
         if Attribute_ in ["0000", "0100"]:
@@ -1458,7 +1495,15 @@ def process_p1meters_meter_with_instant_power(self, widget_type, Attribute_, val
     self.log.logging(["Widget", "Electric"], "Debug", f"------> process_p1meters_meter_with_instant_power : {widget_type} {Attribute_} {value} ({type(value)})", NwkId)
 
     # Retrieve previous data
-    if widget_type.startswith("P1Meter"):
+    import_export = widget_type == "P1Meter" and is_p1meter_import_export(self, NwkId)
+    if import_export:
+        cur_usage1, cur_usage2, cur_return1, cur_return2, _, cur_prod = retrieve_data_from_current( self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0;0" )
+        if cur_usage1 == '0':
+            cur_usage1 = '%s' %(_retreive_summation_power(self, NwkId, Ep, summation_attribute="0000") or 0)
+        if cur_return1 == '0':
+            cur_return1 = '%s' %(_retreive_summation_power(self, NwkId, Ep, summation_attribute="0001") or 0)
+
+    elif widget_type.startswith("P1Meter"):
         cur_usage1, cur_usage2, cur_return1, cur_return2, _, cur_prod = retrieve_data_from_current( self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0;0" )
         if cur_usage1 == '0':
             cur_usage1 = '%s' %(_retreive_summation_power(self, NwkId, Ep, summation_attribute="0100") or 0)
@@ -1486,6 +1531,10 @@ def process_p1meters_meter_with_instant_power(self, widget_type, Attribute_, val
     if widget_type == "Meter":
         meter_mode = get_meter_mode_from_widget(self, Devices, NwkId, device_id_ieee, device_unit )
         sValue = f"{instant_power};" if meter_mode == 1 and currrent_usage == 0 else f"{instant_power};{currrent_usage}"
+
+    elif import_export:
+        consumption, production = split_p1meter_instant_power(instant_power)
+        sValue = f"{cur_usage1};{cur_usage2};{cur_return1};{cur_return2};{consumption};{production}"
 
     elif widget_type.startswith("P1Meter"):
         sValue = f"{cur_usage1};{cur_usage2};{cur_return1};{cur_return2};{instant_power};{cur_prod}"
