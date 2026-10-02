@@ -541,7 +541,8 @@ def _write_DeviceList_json(self):
     _tmpFileName = _pluginData / (self.DeviceListName[:-3] + "json.tmp")
     
     # Snapshot to avoid serialising a dict that other threads may mutate.
-    snapshot = dict(self.ListOfDevices)
+    # Some runtime structures are not JSON serializable (e.g. RollingLQI is a deque), convert them.
+    snapshot = _flatten_deques(dict(self.ListOfDevices))
     self.log.logging("Database", "Debug", "Write %s = %s" % (_DeviceListFileName, str(snapshot)))
     try:
         with open(_tmpFileName, "wt") as file:
@@ -549,6 +550,12 @@ def _write_DeviceList_json(self):
             file.flush()
             os.fsync(file.fileno())
         os.replace(_tmpFileName, _DeviceListFileName)
+
+    except (TypeError, ValueError, OSError) as e:
+        # The JSON export is an optional extra copy: never let it prevent the txt / Domoticz flush.
+        self.log.logging("Database", "Error", "_write_DeviceList_json - unable to write %s: %s" % (_DeviceListFileName, e))
+        return
+
     finally:
         try:
             if os.path.isfile(_tmpFileName):
@@ -649,7 +656,7 @@ def import_local_device_conf(self):
     Local-Devices directory. Updates self.DeviceConf with model definitions
     and self.ModelManufMapping with any provided identifier mappings.
 
-    Files named README.md and .PRECIOUS are skipped. JSON parse errors
+    Only *.json files are loaded (README.md, .PRECIOUS, backups are skipped). JSON parse errors
     are logged but don't prevent processing other files.
     """
     from os import listdir
@@ -666,7 +673,9 @@ def import_local_device_conf(self):
         model_list = [f for f in listdir(model_directory) if isfile(join(model_directory, f))]
 
         for model_device in model_list:
-            if model_device in ("README.md", ".PRECIOUS"):
+            # Only JSON model definitions; skip README.md, .PRECIOUS, editor backups, hidden files...
+            if model_device.startswith(".") or not model_device.lower().endswith(".json"):
+                self.log.logging("Database", "Debug", "--> Skipping non JSON file %s" % model_device)
                 continue
 
             filename = model_directory / model_device
