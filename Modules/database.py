@@ -672,7 +672,9 @@ def import_local_device_conf(self):
         for model_device in model_list:
             if model_device in ("README.md", ".PRECIOUS"):
                 continue
-
+# GM 02082023 The loop takes all kind of files - Must select only json files
+            if not model_device.lower().endswith(".json"):continue
+# GM Fin                
             filename = model_directory / model_device
             with open(filename, "rt", encoding='utf-8') as handle:
                 try:
