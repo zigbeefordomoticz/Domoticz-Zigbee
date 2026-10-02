@@ -14,25 +14,43 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repository (no need for full main branch)
+      # 1️⃣ Checkout repository with full history so any base commit can be diffed
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 2   # enough for PR diffs
+          fetch-depth: 0
 
-      # 2️⃣ Get list of changed JSON files
-      - name: List changed JSON files
-        id: changed_files
-        run: |
-          echo "CHANGED_JSON=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- '*.json' | paste -sd ',' -)" >> $GITHUB_ENV
-          echo "Changed JSON files: $CHANGED_JSON"
-
-      # 3️⃣ Run Super-Linter only on changed JSON files
-      - name: Lint changed JSON files
-        if: env.CHANGED_JSON != ''
-        uses: github/super-linter@v6
+      # 2️⃣ Parse every added/modified JSON file between base and head
+      - name: Validate changed JSON files
         env:
-          VALIDATE_JSON: true
-          FILES: ${{ env.CHANGED_JSON }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            BASE="$PR_BASE_SHA"
+          else
+            BASE="$PUSH_BEFORE_SHA"
+          fi
 
+          # New branch push (before = 0000...) or unknown base: compare against the default branch
+          if [ -z "$BASE" ] || ! git cat-file -e "${BASE}^{commit}" 2>/dev/null; then
+            BASE=$(git merge-base "origin/$DEFAULT_BRANCH" HEAD)
+          fi
+
+          echo "Comparing $BASE..HEAD"
+          COUNT=0
+          STATUS=0
+          while IFS= read -r f; do
+            COUNT=$((COUNT + 1))
+            if python3 -m json.tool "$f" > /dev/null; then
+              echo "OK      $f"
+            else
+              echo "::error file=$f::Invalid JSON"
+              STATUS=1
+            fi
+          done < <(git diff --name-only --diff-filter=d "$BASE" HEAD -- '*.json')
+
+          [ "$COUNT" -eq 0 ] && echo "No changed JSON files."
+          exit $STATUS
