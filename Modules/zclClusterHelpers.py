@@ -600,8 +600,13 @@ def compute_electrical_measurement_conso(self, nwk_id, src_ep, cluster_id, attr_
         return round(conso / custom_divisor, 3)
 
     # Retrieve multiplier and divisor from the device attribute list
-    multiplier = int(cluster_data.get(mapping['multiplier'], 1))
-    divisor = int(cluster_data.get(mapping['divisor'], 1))
+# GM 23112025 Found some case with hexa values (raw values ?)
+    try:    
+      multiplier = int(cluster_data.get(mapping['multiplier'], 1))
+      divisor = int(cluster_data.get(mapping['divisor'], 1))
+    except:multiplier=1;divisor=1
+# GM Fin
+  
 
     # Ensure multiplier and divisor are not zero (e.g., for Legrand Cable outlets)
     multiplier = multiplier or 1
