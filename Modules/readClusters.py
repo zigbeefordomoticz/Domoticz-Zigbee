@@ -160,6 +160,9 @@ def ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluste
 
     self.log.logging( "Cluster", "Debug", "ReadCluster - %s - %s/%s AttrId: %s AttrType: %s Attsize: %s Status: %s AttrValue: %s" % (
         MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgAttrStatus, MsgClusterData),MsgSrcAddr,)
+# GM 03082023 Sometimes result of attribute read is not stored in dict ReadAttributes of the device - Ensure always done
+    storeReadAttributeStatus(self,MsgType,MsgSQN,MsgSrcAddr,MsgSrcEp,MsgClusterId,MsgAttrID,MsgAttrStatus)
+# GM Fin
 
     if MsgAttrStatus != "00" and MsgClusterId != "0500":
         # We receive a Read Attribute response or a Report with a status error.
@@ -182,9 +185,12 @@ def ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluste
     else:
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
         _context = create_context(MsgClusterId, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)
-
-        self.log.logging( "Cluster", "Log", "ReadCluster - Warning - unknow %s/%s Cluster: %s Attribute: %s Status: %s DataType: %s DataSize: %s Data: %s" %(
-            MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr, _context, )
+# GM 26022025 The device config is not a good reference cause some attributes cannot be discovered but can be read or can send some data 
+# Ensure all data from all clusters/attributes are processed
+        process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, )
+#        self.log.logging( "Cluster", "Error", "ReadCluster - Warning - unknow %s/%s Cluster: %s Attribute: %s Status: %s DataType: %s DataSize: %s Data: %s" %(
+#            MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr, _context, )
+# GM Fin         
 
 
 def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
