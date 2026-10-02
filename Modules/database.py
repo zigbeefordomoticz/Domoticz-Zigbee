@@ -545,6 +545,10 @@ def _write_DeviceList_json(self):
     self.log.logging("Database", "Debug", "Write %s = %s" % (_DeviceListFileName, str(snapshot)))
     try:
         with open(_tmpFileName, "wt") as file:
+# GM 021026 Got an error if non serializable object in dict (like deque)
+            for key in snapshot:
+               snapshot[key]=_flatten_deques(snapshot[key]) # converts deque -> list
+# GM END
             json.dump(snapshot, file, sort_keys=True, indent=2)
             file.flush()
             os.fsync(file.fileno())
