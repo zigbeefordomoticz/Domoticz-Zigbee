@@ -180,6 +180,8 @@ def ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluste
         _func( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, )
 
     else:
+        # No definition for this cluster/attribute: keep the raw value, and record the read status as the other branches do
+        storeReadAttributeStatus(self, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
         _context = create_context(MsgClusterId, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)
 
