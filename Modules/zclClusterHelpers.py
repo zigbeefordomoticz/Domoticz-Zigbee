@@ -604,7 +604,9 @@ def compute_electrical_measurement_conso(self, nwk_id, src_ep, cluster_id, attr_
     try:    
       multiplier = int(cluster_data.get(mapping['multiplier'], 1))
       divisor = int(cluster_data.get(mapping['divisor'], 1))
-    except:multiplier=1;divisor=1
+    except:
+      multiplier=1
+      divisor=1
 # GM Fin
   
 
