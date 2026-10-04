@@ -33,7 +33,8 @@ SETTINGS = {
     "Services": {
         "Order": 1,
         "param": {
-            "MatomoOptIn": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
+# MatomoOptIn must be default 0 Otherwise it is not an Optin            
+            "MatomoOptIn": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
             "enablegroupmanagement": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": False, },
             "enableReadAttributes": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": True, "Advanced": True, },
             "internetAccess": { "type": "bool", "default": 1, "current": None, "restart": 1, "hidden": False, "Advanced": False, },
