@@ -358,6 +358,27 @@ boilerplate) → a per-backend risk/test-plan checklist → files changed / comm
 - Keep plugin.py thin; move logic to Modules/
 - Preserve device config JSON structure; migrations required for breaking changes
 - Avoid hardcoding device behavior; use certified configs
+- One PR = one change (see "Pull Request Scope" below)
+
+**Pull Request Scope — one PR, one feature:**
+
+A PR must carry **one** feature or **one** bug fix. Several commits are fine, as long
+as every commit serves that single change. A PR bundling unrelated changes is sent
+back to be split, before its code is reviewed — on `stable9` this is a safety control,
+not a style preference: a bundled PR cannot be reviewed attentively, cannot be
+reverted on its own when it misbehaves in the field, and collapses `git bisect` onto
+one merge point instead of the real culprit. See AGENTS.md →
+"Pull Request Discipline — One PR, One Change" for the full rule and the
+acceptable/must-split table.
+
+When reviewing or authoring a PR here:
+- Scope first: if the diff has more than one reason to change, say so and propose the split before reviewing line by line.
+- One change = one reason to change. Parts that would be separate release-note items are separate PRs.
+- Always its own PR, however small the diff: a user-visible default in `Classes/PluginConf.py` (state the migration impact on existing installs — defaults are the base layer that stored values override, so flipping one silently changes behaviour for every user who never set it); a `constraints.txt`/`requirements.txt` bump; a `.github/` CI change; a persistent-data-format or device-DB schema change; plugin lifecycle or zigpy thread management.
+- Fill in the PR template. An empty template is an incomplete PR.
+- Never leave the old line commented out beside the new one — git history already holds it.
+- Check the change against the open PRs before writing it: a fix already addressed by an open PR should be closed as superseded, not merged twice (e.g. two PRs both fixing the same `Modules/database.py` deque serialization).
+- Do not merge a bundle "because most of it is fine", and do not cherry-pick the good hunks into an integration branch while leaving the PR open misrepresenting what was merged.
 
 **Commit Message Style:**
 - Follow existing patterns (see recent commits)

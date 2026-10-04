@@ -53,6 +53,13 @@ Before writing or proposing any code change, verify ALL of the following:
 - [ ] Logs are useful, not noisy
 - [ ] Errors are actionable and non-fatal where possible
 
+### Pull Request Scope
+- [ ] This PR carries **one** change (one bug fix, or one feature) — see
+      "Pull Request Discipline" below
+- [ ] Every commit in it serves that one change
+- [ ] Unrelated fixes noticed along the way are left for their own PR
+- [ ] PR title names the change; the PR template is filled in, not left blank
+
 If **any box cannot be checked**, stop and reassess.
 
 ---
@@ -165,6 +172,71 @@ Domoticz (host)
 - Bug fixes
 - Targeted stability improvements
 - Backward-compatible enhancements
+
+---
+
+## 🔀 Pull Request Discipline — One PR, One Change
+
+**Rule: one PR = one feature, or one bug fix.** A PR that bundles several unrelated
+changes is rejected on scope alone, before its code is reviewed.
+
+This is not a style preference. On a production branch it is a safety control:
+
+- **Reviewability** — a reviewer can hold one change in their head and verify it
+  properly. Five unrelated hunks get a shallow pass, and a regression rides along in
+  the one nobody looked at twice.
+- **Revertability** — `stable9` runs people's heating, lighting and alarms. When one
+  change turns out to be wrong in the field, it has to be revertable on its own,
+  without taking four unrelated fixes down with it.
+- **Bisectability** — a bundled PR collapses into one merge point, so
+  `git bisect` lands on "this PR" instead of on the actual culprit.
+- **Independent cadence** — a one-line fix should not wait on the risky change next
+  to it, and a risky change should not be waved through because it shares a PR with
+  an obvious fix.
+
+### What counts as one change
+
+One change is one *reason to change*. If the parts would be described to a user as
+separate items in the release notes, they are separate PRs.
+
+| Acceptable in one PR | Must be split |
+| --- | --- |
+| A fix plus its unit test | Two unrelated bug fixes |
+| A fix plus the comment/docstring explaining it | A bug fix plus a behavioural default change |
+| One feature across several files, if the files only change for that feature | A device fix plus a CI change |
+| Several commits that are iterations on the same change | A fix plus "while I was in here" cleanups |
+
+Several commits in one PR are fine — and normal — as long as every one of them
+serves that single change. The rule is about one *subject* per PR, not one commit.
+
+### Changes that always get their own PR
+
+Never fold these into a PR about something else, however small the diff:
+
+- A change to a user-visible **default** in `Classes/PluginConf.py` (especially
+  privacy/telemetry settings such as `MatomoOptIn`) — a product decision the
+  maintainer signs off on, with the migration impact on existing installs stated
+- A dependency bump in `constraints.txt` or `requirements.txt`
+- A CI / workflow change under `.github/`
+- Anything touching persistent data format or the device database schema
+- A change to plugin lifecycle (`onStart`, `onHeartbeat`, `onStop`) or zigpy thread
+  management
+
+### Review outcome for a bundled PR
+
+Ask the author to split it, and say which hunks belong together. Take the parts that
+are correct and self-contained as their own PRs rather than merging the bundle to
+avoid round-trips. Specifically, do **not**:
+
+- merge a bundled PR "because most of it is fine"
+- cherry-pick the good hunks into the integration branch and leave the PR open
+  misrepresenting what was merged
+
+### Commented-out code
+
+Do not leave the previous version of a line commented out next to the new one. The
+replaced code is in git history. Commented-out code in a diff is a sign the change
+is not finished being decided.
 
 ---
 
