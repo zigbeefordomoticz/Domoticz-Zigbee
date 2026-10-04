@@ -208,7 +208,9 @@ def rebind_Clusters(self, NWKID):
         if _model != {}:
             if _model in self.DeviceConf and "ClusterToUnbind" in self.DeviceConf[_model]:
                 # Check if we have to unbind clusters
-                for iterEp, iterUnBindCluster in self.DeviceConf[_model]["ClusterToUnbind"]:
+# ClusterToBind is a dict so loop must be on items
+                for iterEp, iterUnBindCluster in self.DeviceConf[_model]["ClusterToUnbind"].items():
+#                for iterEp, iterUnBindCluster in self.DeviceConf[_model]["ClusterToUnbind"]:
                     unbindDevice(self, self.ListOfDevices[NWKID]["IEEE"], iterEp, iterUnBindCluster)
 
             # User Configuration if exists
