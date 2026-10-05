@@ -889,6 +889,14 @@ def processListOfDevices(self, Devices):
     # in the heartbeat where we are back on the thread Domoticz calls us on.
     process_widget_creation_requests(self, Devices)
 
+    # Admin widgets (Z4D Status, Z4D Notifications) Domoticz refused to create at
+    # startup. They are created from AdminWidgets.__init__ and nowhere else, so
+    # without this they would stay missing until the plugin is restarted. Same
+    # cadence as the device widgets below; the number of attempts is decided by
+    # retry_failed_admin_widget_creation() itself.
+    if self.adminWidgets and (self.HeartbeatCount % WIDGET_CREATION_RETRY) == 0:
+        self.adminWidgets.retry_failed_admin_widget_creation(Devices)
+
     entriesToBeRemoved = []
 
     for NwkId in list(self.ListOfDevices.keys()):
