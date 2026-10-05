@@ -24,7 +24,8 @@ from DevicesModules.custom_Chameleon import erl_z3_master_info
 from Modules.basicOutputs import getListofAttribute
 from Modules.casaia import pollingCasaia
 from Modules.danfoss import danfoss_room_sensor_polling
-from Modules.domoCreate import retry_failed_widget_creation
+from Modules.domoCreate import (process_widget_creation_requests,
+                                retry_failed_widget_creation)
 from Modules.domoticzAbstractLayer import (find_widget_unit_from_WidgetID,
                                            is_device_ieee_in_domoticz_db)
 from Modules.domoTools import (reset_device_ieee_unit_if_needed,
@@ -882,6 +883,12 @@ def processListOfDevices(self, Devices):
     # Let's check if we do not have a command in TimeOut
 
     # self.ControllerLink.checkTOwaitFor()
+
+    # Widget (re)creations asked for by the WebUI. Those endpoints run in their own
+    # thread and so cannot call the Domoticz API themselves; this is the first point
+    # in the heartbeat where we are back on the thread Domoticz calls us on.
+    process_widget_creation_requests(self, Devices)
+
     entriesToBeRemoved = []
 
     for NwkId in list(self.ListOfDevices.keys()):

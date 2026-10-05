@@ -18,7 +18,8 @@
 
 from Modules.domoticzAbstractLayer import (retreive_free_unit_for_widget, domo_create_api, get_unit_counts,
                                            build_widget_reuse_pool)
-from Modules.domoTools import (GetType, subtypeRGB_FromProfile_Device_IDs,
+from Modules.domoTools import (GetType, remove_all_widgets,
+                               subtypeRGB_FromProfile_Device_IDs,
                                subtypeRGB_FromProfile_Device_IDs_onEp2,
                                update_domoticz_widget)
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
@@ -636,6 +637,87 @@ def reset_widget_creation_retries(self, NwkId=None):
         retries.clear()
     else:
         retries.pop(NwkId, None)
+
+
+def request_widget_creation(self, NwkId, reason, remove_existing_widgets=False):
+    """Ask for a device's widgets to be (re)created, from any thread.
+
+    Domoticz's Python plugin API must only be used from the thread Domoticz calls
+    the plugin on. The WebUI REST endpoints run in their own per-client thread
+    (Classes/WebServer/com.py: handle_client), so they cannot create or delete
+    widgets themselves - they record the request here and
+    process_widget_creation_requests() carries it out from the heartbeat.
+
+    Only ListOfDevices is touched here, and that is a ThreadSafeDeviceDict.
+
+    ``remove_existing_widgets`` additionally drops the device's current widgets
+    first, which is what changing a device's model requires.
+
+    Returns the number of heartbeats before the request is expected to be served,
+    so a caller can tell the user when to look.
+    """
+    queued = getattr(self, "widget_creation_requests", None)
+    if queued is None:
+        queued = self.widget_creation_requests = {}
+
+    pending = queued.get(NwkId)
+    if pending:
+        # Already queued: keep the strongest form of the request rather than
+        # letting a later, weaker one drop the widget removal.
+        pending["remove_existing_widgets"] = (
+            pending["remove_existing_widgets"] or remove_existing_widgets)
+        pending["reason"] = reason
+    else:
+        queued[NwkId] = {
+            "reason": reason,
+            "remove_existing_widgets": remove_existing_widgets,
+        }
+
+    self.log.logging(
+        "WidgetCreation", "Debug",
+        "request_widget_creation - %s queued (%s), remove_existing_widgets: %s" % (
+            NwkId, reason, remove_existing_widgets), NwkId)
+    return 1
+
+
+def process_widget_creation_requests(self, Devices):
+    """Carry out the widget (re)creations queued by request_widget_creation().
+
+    Must only be called from the thread Domoticz calls the plugin on - that is the
+    whole point of the queue - so the heartbeat is its only caller.
+    """
+    queued = getattr(self, "widget_creation_requests", None)
+    if not queued:
+        return
+
+    while True:
+        try:
+            NwkId, request = queued.popitem()
+        except KeyError:
+            # Emptied; a request queued meanwhile is served on the next heartbeat.
+            return
+
+        if NwkId not in self.ListOfDevices:
+            self.log.logging(
+                "WidgetCreation", "Warning",
+                "process_widget_creation_requests - %s is gone, dropping the request (%s)" % (
+                    NwkId, request.get("reason")), NwkId)
+            continue
+
+        self.log.logging(
+            "WidgetCreation", "Status",
+            "Creating widgets for %s as requested (%s)" % (NwkId, request.get("reason")), NwkId)
+
+        # A user asking for this is a new chance for a device the retry budget has
+        # already given up on, so hand it a fresh one.
+        reset_widget_creation_retries(self, NwkId)
+
+        if request.get("remove_existing_widgets"):
+            remove_all_widgets(self, Devices, NwkId)
+
+        over_write_type_from_deviceconf(self, Devices, NwkId)
+        self.ListOfDevices[NwkId]["Status"] = "CreateDB"
+        CreateDomoDevice(self, Devices, NwkId)
 
 
 def retry_failed_widget_creation(self, Devices, NwkId):

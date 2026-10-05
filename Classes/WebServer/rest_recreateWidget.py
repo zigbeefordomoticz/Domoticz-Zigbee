@@ -15,8 +15,7 @@ from time import time
 
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
-from Modules.domoCreate import (CreateDomoDevice,
-                                over_write_type_from_deviceconf)
+from Modules.domoCreate import request_widget_creation
 from Modules.domoticzAbstractLayer import (domoticz_error_api,
                                            domoticz_log_api,
                                            domoticz_status_api)
@@ -49,16 +48,18 @@ def rest_recreate_widgets(self, verb, data, parameters):
             domoticz_error_api("rest_recreate_widgets - Unknown device %s " % key)
             return _response
         nwkid = self.IEEE2NWK[key]
-        _response["Data"] = json.dumps({"Status": "Ok", "Description": "IEEE %s set to Provisioning Requested at %s" % (key, int(time()))})
+        _response["Data"] = json.dumps({"Status": "Ok", "Description": "IEEE %s widget creation requested at %s, it will be done on the next heartbeat" % (key, int(time()))})
     else:
         nwkid = data["NWKID"]
         if nwkid not in self.ListOfDevices:
             domoticz_error_api("rest_recreate_widgets - Unknown device %s " % nwkid)
             return _response
-        _response["Data"] = json.dumps({"Status": "Ok", "Description": "NwkId %s set to Provisioning Requested at %s" % (nwkid, int(time()))})
+        _response["Data"] = json.dumps({"Status": "Ok", "Description": "NwkId %s widget creation requested at %s, it will be done on the next heartbeat" % (nwkid, int(time()))})
 
-    over_write_type_from_deviceconf( self, self.Devices, nwkid)
-    self.ListOfDevices[nwkid]["Status"] = "CreateDB"
-    CreateDomoDevice(self, self.Devices, nwkid)
+    # Do not create the widgets here: this runs in a WebServer client thread
+    # (Classes/WebServer/com.py: handle_client) and the Domoticz plugin API must
+    # only be used from the thread Domoticz calls the plugin on. The heartbeat
+    # picks this up and does the work (Modules/domoCreate.py).
+    request_widget_creation(self, nwkid, "recreate-widgets requested from the WebUI")
 
     return _response
