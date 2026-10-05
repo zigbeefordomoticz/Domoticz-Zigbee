@@ -52,6 +52,7 @@ import os.path
 import threading
 import time
 import traceback
+from collections import deque
 from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
 from pathlib import Path
 from queue import PriorityQueue
@@ -66,6 +67,7 @@ LOG_FILE = "PluginZigbee_"
 LOG_MAX_ERRORS_PER_SESSION = 20
 LOG_MAX_SESSIONS = 5
 LOG_RETENTION_SECONDS = 7 * 24 * 3600  # 7 days
+JSON_SAFE_MAX_DEPTH = 12  # Recursion guard for json_safe(); device entries are far shallower
 
 THREAD_GROUP = {
     "Domoticz": [ "MainThread", ],
@@ -518,25 +520,68 @@ def get_stack_trace():
     return ''.join(stack_trace)
 
 
+def json_safe(obj, _depth=0):
+    """
+    Return a deep, JSON-serializable copy of obj.
+
+    The error history is persisted with a plain json.dump() (see
+    loggingWriteErrorHistory), which raises on any value it does not know. A single
+    such value anywhere in the context aborts the write *after* the file has been
+    truncated, so one unserializable device attribute used to cost the whole error
+    history. Runtime device entries legitimately hold non-JSON values - RollingLQI
+    is a deque (Modules/tools_sqn.py) - so the context is sanitized here rather than
+    left to the caller.
+
+    Containers are rebuilt so the snapshot cannot alias (and later drift from) the
+    live structures, and anything else is rendered with repr() as a last resort.
+    """
+    if isinstance(obj, (str, int, float, bool)) or obj is None:
+        return obj
+
+    if _depth >= JSON_SAFE_MAX_DEPTH:
+        # Depth guard: device entries are shallow, so this means a self-referencing
+        # or pathological structure. Keep the error, drop the recursion.
+        return repr(obj)
+
+    if isinstance(obj, dict):
+        # json.dump() only accepts str/int/float/bool/None keys; normalise the rest.
+        return {
+            (k if isinstance(k, (str, int, float, bool)) or k is None else str(k)):
+                json_safe(v, _depth + 1)
+            for k, v in obj.items()
+        }
+
+    if isinstance(obj, (list, tuple, set, frozenset, deque)):
+        return [json_safe(v, _depth + 1) for v in obj]
+
+    if isinstance(obj, (bytes, bytearray)):
+        return obj.hex()
+
+    if isinstance(obj, BaseException):
+        return "%s: %s" % (type(obj).__name__, obj)
+
+    return repr(obj)
+
+
 def loggingBuildContext(self, thread_name, module, message, nwkid, context=None):
 
     _txt = self.PluginHealth.get("Txt", "Not Started")
-                      
+
     _context = {
         "Time": int(time.time()),
-        "PermitToJoin": self.permitTojoin,
+        "PermitToJoin": json_safe(self.permitTojoin),
         "PluginHealth": _txt,
         "Thread": thread_name,
         "nwkid": nwkid,
         "Module": module,
         "message": message,
     }
-    
+
     if nwkid in self.ListOfDevices:
-        _context["DeviceInfos"] = dict(self.ListOfDevices.get(nwkid, {}))
-    
+        _context["DeviceInfos"] = json_safe(self.ListOfDevices.get(nwkid, {}))
+
     if context is not None:
-        _context["context"] = context.copy() if isinstance(context, dict) else str(context)
+        _context["context"] = json_safe(context) if isinstance(context, dict) else str(context)
 
     return _context
 
@@ -544,9 +589,18 @@ def loggingBuildContext(self, thread_name, module, message, nwkid, context=None)
 def loggingWriteErrorHistory(self):
     _pluginlogs = Path( self.pluginconf.pluginConf["pluginLogs"] )
     jsonLogHistory = _pluginlogs / ( LOG_ERROR_HISTORY + "%02d.json" % self.HardwareID)
+
+    # Serialize before opening the file: open(..., "w") truncates, so a serialization
+    # failure used to leave an empty file and lose the whole error history.
+    try:
+        payload = json.dumps(dict(self.LogErrorHistory))
+    except Exception as e:
+        domoticz_error_api("Hops ! Unable to serialize LogErrorHistory error: %s log: %s" % (e, self.LogErrorHistory))
+        return
+
     try:
         with open(jsonLogHistory, "w", encoding="utf-8") as json_file:
-            json.dump(dict(self.LogErrorHistory), json_file)
+            json_file.write(payload)
             json_file.write("\n")
     except Exception as e:
         domoticz_error_api("Hops ! Unable to write LogErrorHistory error: %s log: %s" % (e, self.LogErrorHistory))
