@@ -24,6 +24,13 @@ from Modules.domoTools import (GetType, subtypeRGB_FromProfile_Device_IDs,
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import get_deviceconf_parameter_value, is_domoticz_new_blind
 
+# How many times a recoverable widget-creation failure is re-attempted before the
+# plugin stops for this session. The heartbeat schedules one attempt every 5 minutes
+# (WIDGET_CREATION_RETRY in Modules/heartbeat.py). Retrying further cannot help: the
+# reason Domoticz refused is logged on the Domoticz side and never returned to us, so
+# it takes a user action to change the outcome.
+WIDGET_CREATION_MAX_RETRIES = 2
+
 
 def widget_creation_context(self, Devices, NwkId, **extra):
     """Context describing the device a widget-creation failure relates to.
@@ -600,6 +607,37 @@ def CreateDomoDevice(self, Devices, NWKID):
     self.widget_reuse_pool = {}
 
 
+def _widget_creation_retries(self):
+    """Per-device retry counters for recoverable widget-creation failures.
+
+    Deliberately kept on the plugin instance and not in the ListOfDevices entry:
+    the budget is session-scoped, so restarting the plugin grants a fresh one. That
+    is the behaviour we want, because restarting is one of the two things a user
+    does after fixing the Domoticz side (the other being the WebUI 'recreate
+    widgets' button). Storing it in the device entry would also persist it into the
+    device database, which is not something a transient counter belongs in.
+
+    Created lazily, like ``widget_reuse_pool``, so plugin startup is untouched.
+    """
+    retries = getattr(self, "widget_creation_retries", None)
+    if retries is None:
+        retries = self.widget_creation_retries = {}
+    return retries
+
+
+def reset_widget_creation_retries(self, NwkId=None):
+    """Grant a fresh retry budget, for one device or for all of them.
+
+    Called when something has plausibly changed the outcome - a user asking for a
+    recreation through the WebUI, or a successful creation.
+    """
+    retries = _widget_creation_retries(self)
+    if NwkId is None:
+        retries.clear()
+    else:
+        retries.pop(NwkId, None)
+
+
 def retry_failed_widget_creation(self, Devices, NwkId):
     """Re-attempt a previously-failed (recoverable) widget creation.
 
@@ -610,26 +648,62 @@ def retry_failed_widget_creation(self, Devices, NwkId):
     CreateDomoDevice sets Status back to ``inDB``.
 
     Widget-creation ownership stays in this module; the heartbeat only schedules
-    the call (see Modules/heartbeat.py).
+    the call (see Modules/heartbeat.py), so the retry budget is enforced here.
 
-    This retry repeats every 5 minutes for as long as the device stays in a
-    failDB_* state, so the line below is what a user actually sees in the Domoticz
-    log. It names the device the way the user knows it, because a bare NwkId is not
-    something they can act on. Note the identification goes in the *message*, not in
-    a context= dict: LoggingManagement only keeps context for logType "Error"
+    At most WIDGET_CREATION_MAX_RETRIES attempts are made, 5 minutes apart. Beyond
+    that the cause is not something the plugin can clear by trying again: Domoticz
+    refuses the creation for a reason it logs on its own side and never returns to
+    us, so an unbounded retry only reprints the same error every 5 minutes for the
+    lifetime of the session. The device is still kept - its Ep/Cluster/ClusterType
+    stay intact - and a restart or a WebUI 'recreate widgets' grants a new budget.
+
+    Note the device identification goes in the *message*, not in a context= dict:
+    LoggingManagement only keeps context for logType "Error"
     (process_logging_event), so a context passed on a "Status" log is discarded.
     """
     device = self.ListOfDevices[NwkId]
     status = device.get("Status")
+    identification = "%s (%s, Model: %s, IEEE: %s)" % (
+        NwkId, device.get("ZDeviceName") or "unnamed",
+        device.get("Model") or "unknown", device.get("IEEE") or "unknown")
+
+    retries = _widget_creation_retries(self)
+    attempt = retries.get(NwkId, 0) + 1
+
+    if attempt > WIDGET_CREATION_MAX_RETRIES:
+        # Report giving up exactly once. The heartbeat keeps scheduling this call
+        # for as long as the device stays in a failDB_* state, so the counter is
+        # left one past the budget to mark the message as already issued.
+        if attempt == WIDGET_CREATION_MAX_RETRIES + 1:
+            retries[NwkId] = attempt
+            self.log.logging(
+                "WidgetCreation", "Error",
+                "Widget creation still failing (%s) for %s after %s attempts - giving up for this "
+                "session. The device is kept, so nothing is lost. Look in the Domoticz log for the "
+                "reason Domoticz refused the creation, check the Domoticz 'Accept New Hardware' "
+                "setting and that free device units are available, then either restart the plugin "
+                "or use 'recreate widgets' in the WebUI to try again." % (
+                    status, identification, WIDGET_CREATION_MAX_RETRIES),
+                NwkId,
+                widget_creation_context(self, Devices, NwkId,
+                                        Reason="retry budget exhausted",
+                                        Attempts=WIDGET_CREATION_MAX_RETRIES))
+        return
+
+    retries[NwkId] = attempt
     self.log.logging(
         "WidgetCreation", "Status",
-        "Widget creation previously failed (%s) for %s (%s, Model: %s, IEEE: %s) - retrying every "
-        "5 minutes. Check the Domoticz log for the reason Domoticz refused, the Domoticz 'Accept "
-        "New Hardware' setting, and that free device units are available." % (
-            status, NwkId, device.get("ZDeviceName") or "unnamed",
-            device.get("Model") or "unknown", device.get("IEEE") or "unknown"),
+        "Widget creation previously failed (%s) for %s - retrying (attempt %s of %s). Check the "
+        "Domoticz log for the reason Domoticz refused, the Domoticz 'Accept New Hardware' setting, "
+        "and that free device units are available." % (
+            status, identification, attempt, WIDGET_CREATION_MAX_RETRIES),
         NwkId)
+
     CreateDomoDevice(self, Devices, NwkId)
+
+    if self.ListOfDevices[NwkId].get("Status") == "inDB":
+        # Recovered: drop the counter so a later failure starts from a full budget.
+        reset_widget_creation_retries(self, NwkId)
 
 
 def update_device_type( self, NWKID, GlobalType ):

@@ -933,9 +933,11 @@ def processListOfDevices(self, Devices):
         if status in ("failDB_NoUnit", "failDB_NoHardware"):
             # Recoverable widget-creation failure (Domoticz refused new hardware,
             # or no free unit was available). Keep the device - deleting it would
-            # lose the whole entry (Ep/Cluster/ClusterType) - and let the creation
-            # module retry every 5 minutes so it self-heals once the user re-enables
-            # 'Accept New Hardware' / frees units.
+            # lose the whole entry (Ep/Cluster/ClusterType) - and schedule a retry
+            # every 5 minutes. Only the cadence is decided here: how many attempts
+            # are worth making is enforced by retry_failed_widget_creation(), which
+            # gives up after WIDGET_CREATION_MAX_RETRIES rather than reprinting the
+            # same error for the whole session.
             if (int(device["Heartbeat"]) % WIDGET_CREATION_RETRY) == 0:
                 retry_failed_widget_creation(self, Devices, NwkId)
             continue
