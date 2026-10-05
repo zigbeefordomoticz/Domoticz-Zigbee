@@ -134,6 +134,9 @@ class TestCreationRefused:
             assert context["MaxRetries"] == admin_module.ADMIN_WIDGET_MAX_RETRIES
             assert context["Request"]["Name"].startswith("Z4D ")
             assert context["Request"]["DeviceID"].startswith("Z4D-")
+            # Carried over from domo_create_api, which no longer reports this itself.
+            assert "device_known" in context["Domoticz"]
+            assert "total_devices" in context["Domoticz"]
 
     def test_the_error_names_the_setting_to_check(self, admin_module):
         # The refusal reason is only ever in the Domoticz log; the plugin can at
@@ -155,6 +158,44 @@ class TestCreationRefused:
         admin = _make_admin_widgets(admin_module, [-1])
         for call in _errors(admin.log):
             json.dumps(call.args[4])
+
+
+class TestOnlyOneErrorPerRefusal:
+
+    def test_domo_create_api_is_told_not_to_report_the_refusal(self, admin_module):
+        # Two Error entries for one refused widget is what this replaced: a generic
+        # "unit is absent afterwards" from the abstract layer, plus the one above.
+        # The abstract layer keeps the refusal at Debug and the caller reports it.
+        seen = []
+
+        def _capture(*args, **kwargs):
+            seen.append(kwargs)
+            return -1
+
+        # Built here rather than through _make_admin_widgets(), which installs a
+        # domo_create_api of its own; the calls under test happen in __init__.
+        admin_module.domo_create_api = _capture
+        log = MagicMock()
+        pluginconf = MagicMock()
+        pluginconf.pluginConf = {"eraseZigatePDM": False}
+        admin_module.AdminWidgets(
+            log, pluginconf, {"Name": "Zigbee for Domoticz"}, {}, {}, {}, 2, {})
+
+        assert len(seen) == 2
+        assert all(kw.get("log_refusal") is False for kw in seen)
+
+    def test_the_abstract_layer_still_defaults_to_reporting(self):
+        # Every other caller must keep the Error it has today.
+        source = ast.parse(Path("Modules/domoticzAbstractLayer.py").read_text(encoding="utf-8"))
+        create = [
+            node for node in source.body
+            if isinstance(node, ast.FunctionDef) and node.name == "domo_create_api"
+        ]
+        assert len(create) == 1
+        defaults = dict(zip(
+            [a.arg for a in create[0].args.args][-len(create[0].args.defaults):],
+            [getattr(d, "value", None) for d in create[0].args.defaults]))
+        assert defaults["log_refusal"] is True
 
 
 class TestRetryBudget:
