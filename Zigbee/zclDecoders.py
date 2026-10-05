@@ -863,10 +863,20 @@ def extract_value_size(self, Data, idx, DType ):
     return None, None, None
 
 
+def device_model(self, nwkid):
+    # The Model is what tells which device certification is involved, so make sure
+    # we always have something to report, even for a device not yet provisioned.
+    if nwkid not in self.ListOfDevices:
+        return "unknown"
+    return self.ListOfDevices[ nwkid ].get("Model") or "unknown"
+
+
 def decoding_error(self, source, sqn, nwkid, ep, cluster, attribute, DType, idx=None, buildPayload=None, frame=None, Data=None):
+    model = device_model(self, nwkid)
     _context = {
         "Sqn": sqn,
         "NwkId": nwkid,
+        "Model": model,
         "Ep": ep,
         "Cluster": cluster,
         "Attribute": attribute,
@@ -876,5 +886,5 @@ def decoding_error(self, source, sqn, nwkid, ep, cluster, attribute, DType, idx=
         "Data": Data,
         "Idx": idx,
     }
-    self.log.logging("zclDecoder", "Error", "%s - decoding_error - %s %s %s %s %s %s %s %s %s %s" % (
-        source, sqn, nwkid, ep, cluster, attribute, DType, idx, buildPayload, frame, Data ), nwkid=nwkid, context=_context)
+    self.log.logging("zclDecoder", "Error", "%s - decoding_error - %s %s %s %s %s %s %s %s %s %s %s" % (
+        source, sqn, nwkid, model, ep, cluster, attribute, DType, idx, buildPayload, frame, Data ), nwkid=nwkid, context=_context)
