@@ -251,11 +251,11 @@ class AdminWidgets:
 
         ID: int = domo_create_api(
             self, Devices, new_deviceid, free_unit, widget_name,
-            Type_=243, Subtype_=22, Switchtype_=0,
+            Type_=243, Subtype_=22, Switchtype_=0, log_refusal=False,
         )
         if ID == WIDGET_CREATION_FAILED:
             self._admin_widget_creation_failed(
-                ADMIN_WIDGET_STATUS, widget_name, new_deviceid, free_unit)
+                ADMIN_WIDGET_STATUS, widget_name, new_deviceid, free_unit, Devices)
             return None, None
 
         self._admin_widget_created(ADMIN_WIDGET_STATUS)
@@ -284,11 +284,11 @@ class AdminWidgets:
         #domoticz_log_api("createNotificationWidget - Creating new widget: %s" % new_deviceid)
         ID: int = domo_create_api(
             self, Devices, new_deviceid, free_unit, widget_name,
-            Type_=243, Subtype_=19, Switchtype_=0,
+            Type_=243, Subtype_=19, Switchtype_=0, log_refusal=False,
         )
         if ID == WIDGET_CREATION_FAILED:
             self._admin_widget_creation_failed(
-                ADMIN_WIDGET_NOTIFICATIONS, widget_name, new_deviceid, free_unit)
+                ADMIN_WIDGET_NOTIFICATIONS, widget_name, new_deviceid, free_unit, Devices)
             return None, None
 
         self._admin_widget_created(ADMIN_WIDGET_NOTIFICATIONS)
@@ -304,13 +304,17 @@ class AdminWidgets:
         widget_name: str,
         deviceid: str,
         unit: Optional[int],
+        Devices: Dict[int, Any],
     ) -> None:
         """Remember a refused admin widget, and report it once per plugin start.
 
-        domo_create_api() has already logged the technical failure. What it cannot
-        say is which admin widget was lost, what the user is expected to do about it,
-        or that the plugin will come back to it - so that is what this adds. It is
-        logged only on the first failure: the retries would otherwise reprint the
+        This is the only error logged for the refusal: domo_create_api() is called
+        with log_refusal=False, because what it can say - that a unit is absent
+        after a creation that did not raise - is of no use to the person reading
+        the log, while which admin widget was lost and what to do about it is.
+        Its Domoticz-side view is carried over into the context below.
+
+        Logged only on the first failure: the retries would otherwise reprint the
         same error every 5 minutes.
         """
         already_known = widget_key in self.failed_admin_widgets
@@ -331,6 +335,10 @@ class AdminWidgets:
                 "Reason": "Domoticz refused the admin widget creation",
                 "AdminWidget": widget_key,
                 "Request": {"DeviceID": deviceid, "Unit": unit, "Name": widget_name},
+                "Domoticz": {
+                    "device_known": deviceid in Devices if Devices is not None else None,
+                    "total_devices": len(Devices) if Devices is not None else None,
+                },
                 "HardwareID": self.HardwareID,
                 "MaxRetries": ADMIN_WIDGET_MAX_RETRIES,
             },
