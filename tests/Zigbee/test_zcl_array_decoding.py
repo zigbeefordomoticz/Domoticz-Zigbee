@@ -10,7 +10,8 @@ frame", so any attribute following it in the same Read Attributes Response or
 Report Attributes frame was swallowed into its value and never decoded (seen on a
 Sonoff SWV-ZFE: fc11/501d read back as its 12 bytes + the raw 501c and 501b
 records). Arrays of fixed-size elements are now sized from their element type and
-element count; structures and arrays of unsized elements keep the legacy behaviour.
+element count; structures, arrays of unsized elements and arrays whose count is 0 while
+payload follows (Tuya TS0505B 0300/f003) keep the legacy behaviour.
 
 Zigbee.zclDecoders imports the real Modules.* package, which conflicts with the
 stubs tests/conftest.py installs for the session, so the calls run in a subprocess.
@@ -45,6 +46,9 @@ CASES = {
     "structure_keeps_legacy": ("0200" + "10" + "01" + "21" + "3412", 0, "4c", (4, 10, "1001213412")),
     # Sonoff SWV-ZFE 0x5020 as read from the device: element type 0x48, 4 one-byte elements, followed by 0x5018
     "sonoff_array_element_type_0x48": ("48" + "0400" + "07050105" + "1850" + "00" + "48" + "48" + "0400" + "00000000", 0, "48", (6, 8, "07050105")),
+    # Tuya TS0505B 0300/f003: element type data24, count 0, and 8 bytes of payload anyway
+    "zero_count_with_payload_falls_back": ("0a" + "0000" + "0e0d00000000c800", 0, "48", (4, 18, "000e0d00000000c800")),
+    "zero_count_without_payload_falls_back": ("0a" + "0000", 0, "48", (4, 2, "00")),
 }
 
 
