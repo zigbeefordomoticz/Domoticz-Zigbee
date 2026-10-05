@@ -34,12 +34,19 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DECODER_SOURCE = REPO_ROOT / "Zigbee" / "zclDecoders.py"
 
-# A report of attribute 0x0000 whose data type is 0x13 - reserved in the ZCL
-# specification, so it is in no SIZE_DATA_TYPE table and cannot be sized. The
-# attribute record starts at 0, the value would start at offset 6.
-UNSIZEABLE_DATA = "0000" + "13" + "1234"
-UNSIZEABLE_FRAME = "018002003cff0001040300010102c57702000018c00a" + UNSIZEABLE_DATA + "2803"
-VALUE_OFFSET = 6
+# Attribute 0x0000 carrying data type 0x13 - reserved in the ZCL specification, so
+# it is in no SIZE_DATA_TYPE table and can never be sized. Using a type that stays
+# undecodable keeps these tests independent of any later decoding change.
+#
+# Each decoder lays its records out differently, hence a different offset for the
+# value the decoder gives up on:
+#   write request / report response:  attribute | type | value
+#   read response:                    attribute | status | type | value
+DECODERS = {
+    "foundation_cluster_write_attribute_request": ("0000" + "13" + "1234", 6),
+    "foundation_cluster_read_attribute_response": ("0000" + "00" + "13" + "1234", 8),
+    "foundation_cluster_report_attribute_response": ("0000" + "13" + "1234", 6),
+}
 
 DEVICE_LISTS = {
     "known_model": {"c577": {"Model": "TS0505B"}},
@@ -56,9 +63,9 @@ def decoded():
         import json, sys, types
         for name in ("Domoticz", "DomoticzEx"):
             sys.modules[name] = types.ModuleType(name)
-        from Zigbee.zclDecoders import foundation_cluster_report_attribute_response
+        import Zigbee.zclDecoders as decoders
 
-        data, frame, device_lists = json.loads(sys.argv[1])
+        decoder_data, device_lists = json.loads(sys.argv[1])
 
         class Log:
             def __init__(self):
@@ -74,16 +81,24 @@ def decoded():
                 self.ListOfDevices = devices
 
         out = {}
-        for name, devices in device_lists.items():
-            plugin = Plugin(devices)
-            returned = foundation_cluster_report_attribute_response(
-                plugin, frame, "c0", "c577", "01", "01", "0300", data)
-            out[name] = {"errors": plugin.log.errors, "frame_dropped": returned == frame}
+        for decoder_name, data in decoder_data.items():
+            decoder = getattr(decoders, decoder_name)
+            frame = "018002003cff0001040300010102c57702000018c00a" + data + "2803"
+            # the write request is the one decoder taking a manufacturer code
+            args = ("c0", "c577", "01", "01", "0300", None, data) if "write" in decoder_name else (
+                "c0", "c577", "01", "01", "0300", data)
+            out[decoder_name] = {}
+            for name, devices in device_lists.items():
+                plugin = Plugin(devices)
+                returned = decoder(plugin, frame, *args)
+                out[decoder_name][name] = {
+                    "errors": plugin.log.errors, "frame_dropped": returned == frame}
         print(json.dumps(out))
         """
     )
+    inputs = [{name: data for name, (data, _) in DECODERS.items()}, DEVICE_LISTS]
     result = subprocess.run(  # nosec B603
-        [sys.executable, "-c", snippet, json.dumps([UNSIZEABLE_DATA, UNSIZEABLE_FRAME, DEVICE_LISTS])],
+        [sys.executable, "-c", snippet, json.dumps(inputs)],
         cwd=str(REPO_ROOT),
         capture_output=True,
         text=True,
@@ -92,12 +107,14 @@ def decoded():
     return json.loads(result.stdout)
 
 
+@pytest.mark.parametrize("decoder", list(DECODERS))
 @pytest.mark.parametrize("case", list(DEVICE_LISTS))
-def test_one_error_is_reported_per_undecodable_attribute(decoded, case):
-    assert len(decoded[case]["errors"]) == 1
-    assert decoded[case]["frame_dropped"] is True
+def test_one_error_is_reported_per_undecodable_attribute(decoded, decoder, case):
+    assert len(decoded[decoder][case]["errors"]) == 1
+    assert decoded[decoder][case]["frame_dropped"] is True
 
 
+@pytest.mark.parametrize("decoder", list(DECODERS))
 @pytest.mark.parametrize(
     "case, expected_model",
     [
@@ -108,8 +125,8 @@ def test_one_error_is_reported_per_undecodable_attribute(decoded, case):
         ("unknown_device", "unknown"),
     ],
 )
-def test_error_context_names_the_model(decoded, case, expected_model):
-    error = decoded[case]["errors"][0]
+def test_error_context_names_the_model(decoded, decoder, case, expected_model):
+    error = decoded[decoder][case]["errors"][0]
 
     assert error["context"]["Model"] == expected_model
     # the log line is what users paste, so it carries the Model too
@@ -117,14 +134,16 @@ def test_error_context_names_the_model(decoded, case, expected_model):
     assert error["nwkid"] == "c577"
 
 
+@pytest.mark.parametrize("decoder", list(DECODERS))
 @pytest.mark.parametrize("case", list(DEVICE_LISTS))
-def test_error_context_reports_where_decoding_stopped(decoded, case):
-    context = decoded[case]["errors"][0]["context"]
+def test_error_context_reports_where_decoding_stopped(decoded, decoder, case):
+    data, value_offset = DECODERS[decoder]
+    context = decoded[decoder][case]["errors"][0]["context"]
 
-    assert context["Idx"] == VALUE_OFFSET
+    assert context["Idx"] == value_offset
     assert context["Attribute"] == "0000"
     assert context["DType"] == "13"
-    assert context["Data"] == UNSIZEABLE_DATA
+    assert context["Data"] == data
 
 
 def test_every_zcl_decoder_log_line_carries_its_nwkid():
