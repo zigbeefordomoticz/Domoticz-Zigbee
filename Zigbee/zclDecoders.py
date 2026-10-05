@@ -283,7 +283,7 @@ def buildframe_foundation_cluster(self, fcf, disable_default_response, command, 
 
 def foundation_cluster_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     # 01 0000f0010023020023030021040023050021060030070021080021090021fdff21
-    self.log.logging("zclDecoder", "Debug", "86400 - Data: %s" % Data)
+    self.log.logging("zclDecoder", "Debug", "86400 - Data: %s" % Data, SrcNwkId)
     
     discovery_complete = Data[:2]
     buildPayload = "f7" + discovery_complete
@@ -345,9 +345,10 @@ def foundation_cluster_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEn
         DType = Data[idx : idx + 2]
         idx += 2
         
+        value_idx = idx
         idx, size, value = extract_value_size(self, Data, idx, DType )
         if value is None and idx is None:
-            decoding_error(self, "foundation_cluster_write_attribute_request", Sqn, SrcNwkId, SrcEndPoint, ClusterId, Attribute, DType, idx=idx, buildPayload=buildPayload, frame=frame, Data=Data)
+            decoding_error(self, "foundation_cluster_write_attribute_request", Sqn, SrcNwkId, SrcEndPoint, ClusterId, Attribute, DType, idx=value_idx, buildPayload=buildPayload, frame=frame, Data=Data)
             return frame
 
         lenData = "%04x" % (size // 2)
@@ -386,9 +387,10 @@ def foundation_cluster_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEn
         
         DType = Data[idx : idx + 2]
         idx += 2
+        value_idx = idx
         idx, size, value = extract_value_size(self, Data, idx, DType )
         if value is None and idx is None:
-            decoding_error(self, "foundation_cluster_read_attribute_response", Sqn, SrcNwkId, SrcEndPoint, ClusterId, Attribute, DType, idx=idx, buildPayload=buildPayload, frame=frame, Data=Data)
+            decoding_error(self, "foundation_cluster_read_attribute_response", Sqn, SrcNwkId, SrcEndPoint, ClusterId, Attribute, DType, idx=value_idx, buildPayload=buildPayload, frame=frame, Data=Data)
             return frame
 
         lenData = "%04x" % (size // 2)
@@ -411,9 +413,10 @@ def foundation_cluster_report_attribute_response(self, frame, Sqn, SrcNwkId, Src
         idx += 4
         DType = Data[idx : idx + 2]
         idx += 2
+        value_idx = idx
         idx, size, value = extract_value_size(self, Data, idx, DType )
         if value is None and idx is None:
-            decoding_error(self, "foundation_cluster_report_attribute_response", Sqn, SrcNwkId, SrcEndPoint, ClusterId, Attribute, DType, idx=idx, buildPayload=buildPayload, frame=frame, Data=Data)
+            decoding_error(self, "foundation_cluster_report_attribute_response", Sqn, SrcNwkId, SrcEndPoint, ClusterId, Attribute, DType, idx=value_idx, buildPayload=buildPayload, frame=frame, Data=Data)
             return frame
 
         lenData = "%04x" % (size // 2)
