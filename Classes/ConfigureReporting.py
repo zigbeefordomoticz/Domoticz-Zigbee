@@ -401,11 +401,9 @@ class ConfigureReporting:
         return read_report_configure_response_zigate(self, MsgData, MsgLQI)
     
     def retreive_configuration_reporting_definition(self, NwkId):
-    
-        if STORE_CUSTOM_CONFIGURE_REPORTING in self.ListOfDevices[NwkId]:
-            self.logging("Debug", f"retreive_configuration_reporting_definition - returning {self.ListOfDevices[NwkId][ STORE_CUSTOM_CONFIGURE_REPORTING ]}", nwkid=NwkId)
-            return self.ListOfDevices[NwkId][ STORE_CUSTOM_CONFIGURE_REPORTING ]
-
+# Priority must be given to DeviceConf as it may be changed from outside (like Local-Devices)
+# For example one can decide to not report certains attributes or change reporting frequency to spare processor
+# Otherwise Reporting configuration is never the newest
         if (
             "Model" in self.ListOfDevices[NwkId]
             and self.ListOfDevices[NwkId]["Model"] != {}
@@ -415,6 +413,11 @@ class ConfigureReporting:
             self.logging("Debug", f"retreive_configuration_reporting_definition - returning {self.DeviceConf[self.ListOfDevices[NwkId]['Model']][STORE_CONFIGURE_REPORTING]}", nwkid=NwkId)
             
             return self.DeviceConf[self.ListOfDevices[NwkId]["Model"]][STORE_CONFIGURE_REPORTING]
+
+        if STORE_CUSTOM_CONFIGURE_REPORTING in self.ListOfDevices[NwkId]:
+            self.logging("Debug", f"retreive_configuration_reporting_definition - returning {self.ListOfDevices[NwkId][ STORE_CUSTOM_CONFIGURE_REPORTING ]}", nwkid=NwkId)
+            return self.ListOfDevices[NwkId][ STORE_CUSTOM_CONFIGURE_REPORTING ]
+
 
         self.logging("Debug", f"retreive_configuration_reporting_definition - returning {CFG_RPT_ATTRIBUTESbyCLUSTERS}", nwkid=NwkId)
         
