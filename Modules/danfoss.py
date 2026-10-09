@@ -89,7 +89,6 @@ def danfoss_write_external_sensor_temp(self, NwkId, external_temperature):
     
     external_temperature = int( round( external_temperature * 2 ) * 50 )
 
-    #if 700 < external_temperature > 3000 and external_temperature < 700:
     if external_temperature > 3000 or external_temperature < 700:
         self.log.logging("Danfoss", "Error", "danfoss_write_external_sensor_temp: out of range external sensor temp %s %s" % (
             NwkId, external_temperature / 100), nwkid=NwkId)
@@ -196,8 +195,6 @@ def danfoss_room_sensor_polling(self, NwkId):
             external_sensor_temperature = temp_sensor
         else:
             external_sensor_temperature = ( external_sensor_temperature + temp_sensor ) / 2
-        #self.log.logging( "Danfoss", "Debug", "danfoss_room_sensor_polling - Found temp: %s from Nwkid: %s in Ep: %s against room %s averagge: %s" % (
-        #    temp_sensor, NwkId, ep, room, external_sensor_temperature), nwkid=NwkId, )
         self.log.logging( "Danfoss", "Debug", "danfoss_room_sensor_polling - Found temp: %s from Nwkid: %s in Ep: %s against room %s average: %s" % (
             temp_sensor, x, ep, room, external_sensor_temperature), nwkid=NwkId, )
 
