@@ -25,6 +25,57 @@ from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import get_deviceconf_parameter_value, is_domoticz_new_blind
 
 
+def widget_creation_context(self, Devices, NwkId, **extra):
+    """Context describing the device a widget-creation failure relates to.
+
+    A widget-creation error carries a Unit number and an IEEE, which is not enough
+    for a user - or for us, reading an errors.json from the forum - to tell which
+    device is affected or what it was supposed to get. LoggingManagement already
+    attaches the whole ListOfDevices entry whenever an Error is logged with a
+    nwkid, so this only adds what is *not* in that entry: the Domoticz-side unit
+    allocation, and the widget Types still expected per endpoint.
+
+    Values are kept to plain JSON types: the error history is persisted with
+    json.dumps() and anything it cannot serialize costs the whole file.
+    """
+    device = self.ListOfDevices.get(NwkId)
+    if device is None:
+        context = {"NwkId": NwkId, "Reason": "NwkId not in ListOfDevices"}
+        context.update(extra)
+        return context
+
+    ieee = device.get("IEEE") or ""
+    context = {
+        "NwkId": NwkId,
+        "IEEE": ieee,
+        "Model": device.get("Model") or "unknown",
+        "ZDeviceName": device.get("ZDeviceName") or "",
+        "Status": device.get("Status") or "unknown",
+        "Heartbeat": device.get("Heartbeat") or "0",
+        "ExpectedTypes": {
+            ep: ep_data.get("Type")
+            for ep, ep_data in (device.get("Ep") or {}).items()
+            if isinstance(ep_data, dict) and ep_data.get("Type")
+        },
+        "DeviceType": device.get("Type") or "",
+    }
+
+    if ieee:
+        # How many Domoticz units this IEEE already holds, and which ones: tells a
+        # 'no free unit' apart from a Domoticz that refused an otherwise free one.
+        context["Domoticz"] = dict(
+            get_unit_counts(self, Devices, ieee),
+            units=sorted(Devices[ieee].Units) if Devices and ieee in Devices else [],
+        )
+
+    reuse_pool = getattr(self, "widget_reuse_pool", None)
+    if reuse_pool:
+        context["ReusableUnits"] = sorted(reuse_pool)
+
+    context.update(extra)
+    return context
+
+
 def cleanup_widget_Type(widget_type_list):
 
     if ("ColorControlFull" in widget_type_list) and ("ColorControl" in widget_type_list):
@@ -246,11 +297,16 @@ def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None
     if reused_unit is not None:
         return reused_unit
 
-    unit = retreive_free_unit_for_widget(self, Devices, ieee)
+    unit = retreive_free_unit_for_widget(self, Devices, ieee, nwkid=nwkid)
     if unit is None:
         # Recoverable: no free Domoticz unit. Mark so the heartbeat retries instead of deleting the device.
         self.ListOfDevices[nwkid]["Status"] = "failDB_NoUnit"
-        self.log.logging("WidgetCreation", "Error", "Domoticz widget creation failed. No available unit for device %s. Cannot create widget." % ieee)
+        self.log.logging(
+            "WidgetCreation", "Error",
+            "Domoticz widget creation failed. No available unit for device %s. Cannot create widget." % ieee,
+            nwkid,
+            widget_creation_context(self, Devices, nwkid, Reason="no free Domoticz unit",
+                                    Ep=ep, WidgetType=cType))
         return None
 
     self.log.logging("WidgetCreation", "Debug", "createDomoticzWidget - unit: %s" % unit, nwkid)
@@ -259,13 +315,20 @@ def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None
 
     # oldFashionWidgetName = cType + "-" + ieee + "-" + ep
 
-    myDev_ID = domo_create_api(self, Devices, ieee, unit, widgetName, widgetType=widgetType, Type_=Type_, Subtype_=Subtype_, Switchtype_=Switchtype_, widgetOptions=widgetOptions, Image=Image)
-    
+    myDev_ID = domo_create_api(self, Devices, ieee, unit, widgetName, widgetType=widgetType, Type_=Type_, Subtype_=Subtype_, Switchtype_=Switchtype_, widgetOptions=widgetOptions, Image=Image, nwkid=nwkid)
+
     if myDev_ID == -1:
         # Recoverable: Domoticz refused the creation (e.g. 'Accept New Hardware' is off).
         # Mark so the heartbeat retries instead of deleting the device.
         self.ListOfDevices[nwkid]["Status"] = "failDB_NoHardware"
-        self.log.logging("WidgetCreation", "Error", "Domoticz widget creation failed. Check that Domoticz can Accept New Hardware [%s]" % myDev_ID)
+        self.log.logging(
+            "WidgetCreation", "Error",
+            "Domoticz widget creation failed for %s/%s %s (unit %s). Check that Domoticz can "
+            "Accept New Hardware, and see the Domoticz log for the reason it refused." % (
+                nwkid, ep, cType, unit),
+            nwkid,
+            widget_creation_context(self, Devices, nwkid, Reason="Domoticz refused the creation",
+                                    Ep=ep, WidgetType=cType, Unit=unit, WidgetName=widgetName))
         return None
 
     self.ListOfDevices[nwkid]["Status"] = "inDB"
@@ -478,7 +541,13 @@ def CreateDomoDevice(self, Devices, NWKID):
         new_units_needed = max(0, len(Type) - reusable_units)
 
         if ( nb_occupied_units + new_units_needed) >= 254:  # Domoticz has a limit of 254 devices per hardware
-            self.log.logging("WidgetCreation", "Error", f"Domoticz Widget Creation Failed - No available unit for device {DeviceID_IEEE}. ", NWKID)
+            self.log.logging(
+                "WidgetCreation", "Error",
+                f"Domoticz Widget Creation Failed - No available unit for device {DeviceID_IEEE}. ",
+                NWKID,
+                widget_creation_context(self, Devices, NWKID, Reason="254-unit limit reached for this device",
+                                        Ep=Ep, RequestedTypes=Type,
+                                        OccupiedUnits=nb_occupied_units, NewUnitsNeeded=new_units_needed))
             self.widget_reuse_pool = {}
             return
 
@@ -519,7 +588,9 @@ def CreateDomoDevice(self, Devices, NWKID):
                     "WidgetCreation", "Error",
                     "CreateDomoDevice - Unrecognized widget Type '%s' for %s Ep: %s; no widget created. "
                     "Check device configuration Type spelling against known widget types." % (t, DeviceID_IEEE, Ep),
-                    NWKID)
+                    NWKID,
+                    widget_creation_context(self, Devices, NWKID, Reason="unrecognized widget Type",
+                                            Ep=Ep, WidgetType=t, RequestedTypes=Type))
 
 
     # for Ep
@@ -540,12 +611,23 @@ def retry_failed_widget_creation(self, Devices, NwkId):
 
     Widget-creation ownership stays in this module; the heartbeat only schedules
     the call (see Modules/heartbeat.py).
+
+    This retry repeats every 5 minutes for as long as the device stays in a
+    failDB_* state, so the line below is what a user actually sees in the Domoticz
+    log. It names the device the way the user knows it, because a bare NwkId is not
+    something they can act on. Note the identification goes in the *message*, not in
+    a context= dict: LoggingManagement only keeps context for logType "Error"
+    (process_logging_event), so a context passed on a "Status" log is discarded.
     """
-    status = self.ListOfDevices[NwkId].get("Status")
+    device = self.ListOfDevices[NwkId]
+    status = device.get("Status")
     self.log.logging(
         "WidgetCreation", "Status",
-        "Widget creation previously failed (%s) for %s - retrying. Check Domoticz 'Accept New "
-        "Hardware' setting and that free device units are available." % (status, NwkId),
+        "Widget creation previously failed (%s) for %s (%s, Model: %s, IEEE: %s) - retrying every "
+        "5 minutes. Check the Domoticz log for the reason Domoticz refused, the Domoticz 'Accept "
+        "New Hardware' setting, and that free device units are available." % (
+            status, NwkId, device.get("ZDeviceName") or "unnamed",
+            device.get("Model") or "unknown", device.get("IEEE") or "unknown"),
         NwkId)
     CreateDomoDevice(self, Devices, NwkId)
 
@@ -600,13 +682,19 @@ def create_xcube_widgets(self, Devices, NWKID, DeviceID_IEEE, Ep, t):
 
     # Create the XCube Widget
     Options = createSwitchSelector(self, 10, DeviceType=t, OffHidden=True, SelectorStyle=1)
-    unit = retreive_free_unit_for_widget(self, Devices, DeviceID_IEEE, nbunit_=2)  # Look for 2 consecutive slots
+    unit = retreive_free_unit_for_widget(self, Devices, DeviceID_IEEE, nbunit_=2, nwkid=NWKID)  # Look for 2 consecutive slots
     
-    idx = domo_create_api(self, Devices, DeviceID_IEEE, unit, deviceName(self, NWKID, t, DeviceID_IEEE, Ep), Type_=244, Subtype_=62, Switchtype_=18, widgetOptions=Options)
+    idx = domo_create_api(self, Devices, DeviceID_IEEE, unit, deviceName(self, NWKID, t, DeviceID_IEEE, Ep), Type_=244, Subtype_=62, Switchtype_=18, widgetOptions=Options, nwkid=NWKID)
     
     if idx == -1:
         self.ListOfDevices[NWKID]["Status"] = "failDB_NoHardware"
-        self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} {t} {unit}")
+        self.log.logging(
+            "WidgetCreation", "Error",
+            f"Domoticz widget creation failed for {NWKID}/{Ep} {t} (unit {unit}). Check that "
+            "Domoticz can Accept New Hardware, and see the Domoticz log for the reason it refused.",
+            NWKID,
+            widget_creation_context(self, Devices, NWKID, Reason="Domoticz refused the creation",
+                                    Ep=Ep, WidgetType=t, Unit=unit))
         return None
     else:
         self.log.logging( "WidgetCreation", "Debug", f"create_xcube_widgets - widgetID {idx} for '{t}'")
@@ -614,10 +702,16 @@ def create_xcube_widgets(self, Devices, NWKID, DeviceID_IEEE, Ep, t):
 
     # Create the Status (Text) Widget to report Rotation angle
     unit += 1
-    idx = domo_create_api(self, Devices, DeviceID_IEEE, unit, deviceName(self, NWKID, "Text", DeviceID_IEEE, Ep), Type_=243, Subtype_=19, Switchtype_=0,)
+    idx = domo_create_api(self, Devices, DeviceID_IEEE, unit, deviceName(self, NWKID, "Text", DeviceID_IEEE, Ep), Type_=243, Subtype_=19, Switchtype_=0, nwkid=NWKID)
     
     if idx == -1:
-        self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} Text {unit}")
+        self.log.logging(
+            "WidgetCreation", "Error",
+            f"Domoticz widget creation failed for {NWKID}/{Ep} Text (unit {unit}). Check that "
+            "Domoticz can Accept New Hardware, and see the Domoticz log for the reason it refused.",
+            NWKID,
+            widget_creation_context(self, Devices, NWKID, Reason="Domoticz refused the creation",
+                                    Ep=Ep, WidgetType="Text", Unit=unit))
         return None
     else:
         self.log.logging( "WidgetCreation", "Debug", f"create_xcube_widgets - widgetID {idx} for 'Text'")
@@ -662,8 +756,12 @@ def create_switch_selector_widget( self, Devices, NWKID, DeviceID_IEEE, Ep, t):
     Options = createSwitchSelector(self, _num_level, DeviceType=t, OffHidden=_OffHidden, SelectorStyle=_SelectorStyle)
     unit = createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
     if unit is None:
-        # Status (failDB_NoUnit / failDB_NoHardware) already set by createDomoticzWidget; don't clobber it.
-        self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} {t} {unit}")
+        # Status (failDB_NoUnit / failDB_NoHardware) already set by createDomoticzWidget,
+        # which also logged the identified Error. Logging a second Error here only
+        # duplicated it in the error history (3 entries per failed widget), so keep the
+        # selector-specific detail at Debug level.
+        self.log.logging("WidgetCreation", "Debug", "create_switch_selector_widget - failed for %s/%s %s Levels: %s Off: %s Style: %s Options: %s" % (
+            DeviceID_IEEE, Ep, t, _num_level, _OffHidden, _SelectorStyle, Options), NWKID)
         return None
 
     self.log.logging("WidgetCreation", "Debug", "create_switch_selector_widget - t: %s Levels: %s Off: %s Style: %s " % (
