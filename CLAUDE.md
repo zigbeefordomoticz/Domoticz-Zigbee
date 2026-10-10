@@ -380,6 +380,17 @@ When reviewing or authoring a PR here:
 - Check the change against the open PRs before writing it: a fix already addressed by an open PR should be closed as superseded, not merged twice (e.g. two PRs both fixing the same `Modules/database.py` deque serialization).
 - Do not merge a bundle "because most of it is fine", and do not cherry-pick the good hunks into an integration branch while leaving the PR open misrepresenting what was merged.
 
+**Release Notes — every release section opens with its PR list and contributors:**
+
+A release section in `ReleaseNotes.md` starts with `Pull requests in this release: #..., #...`
+(ascending, excluding the release PR itself) and `Contributors: @handle (N commits), ...`,
+before the `[Feature]`/`[Issue]`/`[Technical]` bullets. Build the PR list from the history —
+merge subjects, or `gh api repos/zigbeefordomoticz/Domoticz-Zigbee/commits/<sha>/pulls` —
+never from the bullets, which mix issue and PR numbers. Build contributors from
+`git shortlog -sne --no-merges <prev tag>..HEAD`, deduped by email, bots excluded, and add by
+hand anyone whose PR was superseded or re-authored: git holds no record of them. See
+AGENTS.md → "Release Notes — PR List and Contributors".
+
 **Commit Message Style:**
 - Follow existing patterns (see recent commits)
 - Reference issues if applicable
