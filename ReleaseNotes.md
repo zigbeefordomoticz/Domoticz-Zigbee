@@ -145,6 +145,28 @@ Contributors: @pipiche38 (181 commits)
 - [Issue] - Fix OTA heartbeat issue, with dedicated unit tests (#1974)
 - [Issue] - Prevent requesting a cfg report when Min/Max eq to 0x0000 (#1998)
 
+## Contributors before 9.1
+
+Everyone whose work is in the plugin's history from the initial commit (November 2017) to
+the stable9 branch point (`Release stable8.8.1007`, June 2026) — 10817 commits across
+stable8, stable7 and earlier. Per-release lists start at 9.1.001 above.
+
+@pipiche38 (10224 commits), @zaraki673 (261), @SylvainPer (96), @badzz (96), @deennoo (24),
+@Smanar (11), @GMLinky (10), @thiklop (9), @cclauss (7), @thertp (5), @jp-keros (4),
+@Adi3000 (2), @lboue (2), @Maverick81-SR (2), @pitchoun38 (2), @rlacha (2), @shger21 (2),
+@Grunnpi (1), @Hedda (1), @Krakinou (1), @lacha07 (1), @perdro6996 (1), @rbroeders (1),
+@sbhc68 (1).
+
+Credited through `Co-Authored-By:` trailers, without a commit of their own: @Git-Bruno,
+Bert Huijben, ben33880.
+
+Counts merge the several `user.name` and email aliases each person committed under, and
+each handle was resolved against GitHub rather than read off the commit name. The
+`zigbeefordomoticz` organisation account (51 commits) and automated accounts are not
+listed.
+
+---
+
 ## June 2026 - stable8.1.007 ( 2026.6)
 
 - [Issue] - do not run plugin_stats when on Zigate 
