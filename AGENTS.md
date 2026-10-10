@@ -240,6 +240,55 @@ is not finished being decided.
 
 ---
 
+## 📝 Release Notes — PR List and Contributors
+
+Every release section in `ReleaseNotes.md` opens with two lines, before the
+`[Feature]` / `[Issue]` / `[Technical]` bullets:
+
+```markdown
+## October 2026 - stable9 9.1.007 (2026.13)
+
+Pull requests in this release: #2051, #2052, ...
+
+Contributors: @pipiche38 (36 commits), @shger21 (2 commits, #2079), @GMLinky (#2055, #2056, #2057 carried into #2058, #2062 into #2064)
+```
+
+**Pull requests** — every PR whose changes are in the release, in ascending order. The
+release PR itself is not listed; it carries the release, it is not a change in it.
+Derive the list from the history, never from the bullets below it: a bullet may cite an
+issue number (`#2050`) beside its PR number, and once written down the two are
+indistinguishable.
+
+- When the release branch merged the PR branches, the merge subjects are the list:
+  `git log --merges --format='%s' <prev tag>..HEAD`
+- Otherwise ask GitHub which PR owns each commit — authoritative, and it gives the
+  author too:
+  `gh api repos/zigbeefordomoticz/Domoticz-Zigbee/commits/<sha>/pulls --jq '.[]|"#\(.number) @\(.user.login)"'`
+  This answers nothing for a commit that was **cherry-picked or re-authored**: the SHA on
+  the release branch was never in the PR. Those contributions have to be credited by hand
+  (see below).
+
+**Contributors** — everyone whose work is in the release, with their commit count where
+they have one:
+
+- `git shortlog -sne --no-merges <prev tag>..HEAD` gives the commit authors. Dedupe by
+  **email**, not name — the same person appears under more than one `user.name`.
+- Exclude bots (`claude[bot]`, dependabot). They are not contributors.
+- **Credit re-authored work explicitly.** When a contributor's PR was superseded,
+  rewritten or cherry-picked instead of merged, git keeps no record of them — no author,
+  no `Co-Authored-By` — so they are missing from every mechanical list, and the release
+  that drops them is the one that owes them the credit. Name them with the PRs they
+  opened and where the work landed, as with `@GMLinky` above. Better still, add a
+  `Co-Authored-By:` trailer when the commit is written; once it is merged, the release
+  notes are the only place left to carry it.
+- Field reporters who never opened a PR are worth crediting too, with the issue or forum
+  thread they reported.
+
+This is part of cutting the release, not an afterthought: the PR list is how a user
+reading a one-line entry gets to the discussion behind it.
+
+---
+
 ## 🚨 What NOT To Do (Summary)
 
 ❌ Do NOT:
