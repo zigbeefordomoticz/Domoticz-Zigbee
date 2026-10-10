@@ -433,15 +433,23 @@ def build_widget_reuse_pool(self, Devices, DeviceID_):
 
 def domo_create_api(self, Devices, DeviceID_, Unit_, Name_,
                     widgetType=None, Type_=None, Subtype_=None, Switchtype_=None,
-                    widgetOptions=None, Image=None, nwkid=None):
+                    widgetOptions=None, Image=None, nwkid=None, log_refusal=True):
     """
     Create a Domoticz Widget (Extended framework).
 
     ``nwkid`` is optional and used only to enrich the error report: when supplied,
     LoggingManagement attaches the full ListOfDevices entry to the stored error.
 
+    ``log_refusal`` is for a caller that reports the refusal itself, in terms its
+    own user can act on (Classes/AdminWidgets.py does). The refusal is then logged
+    here at Debug rather than Error, so one refused widget is one error entry
+    instead of two. It covers only the paths where *Domoticz* refused; a bad call
+    into this function is always an Error, whoever made it.
+
     Returns the widget IDX on success, or -1 on failure.
     """
+
+    refusal_logtype = "Error" if log_refusal else "Debug"
 
     def _failure_context(reason, **extra):
         """Context attached to a creation failure.
@@ -553,7 +561,7 @@ def domo_create_api(self, Devices, DeviceID_, Unit_, Name_,
             ).Create()
 
     except Exception as e:
-        self.log.logging("AbstractDz", "Error",
+        self.log.logging("AbstractDz", refusal_logtype,
                          f"domo_create_api - Domoticz.Unit.Create() raised: {e}",
                          nwkid, _failure_context("Domoticz.Unit.Create() raised",
                                                  Exception="%s: %s" % (type(e).__name__, e)))
@@ -565,7 +573,7 @@ def domo_create_api(self, Devices, DeviceID_, Unit_, Name_,
     # Verify creation (AND, not OR)
     if not _device_unit_exists(Devices, DeviceID_, Unit_):
         self.log.logging(
-            "AbstractDz", "Error",
+            "AbstractDz", refusal_logtype,
             f"domo_create_api Created device: {DeviceID_} {Unit_} {full_name} failed !!!",
             nwkid,
             _failure_context(
