@@ -840,7 +840,10 @@ def extract_value_size(self, Data, idx, DType ):
         # Sonoff SWV-ZFE declares its uint8 arrays 0x5018/0x5020 with element type 0x48 (array) and one byte
         # per element; no supported device carries a genuine array of arrays, so size those as bytes too.
         element_size = 1 if element_type == "48" else SIZE_DATA_TYPE.get(element_type)
-        if element_size:
+        # A Tuya TS0505B reports 0300/f003 as an array of 0 elements and still appends 8 bytes to it.
+        # Sizing that array from its count leaves those bytes to be read as the next attribute record,
+        # which aborts the whole frame, so an empty array falls back to "take the rest" below.
+        if element_size and nb_elements:
             size = nb_elements * element_size * 2
             if len(Data[idx + 6 :]) >= size:
                 idx += 6
