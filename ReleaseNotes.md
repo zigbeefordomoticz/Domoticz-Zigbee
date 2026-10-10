@@ -20,6 +20,10 @@ Release Numbering
 
 ## September 2026 - stable9 9.1.006 (2026.12)
 
+Pull requests in this release: #2037, #2038, #2048
+
+Contributors: @pipiche38 (25 commits)
+
 - [Feature] - Sonoff SWV-ZFE/ZFU smart water valve: full support - manual irrigation settings (duration, capacity, duration with interval), valve alarm settings, water flow unit, irrigation plans, and live Status text, Flow (L/min), daily Volume and Water Counter widgets derived from the irrigation status reports (#2048)
 - [Feature] - New generic widget types `TextStatus` (Text) and `WaterVolume` (Custom sensor, L); `UpdDomoDeviceWithCluster` can now feed several widgets from one attribute (#2048)
 - [Issue] - Fix ZCL Array (0x48) decoding swallowing the attributes that follow it in a multi-attribute frame (#2048)
@@ -29,6 +33,10 @@ Release Numbering
 - [Technical] - Extract ZCL attribute/cluster JSON parameter keys into named constants (#2037)
 
 ## September 2026 - stable9 9.1.005 (2026.11)
+
+Pull requests in this release: #2030, #2031, #2032, #2033, #2034, #2035, #2036
+
+Contributors: @pipiche38 (11 commits)
 
 - [Issue] - Fix TypeError when radio backend reports lqi as a float (#1999, #2030)
 - [Issue] - Fix Network Topology / Network Energy scan failing on zigpy coordinators (#2033)
@@ -40,9 +48,17 @@ Release Numbering
 
 ## August 2026 - stable9 9.1.004 (2026.10)
 
+Pull requests in this release: #2022
+
+Contributors: @pipiche38 (4 commits)
+
 - [Issue] - Fix: drop spurious OnOff Report Attributes from Tuya remote buttons (#2022)
 
 ## August 2026 - stable9 9.1.003 (2026.9)
+
+Pull requests in this release: #2009, #2011, #2012, #2013, #2014, #2015, #2016, #2019, #2021, #2023, #2025, #2028, #2029
+
+Contributors: @pipiche38 (23 commits)
 
 - [Issue] - Fix ZLinky totalisateur crash on non-numeric index value (#2029)
 - [Issue] - Fix domo_update_api: pass UpdateOptions=True so widget Options persist (#2028)
@@ -58,12 +74,20 @@ Release Numbering
 
 ## August 2026 - stable9 9.1.002 (2026.8)
 
+Pull requests in this release: #2004, #2005, #2006, #2007
+
+Contributors: @pipiche38 (8 commits)
+
 - [Issue] - Fix infinite Configure Reporting mismatch loop; give up permanently after 2 consecutive mismatches instead of retrying forever (#1999)
 - [Issue] - Fix TypeError: 'float' object cannot be interpreted as an integer on PowerFactor/FanSpeed widget updates; coerce nValue at the Domoticz API boundary (#2003)
 - [Issue] - Fix TypeError at ZNP startup building the 0x8010 firmware version frame for CC2531 boards reporting "Z-Stack Home"/"Z-Stack 3.0.x" firmware (#2005)
 - [Issue] - Fix AttributeError on repeated onHeartbeat during ErasePDM restart (#2007)
 
 ## July 2026 - stable9 9.1.001 (2026.7)
+
+Pull requests in this release: #1863, #1924, #1925, #1931, #1932, #1934, #1935, #1940, #1941, #1962, #1963, #1964, #1966, #1976, #1979, #1983, #1984, #1988, #1989, #1990, #1991, #1992, #1993, #1995, #1998
+
+Contributors: @pipiche38 (181 commits)
 
 - [Technical] - Enable Domoticz 'Extended Framework' (DomoticzEx) as the plugin's primary framework, replacing the legacy Domoticz API (#1863, #1931)
 - [Technical] - ZigpyTransport - new HA-grade supervisor for the zigpy thread, with watchdog retry tolerance and automatic recovery (#1935)
