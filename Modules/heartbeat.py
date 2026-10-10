@@ -24,7 +24,8 @@ from DevicesModules.custom_Chameleon import erl_z3_master_info
 from Modules.basicOutputs import getListofAttribute
 from Modules.casaia import pollingCasaia
 from Modules.danfoss import danfoss_room_sensor_polling
-from Modules.domoCreate import retry_failed_widget_creation
+from Modules.domoCreate import (process_widget_creation_requests,
+                                retry_failed_widget_creation)
 from Modules.domoticzAbstractLayer import (find_widget_unit_from_WidgetID,
                                            is_device_ieee_in_domoticz_db)
 from Modules.domoTools import (reset_device_ieee_unit_if_needed,
@@ -882,6 +883,20 @@ def processListOfDevices(self, Devices):
     # Let's check if we do not have a command in TimeOut
 
     # self.ControllerLink.checkTOwaitFor()
+
+    # Widget (re)creations asked for by the WebUI. Those endpoints run in their own
+    # thread and so cannot call the Domoticz API themselves; this is the first point
+    # in the heartbeat where we are back on the thread Domoticz calls us on.
+    process_widget_creation_requests(self, Devices)
+
+    # Admin widgets (Z4D Status, Z4D Notifications) Domoticz refused to create at
+    # startup. They are created from AdminWidgets.__init__ and nowhere else, so
+    # without this they would stay missing until the plugin is restarted. Same
+    # cadence as the device widgets below; the number of attempts is decided by
+    # retry_failed_admin_widget_creation() itself.
+    if self.adminWidgets and (self.HeartbeatCount % WIDGET_CREATION_RETRY) == 0:
+        self.adminWidgets.retry_failed_admin_widget_creation(Devices)
+
     entriesToBeRemoved = []
 
     for NwkId in list(self.ListOfDevices.keys()):
@@ -933,9 +948,11 @@ def processListOfDevices(self, Devices):
         if status in ("failDB_NoUnit", "failDB_NoHardware"):
             # Recoverable widget-creation failure (Domoticz refused new hardware,
             # or no free unit was available). Keep the device - deleting it would
-            # lose the whole entry (Ep/Cluster/ClusterType) - and let the creation
-            # module retry every 5 minutes so it self-heals once the user re-enables
-            # 'Accept New Hardware' / frees units.
+            # lose the whole entry (Ep/Cluster/ClusterType) - and schedule a retry
+            # every 5 minutes. Only the cadence is decided here: how many attempts
+            # are worth making is enforced by retry_failed_widget_creation(), which
+            # gives up after WIDGET_CREATION_MAX_RETRIES rather than reprinting the
+            # same error for the whole session.
             if (int(device["Heartbeat"]) % WIDGET_CREATION_RETRY) == 0:
                 retry_failed_widget_creation(self, Devices, NwkId)
             continue

@@ -35,7 +35,8 @@ def rest_get_device_param( self, parameters):
     _response = prepResponseMessage(self, setupHeadersResponse())
 
     if len(parameters) != 1:
-        return _log_and_return_with_error(self, "rest_get_device_param - unexpected parameter: %s", parameters, "unexpected parameter %s ", _response, )
+        return _log_and_return_with_error(
+            self, "rest_get_device_param - expecting a single NwkId or IEEE, got: %s" % (parameters, ), _response)
 
     nwkid = parameters[0]
     if len(nwkid) == 16:
@@ -43,7 +44,8 @@ def rest_get_device_param( self, parameters):
         nwkid = self.IEEE2NWK.get( nwkid )
 
     if nwkid not in self.ListOfDevices:
-        return _log_and_return_with_error(self, "rest_get_device_param - Unknown device %s ", nwkid, "unknown device %s ", _response, )
+        return _log_and_return_with_error(
+            self, "rest_get_device_param - unknown device %s" % (nwkid, ), _response)
     device_info = self.ListOfDevices.get( nwkid )
     device_param = device_info.get("Param", "{}")
 
@@ -69,17 +71,20 @@ def rest_update_device_param(self, data):
     ieee = data.get("IEEE")
 
     if nwkid is None and ieee is None:
-        return _log_and_return_with_error(self, "rest_update_device_param - missing IEEE or NWKID", "unexpected parameter %s ", _response, )
+        return _log_and_return_with_error(
+            self, "rest_update_device_param - missing IEEE or NWKID in %s" % (data, ), _response)
 
     if ieee:
         nwkid = self.IEEE2NWK.get( ieee )
 
     if parameter is None or nwkid is None:
-        return _log_and_return_with_error(self, "rest_update_device_param - unexpected parameter: %s", data, "unexpected parameter %s ", _response, )
+        return _log_and_return_with_error(
+            self, "rest_update_device_param - unexpected parameter: %s" % (data, ), _response)
     if nwkid not in self.ListOfDevices:
-        return _log_and_return_with_error(self, "rest_update_device_param - Unknown device %s ", nwkid, "unknown device %s ", _response, )
+        return _log_and_return_with_error(
+            self, "rest_update_device_param - unknown device %s" % (nwkid, ), _response)
     old_parameter = self.ListOfDevices[ nwkid ].get("Param")
-    _response["Data"] = {"NwkId %s set Param from: %s to %s" % (nwkid, old_parameter, parameter)}
+    _response["Data"] = {"Message": "NwkId %s set Param from: %s to %s" % (nwkid, old_parameter, parameter)}
 
     self.ListOfDevices[ nwkid ]["Param"] = parameter
 
@@ -88,7 +93,9 @@ def rest_update_device_param(self, data):
     return _response
 
 
-def _log_and_return_with_error(self, arg0, arg1, arg2, _response):
-    self.logging("Error", arg0 % arg1)
-    _response["Data"] = {arg2 % arg1}
+def _log_and_return_with_error(self, message, _response):
+    """Log message and hand it back as a JSON object, so the caller gets a parsable body."""
+
+    self.logging("Error", message)
+    _response["Data"] = {"BE_Error": message}
     return _response

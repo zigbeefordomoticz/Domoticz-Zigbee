@@ -14,9 +14,8 @@ from time import time
 
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
-from Modules.domoCreate import (CreateDomoDevice,
-                                over_write_type_from_deviceconf)
-from Modules.domoTools import remove_all_widgets, update_model_name
+from Modules.domoCreate import request_widget_creation
+from Modules.domoTools import update_model_name
 
 
 def rest_change_model_name(self, verb, data, parameters):
@@ -47,12 +46,16 @@ def rest_change_model_name(self, verb, data, parameters):
         self.logging( "Error", "rest_recreate_widgets - Unknown device %s " % nwkid)
         return _response
     old_model = self.ListOfDevices[ nwkid ]["Model"] if "Model" in self.ListOfDevices[ nwkid ] else ""
-    _response["Data"] = {"NwkId %s set Model from: %s to %s" % (nwkid, old_model, new_model)}
+    _response["Data"] = {"NwkId %s set Model from: %s to %s, widgets will be re-created on the next heartbeat" % (nwkid, old_model, new_model)}
 
     update_model_name( self, nwkid, new_model )
-    remove_all_widgets( self, self.Devices, nwkid)
-    over_write_type_from_deviceconf( self, self.Devices, nwkid)
-    self.ListOfDevices[nwkid]["Status"] = "CreateDB"
-    CreateDomoDevice(self, self.Devices, nwkid)
+
+    # Removing and re-creating the widgets are both Domoticz API calls, and this
+    # runs in a WebServer client thread (Classes/WebServer/com.py: handle_client).
+    # The Domoticz plugin API must only be used from the thread Domoticz calls the
+    # plugin on, so the heartbeat does both (Modules/domoCreate.py).
+    request_widget_creation(
+        self, nwkid, "model changed from %s to %s from the WebUI" % (old_model, new_model),
+        remove_existing_widgets=True)
 
     return _response

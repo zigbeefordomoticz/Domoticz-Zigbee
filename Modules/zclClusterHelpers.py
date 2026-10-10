@@ -11,6 +11,7 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 import binascii
+import contextlib
 import struct
 
 from Modules.pluginModels import (check_found_plugin_model,
@@ -453,6 +454,32 @@ def _cleanup_model_name(msg_att_type, value):
 
 
 # Used by Cluster 0x0702
+def _stored_attribute_to_int(self, nwk_id, cluster_id, attr_id, value, default=1):
+    """
+    Convert a multiplier/divisor attribute value stored in ListOfDevices[nwk_id]["Ep"] to an int.
+
+    The generic ZCL path stores the decoded int, but the raw path (checkAndStoreAttributeValue with
+    MsgClusterData, or databases from older releases) stores the raw hex string. Such a string must be
+    decoded as hex: int("000a") raises and int("0010") silently returns 10 instead of 16.
+    Returns default (and logs) when the value cannot be used, or is 0.
+    """
+    if value is None:
+        return default
+
+    result = None
+    if isinstance(value, int) and not isinstance(value, bool):
+        result = value
+    elif isinstance(value, str):
+        with contextlib.suppress(ValueError):
+            result = int(value, 16)
+
+    if result is None:
+        self.log.logging(["ZclClusters", "Electric"], "Log", f"{nwk_id} cluster {cluster_id} attribute {attr_id}: unexpected stored value {value!r} ({type(value).__name__}), using {default}", nwk_id)
+        return default
+
+    return result or default
+
+
 def compute_metering_conso(self, nwk_id, msg_src_ep, msg_cluster_id, msg_attr_id, raw_value):
     """
     Compute the metering consumption value based on device configuration.
@@ -509,8 +536,8 @@ def compute_metering_conso(self, nwk_id, msg_src_ep, msg_cluster_id, msg_attr_id
             divisor = power_divisor
 
     # Retrieve default multiplier and divisor if not set
-    multiplier = int(cluster_data.get("0301", 1)) if multiplier is None else multiplier
-    divisor = int(cluster_data.get("0302", 1)) if divisor is None else divisor
+    multiplier = _stored_attribute_to_int(self, nwk_id, msg_cluster_id, "0301", cluster_data.get("0301")) if multiplier is None else multiplier
+    divisor = _stored_attribute_to_int(self, nwk_id, msg_cluster_id, "0302", cluster_data.get("0302")) if divisor is None else divisor
 
     # Prevent division by zero (force minimum value of 1)
     divisor = divisor if divisor != 0 else 1  
@@ -600,12 +627,9 @@ def compute_electrical_measurement_conso(self, nwk_id, src_ep, cluster_id, attr_
         return round(conso / custom_divisor, 3)
 
     # Retrieve multiplier and divisor from the device attribute list
-    multiplier = int(cluster_data.get(mapping['multiplier'], 1))
-    divisor = int(cluster_data.get(mapping['divisor'], 1))
-
-    # Ensure multiplier and divisor are not zero (e.g., for Legrand Cable outlets)
-    multiplier = multiplier or 1
-    divisor = divisor or 1
+    # (0 is replaced by 1, e.g. for Legrand Cable outlets)
+    multiplier = _stored_attribute_to_int(self, nwk_id, cluster_id, mapping['multiplier'], cluster_data.get(mapping['multiplier']))
+    divisor = _stored_attribute_to_int(self, nwk_id, cluster_id, mapping['divisor'], cluster_data.get(mapping['divisor']))
 
     conso = round((conso * multiplier) / divisor, 3)
 

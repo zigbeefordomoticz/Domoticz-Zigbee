@@ -18,7 +18,39 @@ Release Numbering
 - Odd numbers --> Stable/9.1 (stable branch)
 - Even numbers  --> Beta/9.2 (dev branch)
 
+## October 2026 - stable9 9.1.007 (2026.13)
+
+Pull requests in this release: #2051, #2052, #2053, #2058, #2060, #2061, #2063, #2064, #2066, #2067, #2068, #2069, #2070, #2071, #2072, #2073, #2074, #2075, #2076, #2079
+
+Contributors: @pipiche38 (36 commits), @shger21 (2 commits, #2079), @GMLinky (#2055, #2056, #2057 carried into #2058, #2062 into #2064)
+
+- [Feature] - Linky: new device Params `LINKY_IDX_HC` / `LINKY_IDX_HP` to tell which of 0x0702/0x0100 (EASF01) and 0x0702/0x0102 (EASF02) counts HC and HP on the meter, and `LINKY_HPHC_ORDER` (HC_HP / HP_HC) to choose which one is shown in Usage1 (T1) of the P1Meter widgets; applies to the ZLinky Tempo colour endpoints too (#2050, #2051)
+- [Feature] - P1Meter: new opt-in device Param `P1METER_IMPORT_EXPORT` turning a `P1Meter` widget into a single tariff import/export meter for standard ZCL energy meters with solar export - delivered energy in Usage1, received energy in Return1, and a negative instant power shown as production (#2060)
+- [Feature] - OTA: add Innr support (manufacturer code 0x1166, firmware folder `OTAFirmware/INNR`) (#2065, #2066)
+- [Issue] - OTA: a manufacturer code shared by several vendors now has one generic entry owning it, so a LiXee or Lumi device is no longer told to store its firmware in the `EUROTRONICS` folder; the former per-vendor folders keep being scanned, so firmware already dropped there is not lost (#2068)
+- [Issue] - Fix a Zigbee transport start on an empty or erased coordinator forming the network *and* restoring a backup instead of one or the other, and fall back to the zigpy database backup when no plugin backup exists (#2053)
+- [Issue] - Fix the JSON export of the device list failing on the `RollingLQI` deque, which also stopped the txt and Domoticz flushes that run after it; load only `*.json` files from `Conf/Local-Devices`; decode a 0x0b04 / 0x0702 multiplier or divisor stored as a hex string as hex (#2058)
+- [Issue] - Fix the device Param `OnOffOnTimeDelay` writing OffWaitTime (0x4002) instead of OnTime (0x4001), which left OnTime impossible to set (#2064)
+- [Issue] - Fix a regression introduced in 9.1.006: a ZCL Array (0x48) announcing 0 elements was sized from that count even when payload followed, dropping every 0x0300/0xf003 report of a Tuya TS0505B bulb with a `decoding_error`. 9.1.005 and earlier were unaffected (#2074)
+- [Issue] - Fix the error-history file (`PluginZigbee_log_error_history_NN.json`) being destroyed by a device attribute `json.dumps()` cannot serialize - in practice any Error logged with a NwkId, because the device entry carries a `RollingLQI` deque (#2069)
+- [Issue] - Widget creation: recoverable failures are now retried at most twice instead of every 5 minutes for the whole plugin session, and the plugin says once what actually unblocks it - retrying cannot clear the cause, every refusal Domoticz reports needs a user action (#2072)
+- [Issue] - Fix the `Z4D Status` and `Z4D Notifications` admin widgets being lost for the whole plugin session when Domoticz refuses to create them; they are now retried, and the refusal is reported once with a context naming the widget (#2073)
+- [Issue] - Stop the WebUI `recreateWidget` and `change_ModelName` REST endpoints from calling the Domoticz plugin API from the WebServer's own thread, where failures are silent; they now queue the widget (re)creation for the heartbeat to carry out (#2071)
+- [Issue] - Device Management: the `device-param` REST error paths now return JSON instead of a Python `set` rendered through `str()`, and no longer raise TypeError instead of reporting the error (#2076)
+- [Issue] - Danfoss: repair the external room sensor range check, which could never fire, and drop a bogus sensor reading from the room average before it reaches the device (#2077, #2079)
+- [Issue] - P1Meter: resolve the HC/HP attribute mapping for every P1Meter widget type, not only on the Linky branch, so an import/export P1Meter carrying `LINKY_COLOR_SENSOR` no longer raises NameError on the Linky colour check (#2051, #2060)
+- [Technical] - Bump zigpy 2.1.0 -> 2.3.0, zigpy-znp 1.1.0 -> 1.1.1, bellows 1.0.1 -> 1.1.0 (#2052)
+- [Technical] - Widget-creation failures now name the device, its Model and the widget being created, in the Domoticz log and in the error history (#2070)
+- [Technical] - A `zclDecoder` `decoding_error` now reports the device Model and the offset decoding actually stopped at, instead of a NwkId and a field that was always null; covers the three foundation decoders, not only Report Attributes (#2075)
+- [Technical] - CI: the "Validate changed JSON files" check now validates the changed JSON files; it silently checked nothing on pull requests and aborted on pushes to a non-default branch (#2061)
+- [Technical] - Document the "one PR = one feature or one bug fix" rule in AGENTS.md and CLAUDE.md (#2063)
+- [Technical] - Fix the `.gitignore` exceptions meant to keep the `OTAFirmware/*/` folder markers and READMEs tracked; neither matched the filenames actually in the tree (#2067)
+
 ## September 2026 - stable9 9.1.006 (2026.12)
+
+Pull requests in this release: #2037, #2038, #2048
+
+Contributors: @pipiche38 (25 commits)
 
 - [Feature] - Sonoff SWV-ZFE/ZFU smart water valve: full support - manual irrigation settings (duration, capacity, duration with interval), valve alarm settings, water flow unit, irrigation plans, and live Status text, Flow (L/min), daily Volume and Water Counter widgets derived from the irrigation status reports (#2048)
 - [Feature] - New generic widget types `TextStatus` (Text) and `WaterVolume` (Custom sensor, L); `UpdDomoDeviceWithCluster` can now feed several widgets from one attribute (#2048)
@@ -30,6 +62,10 @@ Release Numbering
 
 ## September 2026 - stable9 9.1.005 (2026.11)
 
+Pull requests in this release: #2030, #2031, #2032, #2033, #2034, #2035, #2036
+
+Contributors: @pipiche38 (11 commits)
+
 - [Issue] - Fix TypeError when radio backend reports lqi as a float (#1999, #2030)
 - [Issue] - Fix Network Topology / Network Energy scan failing on zigpy coordinators (#2033)
 - [Issue] - Prevent plugin crash on a fresh install: don't rotate a file that doesn't exist yet (#2034)
@@ -40,9 +76,17 @@ Release Numbering
 
 ## August 2026 - stable9 9.1.004 (2026.10)
 
+Pull requests in this release: #2022
+
+Contributors: @pipiche38 (4 commits)
+
 - [Issue] - Fix: drop spurious OnOff Report Attributes from Tuya remote buttons (#2022)
 
 ## August 2026 - stable9 9.1.003 (2026.9)
+
+Pull requests in this release: #2009, #2011, #2012, #2013, #2014, #2015, #2016, #2019, #2021, #2023, #2025, #2028, #2029
+
+Contributors: @pipiche38 (23 commits)
 
 - [Issue] - Fix ZLinky totalisateur crash on non-numeric index value (#2029)
 - [Issue] - Fix domo_update_api: pass UpdateOptions=True so widget Options persist (#2028)
@@ -58,12 +102,20 @@ Release Numbering
 
 ## August 2026 - stable9 9.1.002 (2026.8)
 
+Pull requests in this release: #2004, #2005, #2006, #2007
+
+Contributors: @pipiche38 (8 commits)
+
 - [Issue] - Fix infinite Configure Reporting mismatch loop; give up permanently after 2 consecutive mismatches instead of retrying forever (#1999)
 - [Issue] - Fix TypeError: 'float' object cannot be interpreted as an integer on PowerFactor/FanSpeed widget updates; coerce nValue at the Domoticz API boundary (#2003)
 - [Issue] - Fix TypeError at ZNP startup building the 0x8010 firmware version frame for CC2531 boards reporting "Z-Stack Home"/"Z-Stack 3.0.x" firmware (#2005)
 - [Issue] - Fix AttributeError on repeated onHeartbeat during ErasePDM restart (#2007)
 
 ## July 2026 - stable9 9.1.001 (2026.7)
+
+Pull requests in this release: #1863, #1924, #1925, #1931, #1932, #1934, #1935, #1940, #1941, #1962, #1963, #1964, #1966, #1976, #1979, #1983, #1984, #1988, #1989, #1990, #1991, #1992, #1993, #1995, #1998
+
+Contributors: @pipiche38 (181 commits)
 
 - [Technical] - Enable Domoticz 'Extended Framework' (DomoticzEx) as the plugin's primary framework, replacing the legacy Domoticz API (#1863, #1931)
 - [Technical] - ZigpyTransport - new HA-grade supervisor for the zigpy thread, with watchdog retry tolerance and automatic recovery (#1935)
@@ -92,6 +144,28 @@ Release Numbering
 - [Issue] - Fix OTA JSON load issue (#1995)
 - [Issue] - Fix OTA heartbeat issue, with dedicated unit tests (#1974)
 - [Issue] - Prevent requesting a cfg report when Min/Max eq to 0x0000 (#1998)
+
+## Contributors before 9.1
+
+Everyone whose work is in the plugin's history from the initial commit (November 2017) to
+the stable9 branch point (`Release stable8.8.1007`, June 2026) — 10817 commits across
+stable8, stable7 and earlier. Per-release lists start at 9.1.001 above.
+
+@pipiche38 (10224 commits), @zaraki673 (261), @SylvainPer (96), @badzz (96), @deennoo (24),
+@Smanar (11), @GMLinky (10), @thiklop (9), @cclauss (7), @thertp (5), @jp-keros (4),
+@Adi3000 (2), @lboue (2), @Maverick81-SR (2), @pitchoun38 (2), @rlacha (2), @shger21 (2),
+@Grunnpi (1), @Hedda (1), @Krakinou (1), @lacha07 (1), @perdro6996 (1), @rbroeders (1),
+@sbhc68 (1).
+
+Credited through `Co-Authored-By:` trailers, without a commit of their own: @Git-Bruno,
+Bert Huijben, ben33880.
+
+Counts merge the several `user.name` and email aliases each person committed under, and
+each handle was resolved against GitHub rather than read off the commit name. The
+`zigbeefordomoticz` organisation account (51 commits) and automated accounts are not
+listed.
+
+---
 
 ## June 2026 - stable8.1.007 ( 2026.6)
 

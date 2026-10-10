@@ -338,15 +338,19 @@ def get_unit_counts(self, Devices, DeviceId) -> dict:
     }
 
 
-def retreive_free_unit_for_widget(self, Devices, DeviceId, nbunit_=1):
+def retreive_free_unit_for_widget(self, Devices, DeviceId, nbunit_=1, nwkid=None):
     """
     Look for a free Unit number. If nbunit_ > 1, look for nbunit_ consecutive slots.
+
+    ``nwkid`` is optional and used only to enrich the error report.
 
     Returns an int unit number, or None if none is available.
     """
     if not isinstance(nbunit_, int) or nbunit_ < 1 or nbunit_ > 254:
         self.log.logging("AbstractDz", "Error",
-                         f"retreive_free_unit_for_widget - invalid nbunit_: {nbunit_!r}")
+                         f"retreive_free_unit_for_widget - invalid nbunit_: {nbunit_!r}",
+                         nwkid, {"Reason": "invalid nbunit_", "DeviceID": DeviceId,
+                                 "nbunit_": repr(nbunit_)})
         return None
 
     def _log_message(count):
@@ -429,26 +433,75 @@ def build_widget_reuse_pool(self, Devices, DeviceID_):
 
 def domo_create_api(self, Devices, DeviceID_, Unit_, Name_,
                     widgetType=None, Type_=None, Subtype_=None, Switchtype_=None,
-                    widgetOptions=None, Image=None):
+                    widgetOptions=None, Image=None, nwkid=None, log_refusal=True):
     """
     Create a Domoticz Widget (Extended framework).
 
+    ``nwkid`` is optional and used only to enrich the error report: when supplied,
+    LoggingManagement attaches the full ListOfDevices entry to the stored error.
+
+    ``log_refusal`` is for a caller that reports the refusal itself, in terms its
+    own user can act on (Classes/AdminWidgets.py does). The refusal is then logged
+    here at Debug rather than Error, so one refused widget is one error entry
+    instead of two. It covers only the paths where *Domoticz* refused; a bad call
+    into this function is always an Error, whoever made it.
+
     Returns the widget IDX on success, or -1 on failure.
     """
+
+    refusal_logtype = "Error" if log_refusal else "Debug"
+
+    def _failure_context(reason, **extra):
+        """Context attached to a creation failure.
+
+        Domoticz.Unit().Create() never raises and never reports why it refused -
+        the reason is logged by Domoticz itself, not returned to us (see
+        CUnitEx_insert in hardware/plugins/PythonObjectEx.cpp: new hardware not
+        accepted, DeviceID/Unit already in DeviceStatus, insert not readable
+        back, unit already created). All we can do is record exactly what was
+        asked for and what Domoticz held for that DeviceID at the time, so the
+        error report is diagnosable without asking the user to reproduce.
+        """
+        known = _device_exists(Devices, DeviceID_)
+        context = {
+            "Reason": reason,
+            "Request": {
+                "DeviceID": DeviceID_,
+                "Unit": Unit_,
+                "Name": Name_,
+                "widgetType": widgetType,
+                "Type": Type_,
+                "Subtype": Subtype_,
+                "Switchtype": Switchtype_,
+                "Options": widgetOptions,
+                "Image": Image,
+            },
+            "Domoticz": {
+                "device_known": known,
+                "allocated_units": sorted(Devices[DeviceID_].Units) if known else [],
+                "total_devices": len(Devices) if Devices is not None else None,
+            },
+        }
+        context.update(extra)
+        return context
+
     # --- Input validation ---------------------------------------------------
     if not DeviceID_:
         self.log.logging("AbstractDz", "Error",
-                         "domo_create_api - DeviceID_ is empty or None")
+                         "domo_create_api - DeviceID_ is empty or None",
+                         nwkid, _failure_context("DeviceID_ is empty or None"))
         return -1
 
     if Unit_ is None:
         self.log.logging("AbstractDz", "Error",
-                         f"domo_create_api - Unit_ is None for DeviceID={DeviceID_}")
+                         f"domo_create_api - Unit_ is None for DeviceID={DeviceID_}",
+                         nwkid, _failure_context("Unit_ is None"))
         return -1
 
     if not Name_:
         self.log.logging("AbstractDz", "Error",
-                         f"domo_create_api - Name_ is empty for DeviceID={DeviceID_} Unit={Unit_}")
+                         f"domo_create_api - Name_ is empty for DeviceID={DeviceID_} Unit={Unit_}",
+                         nwkid, _failure_context("Name_ is empty"))
         return -1
     # ------------------------------------------------------------------------
 
@@ -508,8 +561,10 @@ def domo_create_api(self, Devices, DeviceID_, Unit_, Name_,
             ).Create()
 
     except Exception as e:
-        self.log.logging("AbstractDz", "Error",
-                         f"domo_create_api - Domoticz.Unit.Create() raised: {e}")
+        self.log.logging("AbstractDz", refusal_logtype,
+                         f"domo_create_api - Domoticz.Unit.Create() raised: {e}",
+                         nwkid, _failure_context("Domoticz.Unit.Create() raised",
+                                                 Exception="%s: %s" % (type(e).__name__, e)))
         return -1
 
     # Refresh index regardless
@@ -517,8 +572,13 @@ def domo_create_api(self, Devices, DeviceID_, Unit_, Name_,
 
     # Verify creation (AND, not OR)
     if not _device_unit_exists(Devices, DeviceID_, Unit_):
-        self.log.logging("AbstractDz", "Error",
-                         f"domo_create_api Created device: {DeviceID_} {Unit_} {full_name} failed !!!")
+        self.log.logging(
+            "AbstractDz", refusal_logtype,
+            f"domo_create_api Created device: {DeviceID_} {Unit_} {full_name} failed !!!",
+            nwkid,
+            _failure_context(
+                "Domoticz.Unit().Create() did not raise but the unit is absent afterwards; "
+                "the refusal reason is in the Domoticz log, not here"))
         return -1
 
     units_summary = {k: v.ID for k, v in Devices[DeviceID_].Units.items()}

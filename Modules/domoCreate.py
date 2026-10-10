@@ -18,11 +18,70 @@
 
 from Modules.domoticzAbstractLayer import (retreive_free_unit_for_widget, domo_create_api, get_unit_counts,
                                            build_widget_reuse_pool)
-from Modules.domoTools import (GetType, subtypeRGB_FromProfile_Device_IDs,
+from Modules.domoTools import (GetType, remove_all_widgets,
+                               subtypeRGB_FromProfile_Device_IDs,
                                subtypeRGB_FromProfile_Device_IDs_onEp2,
                                update_domoticz_widget)
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import get_deviceconf_parameter_value, is_domoticz_new_blind
+
+# How many times a recoverable widget-creation failure is re-attempted before the
+# plugin stops for this session. The heartbeat schedules one attempt every 5 minutes
+# (WIDGET_CREATION_RETRY in Modules/heartbeat.py). Retrying further cannot help: the
+# reason Domoticz refused is logged on the Domoticz side and never returned to us, so
+# it takes a user action to change the outcome.
+WIDGET_CREATION_MAX_RETRIES = 2
+
+
+def widget_creation_context(self, Devices, NwkId, **extra):
+    """Context describing the device a widget-creation failure relates to.
+
+    A widget-creation error carries a Unit number and an IEEE, which is not enough
+    for a user - or for us, reading an errors.json from the forum - to tell which
+    device is affected or what it was supposed to get. LoggingManagement already
+    attaches the whole ListOfDevices entry whenever an Error is logged with a
+    nwkid, so this only adds what is *not* in that entry: the Domoticz-side unit
+    allocation, and the widget Types still expected per endpoint.
+
+    Values are kept to plain JSON types: the error history is persisted with
+    json.dumps() and anything it cannot serialize costs the whole file.
+    """
+    device = self.ListOfDevices.get(NwkId)
+    if device is None:
+        context = {"NwkId": NwkId, "Reason": "NwkId not in ListOfDevices"}
+        context.update(extra)
+        return context
+
+    ieee = device.get("IEEE") or ""
+    context = {
+        "NwkId": NwkId,
+        "IEEE": ieee,
+        "Model": device.get("Model") or "unknown",
+        "ZDeviceName": device.get("ZDeviceName") or "",
+        "Status": device.get("Status") or "unknown",
+        "Heartbeat": device.get("Heartbeat") or "0",
+        "ExpectedTypes": {
+            ep: ep_data.get("Type")
+            for ep, ep_data in (device.get("Ep") or {}).items()
+            if isinstance(ep_data, dict) and ep_data.get("Type")
+        },
+        "DeviceType": device.get("Type") or "",
+    }
+
+    if ieee:
+        # How many Domoticz units this IEEE already holds, and which ones: tells a
+        # 'no free unit' apart from a Domoticz that refused an otherwise free one.
+        context["Domoticz"] = dict(
+            get_unit_counts(self, Devices, ieee),
+            units=sorted(Devices[ieee].Units) if Devices and ieee in Devices else [],
+        )
+
+    reuse_pool = getattr(self, "widget_reuse_pool", None)
+    if reuse_pool:
+        context["ReusableUnits"] = sorted(reuse_pool)
+
+    context.update(extra)
+    return context
 
 
 def cleanup_widget_Type(widget_type_list):
@@ -246,11 +305,16 @@ def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None
     if reused_unit is not None:
         return reused_unit
 
-    unit = retreive_free_unit_for_widget(self, Devices, ieee)
+    unit = retreive_free_unit_for_widget(self, Devices, ieee, nwkid=nwkid)
     if unit is None:
         # Recoverable: no free Domoticz unit. Mark so the heartbeat retries instead of deleting the device.
         self.ListOfDevices[nwkid]["Status"] = "failDB_NoUnit"
-        self.log.logging("WidgetCreation", "Error", "Domoticz widget creation failed. No available unit for device %s. Cannot create widget." % ieee)
+        self.log.logging(
+            "WidgetCreation", "Error",
+            "Domoticz widget creation failed. No available unit for device %s. Cannot create widget." % ieee,
+            nwkid,
+            widget_creation_context(self, Devices, nwkid, Reason="no free Domoticz unit",
+                                    Ep=ep, WidgetType=cType))
         return None
 
     self.log.logging("WidgetCreation", "Debug", "createDomoticzWidget - unit: %s" % unit, nwkid)
@@ -259,13 +323,20 @@ def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None
 
     # oldFashionWidgetName = cType + "-" + ieee + "-" + ep
 
-    myDev_ID = domo_create_api(self, Devices, ieee, unit, widgetName, widgetType=widgetType, Type_=Type_, Subtype_=Subtype_, Switchtype_=Switchtype_, widgetOptions=widgetOptions, Image=Image)
-    
+    myDev_ID = domo_create_api(self, Devices, ieee, unit, widgetName, widgetType=widgetType, Type_=Type_, Subtype_=Subtype_, Switchtype_=Switchtype_, widgetOptions=widgetOptions, Image=Image, nwkid=nwkid)
+
     if myDev_ID == -1:
         # Recoverable: Domoticz refused the creation (e.g. 'Accept New Hardware' is off).
         # Mark so the heartbeat retries instead of deleting the device.
         self.ListOfDevices[nwkid]["Status"] = "failDB_NoHardware"
-        self.log.logging("WidgetCreation", "Error", "Domoticz widget creation failed. Check that Domoticz can Accept New Hardware [%s]" % myDev_ID)
+        self.log.logging(
+            "WidgetCreation", "Error",
+            "Domoticz widget creation failed for %s/%s %s (unit %s). Check that Domoticz can "
+            "Accept New Hardware, and see the Domoticz log for the reason it refused." % (
+                nwkid, ep, cType, unit),
+            nwkid,
+            widget_creation_context(self, Devices, nwkid, Reason="Domoticz refused the creation",
+                                    Ep=ep, WidgetType=cType, Unit=unit, WidgetName=widgetName))
         return None
 
     self.ListOfDevices[nwkid]["Status"] = "inDB"
@@ -478,7 +549,13 @@ def CreateDomoDevice(self, Devices, NWKID):
         new_units_needed = max(0, len(Type) - reusable_units)
 
         if ( nb_occupied_units + new_units_needed) >= 254:  # Domoticz has a limit of 254 devices per hardware
-            self.log.logging("WidgetCreation", "Error", f"Domoticz Widget Creation Failed - No available unit for device {DeviceID_IEEE}. ", NWKID)
+            self.log.logging(
+                "WidgetCreation", "Error",
+                f"Domoticz Widget Creation Failed - No available unit for device {DeviceID_IEEE}. ",
+                NWKID,
+                widget_creation_context(self, Devices, NWKID, Reason="254-unit limit reached for this device",
+                                        Ep=Ep, RequestedTypes=Type,
+                                        OccupiedUnits=nb_occupied_units, NewUnitsNeeded=new_units_needed))
             self.widget_reuse_pool = {}
             return
 
@@ -519,7 +596,9 @@ def CreateDomoDevice(self, Devices, NWKID):
                     "WidgetCreation", "Error",
                     "CreateDomoDevice - Unrecognized widget Type '%s' for %s Ep: %s; no widget created. "
                     "Check device configuration Type spelling against known widget types." % (t, DeviceID_IEEE, Ep),
-                    NWKID)
+                    NWKID,
+                    widget_creation_context(self, Devices, NWKID, Reason="unrecognized widget Type",
+                                            Ep=Ep, WidgetType=t, RequestedTypes=Type))
 
 
     # for Ep
@@ -527,6 +606,118 @@ def CreateDomoDevice(self, Devices, NWKID):
 
     # Reuse pool is scoped to this creation pass only
     self.widget_reuse_pool = {}
+
+
+def _widget_creation_retries(self):
+    """Per-device retry counters for recoverable widget-creation failures.
+
+    Deliberately kept on the plugin instance and not in the ListOfDevices entry:
+    the budget is session-scoped, so restarting the plugin grants a fresh one. That
+    is the behaviour we want, because restarting is one of the two things a user
+    does after fixing the Domoticz side (the other being the WebUI 'recreate
+    widgets' button). Storing it in the device entry would also persist it into the
+    device database, which is not something a transient counter belongs in.
+
+    Created lazily, like ``widget_reuse_pool``, so plugin startup is untouched.
+    """
+    retries = getattr(self, "widget_creation_retries", None)
+    if retries is None:
+        retries = self.widget_creation_retries = {}
+    return retries
+
+
+def reset_widget_creation_retries(self, NwkId=None):
+    """Grant a fresh retry budget, for one device or for all of them.
+
+    Called when something has plausibly changed the outcome - a user asking for a
+    recreation through the WebUI, or a successful creation.
+    """
+    retries = _widget_creation_retries(self)
+    if NwkId is None:
+        retries.clear()
+    else:
+        retries.pop(NwkId, None)
+
+
+def request_widget_creation(self, NwkId, reason, remove_existing_widgets=False):
+    """Ask for a device's widgets to be (re)created, from any thread.
+
+    Domoticz's Python plugin API must only be used from the thread Domoticz calls
+    the plugin on. The WebUI REST endpoints run in their own per-client thread
+    (Classes/WebServer/com.py: handle_client), so they cannot create or delete
+    widgets themselves - they record the request here and
+    process_widget_creation_requests() carries it out from the heartbeat.
+
+    Only ListOfDevices is touched here, and that is a ThreadSafeDeviceDict.
+
+    ``remove_existing_widgets`` additionally drops the device's current widgets
+    first, which is what changing a device's model requires.
+
+    Returns the number of heartbeats before the request is expected to be served,
+    so a caller can tell the user when to look.
+    """
+    queued = getattr(self, "widget_creation_requests", None)
+    if queued is None:
+        queued = self.widget_creation_requests = {}
+
+    pending = queued.get(NwkId)
+    if pending:
+        # Already queued: keep the strongest form of the request rather than
+        # letting a later, weaker one drop the widget removal.
+        pending["remove_existing_widgets"] = (
+            pending["remove_existing_widgets"] or remove_existing_widgets)
+        pending["reason"] = reason
+    else:
+        queued[NwkId] = {
+            "reason": reason,
+            "remove_existing_widgets": remove_existing_widgets,
+        }
+
+    self.log.logging(
+        "WidgetCreation", "Debug",
+        "request_widget_creation - %s queued (%s), remove_existing_widgets: %s" % (
+            NwkId, reason, remove_existing_widgets), NwkId)
+    return 1
+
+
+def process_widget_creation_requests(self, Devices):
+    """Carry out the widget (re)creations queued by request_widget_creation().
+
+    Must only be called from the thread Domoticz calls the plugin on - that is the
+    whole point of the queue - so the heartbeat is its only caller.
+    """
+    queued = getattr(self, "widget_creation_requests", None)
+    if not queued:
+        return
+
+    while True:
+        try:
+            NwkId, request = queued.popitem()
+        except KeyError:
+            # Emptied; a request queued meanwhile is served on the next heartbeat.
+            return
+
+        if NwkId not in self.ListOfDevices:
+            self.log.logging(
+                "WidgetCreation", "Warning",
+                "process_widget_creation_requests - %s is gone, dropping the request (%s)" % (
+                    NwkId, request.get("reason")), NwkId)
+            continue
+
+        self.log.logging(
+            "WidgetCreation", "Status",
+            "Creating widgets for %s as requested (%s)" % (NwkId, request.get("reason")), NwkId)
+
+        # A user asking for this is a new chance for a device the retry budget has
+        # already given up on, so hand it a fresh one.
+        reset_widget_creation_retries(self, NwkId)
+
+        if request.get("remove_existing_widgets"):
+            remove_all_widgets(self, Devices, NwkId)
+
+        over_write_type_from_deviceconf(self, Devices, NwkId)
+        self.ListOfDevices[NwkId]["Status"] = "CreateDB"
+        CreateDomoDevice(self, Devices, NwkId)
 
 
 def retry_failed_widget_creation(self, Devices, NwkId):
@@ -539,15 +730,62 @@ def retry_failed_widget_creation(self, Devices, NwkId):
     CreateDomoDevice sets Status back to ``inDB``.
 
     Widget-creation ownership stays in this module; the heartbeat only schedules
-    the call (see Modules/heartbeat.py).
+    the call (see Modules/heartbeat.py), so the retry budget is enforced here.
+
+    At most WIDGET_CREATION_MAX_RETRIES attempts are made, 5 minutes apart. Beyond
+    that the cause is not something the plugin can clear by trying again: Domoticz
+    refuses the creation for a reason it logs on its own side and never returns to
+    us, so an unbounded retry only reprints the same error every 5 minutes for the
+    lifetime of the session. The device is still kept - its Ep/Cluster/ClusterType
+    stay intact - and a restart or a WebUI 'recreate widgets' grants a new budget.
+
+    Note the device identification goes in the *message*, not in a context= dict:
+    LoggingManagement only keeps context for logType "Error"
+    (process_logging_event), so a context passed on a "Status" log is discarded.
     """
-    status = self.ListOfDevices[NwkId].get("Status")
+    device = self.ListOfDevices[NwkId]
+    status = device.get("Status")
+    identification = "%s (%s, Model: %s, IEEE: %s)" % (
+        NwkId, device.get("ZDeviceName") or "unnamed",
+        device.get("Model") or "unknown", device.get("IEEE") or "unknown")
+
+    retries = _widget_creation_retries(self)
+    attempt = retries.get(NwkId, 0) + 1
+
+    if attempt > WIDGET_CREATION_MAX_RETRIES:
+        # Report giving up exactly once. The heartbeat keeps scheduling this call
+        # for as long as the device stays in a failDB_* state, so the counter is
+        # left one past the budget to mark the message as already issued.
+        if attempt == WIDGET_CREATION_MAX_RETRIES + 1:
+            retries[NwkId] = attempt
+            self.log.logging(
+                "WidgetCreation", "Error",
+                "Widget creation still failing (%s) for %s after %s attempts - giving up for this "
+                "session. The device is kept, so nothing is lost. Look in the Domoticz log for the "
+                "reason Domoticz refused the creation, check the Domoticz 'Accept New Hardware' "
+                "setting and that free device units are available, then either restart the plugin "
+                "or use 'recreate widgets' in the WebUI to try again." % (
+                    status, identification, WIDGET_CREATION_MAX_RETRIES),
+                NwkId,
+                widget_creation_context(self, Devices, NwkId,
+                                        Reason="retry budget exhausted",
+                                        Attempts=WIDGET_CREATION_MAX_RETRIES))
+        return
+
+    retries[NwkId] = attempt
     self.log.logging(
         "WidgetCreation", "Status",
-        "Widget creation previously failed (%s) for %s - retrying. Check Domoticz 'Accept New "
-        "Hardware' setting and that free device units are available." % (status, NwkId),
+        "Widget creation previously failed (%s) for %s - retrying (attempt %s of %s). Check the "
+        "Domoticz log for the reason Domoticz refused, the Domoticz 'Accept New Hardware' setting, "
+        "and that free device units are available." % (
+            status, identification, attempt, WIDGET_CREATION_MAX_RETRIES),
         NwkId)
+
     CreateDomoDevice(self, Devices, NwkId)
+
+    if self.ListOfDevices[NwkId].get("Status") == "inDB":
+        # Recovered: drop the counter so a later failure starts from a full budget.
+        reset_widget_creation_retries(self, NwkId)
 
 
 def update_device_type( self, NWKID, GlobalType ):
@@ -600,13 +838,19 @@ def create_xcube_widgets(self, Devices, NWKID, DeviceID_IEEE, Ep, t):
 
     # Create the XCube Widget
     Options = createSwitchSelector(self, 10, DeviceType=t, OffHidden=True, SelectorStyle=1)
-    unit = retreive_free_unit_for_widget(self, Devices, DeviceID_IEEE, nbunit_=2)  # Look for 2 consecutive slots
+    unit = retreive_free_unit_for_widget(self, Devices, DeviceID_IEEE, nbunit_=2, nwkid=NWKID)  # Look for 2 consecutive slots
     
-    idx = domo_create_api(self, Devices, DeviceID_IEEE, unit, deviceName(self, NWKID, t, DeviceID_IEEE, Ep), Type_=244, Subtype_=62, Switchtype_=18, widgetOptions=Options)
+    idx = domo_create_api(self, Devices, DeviceID_IEEE, unit, deviceName(self, NWKID, t, DeviceID_IEEE, Ep), Type_=244, Subtype_=62, Switchtype_=18, widgetOptions=Options, nwkid=NWKID)
     
     if idx == -1:
         self.ListOfDevices[NWKID]["Status"] = "failDB_NoHardware"
-        self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} {t} {unit}")
+        self.log.logging(
+            "WidgetCreation", "Error",
+            f"Domoticz widget creation failed for {NWKID}/{Ep} {t} (unit {unit}). Check that "
+            "Domoticz can Accept New Hardware, and see the Domoticz log for the reason it refused.",
+            NWKID,
+            widget_creation_context(self, Devices, NWKID, Reason="Domoticz refused the creation",
+                                    Ep=Ep, WidgetType=t, Unit=unit))
         return None
     else:
         self.log.logging( "WidgetCreation", "Debug", f"create_xcube_widgets - widgetID {idx} for '{t}'")
@@ -614,10 +858,16 @@ def create_xcube_widgets(self, Devices, NWKID, DeviceID_IEEE, Ep, t):
 
     # Create the Status (Text) Widget to report Rotation angle
     unit += 1
-    idx = domo_create_api(self, Devices, DeviceID_IEEE, unit, deviceName(self, NWKID, "Text", DeviceID_IEEE, Ep), Type_=243, Subtype_=19, Switchtype_=0,)
+    idx = domo_create_api(self, Devices, DeviceID_IEEE, unit, deviceName(self, NWKID, "Text", DeviceID_IEEE, Ep), Type_=243, Subtype_=19, Switchtype_=0, nwkid=NWKID)
     
     if idx == -1:
-        self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} Text {unit}")
+        self.log.logging(
+            "WidgetCreation", "Error",
+            f"Domoticz widget creation failed for {NWKID}/{Ep} Text (unit {unit}). Check that "
+            "Domoticz can Accept New Hardware, and see the Domoticz log for the reason it refused.",
+            NWKID,
+            widget_creation_context(self, Devices, NWKID, Reason="Domoticz refused the creation",
+                                    Ep=Ep, WidgetType="Text", Unit=unit))
         return None
     else:
         self.log.logging( "WidgetCreation", "Debug", f"create_xcube_widgets - widgetID {idx} for 'Text'")
@@ -662,8 +912,12 @@ def create_switch_selector_widget( self, Devices, NWKID, DeviceID_IEEE, Ep, t):
     Options = createSwitchSelector(self, _num_level, DeviceType=t, OffHidden=_OffHidden, SelectorStyle=_SelectorStyle)
     unit = createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
     if unit is None:
-        # Status (failDB_NoUnit / failDB_NoHardware) already set by createDomoticzWidget; don't clobber it.
-        self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} {t} {unit}")
+        # Status (failDB_NoUnit / failDB_NoHardware) already set by createDomoticzWidget,
+        # which also logged the identified Error. Logging a second Error here only
+        # duplicated it in the error history (3 entries per failed widget), so keep the
+        # selector-specific detail at Debug level.
+        self.log.logging("WidgetCreation", "Debug", "create_switch_selector_widget - failed for %s/%s %s Levels: %s Off: %s Style: %s Options: %s" % (
+            DeviceID_IEEE, Ep, t, _num_level, _OffHidden, _SelectorStyle, Options), NWKID)
         return None
 
     self.log.logging("WidgetCreation", "Debug", "create_switch_selector_widget - t: %s Levels: %s Off: %s Style: %s " % (

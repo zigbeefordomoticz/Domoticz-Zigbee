@@ -143,3 +143,58 @@ def test_invalid_string_value_does_not_write(onoff_module, plugin, monkeypatch):
     onoff_module.onoff_startup_onoff_mode(plugin, NWKID, EP, "not-a-number")
 
     write_attribute.assert_not_called()
+
+
+# ─── OnTime (0x4001) vs OffWaitTime (0x4002) ──────────────────────────────────
+#
+# OnTime and OffWaitTime are two distinct attributes of the On/Off cluster:
+# OnTime (0x4001) is how long the device stays on after a timed-off On,
+# OffWaitTime (0x4002) is how long it then refuses to turn on again. Both
+# Params were wired to common_onoff_off_wait_time, so setting OnOffOnTimeDelay
+# silently wrote OffWaitTime and OnTime was unreachable.
+
+
+def test_common_onoff_on_time_writes_4001(onoff_module, plugin, monkeypatch):
+    monkeypatch.setattr(onoff_module, "getListOfEpForCluster", lambda *a, **kw: [EP])
+    write_attribute = MagicMock()
+    monkeypatch.setattr(onoff_module, "write_attribute", write_attribute)
+
+    onoff_module.common_onoff_on_time(plugin, NWKID, 60)
+
+    args = write_attribute.call_args.args
+    assert args[7] == "4001"
+    assert args[8] == "21"
+    assert args[9] == "003c"
+
+
+def test_common_onoff_off_wait_time_writes_4002(onoff_module, plugin, monkeypatch):
+    monkeypatch.setattr(onoff_module, "getListOfEpForCluster", lambda *a, **kw: [EP])
+    write_attribute = MagicMock()
+    monkeypatch.setattr(onoff_module, "write_attribute", write_attribute)
+
+    onoff_module.common_onoff_off_wait_time(plugin, NWKID, 60)
+
+    args = write_attribute.call_args.args
+    assert args[7] == "4002"
+    assert args[8] == "21"
+    assert args[9] == "003c"
+
+
+def test_onoff_params_point_at_their_own_handler(onoff_module):
+    """Each Param must target its own attribute, not share one handler."""
+    reg = onoff_module.ONOFF_DEVICE_PARAMETERS
+
+    assert reg["OnOffOnTimeDelay"]["callable"] is onoff_module.common_onoff_on_time
+    assert reg["OnOffOffWaitTime"]["callable"] is onoff_module.common_onoff_off_wait_time
+    assert reg["PowerOnAfterOffOn"]["callable"] is onoff_module.common_onoff_startup_onoff_mode
+
+
+def test_on_time_delay_param_writes_on_time_attribute(onoff_module, plugin, monkeypatch):
+    """End to end through the Param registry, the way paramDevice dispatches."""
+    monkeypatch.setattr(onoff_module, "getListOfEpForCluster", lambda *a, **kw: [EP])
+    write_attribute = MagicMock()
+    monkeypatch.setattr(onoff_module, "write_attribute", write_attribute)
+
+    onoff_module.ONOFF_DEVICE_PARAMETERS["OnOffOnTimeDelay"]["callable"](plugin, NWKID, 60)
+
+    assert write_attribute.call_args.args[7] == "4001"

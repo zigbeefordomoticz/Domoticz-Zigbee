@@ -158,16 +158,27 @@ VENDOR_PROFILES = {
 }
 
 
+# A Zigbee manufacturer code is NOT unique across vendors: 0x1037 is shipped by
+# Eurotronic, LiXee and Lumi, 0x1015 by Develco and frient. OTA matching is done on
+# the (manufacturer_code, image_type) pair read from the image header itself (see
+# is_image_for_query_next_image_request), so an entry below only decides which
+# folders are scanned and which label the WebUI shows - it is never a matching key.
+#
+# A shared manufacturer code therefore gets ONE generic entry that owns it, so the
+# code -> folder lookup has a single unambiguous answer and all images for that code
+# land under one brand. "Folder" is a folder name, or a list of them: a generic entry
+# lists its canonical GENERIC-<code> folder first, followed by the former per-vendor
+# folders, which keep being scanned so an existing installation does not lose
+# firmware already dropped there.
 OTA_CODES = {
     "Danfoss": {"Folder": "DANFOSS", "ManufCode": 0x1246, "ManufName": "Danfoss", "Enabled": True},
-    "Develco": {"Folder": "DEVELCO", "ManufCode": 0x1015, "ManufName": "Develco", "Enabled": True},
+    "Develco-frient": {"Folder": ["GENERIC-1015", "DEVELCO"], "ManufCode": 0x1015, "ManufName": "Develco / frient A/S", "Enabled": True},
     "EcoDim": {"Folder": "ECO-DIM", "ManufCode": 0x126a, "ManufName": "EcoDim", "Enabled": True},
-    "Eurotronics": {"Folder": "EUROTRONICS", "ManufCode": 0x1037, "ManufName": "Eurotronic", "Enabled": True},
-    "Frient": {"Folder": "DEVELCO", "ManufCode": 0x1015, "ManufName": "frient A/S", "Enabled": True},
+    "Eurotronic-LiXee-Lumi": {"Folder": ["GENERIC-1037", "EUROTRONICS", "LIXEE", "LUMI"], "ManufCode": 0x1037, "ManufName": "Eurotronic / LiXee / Lumi", "Enabled": True},
     "Ikea": {"Folder": "IKEA-TRADFRI", "ManufCode": 0x117C, "ManufName": "IKEA of Sweden", "Enabled": True},
+    "Innr": {"Folder": "INNR", "ManufCode": 0x1166, "ManufName": "INNR", "Enabled": True},
     "Ledvance": {"Folder": "LEDVANCE", "ManufCode": 0x1189, "ManufName": "LEDVANCE", "Enabled": True},
     "Legrand": {"Folder": "LEGRAND", "ManufCode": 0x1021, "ManufName": "Legrand", "Enabled": True},
-    "Lixee": {"Folder": "LIXEE", "ManufCode": 0x1037, "ManufName": "LiXee", "Enabled": True},
     "Nodon": {"Folder": "NODON", "ManufCode": 0x128b, "ManufName": "NodOn", "Enabled": True},
     "Osram1": {"Folder": "OSRAM", "ManufCode": 0xBBAA, "ManufName": "OSRAM", "Enabled": True},
     "Osram2": {"Folder": "LEDVANCE", "ManufCode": 0x110C, "ManufName": "OSRAM", "Enabled": True},
@@ -176,11 +187,22 @@ OTA_CODES = {
     "Schneider": {"Folder": "SCHNEIDER-WISER", "ManufCode": 0x105E, "ManufName": "Schneider Electric", "Enabled": True},
     "SonOff": {"Folder": "SONOFF", "ManufCode": 0x1286, "ManufName": "Sonoff", "Enabled": True},
     "Xiaomi": {"Folder": "XIAOMI", "ManufCode": 0x115f, "ManufName": "Xiaomi", "Enabled": True},
-    "Lumi": {"Folder": "LUMI", "ManufCode": 0x1037, "ManufName": "Lumi", "Enabled": True},
     "devbis": {"Folder": "XIAOMI", "ManufCode": 0xdb15, "ManufName": "Lumi", "Enabled": True},
     "z03mmc": {"Folder": "XIAOMI", "ManufCode": 0x0084, "ManufName": "Lumi", "Enabled": True},
     "Namron": {"Folder": "NAMRON", "ManufCode": 0x1224, "ManufName": "Namron", "Enabled": True},
 }
+
+
+def ota_brand_folders(ota_code_entry):
+    """Firmware folders to scan for one OTA_CODES entry.
+
+    "Folder" is either a single folder name or a list of them; a generic entry
+    owning a shared manufacturer code lists its canonical folder first, followed by
+    the former per-vendor folders kept for backward compatibility.
+    """
+    folder = ota_code_entry["Folder"]
+
+    return [folder] if isinstance(folder, str) else list(folder)
 
 
 class OTAManagement(object):
@@ -1239,48 +1261,49 @@ def ota_scan_folder(self):  # OK 13/10
             continue
         
         self.ListOfImages["Brands"][brand] = {}
-        ota_dir = self.pluginconf.pluginConf["pluginOTAFirmware"] + "/" + OTA_CODES[brand]["Folder"]
-        # Check the folder exist
-        if not exists(ota_dir):
-            continue
-
-        ota_image_files = [f for f in listdir(ota_dir) if isfile(join(ota_dir, f))]
-
-        logging(self, "Debug", "   screening %s" %ota_dir)
-        for ota_image_file in ota_image_files:
-            if ota_image_file in ("README.md", "README.txt", ".PRECIOUS", ".precious"):
-                continue
-            logging(self, "Debug", "       found %s" %ota_image_file)
-            header_return = ota_extract_image_headers(self, OTA_CODES[brand]["Folder"], ota_image_file)
-            
-            if header_return is None:
-                continue
-            image_type, headers, ota_image = header_return
-
-            # Check if this Image is the latest version.
-            if image_type in self.ListOfImages["ImageType"] and not check_image_valid_version(
-                self, brand, image_type, ota_image_file, headers
-            ):
-                # Most likely we have a more higher version already loaded!
+        for subfolder in ota_brand_folders(OTA_CODES[brand]):
+            ota_dir = self.pluginconf.pluginConf["pluginOTAFirmware"] + "/" + subfolder
+            # Check the folder exist
+            if not exists(ota_dir):
                 continue
 
-            # Check if the Image type is not used by another brand
-            if image_type in self.ListOfImages["ImageType"] and self.ListOfImages["ImageType"][image_type] != brand:
-                logging(self, "Warning", "ota_scan_folder Firmware %s not loaded, another firmware with the same ImageType and another brand is already loaded" %ota_image_file)
-                continue
+            ota_image_files = [f for f in listdir(ota_dir) if isfile(join(ota_dir, f))]
 
-            self.ListOfImages["ImageType"][image_type] = brand
-            self.ListOfImages["Brands"][brand][ota_image_file] = {
-                "Directory": ota_dir,
-                "Process": False,
-                "ImageType": image_type,
-                "Decoded Header": headers,
-                "OtaImage": ota_image,
-                "intManufCode": headers["manufacturer_code"],
-                "originalVersion": headers["image_version"],
-                "intImageVersion": headers["image_version"],
-                "intSize": headers["image_size"],
-            }
+            logging(self, "Debug", "   screening %s" %ota_dir)
+            for ota_image_file in ota_image_files:
+                if ota_image_file in ("README.md", "README.txt", ".PRECIOUS", ".precious"):
+                    continue
+                logging(self, "Debug", "       found %s" %ota_image_file)
+                header_return = ota_extract_image_headers(self, subfolder, ota_image_file)
+
+                if header_return is None:
+                    continue
+                image_type, headers, ota_image = header_return
+
+                # Check if this Image is the latest version.
+                if image_type in self.ListOfImages["ImageType"] and not check_image_valid_version(
+                    self, brand, image_type, ota_image_file, headers
+                ):
+                    # Most likely we have a more higher version already loaded!
+                    continue
+
+                # Check if the Image type is not used by another brand
+                if image_type in self.ListOfImages["ImageType"] and self.ListOfImages["ImageType"][image_type] != brand:
+                    logging(self, "Warning", "ota_scan_folder Firmware %s not loaded, another firmware with the same ImageType and another brand is already loaded" %ota_image_file)
+                    continue
+
+                self.ListOfImages["ImageType"][image_type] = brand
+                self.ListOfImages["Brands"][brand][ota_image_file] = {
+                    "Directory": ota_dir,
+                    "Process": False,
+                    "ImageType": image_type,
+                    "Decoded Header": headers,
+                    "OtaImage": ota_image,
+                    "intManufCode": headers["manufacturer_code"],
+                    "originalVersion": headers["image_version"],
+                    "intImageVersion": headers["image_version"],
+                    "intSize": headers["image_size"],
+                }
     # Check if there are any firmware images loaded
     if self.ListOfImages:
         logging(self, "Status", "Z4D loads the firmware images")
@@ -1990,7 +2013,9 @@ def check_ota_availability_from_index( self, manufcode, imagetype, fileversion )
 
 def notify_ota_firmware_available(self, srcnwkid, manufcode, imagetype, fileversion, _ota_available ):
 
-    folder = next((OTA_CODES[supported_manufacturer]["Folder"] for supported_manufacturer in OTA_CODES if OTA_CODES[supported_manufacturer]["ManufCode"] == manufcode), None)
+    # One entry owns each manufacturer code, so this lookup has a single answer;
+    # a generic entry reports its canonical folder.
+    folder = next((ota_brand_folders(OTA_CODES[supported_manufacturer])[0] for supported_manufacturer in OTA_CODES if OTA_CODES[supported_manufacturer]["ManufCode"] == manufcode), None)
 
     logging(self, "Status", "Z4D detects a potential new firmware for device %s [%s]" % ( get_device_nickname( self, NwkId=srcnwkid, ), srcnwkid ))
     logging(self, "Status", "   current version: %s" % fileversion)
