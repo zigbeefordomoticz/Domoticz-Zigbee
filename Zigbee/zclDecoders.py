@@ -283,7 +283,7 @@ def buildframe_foundation_cluster(self, fcf, disable_default_response, command, 
 
 def foundation_cluster_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     # 01 0000f0010023020023030021040023050021060030070021080021090021fdff21
-    self.log.logging("zclDecoder", "Debug", "86400 - Data: %s" % Data)
+    self.log.logging("zclDecoder", "Debug", "86400 - Data: %s" % Data, SrcNwkId)
     
     discovery_complete = Data[:2]
     buildPayload = "f7" + discovery_complete
@@ -345,9 +345,10 @@ def foundation_cluster_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEn
         DType = Data[idx : idx + 2]
         idx += 2
         
+        value_idx = idx
         idx, size, value = extract_value_size(self, Data, idx, DType )
         if value is None and idx is None:
-            decoding_error(self, "foundation_cluster_write_attribute_request", Sqn, SrcNwkId, SrcEndPoint, ClusterId, Attribute, DType, idx=idx, buildPayload=buildPayload, frame=frame, Data=Data)
+            decoding_error(self, "foundation_cluster_write_attribute_request", Sqn, SrcNwkId, SrcEndPoint, ClusterId, Attribute, DType, idx=value_idx, buildPayload=buildPayload, frame=frame, Data=Data)
             return frame
 
         lenData = "%04x" % (size // 2)
@@ -386,9 +387,10 @@ def foundation_cluster_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEn
         
         DType = Data[idx : idx + 2]
         idx += 2
+        value_idx = idx
         idx, size, value = extract_value_size(self, Data, idx, DType )
         if value is None and idx is None:
-            decoding_error(self, "foundation_cluster_read_attribute_response", Sqn, SrcNwkId, SrcEndPoint, ClusterId, Attribute, DType, idx=idx, buildPayload=buildPayload, frame=frame, Data=Data)
+            decoding_error(self, "foundation_cluster_read_attribute_response", Sqn, SrcNwkId, SrcEndPoint, ClusterId, Attribute, DType, idx=value_idx, buildPayload=buildPayload, frame=frame, Data=Data)
             return frame
 
         lenData = "%04x" % (size // 2)
@@ -411,9 +413,10 @@ def foundation_cluster_report_attribute_response(self, frame, Sqn, SrcNwkId, Src
         idx += 4
         DType = Data[idx : idx + 2]
         idx += 2
+        value_idx = idx
         idx, size, value = extract_value_size(self, Data, idx, DType )
         if value is None and idx is None:
-            decoding_error(self, "foundation_cluster_report_attribute_response", Sqn, SrcNwkId, SrcEndPoint, ClusterId, Attribute, DType, idx=idx, buildPayload=buildPayload, frame=frame, Data=Data)
+            decoding_error(self, "foundation_cluster_report_attribute_response", Sqn, SrcNwkId, SrcEndPoint, ClusterId, Attribute, DType, idx=value_idx, buildPayload=buildPayload, frame=frame, Data=Data)
             return frame
 
         lenData = "%04x" % (size // 2)
@@ -586,7 +589,7 @@ def buildframe8062_look_for_group_member_ship_response(self, frame, Sqn, SrcNwkI
     if len(Data) < 4:
         self.log.logging("zclDecoder", "Debug", "buildframe8062_look_for_group_member_ship_response - Uncomplete Data: %s" % Data, SrcNwkId)
         self.log.logging("zclDecoder", "Debug", "   Sqn %s, SrcNwkId %s, SrcEndPoint %s, TargetEp %s, ClusterId %s frame %s" %(
-            Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, frame))
+            Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, frame), SrcNwkId)
         return frame
     
     capacity = Data[:2]
@@ -866,10 +869,20 @@ def extract_value_size(self, Data, idx, DType ):
     return None, None, None
 
 
+def device_model(self, nwkid):
+    # The Model is what tells which device certification is involved, so make sure
+    # we always have something to report, even for a device not yet provisioned.
+    if nwkid not in self.ListOfDevices:
+        return "unknown"
+    return self.ListOfDevices[ nwkid ].get("Model") or "unknown"
+
+
 def decoding_error(self, source, sqn, nwkid, ep, cluster, attribute, DType, idx=None, buildPayload=None, frame=None, Data=None):
+    model = device_model(self, nwkid)
     _context = {
         "Sqn": sqn,
         "NwkId": nwkid,
+        "Model": model,
         "Ep": ep,
         "Cluster": cluster,
         "Attribute": attribute,
@@ -879,5 +892,5 @@ def decoding_error(self, source, sqn, nwkid, ep, cluster, attribute, DType, idx=
         "Data": Data,
         "Idx": idx,
     }
-    self.log.logging("zclDecoder", "Error", "%s - decoding_error - %s %s %s %s %s %s %s %s %s %s" % (
-        source, sqn, nwkid, ep, cluster, attribute, DType, idx, buildPayload, frame, Data ), nwkid=nwkid, context=_context)
+    self.log.logging("zclDecoder", "Error", "%s - decoding_error - %s %s %s %s %s %s %s %s %s %s %s" % (
+        source, sqn, nwkid, model, ep, cluster, attribute, DType, idx, buildPayload, frame, Data ), nwkid=nwkid, context=_context)
