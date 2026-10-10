@@ -18,6 +18,7 @@ from Modules.ballast_settings import BALLAST_DEVICE_PARAMETERS
 from Modules.danfoss import DANFOSS_DEVICE_PARAMETERS
 from Modules.ias_settings import IAS_DEVICE_PARAMETERS
 from Modules.legrand_netatmo import LEGRAND_DEVICE_PARAMETERS
+from Modules.linky import LINKY_DEVICE_PARAMETERS
 from Modules.lumi import LUMI_DEVICE_PARAMETERS
 from Modules.occupancy_settings import OCCUPANCY_DEVICE_PARAMETERS
 from Modules.onoff_settings import ONOFF_DEVICE_PARAMETERS
@@ -43,6 +44,7 @@ def initialize_device_settings(self):
         IAS_DEVICE_PARAMETERS,
         BALLAST_DEVICE_PARAMETERS,
         THERMOSTAT_DEVICE_PARAMETERS,
+        LINKY_DEVICE_PARAMETERS,
     ]
 
     # Manufacturer-specific device parameters
