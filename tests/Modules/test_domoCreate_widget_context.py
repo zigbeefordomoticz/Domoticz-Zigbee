@@ -48,7 +48,8 @@ def domoCreate_module(monkeypatch):
                  retreive_free_unit_for_widget=MagicMock(), domo_create_api=MagicMock(),
                  get_unit_counts=MagicMock(), build_widget_reuse_pool=MagicMock())
     _ensure_stub("Modules.domoTools",
-                 GetType=MagicMock(), subtypeRGB_FromProfile_Device_IDs=MagicMock(),
+                 GetType=MagicMock(), remove_all_widgets=MagicMock(),
+                 subtypeRGB_FromProfile_Device_IDs=MagicMock(),
                  subtypeRGB_FromProfile_Device_IDs_onEp2=MagicMock(),
                  update_domoticz_widget=MagicMock())
     _ensure_stub("Modules.switchSelectorWidgets", SWITCH_SELECTORS={})
@@ -480,3 +481,162 @@ class TestRetryBudget:
         domoCreate_module.retry_failed_widget_creation(obj, {}, "abcd")
 
         assert obj.widget_creation_retries == {"abcd": 1}
+
+
+# ---------------------------------------------------------------------------
+# Deferred widget creation (WebUI requests)
+# ---------------------------------------------------------------------------
+
+class TestRequestWidgetCreation:
+    """The WebUI endpoints run in their own thread and must not touch the
+    Domoticz API; they record a request that the heartbeat carries out."""
+
+    def test_request_is_queued_not_executed(self, domoCreate_module, monkeypatch):
+        create = MagicMock()
+        monkeypatch.setattr(domoCreate_module, "CreateDomoDevice", create)
+        obj = _make_self(_ts0041())
+        obj.widget_creation_requests = {}
+
+        domoCreate_module.request_widget_creation(obj, "abcd", "from the WebUI")
+
+        create.assert_not_called()
+        assert obj.widget_creation_requests["abcd"]["reason"] == "from the WebUI"
+        assert obj.widget_creation_requests["abcd"]["remove_existing_widgets"] is False
+
+    def test_remove_flag_is_recorded(self, domoCreate_module):
+        obj = _make_self(_ts0041())
+        obj.widget_creation_requests = {}
+
+        domoCreate_module.request_widget_creation(
+            obj, "abcd", "model changed", remove_existing_widgets=True)
+
+        assert obj.widget_creation_requests["abcd"]["remove_existing_widgets"] is True
+
+    def test_queue_is_created_lazily_on_a_plain_object(self, domoCreate_module):
+        class Plugin:
+            def __init__(self):
+                self.log = MagicMock()
+
+        obj = Plugin()
+        assert not hasattr(obj, "widget_creation_requests")
+
+        domoCreate_module.request_widget_creation(obj, "abcd", "from the WebUI")
+
+        assert "abcd" in obj.widget_creation_requests
+
+    def test_repeated_requests_are_deduplicated(self, domoCreate_module):
+        obj = _make_self(_ts0041())
+        obj.widget_creation_requests = {}
+
+        domoCreate_module.request_widget_creation(obj, "abcd", "first")
+        domoCreate_module.request_widget_creation(obj, "abcd", "second")
+
+        assert len(obj.widget_creation_requests) == 1
+        assert obj.widget_creation_requests["abcd"]["reason"] == "second"
+
+    def test_a_later_weaker_request_does_not_drop_the_removal(self, domoCreate_module):
+        obj = _make_self(_ts0041())
+        obj.widget_creation_requests = {}
+
+        domoCreate_module.request_widget_creation(
+            obj, "abcd", "model changed", remove_existing_widgets=True)
+        domoCreate_module.request_widget_creation(obj, "abcd", "recreate")
+
+        assert obj.widget_creation_requests["abcd"]["remove_existing_widgets"] is True
+
+
+class TestProcessWidgetCreationRequests:
+
+    def _prepare(self, mod, monkeypatch, device=None):
+        obj = _make_self(device if device is not None else _ts0041())
+        obj.widget_creation_requests = {}
+        create = MagicMock()
+        remove = MagicMock()
+        overwrite = MagicMock()
+        monkeypatch.setattr(mod, "CreateDomoDevice", create)
+        monkeypatch.setattr(mod, "remove_all_widgets", remove)
+        monkeypatch.setattr(mod, "over_write_type_from_deviceconf", overwrite)
+        return obj, create, remove, overwrite
+
+    def test_nothing_queued_is_a_no_op(self, domoCreate_module, monkeypatch):
+        obj, create, _, _ = self._prepare(domoCreate_module, monkeypatch)
+
+        domoCreate_module.process_widget_creation_requests(obj, {})
+
+        create.assert_not_called()
+
+    def test_missing_queue_attribute_is_a_no_op(self, domoCreate_module, monkeypatch):
+        obj, create, _, _ = self._prepare(domoCreate_module, monkeypatch)
+        del obj.widget_creation_requests
+
+        class Plugin:
+            log = MagicMock()
+
+        domoCreate_module.process_widget_creation_requests(Plugin(), {})
+        create.assert_not_called()
+
+    def test_queued_request_is_carried_out(self, domoCreate_module, monkeypatch):
+        obj, create, remove, overwrite = self._prepare(domoCreate_module, monkeypatch)
+        devices = {}
+        domoCreate_module.request_widget_creation(obj, "abcd", "from the WebUI")
+
+        domoCreate_module.process_widget_creation_requests(obj, devices)
+
+        overwrite.assert_called_once_with(obj, devices, "abcd")
+        create.assert_called_once_with(obj, devices, "abcd")
+        remove.assert_not_called()
+        assert obj.ListOfDevices["abcd"]["Status"] == "CreateDB"
+
+    def test_queue_is_drained(self, domoCreate_module, monkeypatch):
+        obj, create, _, _ = self._prepare(domoCreate_module, monkeypatch)
+        domoCreate_module.request_widget_creation(obj, "abcd", "from the WebUI")
+
+        domoCreate_module.process_widget_creation_requests(obj, {})
+        domoCreate_module.process_widget_creation_requests(obj, {})
+
+        assert obj.widget_creation_requests == {}
+        assert create.call_count == 1
+
+    def test_removal_is_performed_before_creation(self, domoCreate_module, monkeypatch):
+        obj, create, remove, _ = self._prepare(domoCreate_module, monkeypatch)
+        order = []
+        remove.side_effect = lambda *a: order.append("remove")
+        create.side_effect = lambda *a: order.append("create")
+        domoCreate_module.request_widget_creation(
+            obj, "abcd", "model changed", remove_existing_widgets=True)
+
+        domoCreate_module.process_widget_creation_requests(obj, {})
+
+        assert order == ["remove", "create"]
+
+    def test_several_devices_are_all_served(self, domoCreate_module, monkeypatch):
+        obj, create, _, _ = self._prepare(domoCreate_module, monkeypatch)
+        obj.ListOfDevices["ef01"] = dict(_ts0041(), IEEE="a4c138e090a23a64")
+        domoCreate_module.request_widget_creation(obj, "abcd", "one")
+        domoCreate_module.request_widget_creation(obj, "ef01", "two")
+
+        domoCreate_module.process_widget_creation_requests(obj, {})
+
+        assert sorted(c.args[2] for c in create.call_args_list) == ["abcd", "ef01"]
+
+    def test_request_for_a_vanished_device_is_dropped(self, domoCreate_module, monkeypatch):
+        obj, create, _, _ = self._prepare(domoCreate_module, monkeypatch)
+        domoCreate_module.request_widget_creation(obj, "dead", "from the WebUI")
+
+        domoCreate_module.process_widget_creation_requests(obj, {})
+
+        create.assert_not_called()
+        assert obj.widget_creation_requests == {}
+        warnings = [c for c in obj.log.logging.call_args_list if c.args[1] == "Warning"]
+        assert len(warnings) == 1
+
+    def test_user_request_grants_a_fresh_retry_budget(self, domoCreate_module, monkeypatch):
+        # A device the retry budget has given up on must become eligible again
+        # when the user explicitly asks for a recreation.
+        obj, create, _, _ = self._prepare(domoCreate_module, monkeypatch)
+        obj.widget_creation_retries = {"abcd": domoCreate_module.WIDGET_CREATION_MAX_RETRIES + 1}
+        domoCreate_module.request_widget_creation(obj, "abcd", "from the WebUI")
+
+        domoCreate_module.process_widget_creation_requests(obj, {})
+
+        assert "abcd" not in obj.widget_creation_retries
