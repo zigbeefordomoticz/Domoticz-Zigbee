@@ -24,6 +24,48 @@ def _make_stub(name, **attrs):
     return mod
 
 
+# ─── DomoticzEx: installed at import time, unlike the Modules.* stubs ─────────
+#
+# DomoticzEx is provided by the Domoticz host and is never importable here, so
+# there is no real module to protect and nothing to defer. It is installed now,
+# while conftest is imported - before any test module is collected - so that the
+# first test module to import a SUT binds a *complete* fake.
+#
+# This matters because `import DomoticzEx as Domoticz` binds the module object:
+# once Modules/domoticzAbstractLayer.py is in sys.modules, a later
+# sys.modules["DomoticzEx"] = <other fake> cannot reach it any more. A partial
+# fake installed first therefore used to break whichever test file came second,
+# depending only on collection order.
+
+def _make_domoticzex_stub():
+    _config_store: dict = {}
+
+    def _Configuration(new_cfg=None):
+        if new_cfg is None:
+            return dict(_config_store)
+        _config_store.clear()
+        _config_store.update(new_cfg)
+        return dict(_config_store)
+
+    return _make_stub(
+        "DomoticzEx",
+        Configuration=_Configuration,
+        Unit=MagicMock(name="Unit"),
+        Device=MagicMock(name="Device"),
+        Connection=MagicMock(name="Connection", return_value=MagicMock()),
+        Log=MagicMock(name="Log"),
+        Debug=MagicMock(name="Debug"),
+        Error=MagicMock(name="Error"),
+        Status=MagicMock(name="Status"),
+        Image=MagicMock(name="Image"),
+        Parameters={},
+        Devices={},
+    )
+
+
+sys.modules.setdefault("DomoticzEx", _make_domoticzex_stub())
+
+
 # ─── Stub definitions ─────────────────────────────────────────────────────────
 
 _STUBS = {
