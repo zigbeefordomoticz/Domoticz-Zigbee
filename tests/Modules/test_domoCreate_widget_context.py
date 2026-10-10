@@ -74,7 +74,10 @@ class _FakeDomoticzDevice:
 def _make_self(device=None, nwkid="abcd"):
     obj = MagicMock()
     obj.ListOfDevices = {} if device is None else {nwkid: device}
+    # Both are created lazily on the real plugin instance, but a MagicMock would
+    # auto-create them as Mocks instead of letting getattr() return the default.
     obj.widget_reuse_pool = {}
+    obj.widget_creation_retries = {}
     return obj
 
 
@@ -333,3 +336,147 @@ class TestRetryFailedWidgetCreation:
 
         message = obj.log.logging.call_args.args[2]
         assert "unnamed" in message and "unknown" in message
+
+    def test_retry_reports_the_attempt_number(self, domoCreate_module, monkeypatch):
+        obj = _make_self(_ts0041())
+        monkeypatch.setattr(domoCreate_module, "CreateDomoDevice", MagicMock())
+
+        domoCreate_module.retry_failed_widget_creation(obj, {}, "abcd")
+
+        assert "attempt 1 of 2" in obj.log.logging.call_args.args[2]
+
+
+# ---------------------------------------------------------------------------
+# Retry budget
+# ---------------------------------------------------------------------------
+
+class TestRetryBudget:
+    """The retry must stop after WIDGET_CREATION_MAX_RETRIES.
+
+    The heartbeat keeps scheduling a retry every 5 minutes for as long as the
+    device stays in a failDB_* state, so without a budget the same error is
+    reprinted for the whole session. Domoticz logs the actual refusal reason on
+    its own side and never returns it, so retrying cannot clear the cause.
+    """
+
+    def _retry(self, mod, obj, times):
+        for _ in range(times):
+            mod.retry_failed_widget_creation(obj, {}, "abcd")
+
+    def test_creation_is_attempted_only_up_to_the_budget(self, domoCreate_module, monkeypatch):
+        create = MagicMock()
+        monkeypatch.setattr(domoCreate_module, "CreateDomoDevice", create)
+        obj = _make_self(_ts0041())
+
+        self._retry(domoCreate_module, obj, 10)
+
+        assert create.call_count == domoCreate_module.WIDGET_CREATION_MAX_RETRIES
+
+    def test_budget_default_is_two(self, domoCreate_module):
+        assert domoCreate_module.WIDGET_CREATION_MAX_RETRIES == 2
+
+    def test_giving_up_is_reported_exactly_once(self, domoCreate_module, monkeypatch):
+        monkeypatch.setattr(domoCreate_module, "CreateDomoDevice", MagicMock())
+        obj = _make_self(_ts0041())
+
+        self._retry(domoCreate_module, obj, 20)
+
+        errors = [c for c in obj.log.logging.call_args_list if c.args[1] == "Error"]
+        assert len(errors) == 1
+        assert "giving up for this session" in errors[0].args[2]
+
+    def test_giving_up_names_the_device_and_the_way_out(self, domoCreate_module, monkeypatch):
+        monkeypatch.setattr(domoCreate_module, "CreateDomoDevice", MagicMock())
+        obj = _make_self(_ts0041())
+
+        self._retry(domoCreate_module, obj, 3)
+
+        error = [c for c in obj.log.logging.call_args_list if c.args[1] == "Error"][0]
+        message = error.args[2]
+        assert "Interrupteur salon" in message and "a4c138e090a23a63" in message
+        # The user must be told what actually unblocks it.
+        assert "restart the plugin" in message and "recreate widgets" in message
+        assert error.args[3] == "abcd"
+        assert error.args[4]["Reason"] == "retry budget exhausted"
+
+    def test_device_is_not_dropped_when_giving_up(self, domoCreate_module, monkeypatch):
+        monkeypatch.setattr(domoCreate_module, "CreateDomoDevice", MagicMock())
+        obj = _make_self(_ts0041())
+
+        self._retry(domoCreate_module, obj, 5)
+
+        # Losing the entry would lose Ep/Cluster/ClusterType - the whole reason
+        # failDB_NoHardware is treated as recoverable rather than terminal.
+        assert obj.ListOfDevices["abcd"]["Status"] == "failDB_NoHardware"
+        assert obj.ListOfDevices["abcd"]["Ep"] == {"01": {"Type": "Button_3", "ClusterType": {}}}
+
+    def test_budget_is_per_device(self, domoCreate_module, monkeypatch):
+        create = MagicMock()
+        monkeypatch.setattr(domoCreate_module, "CreateDomoDevice", create)
+        obj = _make_self(_ts0041())
+        obj.ListOfDevices["ef01"] = dict(_ts0041(), IEEE="a4c138e090a23a64")
+
+        self._retry(domoCreate_module, obj, 10)
+        for _ in range(10):
+            domoCreate_module.retry_failed_widget_creation(obj, {}, "ef01")
+
+        assert create.call_count == 2 * domoCreate_module.WIDGET_CREATION_MAX_RETRIES
+
+    def test_success_restores_a_full_budget(self, domoCreate_module, monkeypatch):
+        obj = _make_self(_ts0041())
+
+        def succeed(_self, _devices, nwkid):
+            _self.ListOfDevices[nwkid]["Status"] = "inDB"
+
+        monkeypatch.setattr(domoCreate_module, "CreateDomoDevice", MagicMock(side_effect=succeed))
+        domoCreate_module.retry_failed_widget_creation(obj, {}, "abcd")
+
+        assert obj.widget_creation_retries == {}
+
+    def test_reset_grants_a_new_budget_for_one_device(self, domoCreate_module, monkeypatch):
+        create = MagicMock()
+        monkeypatch.setattr(domoCreate_module, "CreateDomoDevice", create)
+        obj = _make_self(_ts0041())
+
+        self._retry(domoCreate_module, obj, 10)
+        domoCreate_module.reset_widget_creation_retries(obj, "abcd")
+        self._retry(domoCreate_module, obj, 10)
+
+        assert create.call_count == 2 * domoCreate_module.WIDGET_CREATION_MAX_RETRIES
+
+    def test_reset_without_a_nwkid_clears_every_device(self, domoCreate_module, monkeypatch):
+        monkeypatch.setattr(domoCreate_module, "CreateDomoDevice", MagicMock())
+        obj = _make_self(_ts0041())
+        obj.widget_creation_retries = {"abcd": 2, "ef01": 1}
+
+        domoCreate_module.reset_widget_creation_retries(obj)
+
+        assert obj.widget_creation_retries == {}
+
+    def test_giving_up_is_reported_again_after_a_reset(self, domoCreate_module, monkeypatch):
+        monkeypatch.setattr(domoCreate_module, "CreateDomoDevice", MagicMock())
+        obj = _make_self(_ts0041())
+
+        self._retry(domoCreate_module, obj, 5)
+        domoCreate_module.reset_widget_creation_retries(obj, "abcd")
+        self._retry(domoCreate_module, obj, 5)
+
+        errors = [c for c in obj.log.logging.call_args_list if c.args[1] == "Error"]
+        assert len(errors) == 2
+
+    def test_counter_is_created_lazily_on_a_plain_object(self, domoCreate_module, monkeypatch):
+        # The real plugin instance has no widget_creation_retries attribute until
+        # the first recoverable failure; startup must not have to create it.
+        monkeypatch.setattr(domoCreate_module, "CreateDomoDevice", MagicMock())
+
+        class Plugin:
+            def __init__(self):
+                self.ListOfDevices = {"abcd": _ts0041()}
+                self.log = MagicMock()
+
+        obj = Plugin()
+        assert not hasattr(obj, "widget_creation_retries")
+
+        domoCreate_module.retry_failed_widget_creation(obj, {}, "abcd")
+
+        assert obj.widget_creation_retries == {"abcd": 1}
