@@ -132,3 +132,26 @@ class TestHealthDeviceParameters:
 
     def test_live_is_a_stale_candidate(self):
         assert "Live" in HEALTH_STALE_CANDIDATES
+
+
+# ── vocabulary guard ─────────────────────────────────────────────────────────
+
+class TestHealthUndetermined:
+    """HEALTH_UNDETERMINED is the contract between the places that write "I have no
+    evidence about this device" and the places that read it.
+
+    checkHealth() derives _checkHealth from it, and that flag is what makes
+    pingDevices() probe a device at once instead of waiting out pingDevicesFeq.
+    Dropping a spelling here silently stops the post-restart ping sweep, with no
+    test failure anywhere else - hence this guard.
+    """
+
+    def test_unknown_is_undetermined(self):
+        """Written by database.CheckDeviceList, command.mgtCommand, heartbeat,
+        WebServer and GrpDomoticz when a device has to be probed again."""
+        assert "unknown" in HEALTH_UNDETERMINED
+
+    def test_empty_string_is_still_undetermined(self):
+        """Kept so a device entry built before the "unknown" rename, or by a path
+        not covered here, is still probed rather than silently ignored."""
+        assert "" in HEALTH_UNDETERMINED
