@@ -25,6 +25,9 @@ from packaging.version import Version
 from Modules.domoticzAbstractLayer import domoticz_error_api
 from Modules.tools import how_many_devices
 
+# Number of characters of the commit hash reported in the logs, as git abbreviates it
+SHORT_COMMIT_LENGTH = 7
+
 # zigpy-family modules tracked by parse_constraints()/check_python_modules_version()
 PYTHON_MODULES = {
     "zigpy",
@@ -32,6 +35,31 @@ PYTHON_MODULES = {
     "zigpy_deconz",
     "bellows",
 }
+
+def plugin_identity(self):
+    """Return what identifies the running plugin, for the startup logs.
+
+    Format: branch-version, then the revision of the checkout and the certified devices
+    database version, as in "stable9-9.1.007 (commit 9546837, Certified DB 8.586)". The
+    git branch is named as well when it differs from the branch the VERSION file claims,
+    which is how an installation left on a feature branch shows up. Each detail is left
+    out when it is not available, the version itself always being there.
+    """
+    identity = "%s-%s" % (self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"])
+
+    details = []
+    if commit := self.pluginParameters.get("PluginCommit"):
+        git_branch = self.pluginParameters.get("PluginCommitBranch")
+        if git_branch and git_branch != self.pluginParameters["PluginBranch"]:
+            details.append("commit %s on %s" % (commit[:SHORT_COMMIT_LENGTH], git_branch))
+        else:
+            details.append("commit %s" % commit[:SHORT_COMMIT_LENGTH])
+
+    if certified_db_version := self.pluginParameters.get("CertifiedDbVersion"):
+        details.append("Certified DB %s" % certified_db_version)
+
+    return "%s (%s)" % (identity, ", ".join(details)) if details else identity
+
 
 def networksize_update(self):
     """Refresh the NetworkSize plugin parameter from the current device count."""
