@@ -117,6 +117,7 @@ class GroupsManagement(object):
         self.ListOfGroups = {}  # Data structutre to store all groups
         self.log = log
         self.GroupListFileName = None  # Filename of Group caching file
+        self.last_written_groups_list = None  # Serialized ListOfGroups as last written, to skip redundant dumps
         self.ControllerIEEE = None
         self.ScanDevicesToBeDone = []  # List of Devices for which a GrpMemberShip request as to be performed
         self.GroupStatus = "Starting"  # Used by WebServer to display Status of Group!
