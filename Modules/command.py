@@ -202,7 +202,7 @@ def domoticz_command(self, Devices, DeviceID, Unit, Nwkid, Command, Level, Color
     
     health_value = self.ListOfDevices.get(Nwkid, {}).get("Health")
     if health_value == "Not Reachable":
-        self.ListOfDevices.setdefault(Nwkid, {})["Health"] = ""
+        self.ListOfDevices.setdefault(Nwkid, {})["Health"] = "unknown"
 
 
     if Command == "Stop":
