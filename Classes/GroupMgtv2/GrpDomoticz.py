@@ -1035,7 +1035,7 @@ def resetDevicesHeartBeat(self, GrpId):
 
             # Reset Health status of corresponding device if any in Not Reachable
             if "Health" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Health"] == "Not Reachable":
-                self.ListOfDevices[NwkId]["Health"] = ""
+                self.ListOfDevices[NwkId]["Health"] = "unknown"
 
 
 def is_device_inverted(self, GroupId):

@@ -1016,7 +1016,7 @@ class WebServer(object):
                             if _new_param["Disabled"]:
                                 self.ListOfDevices[dev]["Health"] = "Disabled"
                             else:
-                                self.ListOfDevices[dev]["Health"] = ""
+                                self.ListOfDevices[dev]["Health"] = "unknown"
                                 
                         self.ListOfDevices[dev]["Param"] = _new_param
                         
