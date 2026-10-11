@@ -66,10 +66,16 @@ def _deps():
     }
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def grp():
-    """Load GrpServices from its file path with its imports stubbed. Function scoped,
-    as the tests assert on the stubs' calls."""
+    """
+    Load GrpServices from its file path with its imports stubbed.
+
+    Module scoped on purpose: swapping entries in and out of sys.modules once per test
+    churned the import cache enough to disturb an unrelated test elsewhere in the
+    suite, so the swap happens once and the mocks are reset between tests by
+    reset_stub_mocks below.
+    """
     import importlib.util
     import pathlib
 
@@ -90,6 +96,20 @@ def grp():
         sys.modules.pop(name, None)
         if saved.get(name) is not None:
             sys.modules[name] = saved[name]
+
+
+@pytest.fixture(autouse=True)
+def reset_stub_mocks(grp):
+    """The tests assert on call history, so every mock starts each test clean."""
+    mocks = (
+        grp.checkToCreateOrUpdateGroup,
+        grp.LookForGroupAndCreateIfNeeded,
+        grp.find_first_unit_widget_from_deviceID,
+    )
+    for mock in mocks:
+        mock.reset_mock()
+    grp.find_first_unit_widget_from_deviceID.return_value = 1
+    yield
 
 
 def _remote(remote_group, ep=None):
@@ -143,11 +163,9 @@ class TestRecoverLegrandGroups:
 
     def test_a_group_without_its_domoticz_widget_is_recreated(self, grp):
         plugin = _FakeSelf({NWKID: _remote({"01": "fefe"})}, {"fefe": _group_with(IEEE, "01")})
-        sys.modules["Modules.domoticzAbstractLayer"].find_first_unit_widget_from_deviceID.return_value = None
-        try:
-            grp.recover_legrand_groups_from_devices(plugin)
-        finally:
-            sys.modules["Modules.domoticzAbstractLayer"].find_first_unit_widget_from_deviceID.return_value = 1
+        grp.find_first_unit_widget_from_deviceID.return_value = None
+
+        grp.recover_legrand_groups_from_devices(plugin)
 
         grp.LookForGroupAndCreateIfNeeded.assert_called_once_with(plugin, "fefe")
         grp.checkToCreateOrUpdateGroup.assert_not_called()
