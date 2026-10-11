@@ -508,9 +508,7 @@ class BasePlugin:
                 self.ListOfDevices,
                 self.permitTojoin,
             )
-            self.log.loggingUpdatePluginVersion(
-                str(self.pluginParameters["PluginBranch"] + "-" + self.pluginParameters["PluginVersion"])
-            )
+            self.log.loggingUpdatePluginVersion(plugin_identity(self))
             self.log.openLogFile()
 
         # We can use from now the self.log.logging()
