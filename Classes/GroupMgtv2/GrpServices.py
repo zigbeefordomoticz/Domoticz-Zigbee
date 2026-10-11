@@ -20,11 +20,13 @@ from Classes.GroupMgtv2.GrpDatabase import (check_if_group_empty,
                                             checkNwkIdAndUpdateIfAny,
                                             create_group, remove_group,
                                             remove_nwkid_from_all_groups)
-from Classes.GroupMgtv2.GrpDomoticz import (create_domoticz_group_device,
+from Classes.GroupMgtv2.GrpDomoticz import (LookForGroupAndCreateIfNeeded,
+                                            create_domoticz_group_device,
                                             remove_domoticz_group_device,
                                             update_domoticz_group_name)
 from Classes.GroupMgtv2.GrpIkeaRemote import (checkIfIkeaRound5BToBeAdded,
                                               checkIfIkeaRound5BToBeRemoved)
+from Modules.domoticzAbstractLayer import     find_first_unit_widget_from_deviceID
 from Modules.tools import mainPoweredDevice
 from Modules.zigateConsts import LEGRAND_REMOTES
 
@@ -50,6 +52,77 @@ def check_existing_membership(self):
     for GrpId in self.ListOfGroups:
         for NwkId, Ep, Ieee in self.ListOfGroups[GrpId]["Devices"]:
             check_group_member_ship(self, NwkId, Ep, GrpId)
+
+
+def legrand_gang_endpoint(self, NwkId, gang):
+    """
+    Endpoint a gang's group membership belongs to.
+
+    RemoteGroup is keyed by the fc01 leftright byte, or "Single" for a one gang
+    remote. The byte has the same two digit form as an endpoint and is used as one
+    when the device declares it; everything else falls back to endpoint 01.
+    """
+    if gang in self.ListOfDevices.get(NwkId, {}).get("Ep", {}):
+        return gang
+    return "01"
+
+
+def legrand_remote_in_group(self, GrpId, NwkId):
+    """Is this remote, by IEEE, already a member of that group."""
+    ieee = self.ListOfDevices.get(NwkId, {}).get("IEEE")
+    if not ieee:
+        return False
+    devices = self.ListOfGroups.get(GrpId, {}).get("Devices") or []
+    return any(isinstance(device, (list, tuple)) and len(device) >= 3 and device[2] == ieee for device in devices)
+
+
+def recover_legrand_groups_from_devices(self):
+    """
+    Put back the groups a Legrand remote owns when they have gone missing.
+
+    A Legrand remote keeps its group assignment internally - it was told so with fc01
+    command 0x0c - and there is no way to read it back: this model answers both fc01
+    attributes with UNSUPPORTED_ATTRIBUTE. The plugin's own record of it lives in
+    ListOfDevices[nwkid]["Legrand"]["RemoteGroup"], one entry per gang.
+
+    So when the group list is lost while the device list survives, the remote keeps
+    commanding a group the plugin no longer knows and every press only produces
+    "update_domoticz_group_device - unknown group: fefe". The device record holds
+    everything needed to rebuild it, which is what this does, at load time.
+
+    Three states are repaired: the group gone from ListOfGroups, the group there but
+    without this remote, and the group there without its Domoticz widget. A healthy
+    installation does nothing.
+    """
+    for NwkId in list(self.ListOfDevices):
+        device = self.ListOfDevices[NwkId]
+        if not isinstance(device, dict):
+            continue
+
+        legrand = device.get("Legrand")
+        if not isinstance(legrand, dict):
+            continue
+
+        remote_group = legrand.get("RemoteGroup")
+        if not isinstance(remote_group, dict):
+            continue
+
+        for gang, GrpId in sorted(remote_group.items()):
+            if not GrpId:
+                continue
+
+            Ep = legrand_gang_endpoint(self, NwkId, gang)
+
+            if GrpId not in self.ListOfGroups or not legrand_remote_in_group(self, GrpId, NwkId):
+                self.logging(
+                    "Status",
+                    "Recovering Legrand group %s of remote %s/%s from the device record" % (GrpId, NwkId, Ep),
+                )
+                checkToCreateOrUpdateGroup(self, NwkId, Ep, GrpId)
+
+            elif find_first_unit_widget_from_deviceID(self, self.Devices, GrpId) is None:
+                self.logging("Status", "Recovering the Domoticz widget of Legrand group %s" % GrpId)
+                LookForGroupAndCreateIfNeeded(self, GrpId)
 
 
 def RemoveNwkIdFromAllGroups(self, Nwkid):
