@@ -63,7 +63,13 @@ _GRP_DOMO_DEPS = {
     ),
     "Modules.zigateConsts": dict(
         ADDRESS_MODE={"short": 2, "ieee": 3, "group": 4},
-        LEGRAND_REMOTES=[],
+        # Mirrors LEGRAND_REMOTES in Modules/zigateConsts.py. It feeds EXCLUDED_MODELS,
+        # which best_group_widget() uses to leave remotes out of the negotiation, so an
+        # empty stub here would silently disable that exclusion in the tests.
+        LEGRAND_REMOTES=(
+            "Remote switch", "Double gangs remote switch", "Shutters central remote switch",
+            "Remote motion sensor", "Remote toggle switch", "Remote switch Wake up Sleep",
+        ),
         ZIGATE_EP="01",
     ),
     "Zigbee.zclCommands": dict(
@@ -285,14 +291,17 @@ class TestNegotiateEndpointWidget:
 # Tests: best_group_widget — the 1xWW + 2xRGBWW scenario and others
 # ---------------------------------------------------------------------------
 
-def _make_device(widget_type, ep="01"):
-    return {
+def _make_device(widget_type, ep="01", model=None):
+    device = {
         "Ep": {
             ep: {
                 "ClusterType": {"1": widget_type},
             }
         }
     }
+    if model is not None:
+        device["Model"] = model
+    return device
 
 
 def _make_group(devices):
@@ -392,14 +401,20 @@ class TestBestGroupWidget:
         grp_domo.best_group_widget(self_, "0001")
         assert self_.ListOfGroups["0001"]["GroupWidgetType"] == "ColorControlWW"
 
-    def test_empty_group_defaults_to_colorfull(self, grp_domo):
-        """A group with no contributable devices falls back to ColorControlFull."""
+    def test_empty_group_defaults_to_the_placeholder(self, grp_domo):
+        """
+        A group with no contributable device falls back to the placeholder widget.
+
+        Nothing in such a group can be driven by a group command, so it must not
+        present more than On/Off. It is recomputed upwards as soon as a real device
+        joins.
+        """
         self_ = _FakeSelf(
             list_of_devices={},
             list_of_groups={"0001": _make_group([])},
         )
         grp_domo.best_group_widget(self_, "0001")
-        assert self_.ListOfGroups["0001"]["GroupWidgetType"] == "ColorControlFull"
+        assert self_.ListOfGroups["0001"]["GroupWidgetType"] == "Switch"
 
     def test_cluster_set_correctly(self, grp_domo):
         """Cluster must be set from CLUSTER_MAPPING for the resolved widget type."""
@@ -407,4 +422,91 @@ class TestBestGroupWidget:
             ("1111", "01", "ieee1", "ColorControlWW"),
         ])
         assert group["Cluster"] == grp_domo.CLUSTER_MAPPING["ColorControlWW"]
+
+
+class TestBestGroupWidgetExcludesRemotes:
+    """
+    A remote emits group commands and is never driven by them, so it must neither
+    become the group widget type nor cap the negotiation.
+
+    The case that motivated this: a Legrand "Double gangs remote switch" pairs, the
+    fc01 handler auto-creates one group per gang with the remote as sole member, and
+    the group widget came out as an RGB colour control, because "LegrandSelector" has
+    no WIDGET_STYLE entry and silently fell back to ColorControlFull.
+    """
+
+    LEGRAND = "Double gangs remote switch"
+
+    def _run(self, grp_domo, devices_spec):
+        """devices_spec: list of (NwkId, ep, IEEE, widget_type, model)."""
+        list_of_devices = {}
+        group_devices = []
+        for nwk, ep, ieee, wt, model in devices_spec:
+            list_of_devices[nwk] = _make_device(wt, ep, model=model)
+            group_devices.append((nwk, ep, ieee))
+
+        self_ = _FakeSelf(
+            list_of_devices=list_of_devices,
+            list_of_groups={"fefe": _make_group(group_devices)},
+        )
+        return grp_domo.best_group_widget(self_, "fefe"), self_.ListOfGroups["fefe"]
+
+    def test_remote_only_group_gets_the_placeholder_widget(self, grp_domo):
+        _, group = self._run(grp_domo, [
+            ("ee9f", "01", "000474000082702a", "LegrandSelector", self.LEGRAND),
+        ])
+        assert group["GroupWidgetType"] == "Switch"
+
+    def test_remote_only_group_is_not_a_colour_widget(self, grp_domo):
+        """The reported symptom: an RGB_CW_WW_Z widget for a group of one remote."""
+        result, _ = self._run(grp_domo, [
+            ("ee9f", "01", "000474000082702a", "LegrandSelector", self.LEGRAND),
+        ])
+        assert result != grp_domo.WIDGET_STYLE["ColorControlFull"]
+        assert result == grp_domo.WIDGET_STYLE["Switch"]
+
+    def test_remote_widget_type_is_never_persisted(self, grp_domo):
+        """
+        LegrandSelector has no WIDGET_STYLE and no CLUSTER_MAPPING entry, so persisting
+        it left the group with an empty Cluster.
+        """
+        _, group = self._run(grp_domo, [
+            ("ee9f", "01", "000474000082702a", "LegrandSelector", self.LEGRAND),
+        ])
+        assert group["GroupWidgetType"] != "LegrandSelector"
+        assert group["Cluster"] == grp_domo.CLUSTER_MAPPING["Switch"]
+
+    def test_remote_does_not_cap_a_colour_bulb(self, grp_domo):
+        """
+        The regression that ranking the remote would have introduced: a remote offering
+        On/Off and dimming must not hold a colour bulb in the same group down.
+        """
+        _, group = self._run(grp_domo, [
+            ("ee9f", "01", "000474000082702a", "LegrandSelector", self.LEGRAND),
+            ("1111", "01", "ieee1", "ColorControlRGBWW", "TRADFRI bulb"),
+        ])
+        assert group["GroupWidgetType"] == "ColorControlRGBWW"
+
+    def test_remote_listed_after_the_bulb_does_not_change_the_outcome(self, grp_domo):
+        """Order of the Devices list must not matter."""
+        _, group = self._run(grp_domo, [
+            ("1111", "01", "ieee1", "ColorControlRGBWW", "TRADFRI bulb"),
+            ("ee9f", "01", "000474000082702a", "LegrandSelector", self.LEGRAND),
+        ])
+        assert group["GroupWidgetType"] == "ColorControlRGBWW"
+
+    def test_real_devices_still_negotiate_the_minimum(self, grp_domo):
+        """Excluding the remote must not disturb the usual negotiation."""
+        _, group = self._run(grp_domo, [
+            ("ee9f", "01", "000474000082702a", "LegrandSelector", self.LEGRAND),
+            ("1111", "01", "ieee1", "ColorControlRGBWW", "TRADFRI bulb"),
+            ("2222", "01", "ieee2", "LvlControl", "Some dimmer"),
+        ])
+        assert group["GroupWidgetType"] == "LvlControl"
+
+    def test_ikea_remote_control_is_excluded_too(self, grp_domo):
+        _, group = self._run(grp_domo, [
+            ("3333", "01", "ieee3", "LvlControl", "TRADFRI remote control"),
+        ])
+        assert group["GroupWidgetType"] == "Switch"
 
