@@ -163,6 +163,7 @@ from Modules.database import (LoadDeviceList, flush_plugin_listofdevice,
 from Modules.domoticzAbstractLayer import (
     domo_read_Name, load_list_of_domoticz_widget,
     retrieve_widgetid_from_deviceId_unit)
+from Modules.gitInfos import get_git_infos
 from Modules.heartbeat import processListOfDevices
 from Modules.input import zigbee_receive_message
 from Modules.matomo_request import (matomo_coordinator_initialisation,
@@ -443,6 +444,15 @@ class BasePlugin:
         self.pluginParameters["PluginBranch"] = _pluginversion["branch"]
         self.pluginParameters["PluginVersion"] = _pluginversion["version"]
         self.pluginParameters["CertifiedDbVersion"] = z4d_certified_devices.__version__
+
+        # Revision of the running code, when installed from a git checkout. The certified devices
+        # database is usually a pip package and has then no revision to report.
+        plugin_git_infos = get_git_infos(Parameters["HomeFolder"])
+        certified_db_git_infos = get_git_infos(os.path.dirname(z4d_certified_devices.__file__))
+        self.pluginParameters["PluginCommit"] = plugin_git_infos["Commit"]
+        self.pluginParameters["PluginCommitBranch"] = plugin_git_infos["Branch"]
+        self.pluginParameters["CertifiedDbCommit"] = certified_db_git_infos["Commit"]
+        self.pluginParameters["CertifiedDbCommitBranch"] = certified_db_git_infos["Branch"]
         self.pluginParameters["TimeStamp"] = 0
         self.pluginParameters["available"] = None
         self.pluginParameters["available-firmMajor"] = None
@@ -1740,6 +1750,8 @@ def debuging_information(self, mode):
         "Debug": Parameters["Mode6"],
         "Python Version": sys.version,
         "DomoticzHash": Parameters["DomoticzHash"],
+        "Plugin Commit": self.pluginParameters["PluginCommit"],
+        "Certified Db Commit": self.pluginParameters["CertifiedDbCommit"],
         "DomoticzBuildTime": Parameters["DomoticzBuildTime"],
         "Startup Folder": Parameters["StartupFolder"],
         "Home Folder": Parameters["HomeFolder"],
