@@ -18,16 +18,17 @@ EP   = "01"
 
 # Layout: sqn(2)+srcAddr(4)+srcEp(2)+dstEp(2)+clusterId(4)+dir(2)+
 #         manufSpec(2)+manufCode(4)+nbAttr(2)+attributes(4 each)
-def _msg(addr=ADDR, cluster="0000", attr="0000", nb="01", manuf_name=""):
+def _msg(addr=ADDR, cluster="0000", attr="0000", nb="01", manuf_name="",
+         manuf_spec="00", manuf_code="0000"):
     return (
-        "01"      # sqn
-        + addr    # srcAddr
-        + EP      # srcEp
-        + EP      # dstEp
+        "01"            # sqn
+        + addr          # srcAddr
+        + EP            # srcEp
+        + EP            # dstEp
         + cluster
-        + "00"    # direction
-        + "00"    # manufSpec
-        + "0000"  # manufCode
+        + "00"          # direction
+        + manuf_spec
+        + manuf_code
         + nb
         + attr
     )
@@ -83,3 +84,77 @@ class TestDecode0100:
         monkeypatch.setattr(mod, "handle_unknow_device", MagicMock())
         mod.Decode0100(plugin, {}, _msg(), LQI)
         upd.assert_called()
+
+
+class TestDecode0100LegrandOperatingTime:
+    """
+    Cluster 0000 attribute f000 is Legrand's operating time: the remote reads it from
+    the coordinator and the plugin answers with its uptime.
+
+    The branch used to be gated on the stored 'Manufacturer Name' alone, which is read
+    from Basic attribute 0004 and is not necessarily there yet. A remote that asked
+    seconds after joining, before 0004 came back, fell through to the default branch and
+    got no answer. The request itself carries the manufacturer code, so it is enough to
+    identify the device.
+    """
+
+    LEGRAND_FRAME = dict(cluster="0000", attr="f000", manuf_spec="01", manuf_code="1021")
+
+    def _run(self, mod, plugin, monkeypatch, device, compatibility_mode=True, **frame):
+        plugin.ListOfDevices = {ADDR: device}
+        plugin.pluginconf.pluginConf["LegrandCompatibilityMode"] = compatibility_mode
+        plugin.statistics._start = 0
+        rar = MagicMock()
+        monkeypatch.setattr(mod, "read_attribute_response", rar)
+        mod.Decode0100(plugin, {}, _msg(**{**self.LEGRAND_FRAME, **frame}), LQI)
+        return rar
+
+    def test_answered_from_the_frame_manufacturer_code_alone(self, mod, plugin, monkeypatch):
+        """The regression: nothing stored about the manufacturer yet, mid-pairing."""
+        rar = self._run(mod, plugin, monkeypatch, {"Model": "Double gangs remote switch"})
+        rar.assert_called_once()
+
+    def test_answered_from_the_stored_manufacturer_name(self, mod, plugin, monkeypatch):
+        """The path that already worked: no manufacturer code in the frame."""
+        rar = self._run(
+            mod, plugin, monkeypatch,
+            {"Model": "Double gangs remote switch", "Manufacturer Name": "Legrand"},
+            manuf_spec="00", manuf_code="0000",
+        )
+        rar.assert_called_once()
+
+    def test_answered_from_the_stored_manufacturer_code(self, mod, plugin, monkeypatch):
+        """'1021' is a code, so it belongs against 'Manufacturer', not 'Manufacturer Name'."""
+        rar = self._run(
+            mod, plugin, monkeypatch,
+            {"Model": "Double gangs remote switch", "Manufacturer": "1021"},
+            manuf_spec="00", manuf_code="0000",
+        )
+        rar.assert_called_once()
+
+    def test_not_answered_when_nothing_identifies_legrand(self, mod, plugin, monkeypatch):
+        rar = self._run(
+            mod, plugin, monkeypatch,
+            {"Model": "SomeModel", "Manufacturer": "117c", "Manufacturer Name": "IKEA of Sweden"},
+            manuf_spec="00", manuf_code="0000",
+        )
+        rar.assert_not_called()
+
+    def test_not_answered_when_compatibility_mode_is_off(self, mod, plugin, monkeypatch):
+        """Widening the identification must not start answering with the option disabled."""
+        rar = self._run(
+            mod, plugin, monkeypatch,
+            {"Model": "Double gangs remote switch"},
+            compatibility_mode=False,
+        )
+        rar.assert_not_called()
+
+    def test_response_carries_the_attribute_datatype_and_manufacturer_code(self, mod, plugin, monkeypatch):
+        rar = self._run(mod, plugin, monkeypatch, {"Model": "Double gangs remote switch"})
+        args, kwargs = rar.call_args
+        assert args[4] == "0000"    # cluster
+        assert args[5] == "00"      # status
+        assert args[6] == "23"      # datatype, uint32
+        assert args[7] == "f000"    # attribute
+        assert kwargs["manuf_code"] == "1021"
+
