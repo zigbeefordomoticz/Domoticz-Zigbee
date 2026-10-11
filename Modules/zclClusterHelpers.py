@@ -325,6 +325,16 @@ def _upd_data_strut_based_on_model(self, MsgSrcAddr, model_name, initial_ep):
     return True
 
 
+# Models whose variants are told apart by the Manufacturer code or the ZDeviceID
+# rather than by the Manufacturer Name. An 'Identifier' entry in a configuration
+# file can only express a (Model, Manufacturer Name) pair, so for these models
+# PLUGIN_MODELS_MATRIX must be given a chance before a generic <Model>.json
+# configuration is accepted - otherwise e.g. every SONOFF 66666 would take the
+# generic 66666 config instead of 66666-temphumi (ZDeviceID 0302) or
+# 66666-motion (ZDeviceID 0402).
+MODELS_RESOLVED_BY_MATRIX_ONLY = ( "66666", )
+
+
 def _config_source_is_deviceconf(self, nwk_id):
     return self.ListOfDevices.get(nwk_id, {}).get("ConfigSource") == "DeviceConf"
 
@@ -341,18 +351,40 @@ def _build_model_name( self, nwkid, modelName):
     self.log.logging([ "ZclClusters", "Pairing"], "Debug", f"_build_model_name  manuf_code: {manuf_code}", nwkid)
     self.log.logging([ "ZclClusters", "Pairing"], "Debug", f"_build_model_name  zdevice_id: {zdevice_id}", nwkid)
 
-    if modelName in ( '66666', ):
+    # An unknown Manufacturer Name is stored as {} by some code paths, and only
+    # a string can take part in the DeviceConf name lookups here after.
+    if not isinstance(manufacturer_name, str):
+        manufacturer_name = ""
+
+    if manufacturer_name:
+        # A configuration naming this exact (Model, Manufacturer Name) pair is
+        # the most specific answer there is, so it comes first. Conf/Local-Devices
+        # is loaded before the certified database, so a local file wins here -
+        # including over the hardcoded PLUGIN_MODELS_MATRIX, which is only
+        # consulted once every per-manufacturer lookup has missed.
+        if modelName + '-' + manufacturer_name in self.DeviceConf:
+            return modelName + '-' + manufacturer_name
+
+        if modelName + manufacturer_name in self.DeviceConf:
+            return modelName + manufacturer_name
+
+        # Same thing, expressed as an (ModelName, ManufacturerName) tuple in the
+        # 'Identifier' list of a configuration file instead of as a file name.
+        plugin_identifier = plugin_self_identifier( self, modelName, manufacturer_name)
+        if plugin_identifier:
+            return plugin_identifier
+
+        return check_found_plugin_model( self, modelName, manufacturer_name=manufacturer_name, manufacturer_code=manuf_code, device_id=zdevice_id)
+
+    # The Manufacturer Name is not known yet: nothing above could be looked up.
+    if modelName in MODELS_RESOLVED_BY_MATRIX_ONLY:
         #  https://github.com/Koenkk/zigbee2mqtt/issues/4338
         return check_found_plugin_model( self, modelName, manufacturer_name=manufacturer_name, manufacturer_code=manuf_code, device_id=zdevice_id)
 
     # Try to check if the Model name is in the DeviceConf list ( optimised devices)
-    if modelName + '-' + manufacturer_name in self.DeviceConf:
-        return modelName + '-' + manufacturer_name
+    if modelName in self.DeviceConf:
+        return modelName
 
-    if modelName + manufacturer_name in self.DeviceConf:
-        return modelName + manufacturer_name
-
-    # If not found, let see if the model name can be extracted from the (ModelName, ManufacturerName) tuple set in the Conf file as Identifier
     plugin_identifier = plugin_self_identifier( self, modelName, manufacturer_name)
     if plugin_identifier:
         return plugin_identifier
