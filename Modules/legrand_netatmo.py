@@ -171,6 +171,65 @@ def assign_group_membership_to_legrand_remote(self, NwkId, Ep, leftright=None):
             send_legrand_command(self, sqn, NwkId, Ep, "fc01", cmd, LegrandGroupMemberShip)
 
 
+# Band the Legrand remote groups are allocated from, highest id first.
+LEGRAND_GROUP_ID_TOP = 0xFEFE
+LEGRAND_GROUP_ID_BOTTOM = 0xFE00
+
+
+def legrand_group_id_claimed_by_another_remote(self, NwkId, group_id):
+    """True when another Legrand remote has already reserved this group id."""
+    for nwkid, device in self.ListOfDevices.items():
+        if nwkid == NwkId or not isinstance(device, dict):
+            continue
+        legrand = device.get("Legrand")
+        if not isinstance(legrand, dict):
+            continue
+        remote_group = legrand.get("RemoteGroup")
+        if isinstance(remote_group, dict) and group_id in remote_group.values():
+            return True
+    return False
+
+
+def legrand_preferred_group_id(self, NwkId, leftright):
+    """
+    Group id a gang of a Legrand remote should use, derived from the gang itself.
+
+    Allocating with get_available_grp_id() alone returns the highest id in the band
+    that is not already a group, so the id a gang ends up with depends on what else
+    happens to be in the group list: pre-create 0xfefe and gang 01 silently lands on
+    0xfefd instead. Deriving it from the gang keeps it predictable - gang 01 gets
+    0xfefe, gang 02 gets 0xfefd - and lets a group that already exists at that id be
+    reused rather than stepped over, which is what makes populating those groups up
+    front possible.
+
+    Returns None when no id can be derived, or when the derived one is already
+    reserved by another remote; the caller then falls back to scanning the band.
+    """
+    try:
+        rank = int(leftright, 16) if leftright else 1
+    except (TypeError, ValueError):
+        return None
+
+    if rank < 1:
+        return None
+
+    candidate = LEGRAND_GROUP_ID_TOP - (rank - 1)
+    if candidate < LEGRAND_GROUP_ID_BOTTOM:
+        return None
+
+    group_id = "%04x" % candidate
+    if legrand_group_id_claimed_by_another_remote(self, NwkId, group_id):
+        self.log.logging(
+            "Legrand", "Debug",
+            "legrand_preferred_group_id - %s gang %s wanted %s but another remote holds it" % (
+                NwkId, leftright, group_id),
+            NwkId,
+        )
+        return None
+
+    return group_id
+
+
 def get_groupid_for_remote(self, NwkId, Ep, leftright):
     GroupId = None
     if "Legrand" not in self.ListOfDevices[NwkId]:
@@ -190,7 +249,8 @@ def get_groupid_for_remote(self, NwkId, Ep, leftright):
 
     # We need to create a groupId
     if self.groupmgt:
-        GroupId = self.groupmgt.get_available_grp_id(0xFEFE, 0xFE00)
+        GroupId = legrand_preferred_group_id(self, NwkId, leftright) or self.groupmgt.get_available_grp_id(
+            LEGRAND_GROUP_ID_TOP, LEGRAND_GROUP_ID_BOTTOM)
         if leftright:
             self.ListOfDevices[NwkId]["Legrand"]["RemoteGroup"][leftright] = GroupId
         else:
