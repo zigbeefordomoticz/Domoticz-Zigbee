@@ -178,6 +178,7 @@ from Modules.pluginHelpers import (check_firmware_level,
                                    check_requirements, decodeConnection,
                                    get_domoticz_version,
                                    list_all_modules_loaded, networksize_update,
+                                   plugin_identity,
                                    update_DB_device_status_to_reinit)
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.readZclClusters import load_zcl_cluster
@@ -513,8 +514,7 @@ class BasePlugin:
             self.log.openLogFile()
 
         # We can use from now the self.log.logging()
-        self.log.logging("Plugin", "Status", "Z4D starts with %s-%s and using DomoticzEx !" % (
-            self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"]), )
+        self.log.logging("Plugin", "Status", "Z4D starts with %s and using DomoticzEx !" % plugin_identity(self))
 
         # Debuging information
         debuging_information(self, "Debug")
@@ -1514,19 +1514,19 @@ def zigateInit_Phase3(self):
     restart_plugin_reset_ModuleIRCode(self, nwkid=None)
 
     firmware_messages = {
-        "03": "Z4D with Zigate coordinator, firmware %s communication confirmed",
-        "04": "Z4D with Zigate coordinator, OptiPDM firmware %s communication confirmed",
-        "05": "Z4D with Zigate+ coordinator, firmware %s communication confirmed"
+        "03": "Z4D %s with Zigate coordinator, firmware %s communication confirmed",
+        "04": "Z4D %s with Zigate coordinator, OptiPDM firmware %s communication confirmed",
+        "05": "Z4D %s with Zigate+ coordinator, firmware %s communication confirmed"
     }
 
     # Check if firmware major version exists in the dictionary
     if self.FirmwareMajorVersion in firmware_messages:
-        message = firmware_messages[self.FirmwareMajorVersion] % self.FirmwareVersion
+        message = firmware_messages[self.FirmwareMajorVersion] % (plugin_identity(self), self.FirmwareVersion)
         self.log.logging("Plugin", "Status", message)
 
     elif int(self.FirmwareBranch) >= 20:
-        message = "Z4D with Zigpy, coordinator %s, firmware %s communication confirmed." % (
-            self.pluginParameters["CoordinatorModel"], self.pluginParameters["CoordinatorFirmwareVersion"])
+        message = "Z4D %s with Zigpy, coordinator %s, firmware %s communication confirmed." % (
+            plugin_identity(self), self.pluginParameters["CoordinatorModel"], self.pluginParameters["CoordinatorFirmwareVersion"])
         self.log.logging("Plugin", "Status", message)
         
         self.adminWidgets.updateNotificationWidget(Devices, message)
