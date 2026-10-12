@@ -18,6 +18,7 @@ from Classes.WebServer.headerResponse import (prepResponseMessage,
 from Modules.domoticzAbstractLayer import (
     domo_browse_widgets, domo_read_Device_Idx, domo_read_Name,
     domoticz_error_api, retrieve_widgetid_from_deviceId_unit)
+from Modules.tools import mainPoweredDevice
 
 LIST_CLUSTERTYPE_FOR_GROUPS = ( 
     "LvlControl", "Switch", "Plug",
@@ -114,9 +115,19 @@ def is_ready_for_widget_infos(self, nwkid):
 
 
 def _is_ikea_round_remote_or_battery_enabled_or_main_powered(self, nwkid):
-    """ Check if Main Powered, GroupOnBattery is enabled or we have an Ikea Round 5B """
+    """
+    Check if Main Powered, GroupOnBattery is enabled or we have an Ikea Round 5B
+
+    Whether a device is main powered is decided by mainPoweredDevice(), the helper the
+    rest of the group code already uses (GrpServices, GrpWebServices), instead of a
+    MacCapa test of its own. A device can be main powered with MacCapa 84, or announce
+    itself as battery while being main powered without neutral, which the DeviceConf
+    MainPoweredDevice flag corrects. Testing MacCapa == "8e" here kept such devices out
+    of the group WebUI unless GroupOnBattery was enabled, which is not what that setting
+    is for.
+    """
     return (
-        "MacCapa" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["MacCapa"] == "8e"
+        mainPoweredDevice(self, nwkid)
         or self.pluginconf.pluginConf["GroupOnBattery"]
         or "Type" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["Type"] == "Ikea_Round_5b"
     )
