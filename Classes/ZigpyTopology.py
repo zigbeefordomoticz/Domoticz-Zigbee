@@ -97,8 +97,18 @@ def write_json_file(file_path, data):
         
 
 def build_zigpy_neighbors(self, neighbors):
-    """ Build a list of Neighbor tuples """
-    raw_neighbors_set = set()
+    """ Build the neighbours table reported by this scan """
+    # One fresh table per scan, as build_zigpy_routes() already does for routes.
+    #
+    # The table used to be kept across scans and only ever appended to, because
+    # add_to_neighbors_table() skips a pair the table already holds. A pair's
+    # LQI, relationship, device type and rx-on-when-idle therefore stayed at
+    # whatever they were the first time that pair was ever seen: zigpy handed
+    # over fresh readings on every scan and all of them were thrown away. Two
+    # consecutive reports came out byte-identical, so reports could not be
+    # compared with each other, and a device that had since left the network was
+    # still reported with its old links.
+    self.neighbors_table = {}
     ieee2nwk_keys = set(self.IEEE2NWK.keys())
 
     for ieee, neighbor_list in neighbors.items():
@@ -131,13 +141,13 @@ def add_to_neighbors_table( self, ieee_parent, nwkid_parent, neighbor_info_dict)
             "relationship": [],  # Initialize as empty list
         }
         
-    # Check if the relationship exists before adding it
+    # Guard against the same pair turning up twice within one scan. Across
+    # scans there is nothing to guard: build_zigpy_neighbors() starts over.
     relationship_exists = any(
         rel["nwkid"] == nwkid_neighbor and rel["ieee"] == ieee_neighbor
         for rel in self.neighbors_table[nwkid_parent]["relationship"]
     )
             
-    # Add relationship if it doesn't exist already
     if not relationship_exists:
         self.neighbors_table[nwkid_parent]["relationship"].append(
             { "nwkid": nwkid_neighbor,
