@@ -705,3 +705,53 @@ def test_the_same_scan_stored_twice_is_listed_as_two_reports(tmp_path):
 
     assert [summary["timestamp"] for summary in summaries] == [1791824584, 1791824769]
     assert summaries[0]["neighbours"] == summaries[1]["neighbours"] == 2
+
+
+# --- depth sentinels ------------------------------------------------------
+#
+# A real ZNP report came back with depth 0xFF on 19 of 48 neighbour rows and
+# 0x0F on 22 more, against 6 child rows and 42 sibling ones: the radio reports a
+# depth for parent/child rows and a sentinel for siblings, whose depth it does
+# not track. 255 is outside the Zigbee range, so it is not a reading.
+@pytest.mark.parametrize("reported,expected", [
+    (0, 0),
+    (1, 1),
+    (15, 15),      # nwkMaxDepth: legal, so passed through
+    (16, None),    # out of range
+    (255, None),   # the common "not tracked" sentinel
+    (None, None),
+])
+def test_an_out_of_range_depth_is_reported_as_unknown(tmp_path, reported, expected):
+    report = zigpy_report()
+    report[0]["1711537200.123456"]["Neighbors"]["0000"]["relationship"][0]["depth"] = reported
+    write_zigpy_report(tmp_path, report)
+    plugin = FakePlugin(tmp_path, list_of_devices(), zigpy_report=True)
+
+    scan = get_topology_scan(plugin, 1711537200)
+
+    assert neighbour(scan, "0000", "1a2b")["depth"] == expected
+
+
+def test_a_legacy_hex_depth_sentinel_is_reported_as_unknown(tmp_path):
+    report = legacy_report()
+    report["1711537200"]["0000"]["Neighbours"]["1a2b"]["_depth"] = "ff"
+    write_legacy_report(tmp_path, [report])
+    plugin = FakePlugin(tmp_path, list_of_devices())
+
+    scan = get_topology_scan(plugin, 1711537200)
+
+    assert neighbour(scan, "0000", "1a2b")["depth"] is None
+
+
+def test_a_sentinel_depth_does_not_disturb_the_other_fields(tmp_path):
+    report = zigpy_report()
+    report[0]["1711537200.123456"]["Neighbors"]["0000"]["relationship"][0]["depth"] = 255
+    write_zigpy_report(tmp_path, report)
+    plugin = FakePlugin(tmp_path, list_of_devices(), zigpy_report=True)
+
+    scan = get_topology_scan(plugin, 1711537200)
+
+    entry = neighbour(scan, "0000", "1a2b")
+    assert entry["depth"] is None
+    assert entry["lqi"] == 196
+    assert entry["relationship"] == "child"
