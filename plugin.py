@@ -870,7 +870,7 @@ class BasePlugin:
             self.log.logging("TransportZigpy", "Debug", "zigpy_get_all_devices pre-populate( %s, %s)" %( ieee_str, nwk_str))
             if ieee_str:
                 try:
-                    result.append((int(ieee_str, 16), int(nwk_str, 16), node_descriptor_fields(info)))
+                    result.append((int(ieee_str, 16), int(nwk_str, 16), node_descriptor_fields(nwk_str, info)))
                 except (ValueError, TypeError):
                     self.log.logging("TransportZigpy", "Error", "zigpy_get_all_devices pre-populate( %s, %s) failed !!" %( ieee_str, nwk_str))
         return result
