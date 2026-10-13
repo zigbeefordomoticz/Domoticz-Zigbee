@@ -648,11 +648,20 @@ _PLUGIN_LOGICAL_TYPES = {
 # The node descriptor the plugin captured off the wire is 13 bytes, 26 hex chars
 _RAW_NODE_DESCRIPTOR_LENGTH = 26
 
+# How many undescribed devices to name in the startup line before summarising
+PRELOAD_UNDESCRIBED_TO_LIST = 10
+
 _VALID_LOGICAL_TYPES = (
     zdo_types.LogicalType.Coordinator,
     zdo_types.LogicalType.Router,
     zdo_types.LogicalType.EndDevice,
 )
+
+
+# Where a descriptor came from, for the pre-load log: how much of the device
+# table rests on a descriptor the device itself sent is worth being able to see.
+NODE_DESCRIPTOR_FROM_DEVICE = "the descriptor captured from the device"
+NODE_DESCRIPTOR_FROM_RECORD = "the plugin's recorded device type"
 
 
 def _build_node_descriptor(fields):
@@ -666,15 +675,22 @@ def _build_node_descriptor(fields):
     thing being reconstructed, it is never rewritten, and it is the only source
     that distinguishes a coordinator from a router. Everything else is a
     fallback for a device that never answered a Node Descriptor request.
+
+    Returns (descriptor, where it came from), both None when there is nothing to
+    build one from.
     """
     if not fields:
-        return None
+        return None, None
 
     node_desc = _node_descriptor_from_raw(fields.get("raw"))
     if node_desc is not None:
-        return node_desc
+        return node_desc, NODE_DESCRIPTOR_FROM_DEVICE
 
-    return _node_descriptor_from_fields(fields)
+    node_desc = _node_descriptor_from_fields(fields)
+    if node_desc is None:
+        return None, None
+
+    return node_desc, NODE_DESCRIPTOR_FROM_RECORD
 
 
 def _node_descriptor_from_raw(raw):
@@ -783,10 +799,11 @@ def _preload_devices_from_plugin_db(self):
 
     loaded = 0
     skipped = 0
-    described = 0
-    undescribed = 0
+    described = {NODE_DESCRIPTOR_FROM_DEVICE: 0, NODE_DESCRIPTOR_FROM_RECORD: 0}
+    undescribed = []
     for ieee_int, nwk_int, node_descriptor_fields in devices:
         eui64 = zigpy_t.EUI64(zigpy_t.uint64_t(ieee_int).serialize())
+        nwkid = "%04x" % nwk_int
         LOGGER.info("  processing ieee=%s (0x%016x)  nwk=0x%04x", eui64, ieee_int, nwk_int)
         if eui64 not in self.devices:
             dev = self.add_device(eui64, nwk_int)
@@ -796,14 +813,8 @@ def _preload_devices_from_plugin_db(self):
             # add_device() leaves node_desc at None, and zigpy skips a device
             # with no node_desc in every topology scan. Hand over the descriptor
             # the plugin already holds. See issue #2110.
-            node_desc = _build_node_descriptor(node_descriptor_fields)
-            if node_desc is None:
-                undescribed += 1
-                LOGGER.info("    -> no node descriptor known, left unset")
-            else:
-                dev.node_desc = node_desc
-                described += 1
-                LOGGER.info("    -> node_desc set to %s", node_desc)
+            node_desc, source = _build_node_descriptor(node_descriptor_fields)
+            _apply_node_descriptor(self, dev, nwkid, node_desc, source, described, undescribed)
         else:
             dev = self.devices[eui64]
             LOGGER.warning(
@@ -817,25 +828,77 @@ def _preload_devices_from_plugin_db(self):
             # descriptor is never overwritten: zigpy interviewed the device
             # itself, and that is the better source.
             if dev.node_desc is None:
-                node_desc = _build_node_descriptor(node_descriptor_fields)
-                if node_desc is not None:
-                    dev.node_desc = node_desc
-                    described += 1
-                    LOGGER.info("    -> node_desc was unset, set to %s", node_desc)
+                node_desc, source = _build_node_descriptor(node_descriptor_fields)
+                _apply_node_descriptor(self, dev, nwkid, node_desc, source, described, undescribed)
+            else:
+                self.log.logging(
+                    "TransportZigpy", "Debug",
+                    "Pre-load %s: keeping the node descriptor zigpy already has (%s)" % (
+                        nwkid, dev.node_desc.logical_type.name)
+                )
 
-    LOGGER.info(
-        "Pre-load complete: %d added (%d with a node descriptor, %d without), "
-        "%d skipped (already in zigpy table)",
-        loaded, described, undescribed, skipped,
-    )
-    if undescribed:
-        LOGGER.info(
-            "%d pre-loaded device(s) have no known logical type and will be skipped "
-            "by any zigpy topology scan", undescribed
-        )
+    _log_preload_summary(self, loaded, skipped, described, undescribed)
 
     LOGGER.info("zigpy device table AFTER pre-load (%d entries):", len(self.devices))
     _dump_zigpy_devices(self)
+
+
+def _apply_node_descriptor(self, dev, nwkid, node_desc, source, described, undescribed):
+    """Attach a descriptor to a device, and say in the plugin log what happened."""
+    if node_desc is None:
+        undescribed.append(nwkid)
+        self.log.logging(
+            "TransportZigpy", "Debug",
+            "Pre-load %s: no node descriptor known, left unset" % nwkid
+        )
+        return
+
+    dev.node_desc = node_desc
+    described[source] = described.get(source, 0) + 1
+    self.log.logging(
+        "TransportZigpy", "Debug",
+        "Pre-load %s: node descriptor says %s, from %s" % (nwkid, node_desc.logical_type.name, source)
+    )
+
+
+def _log_preload_summary(self, loaded, skipped, described, undescribed):
+    """One startup line saying how much of zigpy's device table is described.
+
+    In the plugin's own log, not only zigpy's, because this is the number that
+    says whether a topology scan can reach the mesh at all: zigpy skips any
+    device with no node descriptor before sending a single request (#2110).
+    """
+    total_described = sum(described.values())
+    self.log.logging(
+        "TransportZigpy", "Status",
+        "Pre-loaded %s device(s) into zigpy's table (%s already there): "
+        "%s with a node descriptor (%s from %s, %s from %s), %s without" % (
+            loaded, skipped,
+            total_described,
+            described.get(NODE_DESCRIPTOR_FROM_DEVICE, 0), NODE_DESCRIPTOR_FROM_DEVICE,
+            described.get(NODE_DESCRIPTOR_FROM_RECORD, 0), NODE_DESCRIPTOR_FROM_RECORD,
+            len(undescribed),
+        )
+    )
+    LOGGER.info(
+        "Pre-load complete: %d added (%d described, %d not), %d skipped (already in zigpy table)",
+        loaded, total_described, len(undescribed), skipped,
+    )
+
+    if not undescribed:
+        return
+
+    # Naming them is the actionable part: those are the device records to look
+    # at, and the devices that will be missing from a topology report.
+    listed = sorted(undescribed)
+    shown = ", ".join(listed[:PRELOAD_UNDESCRIBED_TO_LIST])
+    if len(listed) > PRELOAD_UNDESCRIBED_TO_LIST:
+        shown += " and %s more" % (len(listed) - PRELOAD_UNDESCRIBED_TO_LIST)
+    self.log.logging(
+        "TransportZigpy", "Status",
+        "%s device(s) have no node descriptor and will be skipped by any zigpy "
+        "topology scan: %s" % (len(listed), shown)
+    )
 
 
 def get_device(self, ieee=None, nwk=None):

@@ -64,8 +64,10 @@ SNIPPET = textwrap.dedent(
     scenario = json.loads(sys.argv[1])
 
     class Log:
+        def __init__(self):
+            self.lines = []
         def logging(self, category, level, message, *args, **kwargs):
-            pass
+            self.lines.append((level, message))
 
     class FakeApp:
         def __init__(self, preexisting):
@@ -103,7 +105,7 @@ SNIPPET = textwrap.dedent(
     app = FakeApp(scenario["preexisting"])
     AG._preload_devices_from_plugin_db(app)
 
-    out = {}
+    out = {"__log__": [list(entry) for entry in app.log.lines]}
     for dev in app.devices.values():
         ieee = "%016x" % t.uint64_t.deserialize(dev.ieee.serialize())[0]
         if dev.node_desc is None:
@@ -257,7 +259,7 @@ END_TO_END_SNIPPET = textwrap.dedent(
     for name, nwkid, mac_capa, overrides in json.loads(sys.argv[1]):
         device = {"Capability": decodeMacCapa(mac_capa), "MacCapa": mac_capa}
         device.update(overrides)
-        node_desc = AG._build_node_descriptor(node_descriptor_fields(nwkid, device))
+        node_desc, _source = AG._build_node_descriptor(node_descriptor_fields(nwkid, device))
         out[name] = None if node_desc is None else {
             "logical_type": node_desc.logical_type.name,
             "would_be_scanned": bool(
@@ -462,11 +464,12 @@ PRECEDENCE_SNIPPET = textwrap.dedent(
 
     out = {}
     for name, fields in json.loads(sys.argv[1]).items():
-        node_desc = AG._build_node_descriptor(fields)
+        node_desc, source = AG._build_node_descriptor(fields)
         out[name] = None if node_desc is None else {
             "logical_type": node_desc.logical_type.name,
             "manufacturer_code": int(node_desc.manufacturer_code),
             "frequency_band": int(node_desc.frequency_band),
+            "source": source,
         }
     print(json.dumps(out))
     """
@@ -520,3 +523,103 @@ def test_an_unusable_captured_descriptor_with_no_fields_describes_nothing():
     out = run_precedence({"case": {"raw": "nonsense", "logical_type": None}})
 
     assert out["case"] is None
+
+
+# --- what the plugin log says ---------------------------------------------
+#
+# How much of zigpy's device table rests on a descriptor the device itself sent
+# is the number that says whether a topology scan can reach the mesh at all, so
+# it goes in the plugin's own log rather than only zigpy's.
+def log_lines(out, level=None):
+    return [
+        message for entry_level, message in out["__log__"]
+        if level is None or entry_level == level
+    ]
+
+
+def test_the_pre_load_reports_how_much_of_the_table_is_described():
+    out = run([
+        (IEEE_ROUTER, "1a2b", dict(ROUTER_FIELDS, raw=RAW_COORDINATOR)),
+        (IEEE_END_DEVICE, "c6ca", dict(ROUTER_FIELDS, logical_type="end_device")),
+        (IEEE_COORDINATOR, "0000", None),
+    ])
+
+    summary = [line for line in log_lines(out, "Status") if "Pre-loaded" in line]
+    assert len(summary) == 1, out["__log__"]
+    assert "3 device(s)" in summary[0]
+    assert "2 with a node descriptor" in summary[0]
+    assert "1 from the descriptor captured from the device" in summary[0]
+    assert "1 from the plugin's recorded device type" in summary[0]
+    assert "1 without" in summary[0]
+
+
+def test_the_undescribed_devices_are_named():
+    # Those are the records to go and look at, and the devices that will be
+    # missing from a topology report
+    out = run([
+        (IEEE_ROUTER, "1a2b", ROUTER_FIELDS),
+        (IEEE_END_DEVICE, "c6ca", None),
+        (IEEE_COORDINATOR, "0000", None),
+    ])
+
+    warning = [line for line in log_lines(out, "Status") if "no node descriptor" in line]
+    assert len(warning) == 1, out["__log__"]
+    assert "2 device(s)" in warning[0]
+    assert "0000" in warning[0]
+    assert "c6ca" in warning[0]
+    assert "skipped by any zigpy" in warning[0]
+
+
+def test_nothing_is_said_about_undescribed_devices_when_there_are_none():
+    out = run([(IEEE_ROUTER, "1a2b", ROUTER_FIELDS)])
+
+    assert [line for line in log_lines(out, "Status") if "no node descriptor" in line] == []
+
+
+def test_each_device_says_where_its_descriptor_came_from():
+    out = run([
+        (IEEE_ROUTER, "1a2b", dict(ROUTER_FIELDS, raw=RAW_COORDINATOR)),
+        (IEEE_END_DEVICE, "c6ca", dict(ROUTER_FIELDS, logical_type="end_device")),
+    ])
+
+    debug = log_lines(out, "Debug")
+    assert any(
+        "1a2b" in line and "Coordinator" in line and "captured from the device" in line
+        for line in debug
+    ), debug
+    assert any(
+        "c6ca" in line and "EndDevice" in line and "recorded device type" in line
+        for line in debug
+    ), debug
+
+
+def test_a_device_left_undescribed_says_so_per_device():
+    out = run([(IEEE_ROUTER, "1a2b", None)])
+
+    assert any(
+        "1a2b" in line and "no node descriptor known" in line
+        for line in log_lines(out, "Debug")
+    ), out["__log__"]
+
+
+def test_keeping_zigpys_own_descriptor_is_logged_too():
+    out = run(
+        [(IEEE_ROUTER, "1a2b", ROUTER_FIELDS)],
+        preexisting=[(IEEE_ROUTER, "1a2b", "Router")],
+    )
+
+    assert any(
+        "1a2b" in line and "zigpy already has" in line
+        for line in log_lines(out, "Debug")
+    ), out["__log__"]
+
+
+def test_a_long_list_of_undescribed_devices_is_summarised():
+    # A fresh install can have nothing described at all; the startup line must
+    # not become unreadable
+    devices = [("%016x" % (0x680ae2fffe7ac000 + i), "%04x" % (0x1000 + i), None) for i in range(14)]
+    out = run(devices)
+
+    warning = [line for line in log_lines(out, "Status") if "no node descriptor" in line][0]
+    assert "14 device(s)" in warning
+    assert "and 4 more" in warning
