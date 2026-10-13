@@ -645,12 +645,98 @@ _PLUGIN_LOGICAL_TYPES = {
 }
 
 
+# The node descriptor the plugin captured off the wire is 13 bytes, 26 hex chars
+_RAW_NODE_DESCRIPTOR_LENGTH = 26
+
+_VALID_LOGICAL_TYPES = (
+    zdo_types.LogicalType.Coordinator,
+    zdo_types.LogicalType.Router,
+    zdo_types.LogicalType.EndDevice,
+)
+
+
 def _build_node_descriptor(fields):
-    """Build a zigpy NodeDescriptor from the plugin's own device record.
+    """Build a zigpy NodeDescriptor from what the plugin knows of a device.
 
     `fields` is what Modules.tools_mac_capa.node_descriptor_fields() returns, or
-    None when the plugin does not know the device's logical type -- in which case
-    no descriptor is invented and the device is registered as before.
+    None when the plugin knows neither a raw descriptor nor a device type -- in
+    which case nothing is invented and the device is registered as before.
+
+    The descriptor the plugin captured off the wire is preferred: it is the very
+    thing being reconstructed, it is never rewritten, and it is the only source
+    that distinguishes a coordinator from a router. Everything else is a
+    fallback for a device that never answered a Node Descriptor request.
+    """
+    if not fields:
+        return None
+
+    node_desc = _node_descriptor_from_raw(fields.get("raw"))
+    if node_desc is not None:
+        return node_desc
+
+    return _node_descriptor_from_fields(fields)
+
+
+def _node_descriptor_from_raw(raw):
+    """Parse the node descriptor the plugin captured off the wire.
+
+    _rawNodeDescriptor is the descriptor section of the plugin's 0x8042 frame,
+    as Z4D_decoders/z4d_decoder_Node_Desc_Rsp.py slices it and as
+    Zigbee/zdpDecoders.buildframe_node_descriptor_response() lays it out: each
+    16-bit field byte-swapped into readable big-endian hex, and in the frame's
+    own field order, which is not the descriptor's. Reordering it back into the
+    ZDP wire layout lets zigpy parse it, so no field is reconstructed by hand
+    and nothing is lost -- including the APS flags and the frequency band, which
+    the plugin does not keep anywhere else.
+
+    Returns None rather than raising on anything unexpected, so that a damaged
+    or truncated record simply falls through to the other sources.
+    """
+    if not isinstance(raw, str) or len(raw) < _RAW_NODE_DESCRIPTOR_LENGTH:
+        return None
+
+    try:
+        manufacturer_code = int(raw[0:4], 16)
+        maximum_incoming_transfer_size = int(raw[4:8], 16)
+        maximum_outgoing_transfer_size = int(raw[8:12], 16)
+        server_mask = int(raw[12:16], 16)
+        descriptor_capability_field = int(raw[16:18], 16)
+        mac_capability_flags = int(raw[18:20], 16)
+        maximum_buffer_size = int(raw[20:22], 16)
+        # The 16-bit bit field holds the descriptor's first two bytes, swapped
+        aps_flags_and_frequency_band = int(raw[22:24], 16)
+        logical_type_and_flags = int(raw[24:26], 16)
+    except ValueError:
+        return None
+
+    wire = (
+        bytes([logical_type_and_flags, aps_flags_and_frequency_band, mac_capability_flags])
+        + manufacturer_code.to_bytes(2, "little")
+        + bytes([maximum_buffer_size])
+        + maximum_incoming_transfer_size.to_bytes(2, "little")
+        + server_mask.to_bytes(2, "little")
+        + maximum_outgoing_transfer_size.to_bytes(2, "little")
+        + bytes([descriptor_capability_field])
+    )
+
+    try:
+        node_desc, remaining = zdo_types.NodeDescriptor.deserialize(wire)
+    except Exception as error:  # noqa: BLE001 - a bad record must not stop the pre-load
+        LOGGER.debug("could not parse the stored node descriptor %s: %s", raw, error)
+        return None
+
+    if remaining or node_desc.logical_type not in _VALID_LOGICAL_TYPES:
+        LOGGER.debug("ignoring an implausible stored node descriptor %s -> %s", raw, node_desc)
+        return None
+
+    return node_desc
+
+
+def _node_descriptor_from_fields(fields):
+    """Build a descriptor from the plugin's decoded fields.
+
+    For a device that never answered a Node Descriptor request, so there is no
+    captured descriptor to parse.
 
     Every field is set, not only the logical type zigpy's topology scan reads:
     appdb persists a descriptor through NodeDescriptor.as_tuple(), which needs a
@@ -659,9 +745,6 @@ def _build_node_descriptor(fields):
     here -- no complex or user descriptor, no APS flags, and the 2.4 GHz band,
     which is the only band this plugin supports.
     """
-    if not fields:
-        return None
-
     logical_type = _PLUGIN_LOGICAL_TYPES.get(fields.get("logical_type"))
     if logical_type is None:
         return None
