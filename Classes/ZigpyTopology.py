@@ -117,6 +117,15 @@ def build_zigpy_neighbors(self, neighbors):
             continue
         
         nwkid_parent = self.IEEE2NWK[ ieee_parent ]
+
+        # Record the node even when it reported nothing. zigpy lists every node
+        # it asked, and leaves an empty list behind for one that did not answer
+        # -- the assignment above never happens on a delivery timeout, so the
+        # defaultdict read on its listener_event line creates one. Dropping
+        # those made a node that timed out indistinguishable from a node that
+        # was never scanned at all. See issue #2111.
+        ensure_neighbors_table_entry(self, ieee_parent, nwkid_parent)["neighbors_reported"] = len(neighbor_list)
+
         for neighbor in neighbor_list:
             neighbor_info_dict = parse_neigbor_infos(neighbor)
             
@@ -131,16 +140,30 @@ def build_zigpy_neighbors(self, neighbors):
     return self.neighbors_table
 
 
-def add_to_neighbors_table( self, ieee_parent, nwkid_parent, neighbor_info_dict):
-    nwkid_neighbor = neighbor_info_dict["nwkid_neighbor"]
-    ieee_neighbor = neighbor_info_dict["ieee_neighbor"]
-    
+def ensure_neighbors_table_entry(self, ieee_parent, nwkid_parent):
+    """This node's entry in the table being built, created if it is the first row.
+
+    "neighbors_reported" is how many rows zigpy got back from the node, counted
+    before the rows the plugin cannot resolve are dropped -- so zero rows means
+    the node itself said nothing, rather than the plugin having filtered
+    everything away. That is what tells a timeout from a node whose every
+    neighbour is unknown here.
+    """
     if nwkid_parent not in self.neighbors_table:
         self.neighbors_table[ nwkid_parent ] = {
             "ieee": ieee_parent,
+            "neighbors_reported": 0,
             "relationship": [],  # Initialize as empty list
         }
-        
+    return self.neighbors_table[ nwkid_parent ]
+
+
+def add_to_neighbors_table( self, ieee_parent, nwkid_parent, neighbor_info_dict):
+    nwkid_neighbor = neighbor_info_dict["nwkid_neighbor"]
+    ieee_neighbor = neighbor_info_dict["ieee_neighbor"]
+
+    ensure_neighbors_table_entry(self, ieee_parent, nwkid_parent)
+
     # Guard against the same pair turning up twice within one scan. Across
     # scans there is nothing to guard: build_zigpy_neighbors() starts over.
     relationship_exists = any(
