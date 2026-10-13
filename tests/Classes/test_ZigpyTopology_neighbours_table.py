@@ -281,3 +281,94 @@ def test_each_scan_builds_its_own_table_object():
 
     assert first is not second
     assert first == second
+
+
+# --- a node that was asked and said nothing -------------------------------
+#
+# zigpy lists every node it asked: `self.neighbors[ieee] = await
+# self._scan_neighbors(device)` on success, and on a delivery timeout that
+# assignment never happens, so the defaultdict read on the listener_event line
+# that follows leaves an empty list behind. That empty list is zigpy saying "I
+# asked and got nothing".
+#
+# The plugin used to drop such a node, because an entry was only ever created
+# from inside the per-neighbour loop -- which made a node that timed out
+# indistinguishable from one never scanned (issue #2111). Observed in the field:
+# a scan reaching all 62 devices, of which only 23 reached the report.
+def test_a_node_that_answered_nothing_is_still_in_the_table():
+    topology = FakeZigpyTopology()
+
+    table = build_zigpy_neighbors(topology, scan(**{
+        COORDINATOR_IEEE: [neighbour(ROUTER_IEEE, ROUTER_NWKID, lqi=204)],
+        SECOND_ROUTER_IEEE: [],
+    }))
+
+    assert SECOND_ROUTER_NWKID in table
+    assert table[SECOND_ROUTER_NWKID]["relationship"] == []
+    assert table[SECOND_ROUTER_NWKID]["ieee"] == SECOND_ROUTER_IEEE
+
+
+def test_the_number_of_rows_a_node_reported_is_recorded():
+    topology = FakeZigpyTopology()
+
+    table = build_zigpy_neighbors(topology, scan(**{
+        COORDINATOR_IEEE: [
+            neighbour(ROUTER_IEEE, ROUTER_NWKID, lqi=204),
+            neighbour(SECOND_ROUTER_IEEE, SECOND_ROUTER_NWKID, lqi=142),
+        ],
+        SECOND_ROUTER_IEEE: [],
+    }))
+
+    assert table[COORDINATOR_NWKID]["neighbors_reported"] == 2
+    assert table[SECOND_ROUTER_NWKID]["neighbors_reported"] == 0
+
+
+def test_the_count_is_what_the_node_reported_not_what_survived_filtering():
+    # A node whose every neighbour is unknown to the plugin still answered, and
+    # must not be read as a timeout
+    topology = FakeZigpyTopology()
+    del topology.IEEE2NWK[SECOND_ROUTER_IEEE]
+    del topology.ListOfDevices[SECOND_ROUTER_NWKID]
+
+    table = build_zigpy_neighbors(topology, scan(**{
+        COORDINATOR_IEEE: [neighbour(SECOND_ROUTER_IEEE, SECOND_ROUTER_NWKID, lqi=142)],
+    }))
+
+    assert table[COORDINATOR_NWKID]["relationship"] == []
+    assert table[COORDINATOR_NWKID]["neighbors_reported"] == 1
+
+
+def test_a_node_whose_ieee_the_plugin_cannot_map_is_not_recorded():
+    topology = FakeZigpyTopology()
+    del topology.IEEE2NWK[SECOND_ROUTER_IEEE]
+
+    table = build_zigpy_neighbors(topology, scan(**{
+        COORDINATOR_IEEE: [neighbour(ROUTER_IEEE, ROUTER_NWKID, lqi=204)],
+        SECOND_ROUTER_IEEE: [],
+    }))
+
+    assert sorted(table) == [COORDINATOR_NWKID]
+
+
+def test_the_count_is_refreshed_by_the_next_scan():
+    # A node that answered once and timed out next time must not keep its count
+    topology = FakeZigpyTopology()
+
+    build_zigpy_neighbors(topology, scan(**{
+        COORDINATOR_IEEE: [neighbour(ROUTER_IEEE, ROUTER_NWKID, lqi=204)],
+    }))
+    table = build_zigpy_neighbors(topology, scan(**{COORDINATOR_IEEE: []}))
+
+    assert table[COORDINATOR_NWKID]["neighbors_reported"] == 0
+    assert table[COORDINATOR_NWKID]["relationship"] == []
+
+
+def test_the_table_is_still_json_serialisable():
+    topology = FakeZigpyTopology()
+
+    table = build_zigpy_neighbors(topology, scan(**{
+        COORDINATOR_IEEE: [neighbour(ROUTER_IEEE, ROUTER_NWKID, lqi=204)],
+        SECOND_ROUTER_IEEE: [],
+    }))
+
+    assert snapshot(table) == table

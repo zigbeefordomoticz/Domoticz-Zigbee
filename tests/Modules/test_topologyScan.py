@@ -673,12 +673,16 @@ def test_a_report_written_before_depth_was_collected_reports_a_null_depth(real_w
     assert neighbour(scan, "0000", "1a2b")["depth"] is None
 
 
-def test_a_node_that_answered_only_the_routing_request_still_counts_as_answered(real_world_plugin):
+def test_a_node_listed_only_under_routes_with_nothing_in_it_has_not_answered(real_world_plugin):
+    # This one was read the wrong way round at first. A node listed in Routes
+    # looked like it had answered -- but zigpy leaves an empty list behind for a
+    # routing request that timed out, just as it does for a neighbour request.
+    # A later scan of the same mesh listed six such nodes, every one of them
+    # with an empty routing table, and two of those had timed out in the log
+    # moments earlier. Presence under Routes is not an answer.
     scan = get_topology_scan(real_world_plugin, 1791824584)
 
-    # It demonstrably responded, so "not_scanned" would be wrong even though it
-    # contributed no neighbour
-    assert node(scan, "6477")["scan_status"] == "ok"
+    assert node(scan, "6477")["scan_status"] == "not_scanned"
 
 
 def test_a_node_known_only_as_a_route_destination_is_still_a_node(real_world_plugin):
@@ -755,3 +759,99 @@ def test_a_sentinel_depth_does_not_disturb_the_other_fields(tmp_path):
     assert entry["depth"] is None
     assert entry["lqi"] == 196
     assert entry["relationship"] == "child"
+
+
+# --- a node that was asked and said nothing -------------------------------
+#
+# zigpy lists every node it asked. A delivery timeout leaves
+# topology.neighbors[ieee] untouched and the defaultdict read that follows
+# creates an empty list, so an empty list is zigpy saying "I asked and got
+# nothing". The plugin used to drop those nodes from the report entirely, which
+# made a node that timed out indistinguishable from one never scanned
+# (issue #2111).
+#
+# Observed in the field: a Mgmt_Lqi_req to 0xE079 timing out after ~21 s of
+# retries, on a scan that reached all 62 devices.
+def zigpy_report_with_a_timeout():
+    report = zigpy_report()
+    neighbors = report[0]["1711537200.123456"]["Neighbors"]
+    # asked, answered nothing
+    neighbors["7a8b"] = {"ieee": SECOND_ROUTER_IEEE, "neighbors_reported": 0, "relationship": []}
+    neighbors["0000"]["neighbors_reported"] = len(neighbors["0000"]["relationship"])
+    neighbors["1a2b"]["neighbors_reported"] = len(neighbors["1a2b"]["relationship"])
+    return report
+
+
+def test_a_node_that_was_asked_and_said_nothing_is_a_timeout(tmp_path):
+    write_zigpy_report(tmp_path, zigpy_report_with_a_timeout())
+    plugin = FakePlugin(tmp_path, list_of_devices(), zigpy_report=True)
+
+    scan = get_topology_scan(plugin, 1711537200)
+
+    assert node(scan, "7a8b")["scan_status"] == "timeout"
+    assert node(scan, "0000")["scan_status"] == "ok"
+    assert node(scan, "1a2b")["scan_status"] == "ok"
+
+
+def test_a_timeout_is_counted_apart_from_a_node_never_asked(tmp_path):
+    devices = list_of_devices()
+    devices["dead"] = {"IEEE": "00158d0003021601", "ZDeviceName": "Never asked", "LogicalType": "Router"}
+    write_zigpy_report(tmp_path, zigpy_report_with_a_timeout())
+    plugin = FakePlugin(tmp_path, devices, zigpy_report=True)
+
+    scan = get_topology_scan(plugin, 1711537200)
+
+    assert node(scan, "dead")["scan_status"] == "not_scanned"
+    assert scan["scan"] == {"requested": 4, "answered": 2, "timeout": 1, "not_scanned": 1}
+
+
+def test_a_timeout_outranks_the_routing_table_answering(tmp_path):
+    # The neighbour table is what the graph is built from, so a node that timed
+    # out on it is a timeout even when its routing request came back
+    report = zigpy_report_with_a_timeout()
+    report[0]["1711537200.123456"]["Routes"]["7a8b"] = []
+    write_zigpy_report(tmp_path, report)
+    plugin = FakePlugin(tmp_path, list_of_devices(), zigpy_report=True)
+
+    scan = get_topology_scan(plugin, 1711537200)
+
+    assert node(scan, "7a8b")["scan_status"] == "timeout"
+
+
+def test_a_node_whose_every_neighbour_is_unknown_still_answered(tmp_path):
+    # It reported rows; the plugin dropped them because it cannot resolve them.
+    # That is not the node's fault and not a timeout.
+    report = zigpy_report()
+    neighbors = report[0]["1711537200.123456"]["Neighbors"]
+    neighbors["7a8b"] = {"ieee": SECOND_ROUTER_IEEE, "neighbors_reported": 12, "relationship": []}
+    write_zigpy_report(tmp_path, report)
+    plugin = FakePlugin(tmp_path, list_of_devices(), zigpy_report=True)
+
+    scan = get_topology_scan(plugin, 1711537200)
+
+    assert node(scan, "7a8b")["scan_status"] == "ok"
+
+
+def test_a_report_written_before_the_count_existed_still_reads_as_answered(tmp_path):
+    # An older plugin only listed a node that had at least one resolvable
+    # neighbour, so a listed node answered by definition
+    write_zigpy_report(tmp_path, zigpy_report())
+    plugin = FakePlugin(tmp_path, list_of_devices(), zigpy_report=True)
+
+    scan = get_topology_scan(plugin, 1711537200)
+
+    assert node(scan, "0000")["scan_status"] == "ok"
+    assert node(scan, "1a2b")["scan_status"] == "ok"
+
+
+@pytest.mark.parametrize("neighbors_reported,relationships,expected", [
+    (0, [], "timeout"),
+    (12, [], "ok"),
+    (1, [{"nwkid": "1a2b"}], "ok"),
+    (0, [{"nwkid": "1a2b"}], "ok"),      # contradictory; the rows win
+    (None, [], "ok"),                    # written before the count existed
+    (None, [{"nwkid": "1a2b"}], "ok"),
+])
+def test_zigpy_reporter_scan_status(neighbors_reported, relationships, expected):
+    from Modules.topologyScan import zigpy_reporter_scan_status
+    assert zigpy_reporter_scan_status(neighbors_reported, relationships) == expected
