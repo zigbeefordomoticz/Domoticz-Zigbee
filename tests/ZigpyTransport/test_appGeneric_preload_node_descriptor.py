@@ -544,13 +544,51 @@ def test_the_pre_load_reports_how_much_of_the_table_is_described():
         (IEEE_COORDINATOR, "0000", None),
     ])
 
-    summary = [line for line in log_lines(out, "Status") if "Pre-loaded" in line]
-    assert len(summary) == 1, out["__log__"]
-    assert "3 device(s)" in summary[0]
-    assert "2 with a node descriptor" in summary[0]
-    assert "1 from the descriptor captured from the device" in summary[0]
-    assert "1 from the plugin's recorded device type" in summary[0]
-    assert "1 without" in summary[0]
+    table = [line for line in log_lines(out, "Status") if "Pre-loaded" in line]
+    assert len(table) == 1, out["__log__"]
+    assert "3 device(s)" in table[0]
+    assert "3 added" in table[0]
+    assert "0 already there" in table[0]
+
+    descriptors = [line for line in log_lines(out, "Status") if "Node descriptors:" in line]
+    assert len(descriptors) == 1, out["__log__"]
+    assert "1 from the device's own" in descriptors[0]
+    assert "1 rebuilt from the plugin's record" in descriptors[0]
+    assert "0 already known to zigpy" in descriptors[0]
+    assert "1 missing" in descriptors[0]
+
+
+def test_the_two_summary_lines_account_for_every_device_separately():
+    # A device already in zigpy's table keeping its own descriptor is neither
+    # described by us nor missing, so the counts must be reported apart. The
+    # first real log of this said "Pre-loaded 60 device(s) ... 61 with a node
+    # descriptor", which cannot be read.
+    out = run(
+        [
+            (IEEE_ROUTER, "1a2b", ROUTER_FIELDS),
+            (IEEE_END_DEVICE, "c6ca", ROUTER_FIELDS),
+            (IEEE_COORDINATOR, "0000", ROUTER_FIELDS),
+        ],
+        preexisting=[
+            (IEEE_END_DEVICE, "c6ca", "Router"),   # keeps zigpy's own
+            (IEEE_COORDINATOR, "0000", None),      # gets one filled
+        ],
+    )
+
+    table = [line for line in log_lines(out, "Status") if "Pre-loaded" in line][0]
+    descriptors = [line for line in log_lines(out, "Status") if "Node descriptors:" in line][0]
+
+    # 3 devices: 1 added, 2 already there
+    assert "3 device(s)" in table
+    assert "1 added" in table
+    assert "2 already there" in table
+
+    # 2 described by us (the added one, plus the pre-existing one with none),
+    # 1 already known to zigpy, 0 missing -- which totals the 3 above
+    assert "0 from the device's own" in descriptors
+    assert "2 rebuilt from the plugin's record" in descriptors
+    assert "1 already known to zigpy" in descriptors
+    assert "0 missing" in descriptors
 
 
 def test_the_undescribed_devices_are_named():
