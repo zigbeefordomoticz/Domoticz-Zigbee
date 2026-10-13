@@ -304,11 +304,13 @@ def build_zigpy_scan(self, timestamp, report):
     for reporter, reporter_infos in neighbours_table.items():
         if not isinstance(reporter_infos, Mapping):
             continue
-        # Present in the Neighbors table means the node answered the scan
-        scan_status[reporter] = SCAN_OK
+        relationships = reporter_infos.get("relationship") or []
+        scan_status[reporter] = zigpy_reporter_scan_status(
+            reporter_infos.get("neighbors_reported"), relationships
+        )
         remember_ieee(hints, reporter, reporter_infos.get("ieee"))
 
-        for neighbour in reporter_infos.get("relationship") or []:
+        for neighbour in relationships:
             if not isinstance(neighbour, Mapping) or not neighbour.get("nwkid"):
                 continue
             record = {
@@ -326,10 +328,16 @@ def build_zigpy_scan(self, timestamp, report):
 
     routes = []
     for reporter, route_list in routes_table.items():
-        # Answering the routing request counts as answering the scan, even with
-        # an empty routing table: a node can show up in Routes and not in
-        # Neighbors, and calling that one "not_scanned" would be wrong.
-        scan_status.setdefault(reporter, SCAN_OK)
+        # A node's presence in Routes says nothing about whether it answered.
+        # zigpy leaves an empty list behind for a routing request that timed
+        # out, exactly as it does for a neighbour request, so an empty Routes
+        # entry is not an answer -- a real scan showed six nodes listed there
+        # with nothing in them, two of which had just timed out in the log.
+        # The Neighbors table carries the answer, for every node zigpy asked.
+        #
+        # setdefault, so the node is still reported rather than dropped, while
+        # the Neighbors table above keeps the last word on whether it answered.
+        scan_status.setdefault(reporter, SCAN_NOT_SCANNED)
         for route in route_list or []:
             if not isinstance(route, Mapping):
                 continue
@@ -344,6 +352,28 @@ def build_zigpy_scan(self, timestamp, report):
             })
 
     return build_scan(self, timestamp, SOURCE_ZIGPY, neighbours, routes, {}, scan_status, hints)
+
+
+def zigpy_reporter_scan_status(neighbors_reported, relationships):
+    """Whether a node listed in the zigpy Neighbors table actually answered.
+
+    Being listed at all means zigpy asked it, which already separates these
+    nodes from the ones it skipped. What separates an answer from a timeout is
+    `neighbors_reported`: the number of rows the node sent back, counted before
+    the rows the plugin cannot resolve are dropped. Zero rows is a node that was
+    asked and said nothing -- zigpy records that as an empty list, because a
+    delivery timeout leaves `topology.neighbors[ieee]` untouched and the
+    defaultdict read that follows creates one.
+
+    A report written before this was recorded has no `neighbors_reported`, and
+    the plugin then only listed a node that had at least one resolvable
+    neighbour, so such a node answered by definition.
+    """
+    if relationships:
+        return SCAN_OK
+    if neighbors_reported is None:
+        return SCAN_OK
+    return SCAN_TIMEOUT if neighbors_reported == 0 else SCAN_OK
 
 
 def delete_zigpy_scan(self, timestamp):

@@ -178,11 +178,15 @@ the network. A banner along the lines of *"4 of 32 nodes answered this scan — 
 picture is incomplete"* whenever `answered < requested` is the point of this
 object.
 
-Only the `legacy` and `topologyv2` backends can distinguish `timeout` from
-`not_scanned`. On `zigpy` a node that did not answer is reported as
-`not_scanned`, because zigpy's scanner does not report which nodes it failed to
-reach versus never asked. Do not read a `zigpy` `timeout: 0` as "every node was
-reached".
+All three backends distinguish `timeout` from `not_scanned`. On `zigpy` the
+difference is whether the scanner listed the node at all: a node it asked and
+got nothing back from is a `timeout`, a node it never asked — because it has no
+node descriptor, or is not a router — is `not_scanned`.
+
+A `timeout` on a `zigpy` scan is worth surfacing for a second reason: a node
+that does not answer costs the scan roughly 40 seconds of retries, on every
+scan, and zigpy only stops asking a node that *refuses* — not one that stays
+silent. So `timeout` is both a gap in the picture and an ongoing cost.
 
 ---
 
