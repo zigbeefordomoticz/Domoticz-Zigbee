@@ -198,3 +198,77 @@ def is_ack_tobe_disabled(self, nwkid):
         return False
 
     return False
+
+# Node descriptor material handed to zigpy for a pre-loaded device.
+#
+# zigpy fills Device.node_desc only for a device it interviewed itself, and the
+# plugin registers its own devices with add_device(), which leaves it None. A
+# device with no node_desc is skipped by zigpy's topology scan before any
+# request is sent, so on an existing install a scan reaches almost nothing.
+# See issue #2110.
+NODE_DESCRIPTOR_LOGICAL_TYPES = {
+    "coordinator": "coordinator",
+    "router": "router",
+    "end device": "end_device",
+    "end_device": "end_device",
+}
+
+# The plugin only ever talks to 2.4 GHz Zigbee radios
+NODE_DESCRIPTOR_DEVICE_TYPES = {"FFD": "router", "RFD": "end_device"}
+
+
+def node_descriptor_fields(device_record):
+    """What the plugin knows of a device's node descriptor, as plain data.
+
+    Plain data rather than a zigpy NodeDescriptor, so that plugin.py and this
+    module stay free of zigpy imports: the transport builds the real struct.
+
+    The plugin's own decoded fields are read rather than the stored
+    _rawNodeDescriptor bytes, deliberately. ReArrangeMacCapaBasedOnModel()
+    corrects LogicalType and MacCapa for the devices that misreport their own
+    power source, and those corrections are what the rest of the plugin acts on;
+    the raw bytes would re-introduce the misreport, and are stored in the
+    plugin's 0x8042 field order rather than the node descriptor's.
+
+    Returns None when the logical type is not known, so that the caller
+    registers the device the way it does today -- without a descriptor -- rather
+    than with a guessed one. Guessing matters here: a device wrongly presented as
+    a router is one zigpy will interrogate on every single scan.
+    """
+    if not device_record:
+        return None
+
+    logical_type = NODE_DESCRIPTOR_LOGICAL_TYPES.get(
+        str(device_record.get("LogicalType") or "").strip().lower()
+    ) or NODE_DESCRIPTOR_DEVICE_TYPES.get(device_record.get("DeviceType"))
+
+    if logical_type is None:
+        return None
+
+    return {
+        "logical_type": logical_type,
+        "mac_capability": _node_descriptor_int(device_record.get("MacCapa"), 0xFF),
+        # "Manufacturer" usually holds the 4-hex manufacturer code, but some
+        # device modules put a name in it ("Legrand"), hence the range check
+        "manufacturer_code": _node_descriptor_int(device_record.get("Manufacturer"), 0xFFFF),
+        "maximum_buffer_size": _node_descriptor_int(device_record.get("Max Buffer Size"), 0xFF),
+        "maximum_incoming_transfer_size": _node_descriptor_int(device_record.get("Max Rx"), 0xFFFF),
+        "maximum_outgoing_transfer_size": _node_descriptor_int(device_record.get("Max Tx"), 0xFFFF),
+        "server_mask": _node_descriptor_int(device_record.get("server_mask"), 0xFFFF),
+        "descriptor_capability_field": _node_descriptor_int(device_record.get("descriptor_capability"), 0xFF),
+    }
+
+
+def _node_descriptor_int(value, maximum):
+    """A node descriptor field as an int, or 0 when the record holds no usable value."""
+    if isinstance(value, bool) or value is None:
+        return 0
+    if isinstance(value, int):
+        return value if 0 <= value <= maximum else 0
+    if not isinstance(value, str) or not value.strip():
+        return 0
+    try:
+        number = int(value.strip(), 16)
+    except ValueError:
+        return 0
+    return number if 0 <= number <= maximum else 0
