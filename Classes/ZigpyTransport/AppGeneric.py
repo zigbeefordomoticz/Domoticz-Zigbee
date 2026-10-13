@@ -799,6 +799,7 @@ def _preload_devices_from_plugin_db(self):
 
     loaded = 0
     skipped = 0
+    kept = 0
     described = {NODE_DESCRIPTOR_FROM_DEVICE: 0, NODE_DESCRIPTOR_FROM_RECORD: 0}
     undescribed = []
     for ieee_int, nwk_int, node_descriptor_fields in devices:
@@ -831,13 +832,14 @@ def _preload_devices_from_plugin_db(self):
                 node_desc, source = _build_node_descriptor(node_descriptor_fields)
                 _apply_node_descriptor(self, dev, nwkid, node_desc, source, described, undescribed)
             else:
+                kept += 1
                 self.log.logging(
                     "TransportZigpy", "Debug",
                     "Pre-load %s: keeping the node descriptor zigpy already has (%s)" % (
                         nwkid, dev.node_desc.logical_type.name)
                 )
 
-    _log_preload_summary(self, loaded, skipped, described, undescribed)
+    _log_preload_summary(self, loaded, skipped, kept, described, undescribed)
 
     LOGGER.info("zigpy device table AFTER pre-load (%d entries):", len(self.devices))
     _dump_zigpy_devices(self)
@@ -861,28 +863,36 @@ def _apply_node_descriptor(self, dev, nwkid, node_desc, source, described, undes
     )
 
 
-def _log_preload_summary(self, loaded, skipped, described, undescribed):
-    """One startup line saying how much of zigpy's device table is described.
+def _log_preload_summary(self, loaded, skipped, kept, described, undescribed):
+    """Two startup lines saying how much of zigpy's device table is described.
 
     In the plugin's own log, not only zigpy's, because this is the number that
     says whether a topology scan can reach the mesh at all: zigpy skips any
     device with no node descriptor before sending a single request (#2110).
+
+    The two lines account for every device separately -- how it got into the
+    table, and where its descriptor came from -- because a device already in
+    zigpy's table can keep a descriptor zigpy interviewed itself, so the two
+    counts do not line up with each other.
     """
-    total_described = sum(described.values())
+    from_device = described.get(NODE_DESCRIPTOR_FROM_DEVICE, 0)
+    from_record = described.get(NODE_DESCRIPTOR_FROM_RECORD, 0)
+
     self.log.logging(
         "TransportZigpy", "Status",
-        "Pre-loaded %s device(s) into zigpy's table (%s already there): "
-        "%s with a node descriptor (%s from %s, %s from %s), %s without" % (
-            loaded, skipped,
-            total_described,
-            described.get(NODE_DESCRIPTOR_FROM_DEVICE, 0), NODE_DESCRIPTOR_FROM_DEVICE,
-            described.get(NODE_DESCRIPTOR_FROM_RECORD, 0), NODE_DESCRIPTOR_FROM_RECORD,
-            len(undescribed),
-        )
+        "Pre-loaded %s device(s) into zigpy's table: %s added, %s already there" % (
+            loaded + skipped, loaded, skipped)
+    )
+    self.log.logging(
+        "TransportZigpy", "Status",
+        "Node descriptors: %s from the device's own, %s rebuilt from the plugin's "
+        "record, %s already known to zigpy, %s missing" % (
+            from_device, from_record, kept, len(undescribed))
     )
     LOGGER.info(
-        "Pre-load complete: %d added (%d described, %d not), %d skipped (already in zigpy table)",
-        loaded, total_described, len(undescribed), skipped,
+        "Pre-load complete: %d added, %d already there; node descriptors: %d from the "
+        "device, %d rebuilt, %d already known, %d missing",
+        loaded, skipped, from_device, from_record, kept, len(undescribed),
     )
 
     if not undescribed:
