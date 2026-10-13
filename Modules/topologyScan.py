@@ -96,6 +96,9 @@ V2_TABLES = ("Neighbours", "RoutingTable", "AssociatedDevices")
 COORDINATOR_NWKID = "0000"
 COORDINATOR_DEFAULT_NAME = "Zigbee Coordinator"
 
+# nwkMaxDepth: the Zigbee tree depth cannot exceed 15
+MAX_TREE_DEPTH = 15
+
 SCAN_OK = "ok"
 SCAN_TIMEOUT = "timeout"
 SCAN_NOT_SUPPORTED = "not_supported"
@@ -314,7 +317,7 @@ def build_zigpy_scan(self, timestamp, report):
                 "relationship": canonical(neighbour.get("relationship"), RELATIONSHIP_ALIASES),
                 "device_type": canonical(neighbour.get("device_type"), DEVICE_TYPE_ALIASES),
                 "lqi": as_int(neighbour.get("lqi_from_device")),
-                "depth": as_int(neighbour.get("depth")),
+                "depth": as_depth(neighbour.get("depth")),
                 "rx_on_when_idle": canonical(neighbour.get("rx_on_when_idle"), ON_OFF_ALIASES),
                 "permit_joining": canonical(neighbour.get("permit_joining"), ON_OFF_ALIASES),
             }
@@ -610,7 +613,7 @@ def build_neighbour_record(reporter, neighbour_nwkid, neighbour_infos):
         "relationship": canonical(neighbour_infos.get("_relationshp"), RELATIONSHIP_ALIASES),
         "device_type": canonical(neighbour_infos.get("_devicetype"), DEVICE_TYPE_ALIASES),
         "lqi": as_int(neighbour_infos.get("_lnkqty")),
-        "depth": as_int(neighbour_infos.get("_depth")),
+        "depth": as_depth(neighbour_infos.get("_depth")),
         "rx_on_when_idle": canonical(neighbour_infos.get("_rxonwhenidl"), ON_OFF_ALIASES),
         "permit_joining": canonical(neighbour_infos.get("_permitjnt"), ON_OFF_ALIASES),
     }
@@ -821,6 +824,25 @@ def as_int(value):
         except ValueError:
             return None
     return None
+
+
+def as_depth(value):
+    """Tree depth, or None when the radio did not actually report one.
+
+    Zigbee caps the tree depth at 15 (nwkMaxDepth), and a radio with no depth to
+    give for a row answers with a sentinel rather than omitting the field: 0xFF
+    is common, and shows up mostly on sibling rows, where the depth of the
+    neighbour is not something the reporter tracks. An out-of-range value is not
+    a reading, so it is reported as unknown instead of being passed on as a
+    255-deep node.
+
+    15 is a legal depth and is passed through, even though a radio may well be
+    using it as a sentinel too -- the API cannot tell those apart, and
+    discarding it would lose the real value on a mesh that is genuinely that
+    deep.
+    """
+    depth = as_int(value)
+    return None if depth is None or not 0 <= depth <= MAX_TREE_DEPTH else depth
 
 
 def as_number(value):

@@ -296,10 +296,28 @@ are nodes absent from the device database. The plugin used to drop all of those;
 deciding what to draw is the UI's call now. A reasonable default is to draw
 `parent`/`child`/`sibling` and offer the rest as a toggle.
 
-`depth` is `null` for a `legacy` scan, and for any `zigpy` report written by a
-plugin older than this API — the value was being discarded at collection time.
-Newer zigpy scans carry it, so expect `null` from reports already on disk at
-upgrade time and a number from scans run afterwards.
+**`depth` is unreliable in practice — do not lay a tree out with it.** Zigbee
+caps the tree depth at 15, and a radio with no depth to give for a row answers
+with a sentinel rather than omitting the field. A value outside 0–15 is reported
+as `null`, because it is not a reading. A value of exactly `15` is passed
+through, since it is legal — but a radio may well be using it as a sentinel too,
+and the plugin cannot tell those apart.
+
+What that looks like on a real ZNP scan of 48 neighbour rows:
+
+| `depth` | rows | |
+|---|---|---|
+| `0`, `1`, `2` | 7 | genuine, on the parent/child rows |
+| `15` | 22 | legal, almost certainly a sentinel |
+| `null` | 19 | was `255` — out of range, so not reported as a reading |
+
+The pattern follows `relationship`: this radio tracks depth for parent/child
+rows and not for siblings. Treat a `depth` on a `sibling` row with suspicion.
+
+`depth` is also `null` for every `legacy` scan, and for any `zigpy` report
+written by a plugin older than this API — the value was being discarded at
+collection time. So expect `null` from reports already on disk at upgrade time
+and a number from scans run afterwards.
 
 ### 6.3 `routes`
 
