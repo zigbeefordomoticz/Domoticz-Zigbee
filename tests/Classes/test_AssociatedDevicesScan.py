@@ -17,6 +17,9 @@ What is pinned here:
     the scan is filed without the table rather than with half of it
   - a response for a node this collection did not ask is refused, so the
     TopologyV2 scan that issues the same request keeps working
+  - the object handed to the sender duck-types as the plugin: the real
+    zdp_NWK_address_request() is called with the collector as `self`, so every
+    attribute the send path reads off the plugin has to be there
 
 The class is instantiated directly, with a recorded sender in place of
 zdp_NWK_address_request: no transport, no zigpy, and nothing that drags the real
@@ -86,7 +89,7 @@ def make_scan(list_of_devices=None, load=0):
             "2222": {"IEEE": "00158d0000000002", "Status": "inDB", "Capability": FFD},
         }
     scan = AssociatedDevicesScan(
-        PluginConf(), ControllerLink(load), list_of_devices, {}, Log(), record_request,
+        "zigpy", PluginConf(), ControllerLink(load), list_of_devices, {}, Log(), record_request,
         on_completed=completed,
     )
     return scan, reported
@@ -368,3 +371,51 @@ def test_an_abandoned_collection_reports_no_outcome_either(sent):
 
     assert reported == [None]
     assert OUTCOMES == [None]
+
+
+# ---------------------------------------------------------------------------
+# The plugin stand-in
+# ---------------------------------------------------------------------------
+# What raw_APS_request() and the ZDP layer under zdp_NWK_address_request() read
+# off the object they are handed as `self`, with where each one is read. The
+# collector is that object -- _request() calls the sender with `self` -- so a
+# name missing here raises on the first request of every node and the whole
+# collection times out having sent nothing, which is exactly what it looks like
+# from the report: every node "timeout", coordinator included.
+PLUGIN_ATTRIBUTES_READ_BY_THE_SEND_PATH = (
+    "zigbee_communication",   # raw_APS_request: zigpy or native transport
+    "pairing_in_progress",    # raw_APS_request: delay while commissioning
+    "pluginconf",             # zdp_raw_NWK_address_request: coordinatorCmd, ControllerInRawMode
+    "ControllerLink",         # zigpy_raw_APS_request: sendData, loadTransmit
+    "ListOfDevices",          # get_and_inc_ZDP_SQN, add_Last_Cmds
+    "DeviceConf",             # device_listening_on_iddle -> get_deviceconf_parameter_value
+    "log",                    # everywhere
+)
+
+
+def test_collector_carries_every_attribute_the_send_path_reads(sent):
+    """The stub sender in these tests reads none of these; the real one reads all."""
+    scan, _ = make_scan()
+    missing = [name for name in PLUGIN_ATTRIBUTES_READ_BY_THE_SEND_PATH if not hasattr(scan, name)]
+    assert missing == [], "the send path would raise AttributeError on %s" % missing
+
+
+def test_a_sender_reading_the_plugin_attributes_is_served(sent):
+    """A sender shaped like raw_APS_request(), rather than one that ignores `self`."""
+    seen = {}
+
+    def sender_like_raw_aps_request(plugin, nwkid, ieee, u8RequestType="00", u8StartIndex="00"):
+        for name in PLUGIN_ATTRIBUTES_READ_BY_THE_SEND_PATH:
+            seen[name] = getattr(plugin, name)
+        SENT.append((nwkid, ieee, u8RequestType, u8StartIndex))
+
+    scan = AssociatedDevicesScan(
+        "zigpy", PluginConf(), ControllerLink(), {"0000": {"IEEE": "00124b0022aabbcc"}}, {}, Log(),
+        sender_like_raw_aps_request,
+    )
+    scan.start_scan()
+    scan.continue_scan()
+
+    assert len(sent) == 1, "the request has to reach the sender"
+    assert seen["zigbee_communication"] == "zigpy"
+    assert seen["pairing_in_progress"] is False, "plugin.py does not tick this while pairing"

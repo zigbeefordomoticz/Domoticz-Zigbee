@@ -69,8 +69,21 @@ SCAN_STATUS_TIMEOUT = "timeout"
 
 class AssociatedDevicesScan:
 
-    def __init__(self, PluginConf, ZigateComm, ListOfDevices, DeviceConfig, log,
+    def __init__(self, zigbee_communication, PluginConf, ZigateComm, ListOfDevices, DeviceConfig, log,
                  send_request, on_completed=None):
+        # Every attribute below is read by the send path, because the collector
+        # is what stands in for the plugin on the way down: _request() calls
+        # zdp_NWK_address_request(self, ...) with this object as `self`, the
+        # same shape as Classes/NetworkMap.py. Anything that path reads and this
+        # object does not carry is an AttributeError on the first request of
+        # every node, which reads in the report as a mesh where nothing answered.
+        #
+        # zigbee_communication is read by raw_APS_request() to pick the zigpy or
+        # the native transport -- inside the argument list of its opening
+        # self.log.logging() call, so it is read whether or not that category is
+        # enabled. It was missing, and a collection timed out on all of its
+        # nodes, coordinator included, having sent nothing.
+        self.zigbee_communication = zigbee_communication
         self.pluginconf = PluginConf
         self.ControllerLink = ZigateComm
         self.ListOfDevices = ListOfDevices
@@ -80,6 +93,12 @@ class AssociatedDevicesScan:
         # a scan with an AttributeError that escaped as an HTTP status 0.
         self.DeviceConf = DeviceConfig
         self.log = log
+
+        # Also read by raw_APS_request(), to delay commands while a device is
+        # commissioning. A constant rather than the plugin's flag: plugin.py
+        # does not tick this collection while self.pairing_in_progress is set,
+        # so by construction it is False whenever the send path reads it.
+        self.pairing_in_progress = False
 
         # zdp_NWK_address_request, handed in rather than imported: importing
         # Zigbee.zdpCommands pulls the real Modules.* chain into whatever imports
