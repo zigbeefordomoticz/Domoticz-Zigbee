@@ -75,22 +75,48 @@ class ZigpyTopology:
         return self.pending_report[0]
 
 
-    def write_topology_report(self, associated_devices=None):
-        """File the prepared report, with the Associated Devices table if collected.
+    def write_topology_report(self, associated_devices=None, associated_devices_outcome=None):
+        """File a scan. Two shapes reach here.
 
-        `associated_devices` is None when the table was not collected at all --
-        the feature is off, or the collection was abandoned. The section is then
-        left out of the entry rather than written empty, so a reader can tell a
-        scan that did not collect the table from one that collected it and found
-        no children.
+        With a report prepared by prepare_topology_report(), this files zigpy's
+        tables, plus the Associated Devices table when the collection that
+        followed them completed. `associated_devices` is None when that table was
+        not collected at all -- the feature is off, or the collection was
+        abandoned -- and the section is then left out of the entry rather than
+        written empty, so a reader can tell a scan that did not collect the table
+        from one that collected it and found no children.
+
+        With nothing prepared, this is a standalone Associated Devices
+        collection: it is filed as a scan of its own, carrying that table alone.
         """
         if self.pending_report is None:
-            self.log.logging("ZigpyTopology", "Debug", "write_topology_report - nothing pending")
-            return None
+            return self.write_associated_devices_report(associated_devices, associated_devices_outcome)
 
         time_stamp, neighbors_list, routes_list = self.pending_report
         self.pending_report = None
-        save_report_to_file(self, time_stamp, neighbors_list, routes_list, associated_devices)
+        save_report_to_file(
+            self, time_stamp, neighbors_list, routes_list, associated_devices, associated_devices_outcome
+        )
+        return time_stamp
+
+
+    def write_associated_devices_report(self, associated_devices, associated_devices_outcome=None):
+        """File a standalone Associated Devices collection as a scan of its own.
+
+        No Neighbors and no Routes section: those tables were not asked for, and
+        an absent section is how the payload says a table was not collected.
+        Writing zigpy's current tables here instead would be a lie --
+        app.get_topology() is the union of everything zigpy ever scanned, not an
+        observation made now.
+        """
+        if associated_devices is None:
+            # An abandoned collection. There is nothing to file, and no zigpy
+            # half waiting on it either.
+            self.log.logging("ZigpyTopology", "Debug", "write_associated_devices_report - nothing collected")
+            return None
+
+        time_stamp = time.time()
+        save_associated_devices_report_to_file(self, time_stamp, associated_devices, associated_devices_outcome)
         return time_stamp
 
 
@@ -105,18 +131,43 @@ class ZigpyTopology:
         return self.ControllerLink.app.is_zigpy_topology_in_progress()
 
 
-def save_report_to_file(self, time_stamp, neighbors, routes, associated_devices=None):
+def save_report_to_file(self, time_stamp, neighbors, routes, associated_devices=None, associated_devices_outcome=None):
     self.log.logging("ZigpyTopology", "Debug", "save_report_to_file")
+    scan = { "Neighbors": neighbors, "Routes":routes }
+    add_associated_devices_sections(scan, associated_devices, associated_devices_outcome)
+    append_report_entry(self, time_stamp, scan)
+
+
+def save_associated_devices_report_to_file(self, time_stamp, associated_devices, associated_devices_outcome=None):
+    """A scan carrying the Associated Devices table and nothing else."""
+    self.log.logging("ZigpyTopology", "Debug", "save_associated_devices_report_to_file")
+    scan = {}
+    add_associated_devices_sections(scan, associated_devices, associated_devices_outcome)
+    append_report_entry(self, time_stamp, scan)
+
+
+def add_associated_devices_sections(scan, associated_devices, associated_devices_outcome):
+    """Add the Associated Devices sections, only when the table was collected.
+
+    The presence of "AssociatedDevices" is what tells /topology-scan that this
+    scan carries the table, so it is never written just to be empty.
+    "AssociatedDevicesScan" carries which nodes were asked and which answered,
+    which the flat table cannot say -- a node asked that timed out and a router
+    with no children are both an empty list.
+    """
+    if associated_devices is None:
+        return
+    scan["AssociatedDevices"] = associated_devices
+    if associated_devices_outcome is not None:
+        scan["AssociatedDevicesScan"] = associated_devices_outcome
+
+
+def append_report_entry(self, time_stamp, scan):
     zigpy_topology_reports_filename = Path( self.pluginconf.pluginConf["pluginReports"] ) / ( ZIGPY_TOPOLOGY_REPORT_FILENAME + "%02d.json" % self.HardwareID)
     if not os.path.isdir( Path(self.pluginconf.pluginConf["pluginReports"]) ):
         self.log.logging("ZigpyTopology", "Error", "save_report_to_file: Unable to get access to directory %s, please check PluginConf.json" % (self.pluginconf.pluginConf["pluginReports"]), )
         return
 
-    scan = { "Neighbors": neighbors, "Routes":routes }
-    if associated_devices is not None:
-        # Only when the table was really collected: its presence is what tells
-        # /topology-scan that this scan carries it.
-        scan["AssociatedDevices"] = associated_devices
     new_report = { time_stamp: scan }
     available_reports = read_topology_report(zigpy_topology_reports_filename)
 
