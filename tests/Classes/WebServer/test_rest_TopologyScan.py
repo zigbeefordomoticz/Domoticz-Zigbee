@@ -17,8 +17,9 @@ import json
 
 import pytest
 
-from Classes.WebServer.rest_TopologyScan import (rest_topology_scan,
-                                                 rest_zigpy_topology_raw)
+from Classes.WebServer.rest_TopologyScan import (
+    rest_topology_scan, rest_topology_scan_associated_devices,
+    rest_zigpy_topology_raw)
 
 HARDWARE_ID = 1
 TIMESTAMP = 1711537200
@@ -228,3 +229,147 @@ def test_the_raw_passthrough_is_empty_on_a_non_zigpy_setup(plugin):
     response = rest_zigpy_topology_raw(plugin, "GET", None, [])
 
     assert json.loads(response["Data"]) == []
+
+
+# ---------------------------------------------------------------------------
+# GET /topology-scan-associated-devices
+# ---------------------------------------------------------------------------
+class FakeCollector:
+    """The collector, as far as this endpoint is concerned."""
+
+    def __init__(self, nodes_to_ask=1, collecting=False):
+        self.nodes_to_ask = nodes_to_ask
+        self.collecting = collecting
+        self.starts = 0
+
+    def in_progress(self):
+        return self.collecting
+
+    def start_scan(self):
+        self.starts += 1
+        return bool(self.nodes_to_ask)
+
+
+class FakeNetworkMap:
+    def __init__(self, phase=0):
+        self.phase = phase
+
+    def NetworkMapPhase(self):
+        return self.phase
+
+
+class FakeZigpyTopology:
+    def __init__(self, scanning=False):
+        self.ControllerLink = type("ControllerLink", (), {"app": object()})()
+        self.scanning = scanning
+
+    def is_zigpy_topology_in_progress(self):
+        return self.scanning
+
+
+@pytest.fixture
+def collect_plugin(tmp_path):
+    plugin = FakePlugin(tmp_path)
+    plugin.networkmap = FakeNetworkMap()
+    plugin.zigpy_topology = FakeZigpyTopology()
+    plugin.associated_devices_scan = FakeCollector()
+    return plugin
+
+
+def collect(plugin, parameters=None):
+    response = rest_topology_scan_associated_devices(plugin, "GET", None, parameters or [])
+    return response, json.loads(response["Data"])
+
+
+def test_the_collection_starts_and_answers_immediately(collect_plugin):
+    """The collection takes minutes; the caller polls /plugin-health."""
+    response, payload = collect(collect_plugin)
+
+    assert response["Status"] == "200 OK"
+    assert payload["Name"] == "Req-Topology-AssociatedDevices"
+    assert collect_plugin.associated_devices_scan.starts == 1
+
+
+def test_the_setting_is_not_required_to_ask_for_the_table_explicitly(collect_plugin):
+    """ZigpyTopologyAssociatedDevices decides whether a *topology scan* collects
+    the table as well. Asking for the table is the request itself."""
+    collect_plugin.pluginconf.pluginConf["ZigpyTopologyAssociatedDevices"] = False
+
+    response, _ = collect(collect_plugin)
+    assert response["Status"] == "200 OK"
+    assert collect_plugin.associated_devices_scan.starts == 1
+
+
+def test_a_second_collection_is_refused_while_one_runs(collect_plugin):
+    collect_plugin.associated_devices_scan.collecting = True
+
+    response, payload = collect(collect_plugin)
+    assert response["Status"] == "400 BAD REQUEST"
+    assert "already in progress" in payload["BE_Error"]
+    assert collect_plugin.associated_devices_scan.starts == 0
+
+
+def test_it_is_refused_while_a_zigpy_scan_runs(collect_plugin):
+    """Two scanners on the same routers at once is what the whole design avoids."""
+    collect_plugin.zigpy_topology.scanning = True
+
+    response, payload = collect(collect_plugin)
+    assert response["Status"] == "400 BAD REQUEST"
+    assert collect_plugin.associated_devices_scan.starts == 0
+
+
+def test_it_is_refused_while_a_native_scan_runs(collect_plugin):
+    collect_plugin.networkmap.phase = 2
+
+    response, _ = collect(collect_plugin)
+    assert collect_plugin.associated_devices_scan.starts == 0
+
+
+def test_it_is_refused_on_a_native_coordinator(collect_plugin):
+    """A TopologyV2 scan collects the same table with every scan there."""
+    collect_plugin.zigbee_communication = "native"
+
+    response, payload = collect(collect_plugin)
+    assert response["Status"] == "400 BAD REQUEST"
+    assert "zigpy" in payload["BE_Error"]
+    assert collect_plugin.associated_devices_scan.starts == 0
+
+
+def test_it_is_refused_when_the_zigpy_topology_report_is_off(collect_plugin):
+    """The collection is ticked from the zigpy topology lifecycle, which does not
+    run with ZigpyTopologyReport off -- starting it would hang."""
+    collect_plugin.pluginconf.pluginConf["ZigpyTopologyReport"] = False
+
+    response, payload = collect(collect_plugin)
+    assert response["Status"] == "400 BAD REQUEST"
+    assert "ZigpyTopologyReport" in payload["BE_Error"]
+    assert collect_plugin.associated_devices_scan.starts == 0
+
+
+def test_it_is_refused_before_the_collector_exists(collect_plugin):
+    collect_plugin.associated_devices_scan = None
+
+    response, payload = collect(collect_plugin)
+    assert response["Status"] == "503 SERVICE UNAVAILABLE"
+
+
+def test_it_is_refused_when_there_is_nothing_to_ask(collect_plugin):
+    collect_plugin.associated_devices_scan.nodes_to_ask = 0
+
+    response, payload = collect(collect_plugin)
+    assert response["Status"] == "400 BAD REQUEST"
+    assert "no coordinator or router" in payload["BE_Error"]
+
+
+def test_unexpected_parameters_are_refused(collect_plugin):
+    response, payload = collect(collect_plugin, ["1711537200"])
+
+    assert response["Status"] == "400 BAD REQUEST"
+    assert collect_plugin.associated_devices_scan.starts == 0
+
+
+def test_only_get_starts_a_collection(collect_plugin):
+    for verb in ("PUT", "DELETE", "POST"):
+        response = rest_topology_scan_associated_devices(collect_plugin, verb, None, [])
+        assert response["Status"] == "200 OK"
+        assert collect_plugin.associated_devices_scan.starts == 0

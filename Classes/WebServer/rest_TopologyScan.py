@@ -29,6 +29,9 @@
 
         GET    /zigpy-topology-raw                 Zigpy-Topology-XX.json, untouched
 
+        GET    /topology-scan-associated-devices   start an Associated Devices
+                                                   collection on its own
+
         A graph needs nodes, neighbours and routes at once, so the whole-scan
         call is the one to build a graph from; the sub-resources are a
         convenience for other tooling, and answer with the same envelope
@@ -40,10 +43,12 @@
 """
 
 import json
+from time import time
 
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
-from Modules.topologyScan import (delete_all_topology_scans,
+from Modules.topologyScan import (a_topology_scan_is_running,
+                                  delete_all_topology_scans,
                                   delete_topology_scan, get_topology_scan,
                                   list_topology_scans,
                                   read_raw_zigpy_topology_report,
@@ -258,3 +263,70 @@ def dummy_topology_scan():
             },
         ],
     }
+
+
+# ---------------------------------------------------------------------------
+# Starting a standalone Associated Devices collection
+# ---------------------------------------------------------------------------
+def rest_topology_scan_associated_devices(self, verb, data, parameters):
+    """Collect every coordinator's and router's Associated Devices table, alone.
+
+    The same collection that runs as the second half of a zigpy topology scan,
+    started on its own. It is much cheaper than a full scan -- one ZDP request
+    per router instead of two paginated tables with zigpy's 1.0-1.5 s sleep
+    between pages -- and a mesh's parent/child relationships change far more
+    often than its backbone, so refreshing the tree alone is worth having.
+
+    The result is filed as a scan of its own, carrying that one table:
+    `tables` reads ["associated_devices"], and `scan` reports the coverage of
+    the collection rather than of a neighbour scan that never ran.
+
+    This does not need ZigpyTopologyAssociatedDevices. That setting decides
+    whether a *topology scan* collects the table as well; asking for the table
+    explicitly is the request itself.
+
+    Answers immediately -- the collection takes minutes. Poll /plugin-health
+    for "Topology": "In Progress", then GET /topology-scan for the new scan.
+    """
+    _response = prepResponseMessage(self, setupHeadersResponse())
+    _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+    if verb != "GET":
+        return _response
+
+    if parameters:
+        return respond_with_error(self, _response, "400 BAD REQUEST", "unexpected parameters %s" % parameters)
+
+    if self.zigbee_communication != "zigpy":
+        return respond_with_error(
+            self, _response, "400 BAD REQUEST",
+            "only a zigpy coordinator collects this table on its own; a TopologyV2 scan "
+            "collects it with every scan",
+        )
+
+    if not self.pluginconf.pluginConf.get("ZigpyTopologyReport"):
+        # The collection is ticked from the zigpy topology lifecycle, which does
+        # not run with ZigpyTopologyReport off. Starting it would hang.
+        return respond_with_error(
+            self, _response, "400 BAD REQUEST", "ZigpyTopologyReport is disabled"
+        )
+
+    if self.associated_devices_scan is None:
+        return respond_with_error(
+            self, _response, "503 SERVICE UNAVAILABLE", "the plugin is still starting up"
+        )
+
+    if a_topology_scan_is_running(self):
+        return respond_with_error(
+            self, _response, "400 BAD REQUEST", "a topology scan is already in progress"
+        )
+
+    if not self.associated_devices_scan.start_scan():
+        return respond_with_error(
+            self, _response, "400 BAD REQUEST", "no coordinator or router to ask"
+        )
+
+    self.logging("Status", "Request a Start of Associated Devices collection")
+    _response["Data"] = json.dumps({"Name": "Req-Topology-AssociatedDevices", "TimeStamp": int(time())})
+    return _response
+
