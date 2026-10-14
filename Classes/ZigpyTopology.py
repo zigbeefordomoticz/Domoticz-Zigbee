@@ -97,8 +97,18 @@ def write_json_file(file_path, data):
         
 
 def build_zigpy_neighbors(self, neighbors):
-    """ Build a list of Neighbor tuples """
-    raw_neighbors_set = set()
+    """ Build the neighbours table reported by this scan """
+    # One fresh table per scan, as build_zigpy_routes() already does for routes.
+    #
+    # The table used to be kept across scans and only ever appended to, because
+    # add_to_neighbors_table() skips a pair the table already holds. A pair's
+    # LQI, relationship, device type and rx-on-when-idle therefore stayed at
+    # whatever they were the first time that pair was ever seen: zigpy handed
+    # over fresh readings on every scan and all of them were thrown away. Two
+    # consecutive reports came out byte-identical, so reports could not be
+    # compared with each other, and a device that had since left the network was
+    # still reported with its old links.
+    self.neighbors_table = {}
     ieee2nwk_keys = set(self.IEEE2NWK.keys())
 
     for ieee, neighbor_list in neighbors.items():
@@ -107,6 +117,15 @@ def build_zigpy_neighbors(self, neighbors):
             continue
         
         nwkid_parent = self.IEEE2NWK[ ieee_parent ]
+
+        # Record the node even when it reported nothing. zigpy lists every node
+        # it asked, and leaves an empty list behind for one that did not answer
+        # -- the assignment above never happens on a delivery timeout, so the
+        # defaultdict read on its listener_event line creates one. Dropping
+        # those made a node that timed out indistinguishable from a node that
+        # was never scanned at all. See issue #2111.
+        ensure_neighbors_table_entry(self, ieee_parent, nwkid_parent)["neighbors_reported"] = len(neighbor_list)
+
         for neighbor in neighbor_list:
             neighbor_info_dict = parse_neigbor_infos(neighbor)
             
@@ -121,23 +140,37 @@ def build_zigpy_neighbors(self, neighbors):
     return self.neighbors_table
 
 
-def add_to_neighbors_table( self, ieee_parent, nwkid_parent, neighbor_info_dict):
-    nwkid_neighbor = neighbor_info_dict["nwkid_neighbor"]
-    ieee_neighbor = neighbor_info_dict["ieee_neighbor"]
-    
+def ensure_neighbors_table_entry(self, ieee_parent, nwkid_parent):
+    """This node's entry in the table being built, created if it is the first row.
+
+    "neighbors_reported" is how many rows zigpy got back from the node, counted
+    before the rows the plugin cannot resolve are dropped -- so zero rows means
+    the node itself said nothing, rather than the plugin having filtered
+    everything away. That is what tells a timeout from a node whose every
+    neighbour is unknown here.
+    """
     if nwkid_parent not in self.neighbors_table:
         self.neighbors_table[ nwkid_parent ] = {
             "ieee": ieee_parent,
+            "neighbors_reported": 0,
             "relationship": [],  # Initialize as empty list
         }
-        
-    # Check if the relationship exists before adding it
+    return self.neighbors_table[ nwkid_parent ]
+
+
+def add_to_neighbors_table( self, ieee_parent, nwkid_parent, neighbor_info_dict):
+    nwkid_neighbor = neighbor_info_dict["nwkid_neighbor"]
+    ieee_neighbor = neighbor_info_dict["ieee_neighbor"]
+
+    ensure_neighbors_table_entry(self, ieee_parent, nwkid_parent)
+
+    # Guard against the same pair turning up twice within one scan. Across
+    # scans there is nothing to guard: build_zigpy_neighbors() starts over.
     relationship_exists = any(
         rel["nwkid"] == nwkid_neighbor and rel["ieee"] == ieee_neighbor
         for rel in self.neighbors_table[nwkid_parent]["relationship"]
     )
             
-    # Add relationship if it doesn't exist already
     if not relationship_exists:
         self.neighbors_table[nwkid_parent]["relationship"].append(
             { "nwkid": nwkid_neighbor,
@@ -146,6 +179,7 @@ def add_to_neighbors_table( self, ieee_parent, nwkid_parent, neighbor_info_dict)
                 "device_type": neighbor_info_dict[ "device_type"],
                 "rx_on_when_idle": neighbor_info_dict[ "rx_on_when_idle"],
                 "lqi_from_device": neighbor_info_dict[ "lqi"],
+                "depth": neighbor_info_dict[ "depth"],
                 "permit_joining": neighbor_info_dict[ "permit_joining"]}
         )
         self.log.logging("ZigpyTopology", "Debug", f"build_zigpy_neighbors adding relation {self.neighbors_table[nwkid_parent]['relationship']}")
@@ -159,6 +193,7 @@ def parse_neigbor_infos( neighbor ):
         "rx_on_when_idle": convert_rx_on_when_idle(neighbor.rx_on_when_idle),
         "relationship": convert_relationship_code(neighbor.relationship),
         "permit_joining": convert_permit_joining(neighbor.permit_joining),
+        "depth": neighbor.depth,
         "lqi": neighbor.lqi
     }
 
