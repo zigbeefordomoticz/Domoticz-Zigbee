@@ -3,7 +3,8 @@ from Modules.domoTools import lastSeenUpdate
 from Modules.errorCodes import DisplayStatusCode
 from Modules.tools import (DeviceExist, loggingMessages, timeStamped,
                            zigpy_plugin_sanity_check)
-from Modules.associated_devices import notify_associated_devices_scan
+from Modules.associated_devices import (notify_associated_devices_no_list,
+                                        notify_associated_devices_scan)
 from Modules.zb_tables_management import store_NwkAddr_Associated_Devices
 from Z4D_decoders.z4d_decoder_helpers import \
     Network_Address_response_request_next_index
@@ -16,6 +17,12 @@ def Decode8040(self, Devices, MsgData, MsgLQI):
     MsgIEEE = MsgData[4:20]
     self.log.logging('Input', 'Debug', 'Decode8040 - Reception of Network Address response %s with status %s' % (MsgIEEE, MsgDataStatus))
     if MsgDataStatus != '00':
+        # An answer, not a silence: INV_REQUESTTYPE is what a stack with no
+        # support for the extended response replies. An Associated Devices
+        # collection waiting on this node has to hear it, or it waits out the
+        # node's whole budget and files it as a timeout. Nothing else changes --
+        # the frame still carries no data for the rest of this decoder.
+        notify_associated_devices_no_list(self, MsgIEEE, 'ZDP status %s' % MsgDataStatus)
         return
     MsgShortAddress = MsgData[20:24]
     extendedResponse = False
@@ -27,6 +34,13 @@ def Decode8040(self, Devices, MsgData, MsgLQI):
         MsgDeviceList = MsgData[28:]
         
     self.log.logging('Input', 'Debug', 'Network Address response, [%s] Status: %s Ieee: %s NwkId: %s' % (MsgSequenceNumber, DisplayStatusCode(MsgDataStatus), MsgIEEE, MsgShortAddress))
+
+    if not extendedResponse:
+        # A single device response: the address and nothing after it. Same
+        # reason as the status check above -- the node answered, it just has no
+        # list to give, and a collection waiting on it must not call that a
+        # timeout.
+        notify_associated_devices_no_list(self, MsgIEEE, 'no associated device list', nwkid=MsgShortAddress)
 
     if extendedResponse:
         self.log.logging('Input', 'Debug', '                        , Nb Associated Devices: %s Idx: %s Device List: %s' % (MsgNumAssocDevices, MsgStartIndex, MsgDeviceList))

@@ -20,6 +20,10 @@ What is pinned here:
   - the object handed to the sender duck-types as the plugin: the real
     zdp_NWK_address_request() is called with the collector as `self`, so every
     attribute the send path reads off the plugin has to be there
+  - a node that answers without a list is not_supported, not a timeout, and the
+    scan moves on at once rather than waiting out its budget
+  - that answer is matched on the IEEE the request in flight asked about, so a
+    failed heartbeat ping of an unrelated device cannot be mistaken for it
 
 The class is instantiated directly, with a recorded sender in place of
 zdp_NWK_address_request: no transport, no zigpy, and nothing that drags the real
@@ -30,6 +34,9 @@ import pytest
 
 from Classes.AssociatedDevicesScan import (NODE_TICK_BUDGET, PHASE_IDLE,
                                            PHASE_RUNNING,
+                                           SCAN_STATUS_NOT_SUPPORTED,
+                                           SCAN_STATUS_OK,
+                                           SCAN_STATUS_TIMEOUT,
                                            AssociatedDevicesScan)
 
 FFD = ["Full-Function Device", "Main Powered"]
@@ -419,3 +426,107 @@ def test_a_sender_reading_the_plugin_attributes_is_served(sent):
     assert len(sent) == 1, "the request has to reach the sender"
     assert seen["zigbee_communication"] == "zigpy"
     assert seen["pairing_in_progress"] is False, "plugin.py does not tick this while pairing"
+
+
+# ---------------------------------------------------------------------------
+# An answer that carries no list
+# ---------------------------------------------------------------------------
+IEEE_0000 = "00124b0022aabbcc"
+IEEE_1111 = "00158d0000000001"
+
+
+def test_a_node_answering_without_a_list_is_not_supported(sent):
+    """A stack with no extended address response answers, it just has no list."""
+    scan, reported = make_scan()
+    scan.start_scan()
+    scan.continue_scan()                                    # asks 0000
+
+    assert scan.response_without_list(IEEE_0000, "ZDP status 80") is True
+
+    scan.continue_scan()                                    # asks 1111 at once
+    answer(scan, "1111", "")
+    scan.continue_scan()
+    answer(scan, "2222", "")
+    scan.continue_scan()
+
+    assert OUTCOMES[0]["0000"] == SCAN_STATUS_NOT_SUPPORTED
+    assert OUTCOMES[0]["1111"] == SCAN_STATUS_OK
+    assert "0000" not in reported[0], "a node with no list is not an empty entry"
+
+
+def test_it_does_not_cost_the_node_its_timeout_budget(sent):
+    """The answer is already in hand, so the next node is asked on the next tick."""
+    scan, _ = make_scan()
+    scan.start_scan()
+    scan.continue_scan()
+    assert len(sent) == 1
+
+    scan.response_without_list(IEEE_0000, "ZDP status 80")
+    scan.continue_scan()
+    assert len(sent) == 2, "waiting out NODE_TICK_BUDGET would still be on 0000"
+
+
+def test_a_reply_for_another_ieee_is_refused(sent):
+    """Modules/heartbeat.py pings an unresponsive device with the same request.
+
+    Its failures have the same shape, so a reply naming any other IEEE must not
+    land on the node this collection happens to be waiting on.
+    """
+    scan, _ = make_scan()
+    scan.start_scan()
+    scan.continue_scan()                                    # waiting on 0000
+
+    assert scan.response_without_list("aabbccddeeff0011", "ZDP status 81") is False
+
+    for _ in range(NODE_TICK_BUDGET):
+        scan.continue_scan()
+    scan.continue_scan()
+    answer(scan, "1111", "")
+    scan.continue_scan()
+    answer(scan, "2222", "")
+    scan.continue_scan()
+
+    assert OUTCOMES[0]["0000"] == SCAN_STATUS_TIMEOUT, "0000 still timed out on its own"
+
+
+def test_a_reply_naming_another_nwkid_is_refused(sent):
+    """The single device response carries an nwkid; it has to be the one asked."""
+    scan, _ = make_scan()
+    scan.start_scan()
+    scan.continue_scan()
+
+    assert scan.response_without_list(IEEE_0000, "no list", nwkid="1111") is False
+
+
+def test_a_reply_with_nothing_in_flight_is_refused(sent):
+    scan, _ = make_scan()
+    assert scan.response_without_list(IEEE_0000, "ZDP status 80") is False
+    scan.start_scan()
+    assert scan.response_without_list(IEEE_0000, "ZDP status 80") is False, "nothing asked yet"
+
+
+def test_it_cannot_downgrade_a_node_that_already_answered(sent):
+    """A late no-list reply must not take back a list already collected."""
+    scan, reported = make_scan()
+    scan.start_scan()
+    scan.continue_scan()
+    answer(scan, "0000", "1a2b")
+
+    assert scan.response_without_list(IEEE_0000, "ZDP status 80") is False
+
+    scan.continue_scan()
+    answer(scan, "1111", "")
+    scan.continue_scan()
+    answer(scan, "2222", "")
+    scan.continue_scan()
+
+    assert OUTCOMES[0]["0000"] == SCAN_STATUS_OK
+    assert reported[0]["0000"] == ["1a2b"]
+
+
+def test_the_ieee_match_ignores_case(sent):
+    """The plugin stores IEEE lowercase; a decoder is not guaranteed to."""
+    scan, _ = make_scan()
+    scan.start_scan()
+    scan.continue_scan()
+    assert scan.response_without_list(IEEE_0000.upper(), "ZDP status 80") is True
