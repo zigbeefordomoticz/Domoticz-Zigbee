@@ -841,3 +841,104 @@ def test_the_listing_reports_the_associated_devices_table(zigpy_plugin_with_asso
     summaries = list_topology_scans(zigpy_plugin_with_associated_devices)
 
     assert summaries[0]["tables"] == ["neighbours", "routes", "associated_devices"]
+
+
+# --- a standalone Associated Devices collection ---------------------------
+#
+# GET /topology-scan-associated-devices runs the collection on its own, so the
+# report entry carries that one section. Neither Neighbors nor Routes was asked
+# for, and an absent section is how the payload says a table was not collected.
+def associated_devices_only_report(associated_devices, outcome=None):
+    entry = {"AssociatedDevices": associated_devices}
+    if outcome is not None:
+        entry["AssociatedDevicesScan"] = outcome
+    return [{"1711537200.123456": entry}]
+
+
+@pytest.fixture
+def standalone_plugin(tmp_path):
+    write_zigpy_report(tmp_path, associated_devices_only_report(
+        {"0000": ["c6ca"], "1a2b": []},
+        {"0000": "ok", "1a2b": "ok", "7a8b": "timeout"},
+    ))
+    return FakePlugin(tmp_path, list_of_devices(), zigpy_report=True)
+
+
+def test_a_standalone_collection_claims_only_its_own_table(standalone_plugin):
+    scan = get_topology_scan(standalone_plugin, 1711537200)
+
+    assert scan["tables"] == ["associated_devices"]
+    assert scan["neighbours"] == []
+    assert scan["routes"] == []
+    assert node(scan, "0000")["associated_devices"] == ["c6ca"]
+
+
+def test_a_standalone_collection_reports_its_own_coverage(standalone_plugin):
+    """Nothing asked for a neighbour table here, so the coverage reported has to
+    be the collection's. Reading it off the absent neighbour table instead would
+    make every router not_scanned and the scan look like a total failure."""
+    scan = get_topology_scan(standalone_plugin, 1711537200)
+
+    assert node(scan, "0000")["scan_status"] == "ok"
+    assert node(scan, "1a2b")["scan_status"] == "ok"
+    assert node(scan, "7a8b")["scan_status"] == "timeout"
+    assert scan["scan"]["answered"] == 2
+    assert scan["scan"]["timeout"] == 1
+
+
+def test_a_standalone_collection_without_its_outcome_section(tmp_path):
+    """Defensive: the section is written by the same code that writes the table,
+    but the file is read back off disk and is not trusted to be well shaped."""
+    write_zigpy_report(tmp_path, associated_devices_only_report({"0000": ["c6ca"]}))
+    plugin = FakePlugin(tmp_path, list_of_devices(), zigpy_report=True)
+
+    scan = get_topology_scan(plugin, 1711537200)
+    assert scan["tables"] == ["associated_devices"]
+    # No claim either way about who answered: back to the per-node default.
+    assert node(scan, "0000")["scan_status"] == "not_scanned"
+
+
+def test_a_malformed_outcome_section_is_ignored(tmp_path):
+    write_zigpy_report(tmp_path, associated_devices_only_report({"0000": ["c6ca"]}, outcome="broken"))
+    plugin = FakePlugin(tmp_path, list_of_devices(), zigpy_report=True)
+
+    assert get_topology_scan(plugin, 1711537200)["tables"] == ["associated_devices"]
+
+
+def test_an_unknown_outcome_value_is_not_read_as_an_answer(tmp_path):
+    """Only "ok" is an answer; anything else is a node that did not answer."""
+    write_zigpy_report(tmp_path, associated_devices_only_report(
+        {"0000": []}, {"0000": "something-else"}
+    ))
+    plugin = FakePlugin(tmp_path, list_of_devices(), zigpy_report=True)
+
+    assert node(get_topology_scan(plugin, 1711537200), "0000")["scan_status"] == "timeout"
+
+
+def test_the_outcome_section_does_not_override_a_neighbour_scan(tmp_path):
+    """On a full scan the Neighbors table keeps the last word on scan_status:
+    the two sections answer different questions, and mixing them would make the
+    field mean neither."""
+    report = zigpy_report()
+    report[0]["1711537200.123456"]["AssociatedDevices"] = {"0000": ["c6ca"]}
+    report[0]["1711537200.123456"]["AssociatedDevicesScan"] = {"0000": "timeout"}
+    write_zigpy_report(tmp_path, report)
+    plugin = FakePlugin(tmp_path, list_of_devices(), zigpy_report=True)
+
+    scan = get_topology_scan(plugin, 1711537200)
+    assert scan["tables"] == ["neighbours", "routes", "associated_devices"]
+    assert node(scan, "0000")["scan_status"] == "ok", "the node answered its neighbour table"
+
+
+def test_the_listing_shows_a_standalone_collection_beside_a_full_scan(tmp_path):
+    reports = zigpy_report()
+    reports.append(associated_devices_only_report({"0000": ["c6ca"]}, {"0000": "ok"})[0])
+    reports[-1][str(1711540000.5)] = reports[-1].pop("1711537200.123456")
+    write_zigpy_report(tmp_path, reports)
+    plugin = FakePlugin(tmp_path, list_of_devices(), zigpy_report=True)
+
+    summaries = list_topology_scans(plugin)
+    assert [summary["tables"] for summary in summaries] == [
+        ["neighbours", "routes"],
+        ["associated_devices"],
+    ]

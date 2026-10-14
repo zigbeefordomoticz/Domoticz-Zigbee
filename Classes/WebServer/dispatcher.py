@@ -77,6 +77,7 @@ def setup_list_rest_commands( self ):
         {"Name": "sw-reset-coordinator", "Verbs": {"GET"}, "function": self.rest_reset_zigate},
         {"Name": "topologie", "Verbs": {"GET", "DELETE"}, "function": self.rest_netTopologie},
         {"Name": "topology-scan", "Verbs": {"GET", "DELETE"}, "function": self.rest_topology_scan},
+        {"Name": "topology-scan-associated-devices", "Verbs": {"GET"}, "function": self.rest_topology_scan_associated_devices},
         {"Name": "unbinding", "Verbs": {"PUT"}, "function": self.rest_unbinding},
         {"Name": "unbinding-group", "Verbs": {"PUT"}, "function": self.rest_group_unbinding},
         {"Name": "upgrade-certified-devices", "Verbs": {"GET"}, "function": self.rest_certified_devices_update},
