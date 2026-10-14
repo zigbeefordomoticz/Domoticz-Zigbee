@@ -21,6 +21,7 @@ import pytest
 
 from Modules.topologyScan import (SOURCE_LEGACY, SOURCE_TOPOLOGY_V2,
                                   SOURCE_ZIGPY, as_int, canonical,
+                                  delete_all_topology_scans,
                                   delete_topology_scan, get_topology_scan,
                                   list_topology_scans, read_json_file,
                                   value_or_none)
@@ -249,9 +250,12 @@ def test_a_scan_written_by_two_backends_is_listed_once_by_the_active_one(tmp_pat
     assert [summary["source"] for summary in summaries] == [SOURCE_TOPOLOGY_V2]
 
 
-def test_reports_of_an_inactive_backend_stay_readable(tmp_path):
-    # Switching a setup from legacy to zigpy must not hide the reports already
-    # on disk: `source` is a per-scan property, not a per-plugin one.
+def test_only_the_active_backend_is_listed(tmp_path):
+    # An inactive backend is not enumerated. The TopologyV2 tables are why: with
+    # no report file to read, a scan is inferred from the distinct Time values
+    # left in each device's tables, and on a zigpy setup those are residue of
+    # code paths that never ran a topology scan -- they listed as scans that
+    # were never run, interleaved with the real zigpy reports.
     write_legacy_report(tmp_path, [legacy_report(timestamp=1711530000)])
     write_zigpy_report(tmp_path, zigpy_report())
     plugin = FakePlugin(tmp_path, list_of_devices(), zigpy_report=True)
@@ -259,9 +263,65 @@ def test_reports_of_an_inactive_backend_stay_readable(tmp_path):
     summaries = list_topology_scans(plugin)
 
     assert [(summary["timestamp"], summary["source"]) for summary in summaries] == [
-        (1711530000, SOURCE_LEGACY),
         (1711537200, SOURCE_ZIGPY),
     ]
+
+
+def test_a_zigpy_setup_does_not_list_topologyv2_residue(tmp_path):
+    """The case this came from, on a live ZNP install.
+
+    Two real zigpy reports on disk, and the device database still carrying
+    TopologyV2 table entries at other timestamps -- entries a topology scan did
+    not write, since rest_req_topologie() on a zigpy setup sends
+    ZIGPY-TOPOLOGY-SCAN and never starts a NetworkMap scan. Those listed as
+    extra scans, several of them with no neighbour row, interleaved with the
+    real reports. Only the two zigpy scans are scans.
+    """
+    reports = zigpy_report()
+    body = reports[0]["1711537200.123456"]
+    reports.append({"1711540000.654321": body})
+    write_zigpy_report(tmp_path, reports)
+    # Residue at timestamps of its own, between and around the two reports.
+    devices = topology_v2_devices(timestamp=1711538000)
+    devices["0000"]["RoutingTable"].append({
+        "Devices": [], "SQN": 0, "Status": "", "TimeStamp": 1711539000, "Time": 1711539000,
+    })
+    plugin = FakePlugin(tmp_path, devices, zigpy_report=True)
+
+    summaries = list_topology_scans(plugin)
+
+    assert [(summary["timestamp"], summary["source"]) for summary in summaries] == [
+        (1711537200, SOURCE_ZIGPY),
+        (1711540000, SOURCE_ZIGPY),
+    ]
+
+
+def test_a_scan_of_an_inactive_backend_is_still_readable_by_id(tmp_path):
+    # Not listed is not gone: `source` stays a per-scan property, and a report
+    # on disk from a backend the setup no longer runs is still fetched when its
+    # timestamp is asked for. It is the enumeration that was untrustworthy.
+    write_legacy_report(tmp_path, [legacy_report(timestamp=1711530000)])
+    write_zigpy_report(tmp_path, zigpy_report())
+    plugin = FakePlugin(tmp_path, list_of_devices(), zigpy_report=True)
+
+    scan = get_topology_scan(plugin, 1711530000)
+
+    assert scan is not None
+    assert scan["source"] == SOURCE_LEGACY
+
+
+def test_delete_all_reaches_a_backend_that_is_not_listed(tmp_path):
+    # "Delete every scan" must not be bounded by the listing, or the residue
+    # list_topology_scans() stopped showing would have nothing able to clear it.
+    write_legacy_report(tmp_path, [legacy_report(timestamp=1711530000)])
+    write_zigpy_report(tmp_path, zigpy_report())
+    plugin = FakePlugin(tmp_path, list_of_devices(), zigpy_report=True)
+
+    removed = delete_all_topology_scans(plugin)
+
+    assert SOURCE_LEGACY in removed
+    assert get_topology_scan(plugin, 1711530000) is None
+    assert get_topology_scan(plugin, 1711537200) is None
 
 
 def test_an_unknown_timestamp_has_no_scan(zigpy_plugin):
