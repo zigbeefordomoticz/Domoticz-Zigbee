@@ -33,6 +33,14 @@ other tooling, not for the graph.
 
 Starting a scan is unchanged: `GET /req-topologie`, as today.
 
+On a zigpy installation, that scan has two halves: zigpy collects the neighbour
+and route tables, then — when `ZigpyTopologyAssociatedDevices` is enabled — the
+plugin collects each router's associated device list itself (§6.1.2). The whole
+thing is filed as one scan under one timestamp, and `/plugin-health` reports
+`"Topology": "In Progress"` for both halves, so a scan is not finished when
+zigpy's half is. The second half adds a few minutes; nothing is readable through
+these endpoints until it ends.
+
 ---
 
 ## 2. Concepts
@@ -60,21 +68,30 @@ and tells you honestly which one produced each scan:
 legacy to zigpy keeps its old reports readable, so one listing can mix sources.
 Do not cache "this installation is a zigpy installation" off one scan.
 
-### 2.3 `tables` — what that backend can collect
+### 2.3 `tables` — what this scan collected
 
 | `source` | `tables` |
 |---|---|
-| `zigpy` | `["neighbours", "routes"]` |
+| `zigpy` | `["neighbours", "routes"]` or `["neighbours", "routes", "associated_devices"]` |
 | `topologyv2` | `["neighbours", "routes", "associated_devices"]` |
 | `legacy` | `["neighbours"]` |
 
 A table **listed but empty** means the backend asked and got nothing — that is a
-finding worth showing. A table **not listed** means the backend cannot collect it
+finding worth showing. A table **not listed** means this scan does not carry it
 at all — grey the control out instead of showing an empty result.
 
 Concretely: when `"routes"` is absent from `tables`, disable the
 neighbours/routes filter. When `"associated_devices"` is absent, every node's
 `associated_devices` is `null`, which is not the same statement as `[]`.
+
+**Read `tables` per scan, not per source.** `zigpy` is the one backend whose
+answer varies between two scans of the same installation: zigpy itself collects
+only neighbours and routes, and the associated device list is collected by the
+plugin afterwards, under the `ZigpyTopologyAssociatedDevices` setting (see
+§6.1.2). A scan stored before that collection existed, one run with the setting
+off, and one whose collection was cut short by a radio restart all come back
+without the table. The other two backends fill all of their tables on every
+scan.
 
 ### 2.4 `null` means "no value", not zero
 
@@ -216,7 +233,7 @@ reached".
 | `rx_on_when_idle` | from the device's MAC capability, else from what a neighbour reported about it |
 | `scan_status` | §6.1.1 |
 | `health`, `model`, `lqi`, `rssi`, `battery` | the same values `/zdevice-name` returns, for this node, **now** — not as of the scan |
-| `associated_devices` | list of nwkids of this node's direct children, or `null` when the backend has no such table |
+| `associated_devices` | list of nwkids of this node's direct children, or `null` when this scan does not carry the table; §6.1.2 |
 
 **Use `nwkid` as the node key and `ieee` as the stable id. Never `name`.** Two
 devices can share a name, a rename breaks comparison against older reports, and
@@ -247,6 +264,39 @@ meaningful; `scan_status` says why.
 Before this field existed, a node that timed out looked exactly like a leaf with
 no neighbours. Distinguishing `timeout`/`not_scanned` from `not_supported` is the
 single most useful thing the UI can do with this payload.
+
+#### 6.1.2 `associated_devices` — the children a router declares
+
+A node's `associated_devices` is the list of nwkids that node reported as its
+own children. It is the one table that reports a **sleepy end device's parent**:
+the parent answers for it, so a battery device that never answers anything is
+still placed in the tree. A Lumi/Aqara sensor typically appears here and nowhere
+else.
+
+It is not a `Mgmt_*` table. It rides on the extended address response —
+`NWK_addr_req` with `RequestType 0x01`, answered with `NumAssocDev`,
+`StartIndex` and `NWKAddrAssocDevList` — which only a coordinator or a router is
+asked for.
+
+Reading it:
+
+- **`null` is not `[]`.** `null` means this scan does not carry the table at all;
+  check `tables` (§2.3) before offering a parent/child view. `[]` means that node
+  was asked and declared no children.
+- **An entry is a parent → child edge**, nothing more. There is no LQI, no
+  relationship and no depth on it, unlike a `neighbours` row.
+- **The nwkids are not resolved for you.** Join them against `nodes` to get an
+  ieee, a name and a type; a child that is not in `nodes` is a device the plugin
+  does not know.
+- **A node absent from the table is not distinguishable from one that answered
+  nothing.** The table is flat — `{nwkid: [children]}` — so a coordinator or
+  router that was asked but timed out reads as `[]`, exactly like one with no
+  children. `scan_status` answers that question for the *neighbour* request
+  only. Known limitation; do not present `[]` as proof a router has no children.
+- **On a zigpy scan the rows lag the neighbour rows.** The scan's `timestamp` is
+  the moment zigpy's neighbour and route tables were read; the associated device
+  lists are collected over the following minutes. A device that joined in between
+  can appear as a child of a router whose neighbour table predates it.
 
 ### 6.2 `neighbours`
 
@@ -438,7 +488,8 @@ there is no reason to page or to split the call.
 5. Route overlay from `routes`, drawn `reporter` → `next_hop` → … →
    `destination`, offered only when `"routes"` is in `tables`.
 6. `associated_devices` for a parent/child tree view, offered only when
-   `"associated_devices"` is in `tables`.
+   `"associated_devices"` is in `tables` — per scan, not per source (§2.3). It is
+   the only view that places a sleepy end device under its parent (§6.1.2).
 
 Do not join anything by `name`, and do not assume a node in `nodes` has an edge.
 

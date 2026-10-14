@@ -35,6 +35,9 @@ class ZigpyTopology:
         self.new_scan_detected = None
         self.neighbors_table = {}
         self.pairing_in_progress = pairing_in_progress
+        # zigpy's half of a scan, held between the moment zigpy finishes and the
+        # moment the whole scan is filed. See prepare_topology_report().
+        self.pending_report = None
 
     def copy_zigpy_infos_to_plugin(self, neighbors_list=None, routes_list=None):
         if neighbors_list is None and routes_list is None:
@@ -52,27 +55,69 @@ class ZigpyTopology:
             self.log.logging("ZigpyTopology", "Debug", f"{(traceback.format_exc())}")
 
 
-    def save_topology_report(self):
-        self.log.logging("ZigpyTopology", "Debug", "save_topology_report")
+    def prepare_topology_report(self):
+        """Take zigpy's tables off the controller and hold them, timestamped.
+
+        The report is not written yet: a scan can have a second half, the
+        Associated Devices collection the plugin runs itself, and the whole scan
+        is filed as one entry under one timestamp.
+
+        The timestamp is minted here, when zigpy's tables are read -- it dates
+        the observation of the neighbour and route tables, not the file write.
+        Rows collected afterwards lag it by the length of that collection.
+        """
+        self.log.logging("ZigpyTopology", "Debug", "prepare_topology_report")
         neighbors, routes = self.ControllerLink.app.get_topology()
         neighbors_list = build_zigpy_neighbors(self, neighbors)
         routes_list = build_zigpy_routes(self, routes)
         self.copy_zigpy_infos_to_plugin(neighbors_list, routes_list)
-        save_report_to_file(self, time.time(), neighbors_list, routes_list)
+        self.pending_report = (time.time(), neighbors_list, routes_list)
+        return self.pending_report[0]
+
+
+    def write_topology_report(self, associated_devices=None):
+        """File the prepared report, with the Associated Devices table if collected.
+
+        `associated_devices` is None when the table was not collected at all --
+        the feature is off, or the collection was abandoned. The section is then
+        left out of the entry rather than written empty, so a reader can tell a
+        scan that did not collect the table from one that collected it and found
+        no children.
+        """
+        if self.pending_report is None:
+            self.log.logging("ZigpyTopology", "Debug", "write_topology_report - nothing pending")
+            return None
+
+        time_stamp, neighbors_list, routes_list = self.pending_report
+        self.pending_report = None
+        save_report_to_file(self, time_stamp, neighbors_list, routes_list, associated_devices)
+        return time_stamp
+
+
+    def save_topology_report(self):
+        """Collect and file in one go, for a scan with no second half."""
+        self.log.logging("ZigpyTopology", "Debug", "save_topology_report")
+        self.prepare_topology_report()
+        return self.write_topology_report()
 
 
     def is_zigpy_topology_in_progress(self):
         return self.ControllerLink.app.is_zigpy_topology_in_progress()
 
 
-def save_report_to_file(self, time_stamp, neighbors, routes):
+def save_report_to_file(self, time_stamp, neighbors, routes, associated_devices=None):
     self.log.logging("ZigpyTopology", "Debug", "save_report_to_file")
     zigpy_topology_reports_filename = Path( self.pluginconf.pluginConf["pluginReports"] ) / ( ZIGPY_TOPOLOGY_REPORT_FILENAME + "%02d.json" % self.HardwareID)
     if not os.path.isdir( Path(self.pluginconf.pluginConf["pluginReports"]) ):
         self.log.logging("ZigpyTopology", "Error", "save_report_to_file: Unable to get access to directory %s, please check PluginConf.json" % (self.pluginconf.pluginConf["pluginReports"]), )
         return
 
-    new_report = { time_stamp: { "Neighbors": neighbors, "Routes":routes }}
+    scan = { "Neighbors": neighbors, "Routes":routes }
+    if associated_devices is not None:
+        # Only when the table was really collected: its presence is what tells
+        # /topology-scan that this scan carries it.
+        scan["AssociatedDevices"] = associated_devices
+    new_report = { time_stamp: scan }
     available_reports = read_topology_report(zigpy_topology_reports_filename)
 
     available_reports.append(new_report)
