@@ -73,6 +73,7 @@ SETTINGS = {
             "autoRestore": {"type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": True,},
             "ZigpyTopologyReport": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "ZigpyTopologyReportAutoBackup": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
+            "ZigpyTopologyAssociatedDevices": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "ZigpyAutoTopology": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "MonitorLoopLatency": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
             "CaptureRxFrames": {"type": "bool","default": 0,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
@@ -625,6 +626,9 @@ def load_settings(self):
     if self.zigbee_communication != "zigpy":
         # Force to 0 as this parameter is only relevant to Zigpy
         self.pluginConf["ZigpyTopologyReport"] = False
+        # Second half of a zigpy topology scan; nothing runs it on a native ZiGate,
+        # where the TopologyV2 scan collects the same table on its own.
+        self.pluginConf["ZigpyTopologyAssociatedDevices"] = False
     
     if dz_timestamp >= txt_timestamp:
         Domoticz.Status("Z4D loads pluginconf from Domoticz Db: %s" % len(self.pluginConf))
