@@ -59,12 +59,24 @@ STATUS_REQUIRED = "ScanRequired"
 STATUS_WAITING = "WaitingResponse"
 STATUS_RECEIVED = "Received"
 STATUS_TIMEDOUT = "TimedOut"
+# Answered, but with nothing in the answer. A node here will never produce the
+# table, which is not the same fact as a node that said nothing at all, and the
+# report has to be able to tell the two apart.
+STATUS_NO_LIST = "AnsweredWithoutList"
 
 # How the outcome is recorded in the report, in the /topology-scan vocabulary
-# (Modules/topologyScan.py: SCAN_OK / SCAN_TIMEOUT) rather than in the internal
-# spelling above, so the report needs no translation on the way out.
+# (Modules/topologyScan.py: SCAN_OK / SCAN_TIMEOUT / SCAN_NOT_SUPPORTED) rather
+# than in the internal spelling above, so the report needs no translation on the
+# way out. not_supported already means "this node cannot answer this kind of
+# request" there, which is exactly what a reply carrying no list says.
 SCAN_STATUS_OK = "ok"
 SCAN_STATUS_TIMEOUT = "timeout"
+SCAN_STATUS_NOT_SUPPORTED = "not_supported"
+
+_REPORTED_OUTCOME = {
+    STATUS_RECEIVED: SCAN_STATUS_OK,
+    STATUS_NO_LIST: SCAN_STATUS_NOT_SUPPORTED,
+}
 
 
 class AssociatedDevicesScan:
@@ -118,6 +130,13 @@ class AssociatedDevicesScan:
         self.nodes = {}
         self.collected = {}
         self.current = None
+        # The IEEE the request in flight asked about. A reply carrying no
+        # associated device list is matched on it rather than on the nwkid,
+        # because the plugin issues the same NWK_addr_req elsewhere --
+        # Modules/heartbeat.py pings an unresponsive device with RequestType 00,
+        # three times -- and those replies have exactly this shape. Matching the
+        # IEEE this collection asked for cannot confuse the two.
+        self.current_ieee = None
         self.node_ticks = 0
         self.scan_ticks = 0
         self.scan_budget = 0
@@ -135,6 +154,7 @@ class AssociatedDevicesScan:
         self.nodes = {nwkid: STATUS_REQUIRED for nwkid in nodes_to_scan(self.ListOfDevices)}
         self.collected = {}
         self.current = None
+        self.current_ieee = None
         self.node_ticks = 0
         self.scan_ticks = 0
         self.scan_budget = SCAN_BUDGET_FACTOR * (NODE_TICK_BUDGET + 1) * max(len(self.nodes), 1)
@@ -171,6 +191,7 @@ class AssociatedDevicesScan:
             self.logging("Debug", "continue_scan - %s did not answer" % self.current)
             self.nodes[self.current] = STATUS_TIMEDOUT
             self.current = None
+            self.current_ieee = None
 
         # Loop rather than one node per tick: a node that cannot be asked at all
         # must not cost a heartbeat. Each turn either sends a request and
@@ -196,17 +217,21 @@ class AssociatedDevicesScan:
         self.logging("Debug", "_request - asking %s for its associated devices" % nwkid)
         self.nodes[nwkid] = STATUS_WAITING
         self.current = nwkid
+        self.current_ieee = ieee
         self.node_ticks = 0
         self.send_request(self, nwkid, ieee, u8RequestType=EXTENDED_REQUEST_TYPE, u8StartIndex="00")
         return True
 
     def finish(self):
         answered = sum(1 for status in self.nodes.values() if status == STATUS_RECEIVED)
+        no_list = sum(1 for status in self.nodes.values() if status == STATUS_NO_LIST)
         children = sum(len(devices) for devices in self.collected.values())
         self.logging(
             "Status",
-            "Associated Devices collected: %s of %s node(s) answered, %s child(ren) reported in %s s"
-            % (answered, len(self.nodes), children, int(time.time() - (self.started_at or time.time()))),
+            "Associated Devices collected: %s of %s node(s) answered, %s child(ren) reported, "
+            "%s node(s) cannot report a list, in %s s"
+            % (answered, len(self.nodes), children, no_list,
+               int(time.time() - (self.started_at or time.time()))),
         )
         self._report(dict(self.collected), self.outcome())
 
@@ -217,9 +242,15 @@ class AssociatedDevicesScan:
         timed out and a router that answered "no children" are both an empty
         list. A standalone collection is the whole scan, so its coverage has to
         be recorded somewhere.
+
+        Three outcomes, not two. A node that answered without a list is reported
+        not_supported rather than timeout: both leave the node out of the table,
+        but only one of them is a mesh problem, and reporting a live mains
+        powered router as a timeout sends whoever reads the report looking for a
+        radio fault that is not there.
         """
         return {
-            nwkid: SCAN_STATUS_OK if status == STATUS_RECEIVED else SCAN_STATUS_TIMEOUT
+            nwkid: _REPORTED_OUTCOME.get(status, SCAN_STATUS_TIMEOUT)
             for nwkid, status in self.nodes.items()
         }
 
@@ -238,6 +269,7 @@ class AssociatedDevicesScan:
     def _report(self, associated_devices, outcome):
         self.phase = PHASE_IDLE
         self.current = None
+        self.current_ieee = None
         self.nodes = {}
         self.collected = {}
         if self.on_completed:
@@ -274,6 +306,48 @@ class AssociatedDevicesScan:
         self.nodes[nwkid] = STATUS_RECEIVED
         if self.current == nwkid:
             self.current = None
+            self.current_ieee = None
+        return True
+
+    def response_without_list(self, ieee, reason, nwkid=None):
+        """A reply to the request in flight that carries no associated devices.
+
+        Two replies land here, and neither reaches response_received():
+
+          - a non-zero ZDP status. INV_REQUESTTYPE is what a stack that does not
+            implement RequestType 0x01 answers, and Decode8040() returns on the
+            status check before it reads any further.
+          - status 00 carrying only the address, with no NumAssocDev, StartIndex
+            or list: a single device response to an extended request. It is 24
+            characters, so Decode8040() never sets extendedResponse.
+
+        Both mean the node will not produce a list, ever. Recording that is the
+        point: a live mains powered router read as "timeout" is a mesh fault
+        that is not happening, and waiting out its budget first costs a
+        heartbeat per node for an answer already in hand.
+
+        Matched on the IEEE the request in flight asked about, never on the
+        nwkid alone. Modules/heartbeat.py pings an unresponsive device with the
+        same NWK_addr_req at RequestType 00 and those replies have the same two
+        shapes, so a looser match would mark whichever node this collection
+        happens to be waiting on as not_supported on a ping that failed for an
+        unrelated device. Returns False for anything else, which leaves that
+        reply to the rest of Decode8040() untouched.
+        """
+        if self.phase != PHASE_RUNNING or self.current is None:
+            return False
+        if not ieee or not self.current_ieee or ieee.lower() != self.current_ieee.lower():
+            return False
+        if nwkid is not None and nwkid != self.current:
+            # The reply names a device other than the one asked. Not ours.
+            return False
+
+        self.logging(
+            "Debug", "response_without_list - %s reports no associated devices (%s)" % (self.current, reason)
+        )
+        self.nodes[self.current] = STATUS_NO_LIST
+        self.current = None
+        self.current_ieee = None
         return True
 
     def logging(self, logType, message):

@@ -174,3 +174,23 @@ def notify_associated_devices_scan(self, nwkid, num_assoc_devices, start_index, 
     if scan is None:
         return False
     return scan.response_received(nwkid, num_assoc_devices, start_index, device_list)
+
+
+def notify_associated_devices_no_list(self, ieee, reason, nwkid=None):
+    """Tell the collector that the node it is waiting on will not send a list.
+
+    The extended address response is not the only reply a NWK_addr_req gets. A
+    stack that does not implement RequestType 0x01 answers a non-zero status,
+    and some answer status 00 with only the address and no list at all. Both are
+    answers, and both are dropped by Decode8040() before the collector hears
+    anything, which left a live router indistinguishable from a silent one.
+
+    Keyed by the IEEE asked rather than by the nwkid, because
+    Modules/heartbeat.py issues the same request at RequestType 00 when pinging
+    an unresponsive device and its failures have the same shape. The collector
+    refuses anything that is not the reply to the request it has in flight.
+    """
+    scan = getattr(self, "associated_devices_scan", None)
+    if scan is None:
+        return False
+    return scan.response_without_list(ieee, reason, nwkid=nwkid)
