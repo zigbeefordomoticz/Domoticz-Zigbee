@@ -133,6 +133,7 @@ import time
 import z4d_certified_devices
 
 from Classes.AdminWidgets import AdminWidgets
+from Classes.AssociatedDevicesScan import AssociatedDevicesScan
 from Classes.ConfigureReporting import ConfigureReporting
 from Classes.DomoticzDB import (DomoticzAPIClient, DomoticzDB_DeviceStatus,
                                 DomoticzDB_Hardware, DomoticzDB_Preferences,
@@ -198,7 +199,8 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
 from Modules.zigpy_preload import device_has_left_the_network
-from Zigbee.zdpCommands import zdp_get_permit_joint_status
+from Zigbee.zdpCommands import (zdp_get_permit_joint_status,
+                                zdp_NWK_address_request)
 
 VERSION_FILENAME = ".hidden/VERSION"
 MIN_PYTHON = (3, 11)
@@ -256,6 +258,7 @@ class BasePlugin:
         self.groupmgt = None
         self.networkmap = None
         self.zigpy_topology = None
+        self.associated_devices_scan = None
         self.networkenergy = None
         self.domoticz_api = None
         self.domoticz_device_cache = None
@@ -680,6 +683,10 @@ class BasePlugin:
             self.log.logging("Plugin", "Log", "onStop called")
         else:
             Domoticz.Log("onStop()")
+
+        # A topology scan half collected is still worth keeping: file zigpy's
+        # tables now rather than lose a scan that took minutes.
+        _abandon_associated_devices_scan(self, "plugin is stopping")
 
         # Stop the DNS version-check worker and wait for it to exit.
         # Non-daemon threads must complete before the embedded interpreter tears down.
@@ -1173,7 +1180,10 @@ def retreive_zigpy_topology_data(self):
         return
 
     if self.zigpy_topology.ControllerLink.app is None:
-        # Radio is mid-restart (supervisor recovering from a comms failure); nothing to poll yet
+        # Radio is mid-restart (supervisor recovering from a comms failure); nothing to poll yet.
+        # File whatever a pending scan already has rather than hold it until the
+        # radio comes back -- the mesh it describes is the one before the restart.
+        _abandon_associated_devices_scan(self, "radio is restarting")
         return
 
     if self.zigpy_topology.is_zigpy_topology_in_progress():
@@ -1181,13 +1191,51 @@ def retreive_zigpy_topology_data(self):
         self.zigpy_topology.new_scan_detected = True
         return
 
+    if self.associated_devices_scan and self.associated_devices_scan.in_progress():
+        # Second half of the scan: zigpy is done, the plugin is collecting the
+        # Associated Devices table itself. The report is written when this ends.
+        if self.pairing_in_progress or self.busy:
+            # Same priority rule the topology scan follows in heartbeat.py:
+            # commissioning a device comes first.
+            return
+        self.associated_devices_scan.continue_scan()
+        return
+
     is_manual_scan = self.ListOfDevices["0000"].get("ZigpyTopologyRequested", False)
     if self.zigpy_topology.new_scan_detected and ( self.pluginconf.pluginConf["ZigpyTopologyReportAutoBackup"] or is_manual_scan):
         # Scan is completed. Time for a backup
-        self.zigpy_topology.save_topology_report()
         self.zigpy_topology.new_scan_detected = False
         self.ListOfDevices["0000"]["ZigpyTopologyRequested"] = False
+        self.zigpy_topology.prepare_topology_report()
+        if not _start_associated_devices_scan(self, is_manual_scan):
+            self.zigpy_topology.write_topology_report()
         return
+
+
+def _start_associated_devices_scan(self, is_manual_scan):
+    """Begin the second half of the scan. False when there is no second half.
+
+    An automatic scan only collects the table when the report is going to be
+    kept (ZigpyTopologyReportAutoBackup), so a periodic zigpy scan nobody asked
+    about does not spend minutes of ZDP on a report that is discarded.
+    """
+    if not self.pluginconf.pluginConf.get("ZigpyTopologyAssociatedDevices"):
+        return False
+
+    if self.associated_devices_scan is None:
+        return False
+
+    if not (is_manual_scan or self.pluginconf.pluginConf["ZigpyTopologyReportAutoBackup"]):
+        return False
+
+    return self.associated_devices_scan.start_scan()
+
+
+def _abandon_associated_devices_scan(self, reason):
+    if self.associated_devices_scan and self.associated_devices_scan.in_progress():
+        # abort() reports None, which makes write_topology_report() file the
+        # scan with zigpy's two tables and no Associated Devices section.
+        self.associated_devices_scan.abort(reason)
     
     # coordinator_data = self.ListOfDevices.get("0000", {})
     # if "ZigpyNeighbors" in coordinator_data and "ZigpyRoutes" in coordinator_data:
@@ -1522,6 +1570,17 @@ def zigateInit_Phase3(self):
             self.zigbee_communication ,self.pluginconf, self.ControllerLink, self.ListOfDevices, self.IEEE2NWK, self.DeviceConf, Devices, self.HardwareID, self.log, self.pairing_in_progress
         )
 
+    if self.associated_devices_scan is None and self.zigpy_topology:
+        # Second half of a zigpy topology scan. It hands its result straight to
+        # the report the first half left pending, which is why the write is
+        # injected as a callback rather than the collector reaching for
+        # ZigpyTopology itself.
+        self.associated_devices_scan = AssociatedDevicesScan(
+            self.pluginconf, self.ControllerLink, self.ListOfDevices, self.DeviceConf, self.log,
+            zdp_NWK_address_request,
+            on_completed=self.zigpy_topology.write_topology_report,
+        )
+
     if self.networkmap:
         self.webserver.update_networkmap(self.networkmap)
 
@@ -1529,6 +1588,11 @@ def zigateInit_Phase3(self):
         # So /plugin-health can say that a zigpy scan is running: the
         # NetworkMap phase it used to read never moves on a zigpy setup.
         self.webserver.update_zigpy_topology(self.zigpy_topology)
+
+    if self.associated_devices_scan:
+        # Same reason: the collection is the second half of that same scan, and
+        # /plugin-health must not report the scan as finished while it runs.
+        self.webserver.update_associated_devices_scan(self.associated_devices_scan)
 
     # Enable Over The Air Upgrade if applicable
     if self.OTA is None and self.pluginconf.pluginConf["allowOTA"]:

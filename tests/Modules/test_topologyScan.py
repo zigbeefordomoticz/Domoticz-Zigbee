@@ -915,3 +915,87 @@ def test_a_report_written_before_the_count_existed_still_reads_as_answered(tmp_p
 def test_zigpy_reporter_scan_status(neighbors_reported, relationships, expected):
     from Modules.topologyScan import zigpy_reporter_scan_status
     assert zigpy_reporter_scan_status(neighbors_reported, relationships) == expected
+# --- the Associated Devices table on a zigpy scan -------------------------
+#
+# zigpy collects neighbours and routes; the Associated Devices table is
+# collected by the plugin afterwards, and only when it is switched on. So the
+# zigpy source is the one backend whose `tables` is a property of the scan in
+# hand rather than of the backend.
+def zigpy_report_with_associated_devices(associated_devices):
+    report = zigpy_report()
+    report[0]["1711537200.123456"]["AssociatedDevices"] = associated_devices
+    return report
+
+
+@pytest.fixture
+def zigpy_plugin_with_associated_devices(tmp_path):
+    write_zigpy_report(tmp_path, zigpy_report_with_associated_devices({
+        "0000": ["c6ca", "1a2b"],
+        "1a2b": [],
+    }))
+    return FakePlugin(tmp_path, list_of_devices(), zigpy_report=True)
+
+
+def test_a_zigpy_scan_without_the_section_does_not_claim_the_table(zigpy_plugin):
+    """Every report written before the collection existed, and every scan run
+    with it off. Claiming the table would say those routers have no children."""
+    scan = get_topology_scan(zigpy_plugin, 1711537200)
+
+    assert scan["tables"] == ["neighbours", "routes"]
+    assert node(scan, "0000")["associated_devices"] is None
+
+
+def test_a_zigpy_scan_with_the_section_claims_the_table(zigpy_plugin_with_associated_devices):
+    scan = get_topology_scan(zigpy_plugin_with_associated_devices, 1711537200)
+
+    assert scan["tables"] == ["neighbours", "routes", "associated_devices"]
+    assert node(scan, "0000")["associated_devices"] == ["1a2b", "c6ca"]
+
+
+def test_a_node_that_reported_no_child_is_distinguished_from_one_never_asked(
+    zigpy_plugin_with_associated_devices,
+):
+    scan = get_topology_scan(zigpy_plugin_with_associated_devices, 1711537200)
+
+    # Asked, answered, parents nobody.
+    assert node(scan, "1a2b")["associated_devices"] == []
+    # Never asked -- an end device is not asked at all. It reads as empty too,
+    # which is the known limit of a flat table: the per-node answer is not
+    # recorded, only the children. scan_status covers the neighbour request.
+    assert node(scan, "c6ca")["associated_devices"] == []
+
+
+def test_an_empty_associated_devices_section_still_claims_the_table(tmp_path):
+    """A collection that ran and found no child anywhere: the table was asked
+    for, so it is listed, and that is the whole point of listing it."""
+    write_zigpy_report(tmp_path, zigpy_report_with_associated_devices({}))
+    plugin = FakePlugin(tmp_path, list_of_devices(), zigpy_report=True)
+
+    scan = get_topology_scan(plugin, 1711537200)
+    assert scan["tables"] == ["neighbours", "routes", "associated_devices"]
+    assert node(scan, "0000")["associated_devices"] == []
+
+
+def test_associated_devices_are_deduplicated_and_sorted(tmp_path):
+    write_zigpy_report(tmp_path, zigpy_report_with_associated_devices({
+        "0000": ["c6ca", "1a2b", "c6ca"],
+    }))
+    plugin = FakePlugin(tmp_path, list_of_devices(), zigpy_report=True)
+
+    assert node(get_topology_scan(plugin, 1711537200), "0000")["associated_devices"] == ["1a2b", "c6ca"]
+
+
+def test_a_malformed_associated_devices_entry_is_ignored(tmp_path):
+    """The report file is read back off disk and is not trusted to be well shaped."""
+    write_zigpy_report(tmp_path, zigpy_report_with_associated_devices({
+        "0000": ["1a2b", None, 42, {"nwkid": "c6ca"}],
+    }))
+    plugin = FakePlugin(tmp_path, list_of_devices(), zigpy_report=True)
+
+    assert node(get_topology_scan(plugin, 1711537200), "0000")["associated_devices"] == ["1a2b"]
+
+
+def test_the_listing_reports_the_associated_devices_table(zigpy_plugin_with_associated_devices):
+    summaries = list_topology_scans(zigpy_plugin_with_associated_devices)
+
+    assert summaries[0]["tables"] == ["neighbours", "routes", "associated_devices"]

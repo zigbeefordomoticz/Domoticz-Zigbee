@@ -191,6 +191,7 @@ class WebServer(object):
         self.networkmap = None
         self.networkenergy = None
         self.zigpy_topology = None
+        self.associated_devices_scan = None
         self.configureReporting = None
         self.transport = transport
 
@@ -252,6 +253,9 @@ class WebServer(object):
 
     def update_zigpy_topology(self, zigpy_topology):
         self.zigpy_topology = zigpy_topology
+
+    def update_associated_devices_scan(self, associated_devices_scan):
+        self.associated_devices_scan = associated_devices_scan
 
     def update_configureReporting(self,configureReporting ):
         self.configureReporting = configureReporting
@@ -1639,9 +1643,18 @@ def topology_scan_in_progress(self):
 
     A zigpy scan's own state lives on the controller application, which is
     absent until the transport is up and on a native setup altogether, hence
-    the two guards rather than one.
+    the separate guards rather than one.
+
+    The Associated Devices collection needs a guard of its own, and it has to
+    come before the controller is asked: it runs *after* zigpy's half of the
+    scan, so by then is_zigpy_topology_in_progress() is already False while the
+    scan as a whole is not finished and nothing has been filed yet. Asking
+    zigpy alone reported the scan as done for the last minutes of every scan.
     """
     if self.networkmap and self.networkmap.NetworkMapPhase():
+        return True
+
+    if self.associated_devices_scan and self.associated_devices_scan.in_progress():
         return True
 
     if self.zigbee_communication != "zigpy" or not self.zigpy_topology:
