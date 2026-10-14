@@ -171,12 +171,15 @@ def active_topology_source(self):
 
 
 def source_priority(self):
-    """Source lookup order: the active backend first.
+    """Lookup order when fetching one scan by id: the active backend first.
 
     A single scan can end up in two backends at once -- NetworkMap.finish_scan()
     always fills the TopologyV2 tables, and only the legacy file write is gated
     on the TopologyV2 setting. Reporting the same timestamp twice would be
     noise, so the backend the plugin is actually running wins.
+
+    Only get_topology_scan() walks this list. The listing is narrower: see
+    list_topology_scans().
     """
     active = active_topology_source(self)
     return [active] + [x for x in (SOURCE_ZIGPY, SOURCE_TOPOLOGY_V2, SOURCE_LEGACY) if x != active]
@@ -189,20 +192,33 @@ def topology_scan_in_progress(self):
 
 
 def list_topology_scans(self):
-    """Summary of every stored scan, oldest first.
+    """Summary of the active backend's stored scans, oldest first.
 
-    Reports from a backend that is no longer the active one are listed too: a
-    setup switched from legacy to zigpy keeps its old reports readable, which is
-    why `source` is a per-scan property and not a per-plugin one.
+    Only the backend the plugin is currently running, because an inactive one
+    does not hold scans so much as residue. The TopologyV2 tables are the case
+    that matters: there is no report file to enumerate, so a scan is inferred
+    from the distinct `Time` values found across every device's Neighbours,
+    RoutingTable and AssociatedDevices lists. Those entries are created empty by
+    start_new_table_scan() and filled by finish_scan(), are pruned per device
+    per table rather than per scan, and are written by code paths that are not
+    a topology scan at all. On a zigpy setup -- where rest_req_topologie() sends
+    ZIGPY-TOPOLOGY-SCAN and never calls networkmap.start_scan() -- enumerating
+    them produced a listing of scans that were never run, several of them with
+    no neighbour row in them, interleaved with the two real zigpy reports.
+
+    So `source` stays a per-scan property, and a scan written by another backend
+    is still fetched by get_topology_scan() when its timestamp is asked for. It
+    is the enumeration that was never trustworthy, not the scan.
     """
     summaries = []
     seen = set()
-    for source in source_priority(self):
-        for scan in iter_topology_scans(self, source=source):
-            if scan["timestamp"] in seen:
-                continue
-            seen.add(scan["timestamp"])
-            summaries.append(summarize_topology_scan(scan))
+    # One source, but still deduplicated: two zigpy report entries whose float
+    # timestamps truncate to the same second are one scan id.
+    for scan in iter_topology_scans(self, source=active_topology_source(self)):
+        if scan["timestamp"] in seen:
+            continue
+        seen.add(scan["timestamp"])
+        summaries.append(summarize_topology_scan(scan))
 
     return sorted(summaries, key=lambda summary: summary["timestamp"])
 
@@ -260,10 +276,18 @@ def delete_topology_scan(self, timestamp):
 
 
 def delete_all_topology_scans(self):
-    """Remove every stored scan. A scan in progress is not stored yet, so it stays."""
+    """Remove every stored scan, from every backend.
+
+    A scan in progress is not stored yet, so it stays.
+
+    Deliberately not driven by list_topology_scans(), which enumerates only the
+    active backend: "delete every scan" has to reach the inactive ones too, or
+    the residue that listing stopped showing would be left behind with nothing
+    able to clear it.
+    """
     removed = set()
-    for summary in list_topology_scans(self):
-        removed.update(delete_topology_scan(self, summary["timestamp"]))
+    for timestamp in sorted({scan["timestamp"] for scan in iter_topology_scans(self)}):
+        removed.update(delete_topology_scan(self, timestamp))
     return sorted(removed)
 
 

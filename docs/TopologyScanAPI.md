@@ -56,9 +56,25 @@ and tells you honestly which one produced each scan:
 | `topologyv2` | `Modules/zb_tables_management.py`, tables inside the device database |
 | `legacy` | `Classes/NetworkMap.py`, report file `NetworkTopology-v3-XX.json` |
 
-`source` is a property **of the scan, not of the plugin**. A setup switched from
-legacy to zigpy keeps its old reports readable, so one listing can mix sources.
-Do not cache "this installation is a zigpy installation" off one scan.
+`source` is a property **of the scan, not of the plugin**: do not cache "this
+installation is a zigpy installation" off one scan.
+
+**The listing holds one source at a time** — the backend the plugin is currently
+running. An inactive backend is not enumerated, because it does not hold scans
+so much as residue. TopologyV2 is the case that forced this: it has no report
+file, so a scan has to be inferred from the distinct `Time` values left across
+every device's `Neighbours`, `RoutingTable` and `AssociatedDevices` lists. Those
+entries are created empty by `start_new_table_scan()` and only filled by
+`finish_scan()`, are pruned per device per table rather than per scan, and are
+written by code paths that are not a topology scan at all. On a zigpy setup —
+where `/req-topologie` sends `ZIGPY-TOPOLOGY-SCAN` and never starts a NetworkMap
+scan — enumerating them listed scans that had never been run, several with no
+neighbour row in them, interleaved with the real zigpy reports.
+
+Not listed is not gone. `GET /topology-scan/<timestamp>` still answers a scan
+written by any backend, so a report on disk from a setup's previous backend
+stays readable by id, and `DELETE /topology-scan` still clears every backend. It
+was the enumeration that was never trustworthy, not the scan.
 
 ### 2.3 `tables` — what that backend can collect
 
@@ -130,7 +146,8 @@ The report list. Enough to label each entry without fetching it.
 | `scan` | the same object as in the full scan, §5 |
 
 Ordered **oldest first**. `[]` when nothing is stored. A scan still being
-collected is not listed; it appears once it finishes.
+collected is not listed; it appears once it finishes. Only the active backend's
+scans are listed, so every entry carries the same `source` — see §2.2.
 
 ---
 
@@ -384,6 +401,10 @@ shape is an internal detail and may change without notice.
 `sources` lists the backends the scan was removed from. It can hold more than one
 entry: a single scan is sometimes written by two backends at once, and all copies
 are removed, so a re-list never brings the report back.
+
+Both deletes reach **every** backend, not only the listed one. `DELETE
+/topology-scan` is the way to clear an inactive backend's leftovers, which §2.2
+no longer enumerates.
 
 `404` for an unknown timestamp. `400` when the timestamp belongs to a scan still
 being collected — it cannot be deleted until it finishes.
