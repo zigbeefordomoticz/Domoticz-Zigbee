@@ -1543,7 +1543,7 @@ def zigateInit_Phase3(self):
         # injected as a callback rather than the collector reaching for
         # ZigpyTopology itself.
         self.associated_devices_scan = AssociatedDevicesScan(
-            self.pluginconf, self.ControllerLink, self.ListOfDevices, self.DeviceConf, self.log,
+            self.zigbee_communication, self.pluginconf, self.ControllerLink, self.ListOfDevices, self.DeviceConf, self.log,
             zdp_NWK_address_request,
             on_completed=self.zigpy_topology.write_topology_report,
         )
