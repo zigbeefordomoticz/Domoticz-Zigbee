@@ -19,8 +19,10 @@ import json
 
 import pytest
 
-from Modules.topologyScan import (SOURCE_LEGACY, SOURCE_TOPOLOGY_V2,
-                                  SOURCE_ZIGPY, as_int, canonical,
+from Modules.topologyScan import (SCAN_NOT_SUPPORTED, SCAN_OK, SCAN_TIMEOUT,
+                                  SOURCE_LEGACY, SOURCE_TOPOLOGY_V2,
+                                  SOURCE_ZIGPY, as_int,
+                                  associated_devices_scan_status, canonical,
                                   delete_topology_scan, get_topology_scan,
                                   list_topology_scans, read_json_file,
                                   value_or_none)
@@ -942,3 +944,26 @@ def test_the_listing_shows_a_standalone_collection_beside_a_full_scan(tmp_path):
         ["neighbours", "routes"],
         ["associated_devices"],
     ]
+
+
+# ---------------------------------------------------------------------------
+# associated_devices_scan_status - not_supported survives the way out
+# ---------------------------------------------------------------------------
+def test_associated_devices_outcome_keeps_not_supported():
+    """A node that answered without a list is a permanent gap, not a timeout."""
+    status = associated_devices_scan_status({
+        "AssociatedDevicesScan": {"1111": "ok", "2222": "timeout", "3333": "not_supported"},
+    })
+    assert status == {
+        "1111": SCAN_OK,
+        "2222": SCAN_TIMEOUT,
+        "3333": SCAN_NOT_SUPPORTED,
+    }
+
+
+def test_associated_devices_outcome_falls_back_to_timeout():
+    """An older or unknown spelling reads as "not in the table, reason unknown"."""
+    status = associated_devices_scan_status({
+        "AssociatedDevicesScan": {"1111": "Received", "2222": ""},
+    })
+    assert status == {"1111": SCAN_TIMEOUT, "2222": SCAN_TIMEOUT}

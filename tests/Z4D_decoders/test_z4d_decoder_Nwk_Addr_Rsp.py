@@ -78,3 +78,48 @@ class TestDecode8040:
         plugin.log.logging.reset_mock()
         mod.Decode8040(plugin, {}, _msg(ieee="ffffffffffffffff"), LQI)
         assert any(c.args[1] == "Error" for c in plugin.log.logging.call_args_list)
+
+    # ------------------------------------------------------------------
+    # Telling an Associated Devices collection that an answer carried no list
+    # ------------------------------------------------------------------
+    # Both of these replies are answers, and both used to be dropped before the
+    # collector heard them, so a live router that cannot produce an associated
+    # device list was filed as a timeout.
+
+    def test_non_zero_status_notifies_the_collection(self, mod, plugin, monkeypatch):
+        """INV_REQUESTTYPE is what a stack with no extended response answers."""
+        notify = MagicMock()
+        monkeypatch.setattr(mod, "notify_associated_devices_no_list", notify)
+        mod.Decode8040(plugin, {}, _msg(status="80"), LQI)
+
+        notify.assert_called_once()
+        assert notify.call_args.args[1] == DEV_IEEE, "matched on the IEEE asked"
+        assert "80" in notify.call_args.args[2]
+
+    def test_single_device_response_notifies_the_collection(self, mod, plugin, monkeypatch):
+        """Status 00, address only: no NumAssocDev, no StartIndex, no list."""
+        plugin.ListOfDevices = {}
+        plugin.IEEE2NWK = {}
+        monkeypatch.setattr(mod, "DeviceExist", MagicMock(return_value=False))
+        notify = MagicMock()
+        monkeypatch.setattr(mod, "notify_associated_devices_no_list", notify)
+        mod.Decode8040(plugin, {}, _msg(), LQI)
+
+        notify.assert_called_once()
+        assert notify.call_args.args[1] == DEV_IEEE
+        assert notify.call_args.kwargs["nwkid"] == DEV_NWKID
+
+    def test_an_extended_response_does_not_notify_no_list(self, mod, plugin, monkeypatch):
+        """It carries a list, so it goes to response_received() instead."""
+        plugin.ListOfDevices = {}
+        plugin.IEEE2NWK = {}
+        monkeypatch.setattr(mod, "DeviceExist", MagicMock(return_value=False))
+        monkeypatch.setattr(mod, "Network_Address_response_request_next_index", MagicMock())
+        notify = MagicMock()
+        monkeypatch.setattr(mod, "notify_associated_devices_no_list", notify)
+        scan = MagicMock()
+        monkeypatch.setattr(mod, "notify_associated_devices_scan", scan)
+        mod.Decode8040(plugin, {}, _msg(extra="01" + "00" + "abcd"), LQI)
+
+        notify.assert_not_called()
+        scan.assert_called_once()

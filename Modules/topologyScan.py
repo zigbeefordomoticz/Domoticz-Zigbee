@@ -429,6 +429,13 @@ def build_zigpy_scan(self, timestamp, report):
     )
 
 
+# What a collection is allowed to say about a node. Anything else a report holds
+# -- an older spelling, or a value from a future version -- reads as a timeout,
+# which is the honest answer for "this node is not in the table and this plugin
+# cannot tell you why".
+_ASSOCIATED_DEVICES_OUTCOMES = (SCAN_OK, SCAN_TIMEOUT, SCAN_NOT_SUPPORTED)
+
+
 def associated_devices_scan_status(report):
     """Per-node outcome of an Associated Devices collection, from its own section.
 
@@ -436,12 +443,18 @@ def associated_devices_scan_status(report):
     `AssociatedDevices` table itself cannot say: it is flat, so a node asked
     that timed out and a router that answered "no children" are both an empty
     list.
+
+    not_supported is kept distinct from timeout on the way out. A node that
+    answered the request without a list -- a stack with no extended address
+    response -- will never be in this table, while a timeout may well be in the
+    next scan, and build_scan_statistics() deliberately leaves the first out of
+    `requested` so permanent gaps do not depress the coverage figure forever.
     """
     outcome = report.get("AssociatedDevicesScan") or {}
     if not isinstance(outcome, Mapping):
         return {}
     return {
-        nwkid: SCAN_OK if status == SCAN_OK else SCAN_TIMEOUT
+        nwkid: status if status in _ASSOCIATED_DEVICES_OUTCOMES else SCAN_TIMEOUT
         for nwkid, status in outcome.items()
         if isinstance(nwkid, str)
     }
