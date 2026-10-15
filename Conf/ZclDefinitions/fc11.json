@@ -3,7 +3,6 @@
     "Description": "Sonoff Manufacturer ",
     "Version": "1",
     "Enabled": true,
-    "ManufSpecificCluster": "schneider_touch_screen_cluster",
     "Attributes": {
         "0001": { "Enabled": true, "Name": "network_led", "DataType": "10", "ActionList": [ "check_store_value" ] },
         "0002": { "Enabled": true, "Name": "backlight", "DataType": "10", "ActionList": [ "check_store_value" ] },
