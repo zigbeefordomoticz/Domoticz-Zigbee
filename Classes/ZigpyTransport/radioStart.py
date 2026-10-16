@@ -251,6 +251,22 @@ async def radio_start(
 # Per-radio configuration builders
 # ---------------------------------------------------------------------------
 
+def _configured_tx_power(self):
+    """Returns the TX power in dBm set in TXpower_set, or None to keep the radio's own.
+
+    TXpower_set defaults to 0, which means "not set": passing it on would force
+    0 dBm at every start, where zigpy's own default (None) leaves the radio alone.
+    """
+    value = self.pluginconf.pluginConf.get("TXpower_set")
+    try:
+        tx_power = int(value)
+    except (TypeError, ValueError):
+        if value not in (None, ""):
+            self.log.logging("TransportZigpy", "Error", f"++ TX Power {value!r} is not a number, keeping the radio's own")
+        return None
+    return tx_power or None
+
+
 def ezsp_configuration_setup(self, bellows_conf, serialPort, serial_specifics):
     """Returns the configuration dict for an EZSP (Bellows/Silicon Labs) coordinator."""
     flow_control = serial_specifics.get("FlowControl", None)
@@ -281,8 +297,8 @@ def ezsp_configuration_setup(self, bellows_conf, serialPort, serial_specifics):
                          "Coordinater will support to 0")
         config[bellows_conf.CONF_EZSP_CONFIG]["CONFIG_MAX_END_DEVICE_CHILDREN"] = 0
 
-    if self.pluginconf.pluginConf.get("TXpower_set") is not None:
-        tx_power = int(self.pluginconf.pluginConf["TXpower_set"])
+    tx_power = _configured_tx_power(self)
+    if tx_power is not None:
         self.log.logging("TransportZigpy", "Status", f"++ Setting TX Power to {tx_power} dBm")
         config[bellows_conf.CONF_EZSP_CONFIG]["CONFIG_TX_POWER_MODE"] = 0x3
         self.log.logging("TransportZigpy", "Status",
@@ -305,8 +321,8 @@ def znp_configuration_setup(self, znp_conf, serialPort, serial_specifics):
         zigpy.config.CONF_OTA: {},
     }
 
-    if self.pluginconf.pluginConf.get("TXpower_set") is not None:
-        tx_power = int(self.pluginconf.pluginConf["TXpower_set"])
+    tx_power = _configured_tx_power(self)
+    if tx_power is not None:
         config[znp_conf.CONF_ZNP_CONFIG]["tx_power"] = tx_power
         config[zigpy.config.CONF_NWK][zigpy.config.CONF_NWK_TX_POWER] = tx_power
 
@@ -357,10 +373,9 @@ def optional_configuration_setup(self, config, radio_conf, set_extendedPanId, se
     if set_channel != 0:
         config[zigpy.config.CONF_NWK][zigpy.config.CONF_NWK_CHANNEL] = set_channel
     
-    if self.pluginconf.pluginConf.get("TXpower_set") is not None:
-        config[zigpy.config.CONF_NWK][zigpy.config.CONF_NWK_TX_POWER] = int(
-            self.pluginconf.pluginConf["TXpower_set"]
-        )
+    tx_power = _configured_tx_power(self)
+    if tx_power is not None:
+        config[zigpy.config.CONF_NWK][zigpy.config.CONF_NWK_TX_POWER] = tx_power
 
     config[zigpy.config.CONF_SOURCE_ROUTING] = bool(self.pluginconf.pluginConf["zigpySourceRouting"])
     config[zigpy.config.CONF_OTA][zigpy.config.CONF_OTA_ENABLED] = False
