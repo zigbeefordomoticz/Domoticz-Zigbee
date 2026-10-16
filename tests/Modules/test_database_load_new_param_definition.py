@@ -138,5 +138,10 @@ def test_polling_globals_set_by_the_user_still_apply(results):
     assert res["3333"]["Param"]["AC201Polling"] == 1200
 
 
+def test_power_on_after_off_on_is_matched_by_name_only(results):
+    res = results["polling_globals_default"]
+    assert res["1111"]["Param"]["OffOn"] == 7
+
+
 def test_existing_param_is_not_overwritten(results):
     assert results["existing_param_kept"]["1111"]["Param"] == {"OnOffPollingFreq": 42, "OffOn": 3}
