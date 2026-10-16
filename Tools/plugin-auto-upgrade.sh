@@ -38,6 +38,35 @@ cleanup_venv_full() {
 }
 
 
+check_venv_from_python3() {
+    #
+    # 3) Last resort: python3 found in PATH runs from a venv
+    #
+    # A venv can be enabled by PATH alone, with neither VIRTUAL_ENV nor PYTHONPATH set:
+    # the official Domoticz Docker image does it with /opt/venv, and any other location
+    # works the same way. Domoticz resolves its embedded Python from PATH as well, so this
+    # venv is the one the plugin imports its modules from.
+    local prefix
+    prefix=$(python3 -c 'import sys; print(sys.prefix if sys.prefix != sys.base_prefix else "")' 2>/dev/null)
+    if [ -z "$prefix" ]; then
+        echo "[check_venv] python3 in PATH is not running from a venv."
+        return
+    fi
+    prefix="${prefix%/}"
+    if [ ! -f "$prefix/pyvenv.cfg" ] || [ ! -f "$prefix/bin/activate" ]; then
+        echo "[check_venv] python3 in PATH runs from '$prefix', but it has no pyvenv.cfg or bin/activate."
+        return
+    fi
+
+    VENV=true
+    VENV_VERSION="V2"
+    VENV_ROOT="$prefix"
+    # Hand the venv over to plugin-auto-upgrade-v2.sh, which only looks at VIRTUAL_ENV.
+    export VIRTUAL_ENV="$VENV_ROOT"
+    echo "[check_venv] Detected virtualenv of python3 in PATH (V2)"
+    echo "[check_venv] Venv root set to '$VENV_ROOT'"
+}
+
 check_venv() {
     # Initialize defaults
     VENV=false
@@ -65,6 +94,7 @@ check_venv() {
     # Return if PYTHONPATH is empty
     if [ -z "$PYTHONPATH" ]; then
         echo "[check_venv] PYTHONPATH is empty or not set."
+        check_venv_from_python3
         return
     fi
 
@@ -103,6 +133,7 @@ check_venv() {
 
     if [ "$VENV" = false ]; then
         echo "[check_venv] No valid venv detected in PYTHONPATH."
+        check_venv_from_python3
     fi
 
     # Export for external use
