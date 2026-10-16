@@ -204,6 +204,37 @@ SWITCH_SELECTORS = {
             }
         }
     },
+    "Button_4": {
+        # Four press types reported in a single value: Click, Double, Triple, Long.
+        # For remotes that report all of them on one attribute, e.g. the Sonoff
+        # SNZB-01M on fc12/0000.
+        # Keys are given as both int and str: a uint8 attribute decodes to an int,
+        # while other sources hand over a str.
+        # The level order here is not any particular device's raw value order - a
+        # device configuration maps its own values onto these levels with
+        # DecodedValueList.
+        "00": (0, "00"),
+        1: (1, "10"),
+        "1": (1, "10"),
+        "01": (1, "10"),
+        2: (2, "20"),
+        "2": (2, "20"),
+        "02": (2, "20"),
+        3: (3, "30"),
+        "3": (3, "30"),
+        "03": (3, "30"),
+        4: (4, "40"),
+        "4": (4, "40"),
+        "04": (4, "40"),
+        "ForceUpdate": True,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|Click|Double Click|Triple Click|Long Click",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Click|Double Click|Triple Click|Long Click"
+            }
+        }
+    },
     "CAC221ACMode": {
         "00": (0, "00"),
         "01": (1, "10"),
