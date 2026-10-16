@@ -124,5 +124,19 @@ def test_device_without_manufacturer_does_not_stop_the_loop(results):
     assert res["bbbb"]["CheckParam"] is True
 
 
+def test_default_polling_globals_keep_the_certified_value(results):
+    res = results["polling_globals_default"]
+    assert res["1111"]["Param"]["OnOffPollingFreq"] == 300
+    assert res["2222"]["Param"]["PowerPollingFreq"] == 300
+    assert res["3333"]["Param"]["AC201Polling"] == 300
+
+
+def test_polling_globals_set_by_the_user_still_apply(results):
+    res = results["polling_globals_set"]
+    assert res["1111"]["Param"]["OnOffPollingFreq"] == 600
+    assert res["2222"]["Param"]["PowerPollingFreq"] == 900
+    assert res["3333"]["Param"]["AC201Polling"] == 1200
+
+
 def test_existing_param_is_not_overwritten(results):
     assert results["existing_param_kept"]["1111"]["Param"] == {"OnOffPollingFreq": 42, "OffOn": 3}
