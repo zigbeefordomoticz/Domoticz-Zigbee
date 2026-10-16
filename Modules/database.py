@@ -1053,7 +1053,7 @@ def load_new_param_definition(self):
                 
             if param in ("PowerOnAfterOffOn"):
                 if "Manufacturer" not in self.ListOfDevices[key]:
-                    return
+                    continue
                 if self.ListOfDevices[key]["Manufacturer"] == "100b":  # Philips
                     self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf["PhilipsPowerOnAfterOffOn"]
 
@@ -1079,7 +1079,7 @@ def load_new_param_definition(self):
                 if "Manufacturer Name" in self.ListOfDevices[key]:
                     devManufName = self.ListOfDevices[key]["Manufacturer Name"]
                 if devManufCode == devManufName == "":
-                    return
+                    continue
 
                 plugin_generic_param = None
                 if devManufCode in POLLING_TABLE_SPECIFICS:
@@ -1088,7 +1088,7 @@ def load_new_param_definition(self):
                     plugin_generic_param = POLLING_TABLE_SPECIFICS[devManufName]
 
                 if plugin_generic_param is None:
-                    return False
+                    continue
                 self.log.logging("Database", "Log","--->PluginConf %s <-- %s" % (param, plugin_generic_param))
                 self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf[plugin_generic_param]
 
@@ -1105,7 +1105,7 @@ def load_new_param_definition(self):
                 if "Manufacturer Name" in self.ListOfDevices[key]:
                     devManufName = self.ListOfDevices[key]["Manufacturer Name"]
                 if devManufCode == devManufName == "":
-                    return
+                    continue
 
                 plugin_generic_param = None
                 if devManufCode in POLLING_TABLE_SPECIFICS:
@@ -1114,7 +1114,7 @@ def load_new_param_definition(self):
                     plugin_generic_param = POLLING_TABLE_SPECIFICS[devManufName]
 
                 if plugin_generic_param is None:
-                    return False
+                    continue
                 self.log.logging("Database", "Log","--->PluginConf %s <-- %s" % (param, plugin_generic_param))
                 self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf[plugin_generic_param]
 
@@ -1130,7 +1130,7 @@ def load_new_param_definition(self):
                 if "Manufacturer Name" in self.ListOfDevices[key]:
                     devManufName = self.ListOfDevices[key]["Manufacturer Name"]
                 if devManufCode == devManufName == "":
-                    return
+                    continue
 
                 plugin_generic_param = None
                 if devManufCode in POLLING_TABLE_SPECIFICS:
@@ -1139,7 +1139,7 @@ def load_new_param_definition(self):
                     plugin_generic_param = POLLING_TABLE_SPECIFICS[devManufName]
 
                 if plugin_generic_param is None:
-                    return False
+                    continue
                 self.log.logging("Database", "Log","--->PluginConf %s <-- %s" % (param, plugin_generic_param))
                 self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf[plugin_generic_param]
 
