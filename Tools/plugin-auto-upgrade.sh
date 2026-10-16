@@ -9,6 +9,13 @@ cleanup_venv_full() {
         return 1
     fi
 
+    # VENV_ROOT is derived from PYTHONPATH: only a real venv root may be emptied, never
+    # a system prefix such as /usr/local or a data folder such as /opt/domoticz/userdata.
+    if [[ ! -f "$VENV_ROOT/pyvenv.cfg" ]]; then
+        echo "Warning: '$VENV_ROOT' has no pyvenv.cfg, it is not a virtual environment. Skipping cleanup."
+        return 1
+    fi
+
     echo "Starting full cleanup in $VENV_ROOT..."
 
     # Keep these core folders/files
