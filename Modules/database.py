@@ -1053,7 +1053,7 @@ def load_new_param_definition(self):
             if param == "Disabled" and "Disabled" in self.ListOfDevices[key]["Param"] and self.ListOfDevices[key]["Param"][ "Disabled" ]:
                 self.ListOfDevices[key]["Health"] = "Disabled"
                 
-            if param in ("PowerOnAfterOffOn"):
+            if param == "PowerOnAfterOffOn":
                 if "Manufacturer" not in self.ListOfDevices[key]:
                     continue
                 if self.ListOfDevices[key]["Manufacturer"] == "100b":  # Philips
