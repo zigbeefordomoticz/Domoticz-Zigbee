@@ -44,6 +44,15 @@ POWER_LEVEL = {0: 00, 1: 52, 2: 40, 3: 32}  # Max (Default)  #  #  # Min
 def set_TxPower(self, powerlevel):
 
     if self.zigbee_communication == "zigpy":
+        try:
+            powerlevel = int(powerlevel)
+        except (TypeError, ValueError):
+            powerlevel = 0
+        if powerlevel == 0:
+            # 0 means "keep the radio's own TX power" (see radioStart._configured_tx_power):
+            # there is no value to send, the plugin stops setting it from the next start.
+            self.log.logging("Plugin", "Status", "TX Power 0: the plugin no longer sets the radio TX power, from the next restart")
+            return None
         if powerlevel < -22:
             powerlevel = -22
         elif powerlevel > 22:
