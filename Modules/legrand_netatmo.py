@@ -153,6 +153,38 @@ def legrandReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
         send_legrand_command(self, Sqn, srcNWKID, srcEp, ClusterID, "10", status + _code + _ieee)
 
 
+def legrand_remote_group_endpoint(self, NwkId, Ep, leftright):
+    """
+    Endpoint to record as the group member for one gang of a Legrand remote.
+
+    A remote sends every fc01 frame from endpoint 01, whatever gang was pressed, and
+    identifies the gang with the leftright byte instead. The commands a gang emits
+    come from its own endpoint though: gang 01 from endpoint 01, gang 02 from
+    endpoint 02, both observed on cluster 0006. Group membership has to follow the
+    endpoint that emits the commands rather than the one that carried the pairing
+    frame, because ListOfDevices[NwkId]["GroupMemberShip"] is keyed by endpoint and
+    checkAndTriggerIfMajGroupNeeded() looks the group up by it.
+
+    leftright carries the same two digit form as an endpoint, so it is used as one,
+    but only once the device is known to expose it: a remote that declares a single
+    endpoint keeps Ep, as does the single gang case where there is no leftright byte
+    at all.
+    """
+    if not leftright:
+        return Ep
+
+    if leftright not in self.ListOfDevices.get(NwkId, {}).get("Ep", {}):
+        self.log.logging(
+            "Legrand", "Debug",
+            "legrand_remote_group_endpoint - %s leftright: %s is not an endpoint of this device, keeping Ep: %s" % (
+                NwkId, leftright, Ep),
+            NwkId,
+        )
+        return Ep
+
+    return leftright
+
+
 def assign_group_membership_to_legrand_remote(self, NwkId, Ep, leftright=None):
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cmd = "08"
@@ -162,7 +194,9 @@ def assign_group_membership_to_legrand_remote(self, NwkId, Ep, leftright=None):
             "Legrand", "Debug", "assign_group_membership_to_legrand_remote %s lefright: %s" % (NwkId, leftright)
         )
 
-    groupid = get_groupid_for_remote(self, NwkId, Ep, leftright)
+    # The membership endpoint identifies the gang; Ep below stays the endpoint the
+    # fc01 command is sent to, as fc01 is only present on endpoint 01.
+    groupid = get_groupid_for_remote(self, NwkId, legrand_remote_group_endpoint(self, NwkId, Ep, leftright), leftright)
     if groupid:
         LegrandGroupMemberShip = "%04x" % struct.unpack("H", struct.pack(">H", int(groupid, 16)))[0]
         if leftright:
@@ -172,6 +206,12 @@ def assign_group_membership_to_legrand_remote(self, NwkId, Ep, leftright=None):
 
 
 def get_groupid_for_remote(self, NwkId, Ep, leftright):
+    """
+    Group id reserved for one gang of a Legrand remote, allocating it on first use.
+
+    Ep is the endpoint to record the membership against, as resolved by
+    legrand_remote_group_endpoint(), not the endpoint the fc01 command is sent to.
+    """
     GroupId = None
     if "Legrand" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["Legrand"] = {}

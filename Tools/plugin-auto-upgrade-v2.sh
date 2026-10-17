@@ -11,6 +11,7 @@ echo "----------------------------------------------------"
 # Initialize globals
 VENV_PATH=""
 VENV_ACTIVATED=false
+PKG_MANAGER=""
 PYTHON_VERSION="python${1:-3}"
 PIP_OPTIONS="--no-input install -r requirements.txt --ignore-requires-python --upgrade"
 
@@ -39,42 +40,52 @@ detect_package_manager() {
     elif command -v yum >/dev/null 2>&1; then
         PKG_MANAGER="yum"
     else
-        echo "No supported package manager found (apt, dnf, yum). Install Python manually."
-        exit 1
+        PKG_MANAGER=""
+        echo "No supported package manager found (apt, dnf, yum)."
+        return 0
     fi
     echo "Detected package manager: $PKG_MANAGER"
 }
 
+have_python_stack() {
+    # The upgrade itself only needs an interpreter able to create and use a venv.
+    # pip is handled further down by check_and_upgrade_pip()/install_pip().
+    command -v "$PYTHON_VERSION" >/dev/null 2>&1 \
+        && "$PYTHON_VERSION" -m venv --help >/dev/null 2>&1
+}
+
 install_packages() {
-    # Install python3, venv, pip
-    echo "Ensuring Python3, venv and pip are installed..."
-    if [ "$(whoami)" = "root" ]; then
-        case "$PKG_MANAGER" in
-            apt)
-                apt-get update
-                apt-get install -y python3 python3-venv python3-pip
-                ;;
-            dnf)
-                dnf install -y python3 python3-pip
-                ;;
-            yum)
-                yum install -y python3 python3-pip
-                ;;
-        esac
-    else
-        case "$PKG_MANAGER" in
-            apt)
-                sudo apt-get update
-                sudo apt-get install -y python3 python3-venv python3-pip
-                ;;
-            dnf)
-                sudo dnf install -y python3 python3-pip
-                ;;
-            yum)
-                sudo yum install -y python3 python3-pip
-                ;;
-        esac
+    # Install python3, venv and pip, but only on a system that is missing them.
+    if have_python_stack; then
+        echo "Python3 and venv already present ($("$PYTHON_VERSION" --version 2>&1)). Skipping OS package installation."
+        return 0
     fi
+
+    if [ -z "$PKG_MANAGER" ]; then
+        echo "Python3/venv are missing and no supported package manager is available. Install Python manually."
+        exit 1
+    fi
+
+    echo "Ensuring Python3, venv and pip are installed..."
+    SUDO=""
+    [ "$(whoami)" != "root" ] && SUDO="sudo"
+
+    case "$PKG_MANAGER" in
+        apt)
+            # A single broken or unreachable third-party repository is enough to
+            # make apt-get update exit non-zero. Refreshing the index is a best
+            # effort here, so do not let it abort the plugin upgrade.
+            $SUDO apt-get update \
+                || echo "Warning: apt-get update failed (unrelated repository?), continuing..."
+            $SUDO apt-get install -y python3 python3-venv python3-pip
+            ;;
+        dnf)
+            $SUDO dnf install -y python3 python3-pip
+            ;;
+        yum)
+            $SUDO yum install -y python3 python3-pip
+            ;;
+    esac
 }
 
 install_pip() {

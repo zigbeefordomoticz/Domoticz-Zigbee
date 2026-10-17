@@ -72,7 +72,7 @@ def make_transport():
         "autoBackup":                    None,
         "EzspAllowUnsecuredRejoins":     False,
         "BellowsNoMoreEndDeviceChildren": False,
-        "TXpower_set":                   None,
+        "TXpower_set":                   0,  # the PluginConf default
     }
     t.statistics = MagicMock()
     return t
@@ -194,6 +194,22 @@ class TestEzspConfigurationSetup(unittest.TestCase):
             10
         )
 
+    def test_tx_power_left_to_the_radio_by_default(self):
+        # TXpower_set defaults to 0: neither a TX power nor the boost mode is forced
+        from Classes.ZigpyTransport.radioStart import ezsp_configuration_setup
+        t = make_transport()
+        config = ezsp_configuration_setup(t, _make_radio_conf(), "/dev/ttyUSB0", {})
+        self.assertNotIn(_zc().CONF_NWK_TX_POWER, config[_zc().CONF_NWK])
+        self.assertNotIn("CONFIG_TX_POWER_MODE", config["ezsp_config"])
+
+    def test_negative_tx_power_is_kept(self):
+        from Classes.ZigpyTransport.radioStart import ezsp_configuration_setup
+        t = make_transport()
+        t.pluginconf.pluginConf["TXpower_set"] = "-5"
+        config = ezsp_configuration_setup(t, _make_radio_conf(), "/dev/ttyUSB0", {})
+        self.assertEqual(config[_zc().CONF_NWK][_zc().CONF_NWK_TX_POWER], -5)
+        self.assertEqual(config["ezsp_config"]["CONFIG_TX_POWER_MODE"], 0x3)
+
 
 # ===========================================================================
 # znp_configuration_setup
@@ -218,6 +234,13 @@ class TestZnpConfigurationSetup(unittest.TestCase):
         rc = _make_radio_conf()
         config = znp_configuration_setup(t, rc, "/dev/ttyUSB0", {})
         self.assertEqual(config["znp_config"]["tx_power"], 5)
+
+    def test_tx_power_left_to_the_radio_by_default(self):
+        from Classes.ZigpyTransport.radioStart import znp_configuration_setup
+        t = make_transport()
+        config = znp_configuration_setup(t, _make_radio_conf(), "/dev/ttyUSB0", {})
+        self.assertNotIn("tx_power", config["znp_config"])
+        self.assertNotIn(_zc().CONF_NWK_TX_POWER, config[_zc().CONF_NWK])
 
 
 # ===========================================================================
@@ -307,6 +330,30 @@ class TestOptionalConfigurationSetup(unittest.TestCase):
         rc = _make_radio_conf()
         optional_configuration_setup(t, config, rc, set_extendedPanId=0, set_channel=15)
         self.assertEqual(config[_zc().CONF_NWK][_zc().CONF_NWK_CHANNEL], 15)
+
+    def test_tx_power_not_set_by_default(self):
+        from Classes.ZigpyTransport.radioStart import optional_configuration_setup
+        t = make_transport()
+        config = self._base_config()
+        optional_configuration_setup(t, config, _make_radio_conf(), set_extendedPanId=0, set_channel=0)
+        self.assertNotIn(_zc().CONF_NWK_TX_POWER, config[_zc().CONF_NWK])
+
+    def test_tx_power_set_when_nonzero(self):
+        from Classes.ZigpyTransport.radioStart import optional_configuration_setup
+        t = make_transport()
+        t.pluginconf.pluginConf["TXpower_set"] = 7
+        config = self._base_config()
+        optional_configuration_setup(t, config, _make_radio_conf(), set_extendedPanId=0, set_channel=0)
+        self.assertEqual(config[_zc().CONF_NWK][_zc().CONF_NWK_TX_POWER], 7)
+
+    def test_tx_power_not_a_number_is_logged_and_left_to_the_radio(self):
+        from Classes.ZigpyTransport.radioStart import optional_configuration_setup
+        t = make_transport()
+        t.pluginconf.pluginConf["TXpower_set"] = "abc"
+        config = self._base_config()
+        optional_configuration_setup(t, config, _make_radio_conf(), set_extendedPanId=0, set_channel=0)
+        self.assertNotIn(_zc().CONF_NWK_TX_POWER, config[_zc().CONF_NWK])
+        self.assertIn("Error", [c.args[1] for c in t.log.logging.call_args_list])
 
     def test_channel_not_set_when_zero(self):
         from Classes.ZigpyTransport.radioStart import optional_configuration_setup

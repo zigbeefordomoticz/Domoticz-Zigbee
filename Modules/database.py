@@ -878,7 +878,9 @@ def CheckDeviceList(self, key, val):
                 self.log.logging("Database", "Status", "Z4D adjusts Model from %s to %s" % (
                     OldModel, self.ListOfDevices[key][attribute]))
 
-    self.ListOfDevices[key]["Health"] = ""
+    # A plugin start is no evidence of liveness: whatever was stored is stale until
+    # the device is heard from, or until checkHealth() rules on the persisted LastSeen.
+    self.ListOfDevices[key]["Health"] = "unknown"
 
     if "IEEE" in device_list_dict:
         self.ListOfDevices[key]["IEEE"] = device_list_dict["IEEE"]
@@ -1025,6 +1027,10 @@ def load_new_param_definition(self):
     - OnOffPollingFreq (manufacturer-specific polling)
     - AC201Polling (OWON/CASAIA specific)
     - Various Netatmo LED and control parameters
+
+    The polling overrides are hidden plugin-wide settings defaulting to 0. Only a
+    non-zero value replaces the certified one, so a Param filled here ends up as it
+    would have at pairing.
     """
     for key in self.ListOfDevices:
         if "Model" not in self.ListOfDevices[key]:
@@ -1049,9 +1055,9 @@ def load_new_param_definition(self):
             if param == "Disabled" and "Disabled" in self.ListOfDevices[key]["Param"] and self.ListOfDevices[key]["Param"][ "Disabled" ]:
                 self.ListOfDevices[key]["Health"] = "Disabled"
                 
-            if param in ("PowerOnAfterOffOn"):
+            if param == "PowerOnAfterOffOn":
                 if "Manufacturer" not in self.ListOfDevices[key]:
-                    return
+                    continue
                 if self.ListOfDevices[key]["Manufacturer"] == "100b":  # Philips
                     self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf["PhilipsPowerOnAfterOffOn"]
 
@@ -1077,7 +1083,7 @@ def load_new_param_definition(self):
                 if "Manufacturer Name" in self.ListOfDevices[key]:
                     devManufName = self.ListOfDevices[key]["Manufacturer Name"]
                 if devManufCode == devManufName == "":
-                    return
+                    continue
 
                 plugin_generic_param = None
                 if devManufCode in POLLING_TABLE_SPECIFICS:
@@ -1085,8 +1091,9 @@ def load_new_param_definition(self):
                 if plugin_generic_param is None and devManufName in POLLING_TABLE_SPECIFICS:
                     plugin_generic_param = POLLING_TABLE_SPECIFICS[devManufName]
 
-                if plugin_generic_param is None:
-                    return False
+                if plugin_generic_param is None or not self.pluginconf.pluginConf.get(plugin_generic_param):
+                    # Hidden plugin-wide setting left at its default (0): keep the certified value, as pairing does
+                    continue
                 self.log.logging("Database", "Log","--->PluginConf %s <-- %s" % (param, plugin_generic_param))
                 self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf[plugin_generic_param]
 
@@ -1103,7 +1110,7 @@ def load_new_param_definition(self):
                 if "Manufacturer Name" in self.ListOfDevices[key]:
                     devManufName = self.ListOfDevices[key]["Manufacturer Name"]
                 if devManufCode == devManufName == "":
-                    return
+                    continue
 
                 plugin_generic_param = None
                 if devManufCode in POLLING_TABLE_SPECIFICS:
@@ -1111,8 +1118,9 @@ def load_new_param_definition(self):
                 if plugin_generic_param is None and devManufName in POLLING_TABLE_SPECIFICS:
                     plugin_generic_param = POLLING_TABLE_SPECIFICS[devManufName]
 
-                if plugin_generic_param is None:
-                    return False
+                if plugin_generic_param is None or not self.pluginconf.pluginConf.get(plugin_generic_param):
+                    # Hidden plugin-wide setting left at its default (0): keep the certified value, as pairing does
+                    continue
                 self.log.logging("Database", "Log","--->PluginConf %s <-- %s" % (param, plugin_generic_param))
                 self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf[plugin_generic_param]
 
@@ -1128,7 +1136,7 @@ def load_new_param_definition(self):
                 if "Manufacturer Name" in self.ListOfDevices[key]:
                     devManufName = self.ListOfDevices[key]["Manufacturer Name"]
                 if devManufCode == devManufName == "":
-                    return
+                    continue
 
                 plugin_generic_param = None
                 if devManufCode in POLLING_TABLE_SPECIFICS:
@@ -1136,8 +1144,9 @@ def load_new_param_definition(self):
                 if plugin_generic_param is None and devManufName in POLLING_TABLE_SPECIFICS:
                     plugin_generic_param = POLLING_TABLE_SPECIFICS[devManufName]
 
-                if plugin_generic_param is None:
-                    return False
+                if plugin_generic_param is None or not self.pluginconf.pluginConf.get(plugin_generic_param):
+                    # Hidden plugin-wide setting left at its default (0): keep the certified value, as pairing does
+                    continue
                 self.log.logging("Database", "Log","--->PluginConf %s <-- %s" % (param, plugin_generic_param))
                 self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf[plugin_generic_param]
 
@@ -1234,6 +1243,9 @@ def profalux_fix_remote_device_model(self):
     - Correct Manufacturer Name ("Profalux")
     - Correct Model name ("Telecommande-Profalux")
     """
+    # Imported here: Modules.profalux imports Modules.tools, which imports this module
+    from Modules.profalux import profalux_model_has_own_config
+
     for x in self.ListOfDevices:
         
         if 'ZDeviceID' not in self.ListOfDevices[ x ] or self.ListOfDevices[ x ]['ZDeviceID'] != '0201':
@@ -1247,6 +1259,9 @@ def profalux_fix_remote_device_model(self):
         if "MacCapa" not in self.ListOfDevices[x]:
             continue
         if self.ListOfDevices[x]["MacCapa"] != "80":
+            continue
+        if profalux_model_has_own_config(self, x):
+            # A remote reporting its own model (MAI-ZTM22C, ...) keeps it
             continue
         if "Model" in self.ListOfDevices[x] and self.ListOfDevices[x]["Model"] != "Telecommande-Profalux":
             self.log.logging("Profalux", "Status", "Z4D forces Model from %s to %s" % (

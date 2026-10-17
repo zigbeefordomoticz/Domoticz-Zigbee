@@ -133,6 +133,7 @@ import time
 import z4d_certified_devices
 
 from Classes.AdminWidgets import AdminWidgets
+from Classes.AssociatedDevicesScan import AssociatedDevicesScan
 from Classes.ConfigureReporting import ConfigureReporting
 from Classes.DomoticzDB import (DomoticzAPIClient, DomoticzDB_DeviceStatus,
                                 DomoticzDB_Hardware, DomoticzDB_Preferences,
@@ -163,6 +164,7 @@ from Modules.database import (LoadDeviceList, flush_plugin_listofdevice,
 from Modules.domoticzAbstractLayer import (
     domo_read_Name, load_list_of_domoticz_widget,
     retrieve_widgetid_from_deviceId_unit)
+from Modules.gitInfos import get_git_infos
 from Modules.heartbeat import processListOfDevices
 from Modules.input import zigbee_receive_message
 from Modules.matomo_request import (matomo_coordinator_initialisation,
@@ -177,6 +179,7 @@ from Modules.pluginHelpers import (check_firmware_level,
                                    check_requirements, decodeConnection,
                                    get_domoticz_version,
                                    list_all_modules_loaded, networksize_update,
+                                   plugin_identity,
                                    update_DB_device_status_to_reinit)
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.readZclClusters import load_zcl_cluster
@@ -185,6 +188,7 @@ from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
 from Modules.tools import (build_list_of_device_model,
                            reconcile_ieee_nwkid, lookupForIEEE,
                            night_shift_jobs, unregister_domoticz_widget)
+from Modules.tools_mac_capa import node_descriptor_fields
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_get_firmware_version,
@@ -194,7 +198,9 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_set_certificate, zigate_set_mode)
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
-from Zigbee.zdpCommands import zdp_get_permit_joint_status
+from Modules.zigpy_preload import device_has_left_the_network
+from Zigbee.zdpCommands import (zdp_get_permit_joint_status,
+                                zdp_NWK_address_request)
 
 VERSION_FILENAME = ".hidden/VERSION"
 MIN_PYTHON = (3, 11)
@@ -252,6 +258,7 @@ class BasePlugin:
         self.groupmgt = None
         self.networkmap = None
         self.zigpy_topology = None
+        self.associated_devices_scan = None
         self.networkenergy = None
         self.domoticz_api = None
         self.domoticz_device_cache = None
@@ -443,6 +450,15 @@ class BasePlugin:
         self.pluginParameters["PluginBranch"] = _pluginversion["branch"]
         self.pluginParameters["PluginVersion"] = _pluginversion["version"]
         self.pluginParameters["CertifiedDbVersion"] = z4d_certified_devices.__version__
+
+        # Revision of the running code, when installed from a git checkout. The certified devices
+        # database is usually a pip package and has then no revision to report.
+        plugin_git_infos = get_git_infos(Parameters["HomeFolder"])
+        certified_db_git_infos = get_git_infos(os.path.dirname(z4d_certified_devices.__file__))
+        self.pluginParameters["PluginCommit"] = plugin_git_infos["Commit"]
+        self.pluginParameters["PluginCommitBranch"] = plugin_git_infos["Branch"]
+        self.pluginParameters["CertifiedDbCommit"] = certified_db_git_infos["Commit"]
+        self.pluginParameters["CertifiedDbCommitBranch"] = certified_db_git_infos["Branch"]
         self.pluginParameters["TimeStamp"] = 0
         self.pluginParameters["available"] = None
         self.pluginParameters["available-firmMajor"] = None
@@ -497,14 +513,11 @@ class BasePlugin:
                 self.ListOfDevices,
                 self.permitTojoin,
             )
-            self.log.loggingUpdatePluginVersion(
-                str(self.pluginParameters["PluginBranch"] + "-" + self.pluginParameters["PluginVersion"])
-            )
+            self.log.loggingUpdatePluginVersion(plugin_identity(self))
             self.log.openLogFile()
 
         # We can use from now the self.log.logging()
-        self.log.logging("Plugin", "Status", "Z4D starts with %s-%s and using DomoticzEx !" % (
-            self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"]), )
+        self.log.logging("Plugin", "Status", "Z4D starts with %s and using DomoticzEx !" % plugin_identity(self))
 
         # Debuging information
         debuging_information(self, "Debug")
@@ -670,6 +683,10 @@ class BasePlugin:
             self.log.logging("Plugin", "Log", "onStop called")
         else:
             Domoticz.Log("onStop()")
+
+        # A topology scan half collected is still worth keeping: file zigpy's
+        # tables now rather than lose a scan that took minutes.
+        _abandon_associated_devices_scan(self, "plugin is stopping")
 
         # Stop the DNS version-check worker and wait for it to exit.
         # Non-daemon threads must complete before the embedded interpreter tears down.
@@ -847,16 +864,39 @@ class BasePlugin:
 
 
     def zigpy_get_all_devices(self):
-        """Return all known devices as (EUI64-int, NWK-int) pairs for pre-loading into zigpy."""
+        """Return all known devices for pre-loading into zigpy.
+
+        Each entry is (EUI64-int, NWK-int, node descriptor fields), the third
+        being plain data from node_descriptor_fields() or None when the plugin
+        does not know the device's logical type. The transport turns it into a
+        zigpy NodeDescriptor; without one, zigpy skips the device in every
+        topology scan (issue #2110).
+
+        A device the plugin has recorded as gone is left out, as
+        zigpy_get_device() already does for the same records.
+        """
         result = []
+        departed = []
         for nwk_str, info in self.ListOfDevices.items():
             ieee_str = info.get('IEEE')
             self.log.logging("TransportZigpy", "Debug", "zigpy_get_all_devices pre-populate( %s, %s)" %( ieee_str, nwk_str))
+
+            if device_has_left_the_network(info):
+                departed.append(nwk_str)
+                self.log.logging("TransportZigpy", "Debug", "zigpy_get_all_devices skipping %s, recorded as %s" %(
+                    nwk_str, info.get("Status")))
+                continue
+
             if ieee_str:
                 try:
-                    result.append((int(ieee_str, 16), int(nwk_str, 16)))
+                    result.append((int(ieee_str, 16), int(nwk_str, 16), node_descriptor_fields(nwk_str, info)))
                 except (ValueError, TypeError):
                     self.log.logging("TransportZigpy", "Error", "zigpy_get_all_devices pre-populate( %s, %s) failed !!" %( ieee_str, nwk_str))
+
+        if departed:
+            self.log.logging("TransportZigpy", "Status", "Not pre-loading %s device(s) the plugin has as gone from the network: %s" %(
+                len(departed), ", ".join(sorted(departed))))
+
         return result
 
 
@@ -987,7 +1027,7 @@ class BasePlugin:
             zigateInit_Phase3(self)
             return
 
-        if self.pluginconf.pluginConf["MatomoOptIn"] and self.HeartbeatCount % ( MATOMO_PUBLISHING_PERIOD // HEARTBEAT) == 0:
+        if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"] and self.HeartbeatCount % ( MATOMO_PUBLISHING_PERIOD // HEARTBEAT) == 0:
             matomo_plugin_analytics_infos(self)
 
         if self.transport == "None":
@@ -1140,7 +1180,10 @@ def retreive_zigpy_topology_data(self):
         return
 
     if self.zigpy_topology.ControllerLink.app is None:
-        # Radio is mid-restart (supervisor recovering from a comms failure); nothing to poll yet
+        # Radio is mid-restart (supervisor recovering from a comms failure); nothing to poll yet.
+        # File whatever a pending scan already has rather than hold it until the
+        # radio comes back -- the mesh it describes is the one before the restart.
+        _abandon_associated_devices_scan(self, "radio is restarting")
         return
 
     if self.zigpy_topology.is_zigpy_topology_in_progress():
@@ -1148,13 +1191,51 @@ def retreive_zigpy_topology_data(self):
         self.zigpy_topology.new_scan_detected = True
         return
 
+    if self.associated_devices_scan and self.associated_devices_scan.in_progress():
+        # Second half of the scan: zigpy is done, the plugin is collecting the
+        # Associated Devices table itself. The report is written when this ends.
+        if self.pairing_in_progress or self.busy:
+            # Same priority rule the topology scan follows in heartbeat.py:
+            # commissioning a device comes first.
+            return
+        self.associated_devices_scan.continue_scan()
+        return
+
     is_manual_scan = self.ListOfDevices["0000"].get("ZigpyTopologyRequested", False)
     if self.zigpy_topology.new_scan_detected and ( self.pluginconf.pluginConf["ZigpyTopologyReportAutoBackup"] or is_manual_scan):
         # Scan is completed. Time for a backup
-        self.zigpy_topology.save_topology_report()
         self.zigpy_topology.new_scan_detected = False
         self.ListOfDevices["0000"]["ZigpyTopologyRequested"] = False
+        self.zigpy_topology.prepare_topology_report()
+        if not _start_associated_devices_scan(self, is_manual_scan):
+            self.zigpy_topology.write_topology_report()
         return
+
+
+def _start_associated_devices_scan(self, is_manual_scan):
+    """Begin the second half of the scan. False when there is no second half.
+
+    An automatic scan only collects the table when the report is going to be
+    kept (ZigpyTopologyReportAutoBackup), so a periodic zigpy scan nobody asked
+    about does not spend minutes of ZDP on a report that is discarded.
+    """
+    if not self.pluginconf.pluginConf.get("ZigpyTopologyAssociatedDevices"):
+        return False
+
+    if self.associated_devices_scan is None:
+        return False
+
+    if not (is_manual_scan or self.pluginconf.pluginConf["ZigpyTopologyReportAutoBackup"]):
+        return False
+
+    return self.associated_devices_scan.start_scan()
+
+
+def _abandon_associated_devices_scan(self, reason):
+    if self.associated_devices_scan and self.associated_devices_scan.in_progress():
+        # abort() reports None, which makes write_topology_report() file the
+        # scan with zigpy's two tables and no Associated Devices section.
+        self.associated_devices_scan.abort(reason)
     
     # coordinator_data = self.ListOfDevices.get("0000", {})
     # if "ZigpyNeighbors" in coordinator_data and "ZigpyRoutes" in coordinator_data:
@@ -1489,8 +1570,29 @@ def zigateInit_Phase3(self):
             self.zigbee_communication ,self.pluginconf, self.ControllerLink, self.ListOfDevices, self.IEEE2NWK, self.DeviceConf, Devices, self.HardwareID, self.log, self.pairing_in_progress
         )
 
+    if self.associated_devices_scan is None and self.zigpy_topology:
+        # Second half of a zigpy topology scan. It hands its result straight to
+        # the report the first half left pending, which is why the write is
+        # injected as a callback rather than the collector reaching for
+        # ZigpyTopology itself.
+        self.associated_devices_scan = AssociatedDevicesScan(
+            self.zigbee_communication, self.pluginconf, self.ControllerLink, self.ListOfDevices, self.DeviceConf, self.log,
+            zdp_NWK_address_request,
+            on_completed=self.zigpy_topology.write_topology_report,
+        )
+
     if self.networkmap:
         self.webserver.update_networkmap(self.networkmap)
+
+    if self.zigpy_topology:
+        # So /plugin-health can say that a zigpy scan is running: the
+        # NetworkMap phase it used to read never moves on a zigpy setup.
+        self.webserver.update_zigpy_topology(self.zigpy_topology)
+
+    if self.associated_devices_scan:
+        # Same reason: the collection is the second half of that same scan, and
+        # /plugin-health must not report the scan as finished while it runs.
+        self.webserver.update_associated_devices_scan(self.associated_devices_scan)
 
     # Enable Over The Air Upgrade if applicable
     if self.OTA is None and self.pluginconf.pluginConf["allowOTA"]:
@@ -1504,19 +1606,19 @@ def zigateInit_Phase3(self):
     restart_plugin_reset_ModuleIRCode(self, nwkid=None)
 
     firmware_messages = {
-        "03": "Z4D with Zigate coordinator, firmware %s communication confirmed",
-        "04": "Z4D with Zigate coordinator, OptiPDM firmware %s communication confirmed",
-        "05": "Z4D with Zigate+ coordinator, firmware %s communication confirmed"
+        "03": "Z4D %s with Zigate coordinator, firmware %s communication confirmed",
+        "04": "Z4D %s with Zigate coordinator, OptiPDM firmware %s communication confirmed",
+        "05": "Z4D %s with Zigate+ coordinator, firmware %s communication confirmed"
     }
 
     # Check if firmware major version exists in the dictionary
     if self.FirmwareMajorVersion in firmware_messages:
-        message = firmware_messages[self.FirmwareMajorVersion] % self.FirmwareVersion
+        message = firmware_messages[self.FirmwareMajorVersion] % (plugin_identity(self), self.FirmwareVersion)
         self.log.logging("Plugin", "Status", message)
 
     elif int(self.FirmwareBranch) >= 20:
-        message = "Z4D with Zigpy, coordinator %s, firmware %s communication confirmed." % (
-            self.pluginParameters["CoordinatorModel"], self.pluginParameters["CoordinatorFirmwareVersion"])
+        message = "Z4D %s with Zigpy, coordinator %s, firmware %s communication confirmed." % (
+            plugin_identity(self), self.pluginParameters["CoordinatorModel"], self.pluginParameters["CoordinatorFirmwareVersion"])
         self.log.logging("Plugin", "Status", message)
         
         self.adminWidgets.updateNotificationWidget(Devices, message)
@@ -1740,6 +1842,8 @@ def debuging_information(self, mode):
         "Debug": Parameters["Mode6"],
         "Python Version": sys.version,
         "DomoticzHash": Parameters["DomoticzHash"],
+        "Plugin Commit": self.pluginParameters["PluginCommit"],
+        "Certified Db Commit": self.pluginParameters["CertifiedDbCommit"],
         "DomoticzBuildTime": Parameters["DomoticzBuildTime"],
         "Startup Folder": Parameters["StartupFolder"],
         "Home Folder": Parameters["HomeFolder"],

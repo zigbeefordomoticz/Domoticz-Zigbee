@@ -196,10 +196,19 @@ def _initNeighboursTableEntry(self, nwkid):
     if self.pluginconf.pluginConf["TopologyV2"]:
         mgmt_rtg(self, nwkid, "RoutingTable")
         if "IEEE" in self.ListOfDevices[ nwkid ]:
-            if "Capability" in self.ListOfDevices[ nwkid ] and "Full-Function Device" in self.ListOfDevices[ nwkid ]["Capability"]:
-                zdp_NWK_address_request(self, nwkid, self.ListOfDevices[ nwkid ]['IEEE'], u8RequestType="01")
-            else:
-                zdp_NWK_address_request(self, nwkid, self.ListOfDevices[ nwkid ]['IEEE'], u8RequestType="00")
+            # Always the extended response (RequestType 0x01): it is the only one
+            # carrying the associated device list, which is the whole reason this
+            # request is issued here, and every node reaching this point passed
+            # is_a_router(). This was gated on "Full-Function Device" being in
+            # Capability -- which deviceAnnoucement.py writes on a device announce,
+            # and the coordinator never announces itself (initLODZigate() builds
+            # ListOfDevices["0000"] with no Capability), so the coordinator took the
+            # RequestType 0x00 fallback and its associated devices were never
+            # collected. That is where the end devices parented straight to the
+            # coordinator are listed. The fallback stored nothing anyway:
+            # Decode8040() only keeps an extended response, and a node that does not
+            # support one answers INV_REQUESTTYPE and is dropped on the status check.
+            zdp_NWK_address_request(self, nwkid, self.ListOfDevices[ nwkid ]['IEEE'], u8RequestType="01")
 
 def is_a_router(self, nwkid):
     if nwkid == "0000":
