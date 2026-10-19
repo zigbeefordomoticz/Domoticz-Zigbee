@@ -47,6 +47,7 @@ from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
 from Modules.pluginModels import check_found_plugin_model
 from Modules.tuyaConst import TUYA_MANUFACTURER_NAME
+from Modules.zigateConsts import APPLICATION_PROFILE_IDS, GREEN_POWER_PROFILE_ID
 from Modules.zlinky import update_zlinky_device_model_if_needed
 
 PLUGIN_DATABASE_RECORD_VERSION = 4
@@ -238,6 +239,7 @@ def LoadDeviceList(self):
         # Fixing mistake done in the code.
         fixing_consumption_lumi(self, addr)
         fixing_iSQN_None(self, addr)
+        fixing_green_power_device_id(self, addr)
 
         # Cleaning OTA structure if needed
         cleanup_ota(self, addr)
@@ -1034,6 +1036,61 @@ def fixing_iSQN_None(self, key):
                             is None
                         ):
                             del self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId]["iSQN"][attribute]
+
+
+def fixing_green_power_device_id(self, key):
+    """Restore the device level ProfileID/ZDeviceID overwritten by the Green Power endpoint (#2119).
+
+    Before #2119 the last Simple Descriptor decoded set the device level
+    ProfileID and ZDeviceID, which on mains powered devices is usually the
+    Green Power proxy endpoint (f2, profile a1e0, device 0061). Copy them back
+    from the best application endpoint recorded in Epv2.
+
+    Args:
+        key: Network ID of the device to process
+    """
+    device = self.ListOfDevices[key]
+    if str(device.get("ProfileID", "")).lower() != GREEN_POWER_PROFILE_ID:
+        return
+
+    application_ep = _select_application_endpoint(device.get("Epv2"))
+    if application_ep is None:
+        return
+
+    ep_info = device["Epv2"][application_ep]
+    self.log.logging("Database", "Status", "Z4D fixes %s ProfileID/ZDeviceID from %s/%s (Green Power) to %s/%s (Ep %s)" % (
+        key, device["ProfileID"], device.get("ZDeviceID"), ep_info["ProfileID"], ep_info["ZDeviceID"], application_ep))
+    device["ProfileID"] = ep_info["ProfileID"]
+    device["ZDeviceID"] = ep_info["ZDeviceID"]
+
+
+def _select_application_endpoint(epv2):
+    """Return the endpoint which best describes the device, or None.
+
+    Green Power endpoints are never selected. A ZHA or ZLL profile is preferred
+    over a vendor specific one, then the lowest endpoint number wins.
+    """
+    if not isinstance(epv2, dict):
+        return None
+
+    candidates = []
+    for ep, ep_info in epv2.items():
+        if not isinstance(ep_info, dict):
+            continue
+        profile = ep_info.get("ProfileID")
+        if not isinstance(profile, str) or not isinstance(ep_info.get("ZDeviceID"), str):
+            continue
+        if profile.lower() == GREEN_POWER_PROFILE_ID:
+            continue
+        try:
+            ep_number = int(ep, 16)
+        except ValueError:
+            continue
+        candidates.append((profile.lower() not in APPLICATION_PROFILE_IDS, ep_number, ep))
+
+    if not candidates:
+        return None
+    return min(candidates)[2]
 
 
 def load_new_param_definition(self):
