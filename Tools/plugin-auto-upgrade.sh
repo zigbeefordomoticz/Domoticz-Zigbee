@@ -112,29 +112,41 @@ echo "VENV=$VENV"
 echo "VENV_VERSION=$VENV_VERSION"
 echo "VENV_ROOT=$VENV_ROOT"
 
+# The WebUI passes the Python version Domoticz runs with (e.g. 3.11): hand it over to the
+# upgrade script, so that the modules are installed for that Python and not for python3.
+PYTHON_ARG=()
+if [ -n "$1" ]; then
+    if command -v "python$1" >/dev/null 2>&1; then
+        PYTHON_ARG=("$1")
+        echo "[main] Using python$1"
+    else
+        echo "[main] python$1 not found in PATH, using python3."
+    fi
+fi
+
 # Call the appropriate upgrade script if a venv was detected
 if [ "$VENV" = true ]; then
     case "$VENV_VERSION" in
         V1)
             echo "[main] Running Tools/plugin-auto-upgrade-v1.sh with PYTHONPATH='$VENV_ROOT'"
-            PYTHONPATH="$VENV_ROOT" bash Tools/plugin-auto-upgrade-v1.sh
+            PYTHONPATH="$VENV_ROOT" bash Tools/plugin-auto-upgrade-v1.sh "${PYTHON_ARG[@]}"
             ret=$?   # capture exit code
             ;;
         V2)
             echo "[main] Running Tools/plugin-auto-upgrade-v2.sh with PYTHONPATH='$VENV_ROOT'"
             cleanup_venv_full "$VENV_ROOT"
-            bash Tools/plugin-auto-upgrade-v2.sh
+            bash Tools/plugin-auto-upgrade-v2.sh "${PYTHON_ARG[@]}"
             ret=$?   # capture exit code
             ;;
         *)
             echo "[main] Unknown VENV_VERSION='$VENV_VERSION', default to V1."
-            bash Tools/plugin-auto-upgrade-v1.sh
+            bash Tools/plugin-auto-upgrade-v1.sh "${PYTHON_ARG[@]}"
             ret=$?   # capture exit code
             ;;
     esac
 else
     echo "[main] No venv detected, default to V1."
-    bash Tools/plugin-auto-upgrade-v1.sh
+    bash Tools/plugin-auto-upgrade-v1.sh "${PYTHON_ARG[@]}"
     ret=$?   # capture exit code
 
 fi
