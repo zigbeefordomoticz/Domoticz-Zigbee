@@ -13,7 +13,7 @@
 
 from Modules.pairingProcess import request_next_Ep
 from Modules.tools import updLQI, updSQN, is_duplicate_sqn
-from Modules.zigateConsts import ZCL_CLUSTERS_LIST
+from Modules.zigateConsts import GREEN_POWER_PROFILE_ID, ZCL_CLUSTERS_LIST
 from Modules.zigbeeController import receiveZigateEpDescriptor
 
 
@@ -137,6 +137,11 @@ def update_device_basic_info(self, MsgDataShAddr, MsgDataEp, MsgDataProfile, Msg
 
     device['Epv2'][MsgDataEp]['ProfileID'] = MsgDataProfile
     device['Epv2'][MsgDataEp]['ZDeviceID'] = MsgDataDeviceId
+
+    # The Green Power proxy endpoint must not overwrite the device level ProfileID, ZDeviceID and Version (#2119)
+    if MsgDataProfile.lower() == GREEN_POWER_PROFILE_ID:
+        self.log.logging([ "Pairing", "Input"], 'Debug', f'Decode8043 - {MsgDataShAddr} Ep: {MsgDataEp} Green Power profile {MsgDataProfile}, not used as device ProfileID/ZDeviceID')
+        return
 
     # Global ProfileID
     current_profile = device.get('ProfileID')
