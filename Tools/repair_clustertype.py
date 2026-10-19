@@ -39,6 +39,9 @@ Safety
 - Dry-run by default: prints the proposed changes and writes nothing.
 - ``--apply`` is required to write, and a timestamped ``.bak`` copy is made first.
 - Only *adds* missing widget keys; never removes or overwrites an existing entry.
+- Stop Domoticz before running with ``--apply``. The plugin writes its in-memory
+  device list to ``DeviceList-<hwid>.txt`` when it stops, so restarting only the
+  plugin after the repair would overwrite the repaired file with the damaged list.
 
 Usage
 -----
@@ -46,7 +49,7 @@ Usage
     python3 Tools/repair_clustertype.py --db /path/to/domoticz.db --hwid 3 \
         --devicelist /path/to/Data/DeviceList-3.txt
 
-    # actually write the repaired DeviceList
+    # actually write the repaired DeviceList (Domoticz stopped), then start Domoticz
     python3 Tools/repair_clustertype.py --db /path/to/domoticz.db --hwid 3 \
         --devicelist /path/to/Data/DeviceList-3.txt --apply
 """
@@ -212,7 +215,7 @@ def main():
     print("\n%d ClusterType entry(ies) to restore." % len(additions))
 
     if not args.apply:
-        print("\nDry-run only. Re-run with --apply to write the changes.")
+        print("\nDry-run only. Stop Domoticz, then re-run with --apply to write the changes.")
         return
 
     if not additions:
@@ -224,7 +227,9 @@ def main():
     write_devicelist_txt(devicelist_path, devices)
     print("\nBackup written to %s" % backup)
     print("Repaired DeviceList written to %s" % devicelist_path)
-    print("Restart the plugin to reload the repaired DeviceList.")
+    print("Start Domoticz to load the repaired DeviceList.")
+    print("If Domoticz was running, the plugin overwrites this repair when it stops:")
+    print("stop Domoticz, run this command again with --apply, then start Domoticz.")
 
 
 if __name__ == "__main__":
