@@ -139,6 +139,8 @@ _STUBS = {
     "Modules.zigateConsts": dict(
         ADDRESS_MODE={"short": 2, "ieee": 3, "group": 4},
         ZCL_CLUSTERS_LIST={"0006": "On/Off", "0300": "Color Control"},
+        GREEN_POWER_PROFILE_ID="a1e0",
+        APPLICATION_PROFILE_IDS=("0104", "c05e"),
         LEGRAND_REMOTE_MOTION=[],
         LEGRAND_REMOTE_SWITCHS=[],
         ZIGBEE_COMMAND_IDENTIFIER={},
