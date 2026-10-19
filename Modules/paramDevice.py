@@ -63,6 +63,7 @@ def initialize_device_settings(self):
         TUYA_SIREN_DEVICE_PARAMETERS,
         SCHNEIDER_DEVICE_PARAMETERS,
         GMMS_TIC_METER_DEVICE_PARAMETERS,
+        NAMRON_DEVICE_PARAMETERS,
     ]
 
     # Update device settings in a single loop
