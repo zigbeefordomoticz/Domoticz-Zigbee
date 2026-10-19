@@ -1,1 +1,14 @@
 blank_issues_enabled: false
+contact_links:
+  - name: New device, or update of a not-yet-optimized device
+    url: https://github.com/zigbeefordomoticz/z4d-certified-devices/issues/new?assignees=&labels=Device+Integration&projects=&template=certified-device-model.md&title=%5BModel+Certification%5D+-+
+    about: Device requests go to z4d-certified-devices, not here. Paste the discovery data from Management > Device Management.
+  - name: Question or setup problem (English forum)
+    url: https://www.domoticz.com/forum/viewforum.php?f=68
+    about: Ask here first if you are not sure it is a bug.
+  - name: Question or setup problem (French forum)
+    url: https://easydomoticz.com/forum/viewforum.php?f=28
+    about: Posez ici vos questions en français.
+  - name: Getting help and reporting a problem
+    url: https://zigbeefordomoticz.github.io/wiki/en-eng/Troubleshooting_Reporting-a-problem.html
+    about: Where to report, the expected logs, how to enable the debug parameters.

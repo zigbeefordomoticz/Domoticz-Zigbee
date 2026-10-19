@@ -1,18 +1,24 @@
 ---
 name: Bug report
-about: Create a report to help us improve
+about: Report an identified bug of the plugin (not a device request, not a question)
 title: ''
 labels: ''
 assignees: ''
 
 ---
 
-Your first place to get support is via the Forums.
+<!--
+Issues here are for identified bugs of the plugin only.
 
-    English channel : https://www.domoticz.com/forum/viewforum.php?f=68
-    French Channel : https://easydomoticz.com/forum/viewforum.php?f=28&sid=a8633a9d8cb2acccb32872543b50fd47
-    
-Didn't you find answers in the Wiki at https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Home.md
+* A new device, or a device that is not optimized yet: open an issue on
+  https://github.com/zigbeefordomoticz/z4d-certified-devices/issues
+* A question or a setup problem: ask on the forums
+  English: https://www.domoticz.com/forum/viewforum.php?f=68
+  French:  https://easydomoticz.com/forum/viewforum.php?f=28
+
+How to collect useful logs:
+https://zigbeefordomoticz.github.io/wiki/en-eng/Troubleshooting_Reporting-a-problem.html
+-->
 
 **Describe the bug**
 A clear and concise description of what the bug is.
@@ -21,24 +27,25 @@ A clear and concise description of what the bug is.
 Steps to reproduce the behavior:
 1. Go to '...'
 2. Click on '....'
-3. Scroll down to '....'
-4. See error
+3. See error
 
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+**Environment**
+ - Plugin version and branch (the `Z4D starts with ...` log line):
+ - Coordinator model and firmware (the `... communication confirmed` log line):
+ - Domoticz version:
+ - Python version:
+ - OS:
+ - Browser and version (for a WebUI problem):
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+**Logs**
+Attach the plugin log file excerpt (`Logs/PluginZigbee_<hardware id>.log`) around the problem, with the relevant debug modules enabled in WebUI > Tools > Debug. Please attach it as a text file, not a screenshot.
 
-**Plugin (please complete the following information):**
- - OS: [e.g. Linux Fedora 28]
- - Plugin version
- - Plugin branch
+If the plugin recorded errors, attach the export of WebUI > Tools > Error(s) > Log Error History (json).
+
+For a problem linked to a device, attach the export of WebUI > Tools > Tools > Plugin Raw Devices.
 
 **Additional context**
-Add any other context about the problem here.
+Add any other context or screenshots about the problem here.
