@@ -311,3 +311,41 @@ def test_unmanaged_command_logged(tuya_module, plugin, captured):
         c.args[1] == "Log" for c in plugin.log.logging.call_args_list
     )
 
+
+
+# ---------------------------------------------------------------------------
+# SmartRelayStatus01..04 - power-on behaviour on e001/d010 (issue #2137)
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def relay_write(tuya_module, monkeypatch):
+    write = MagicMock(name="write_attribute")
+    monkeypatch.setattr(tuya_module, "write_attribute", write)
+    return write
+
+
+def _relay_device(plugin, ep_content):
+    plugin.ListOfDevices = {NWKID: {"Model": "TS0004-test", "Ep": ep_content}}
+
+
+@pytest.mark.parametrize("mode", [0, 1, 2, "2"])
+def test_smart_relay_status_writes_valid_mode(tuya_module, plugin, relay_write, mode):
+    _relay_device(plugin, {"02": {"e001": {"d010": "01"}}})
+    tuya_module.SmartRelayStatus02(plugin, NWKID, mode)
+    relay_write.assert_called_once()
+    args = relay_write.call_args.args
+    assert args[1:] == (NWKID, "01", "02", "e001", "0000", "00", "d010", "30", "%02x" % int(mode))
+
+
+@pytest.mark.parametrize("mode", [3, 255])
+def test_smart_relay_status_ignores_invalid_mode(tuya_module, plugin, relay_write, mode):
+    _relay_device(plugin, {"01": {"e001": {"d010": "01"}}})
+    tuya_module.SmartRelayStatus01(plugin, NWKID, mode)
+    relay_write.assert_not_called()
+
+
+@pytest.mark.parametrize("ep_content", [{}, {"01": {}}, {"01": {"e001": {}}}], ids=["no-ep", "no-cluster", "no-attribute"])
+def test_smart_relay_status_skips_missing_target(tuya_module, plugin, relay_write, ep_content):
+    _relay_device(plugin, ep_content)
+    tuya_module.SmartRelayStatus01(plugin, NWKID, 1)
+    relay_write.assert_not_called()
