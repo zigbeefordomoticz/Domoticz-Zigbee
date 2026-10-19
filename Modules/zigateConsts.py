@@ -267,6 +267,10 @@ def composite_value(data_type):
     )
 
 
+# Profile of the Green Power proxy endpoint (usually f2). It describes the proxy, never the device itself.
+GREEN_POWER_PROFILE_ID = "a1e0"
+# Application profiles (ZHA, ZLL) which describe what the device really is.
+APPLICATION_PROFILE_IDS = ("0104", "c05e")
 
 ZLL_DEVICES = {
     # https://www.nxp.com/docs/en/user-guide/JN-UG-3091.pdf
