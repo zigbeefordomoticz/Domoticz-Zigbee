@@ -198,19 +198,6 @@ print_version_info() {
     echo "Latest git commit: $(git log --pretty=oneline -1 || echo 'N/A')"
 }
 
-check_python_and_branch() {
-    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-    CHECK_SCRIPT="$SCRIPT_DIR/check_python_and_branch.py"
-
-    if [ -f "$CHECK_SCRIPT" ]; then
-        python3 "$CHECK_SCRIPT" --no-simulate
-        rc=$?
-        echo "check_python_and_branch.py exited with code $rc"
-    else
-        echo "Warning: $CHECK_SCRIPT not found. Skipping Python branch check."
-    fi
-}
-
 # ------------------------
 # Main script execution
 # ------------------------
@@ -224,7 +211,6 @@ check_and_upgrade_pip
 update_git_config
 update_python_modules
 print_version_info
-check_python_and_branch
 
 
 echo ""
