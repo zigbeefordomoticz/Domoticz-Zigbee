@@ -1971,7 +1971,7 @@ CFG_RPT_ATTRIBUTESbyCLUSTERS = {
     # Pression Atmo
     "0403": {
         "Attributes": {
-            "0000": {"DataType": "20", "MinInterval": "003C", "MaxInterval": "0384", "TimeOut": "0000", "Change": "01"},
+            "0000": {"DataType": "29", "MinInterval": "003C", "MaxInterval": "0384", "TimeOut": "0000", "Change": "0001"},
             "0010": {
                 "DataType": "29",
                 "MinInterval": "003C",
@@ -1983,7 +1983,7 @@ CFG_RPT_ATTRIBUTESbyCLUSTERS = {
     },
     "0404": {
         "Attributes": {
-            "0000": {"DataType": "20", "MinInterval": "003C", "MaxInterval": "0384", "TimeOut": "0000", "Change": "01"},
+            "0000": {"DataType": "21", "MinInterval": "003C", "MaxInterval": "0384", "TimeOut": "0000", "Change": "0001"},
         }
     },
 
