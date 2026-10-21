@@ -163,6 +163,7 @@ from Modules.database import (LoadDeviceList, flush_plugin_listofdevice,
 from Modules.domoticzAbstractLayer import (
     domo_read_Name, load_list_of_domoticz_widget,
     retrieve_widgetid_from_deviceId_unit)
+from Modules.gitInfos import get_git_infos
 from Modules.heartbeat import processListOfDevices
 from Modules.input import zigbee_receive_message
 from Modules.matomo_request import (matomo_coordinator_initialisation,
@@ -177,6 +178,7 @@ from Modules.pluginHelpers import (check_firmware_level,
                                    check_requirements, decodeConnection,
                                    get_domoticz_version,
                                    list_all_modules_loaded, networksize_update,
+                                   plugin_identity,
                                    update_DB_device_status_to_reinit)
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.readZclClusters import load_zcl_cluster
@@ -443,6 +445,15 @@ class BasePlugin:
         self.pluginParameters["PluginBranch"] = _pluginversion["branch"]
         self.pluginParameters["PluginVersion"] = _pluginversion["version"]
         self.pluginParameters["CertifiedDbVersion"] = z4d_certified_devices.__version__
+
+        # Revision of the running code, when installed from a git checkout. The certified devices
+        # database is usually a pip package and has then no revision to report.
+        plugin_git_infos = get_git_infos(Parameters["HomeFolder"])
+        certified_db_git_infos = get_git_infos(os.path.dirname(z4d_certified_devices.__file__))
+        self.pluginParameters["PluginCommit"] = plugin_git_infos["Commit"]
+        self.pluginParameters["PluginCommitBranch"] = plugin_git_infos["Branch"]
+        self.pluginParameters["CertifiedDbCommit"] = certified_db_git_infos["Commit"]
+        self.pluginParameters["CertifiedDbCommitBranch"] = certified_db_git_infos["Branch"]
         self.pluginParameters["TimeStamp"] = 0
         self.pluginParameters["available"] = None
         self.pluginParameters["available-firmMajor"] = None
@@ -497,14 +508,11 @@ class BasePlugin:
                 self.ListOfDevices,
                 self.permitTojoin,
             )
-            self.log.loggingUpdatePluginVersion(
-                str(self.pluginParameters["PluginBranch"] + "-" + self.pluginParameters["PluginVersion"])
-            )
+            self.log.loggingUpdatePluginVersion(plugin_identity(self))
             self.log.openLogFile()
 
         # We can use from now the self.log.logging()
-        self.log.logging("Plugin", "Status", "Z4D starts with %s-%s and using DomoticzEx !" % (
-            self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"]), )
+        self.log.logging("Plugin", "Status", "Z4D starts with %s and using DomoticzEx !" % plugin_identity(self))
 
         # Debuging information
         debuging_information(self, "Debug")
@@ -1504,19 +1512,19 @@ def zigateInit_Phase3(self):
     restart_plugin_reset_ModuleIRCode(self, nwkid=None)
 
     firmware_messages = {
-        "03": "Z4D with Zigate coordinator, firmware %s communication confirmed",
-        "04": "Z4D with Zigate coordinator, OptiPDM firmware %s communication confirmed",
-        "05": "Z4D with Zigate+ coordinator, firmware %s communication confirmed"
+        "03": "Z4D %s with Zigate coordinator, firmware %s communication confirmed",
+        "04": "Z4D %s with Zigate coordinator, OptiPDM firmware %s communication confirmed",
+        "05": "Z4D %s with Zigate+ coordinator, firmware %s communication confirmed"
     }
 
     # Check if firmware major version exists in the dictionary
     if self.FirmwareMajorVersion in firmware_messages:
-        message = firmware_messages[self.FirmwareMajorVersion] % self.FirmwareVersion
+        message = firmware_messages[self.FirmwareMajorVersion] % (plugin_identity(self), self.FirmwareVersion)
         self.log.logging("Plugin", "Status", message)
 
     elif int(self.FirmwareBranch) >= 20:
-        message = "Z4D with Zigpy, coordinator %s, firmware %s communication confirmed." % (
-            self.pluginParameters["CoordinatorModel"], self.pluginParameters["CoordinatorFirmwareVersion"])
+        message = "Z4D %s with Zigpy, coordinator %s, firmware %s communication confirmed." % (
+            plugin_identity(self), self.pluginParameters["CoordinatorModel"], self.pluginParameters["CoordinatorFirmwareVersion"])
         self.log.logging("Plugin", "Status", message)
         
         self.adminWidgets.updateNotificationWidget(Devices, message)
@@ -1740,6 +1748,8 @@ def debuging_information(self, mode):
         "Debug": Parameters["Mode6"],
         "Python Version": sys.version,
         "DomoticzHash": Parameters["DomoticzHash"],
+        "Plugin Commit": self.pluginParameters["PluginCommit"],
+        "Certified Db Commit": self.pluginParameters["CertifiedDbCommit"],
         "DomoticzBuildTime": Parameters["DomoticzBuildTime"],
         "Startup Folder": Parameters["StartupFolder"],
         "Home Folder": Parameters["HomeFolder"],
