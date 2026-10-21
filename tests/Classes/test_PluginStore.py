@@ -13,8 +13,10 @@ Covers:
                  retried at the next flush
   logging      – records never appear in the log
 
-The Domoticz helpers are replaced on the module: getConfigItem / setConfigItem
-by an in-memory configuration, is_domoticz_db_available by a flag.
+The Domoticz helpers are replaced on Classes.PersistedDocument: getConfigItem /
+setConfigItem by an in-memory configuration that, like the real storage layer,
+stamps its own "Version" on the record; is_domoticz_db_available by a flag.
+The real storage layer is exercised in tests/Classes/test_PersistedDocument.py.
 """
 
 import json
@@ -23,7 +25,7 @@ import types
 
 import pytest
 
-import Classes.PluginStore as plugin_store_module
+import Classes.PersistedDocument as persisted_document_module
 from Classes.PluginStore import PluginStore
 
 SECRET = "00112233445566778899aabbccddeeff"
@@ -53,13 +55,16 @@ def domoticz(monkeypatch):
         return json.loads(json.dumps(state.config.get(Key, {})))
 
     def set_config_item(Key=None, Attribute="", Value=None):
-        state.config[Key] = json.loads(json.dumps(Value))
+        record = json.loads(json.dumps(Value))
+        # As prepare_dict_for_storage(): the storage layer owns "Version"
+        record["Version"] = 2
+        state.config[Key] = record
         return state.config
 
-    monkeypatch.setattr(plugin_store_module, "getConfigItem", get_config_item)
-    monkeypatch.setattr(plugin_store_module, "setConfigItem", set_config_item)
-    monkeypatch.setattr(plugin_store_module, "is_domoticz_db_available", lambda plugin: state.available)
-    monkeypatch.setattr(plugin_store_module, "rotate_file_versions", lambda path, nb: state.rotated.append(path))
+    monkeypatch.setattr(persisted_document_module, "getConfigItem", get_config_item)
+    monkeypatch.setattr(persisted_document_module, "setConfigItem", set_config_item)
+    monkeypatch.setattr(persisted_document_module, "is_domoticz_db_available", lambda plugin: state.available)
+    monkeypatch.setattr(persisted_document_module, "rotate_file_versions", lambda path, nb: state.rotated.append(path))
     return state
 
 
@@ -83,7 +88,7 @@ def store_file(plugin, name="TestStore"):
 
 def write_payload(path, version=1, timestamp=1000.0, records=None):
     with open(path, "w", encoding="utf-8") as handle:
-        json.dump({"Version": version, "TimeStamp": timestamp, "Records": records if records is not None else {"k": RECORD}}, handle)
+        json.dump({"FormatVersion": version, "TimeStamp": timestamp, "Records": records if records is not None else {"k": RECORD}}, handle)
 
 
 def read_payload(path):
@@ -143,7 +148,7 @@ class TestLoad:
     def test_domoticz_copy_used_when_more_recent(self, plugin, domoticz):
         plugin.pluginconf.pluginConf["useDomoticzDb"] = True
         write_payload(store_file(plugin), timestamp=1000.0, records={"k": {"from": "file"}})
-        domoticz.config["PluginStore-TestStore"] = {"Version": 1, "TimeStamp": 2000.0, "Records": {"k": {"from": "domoticz"}}}
+        domoticz.config["PluginStore-TestStore"] = {"FormatVersion": 1, "TimeStamp": 2000.0, "Records": {"k": {"from": "domoticz"}}}
         store = PluginStore("TestStore", 1)
 
         store.load(plugin)
@@ -153,7 +158,7 @@ class TestLoad:
     def test_file_used_when_more_recent(self, plugin, domoticz):
         plugin.pluginconf.pluginConf["useDomoticzDb"] = True
         write_payload(store_file(plugin), timestamp=3000.0, records={"k": {"from": "file"}})
-        domoticz.config["PluginStore-TestStore"] = {"Version": 1, "TimeStamp": 2000.0, "Records": {"k": {"from": "domoticz"}}}
+        domoticz.config["PluginStore-TestStore"] = {"FormatVersion": 1, "TimeStamp": 2000.0, "Records": {"k": {"from": "domoticz"}}}
         store = PluginStore("TestStore", 1)
 
         store.load(plugin)
@@ -161,7 +166,7 @@ class TestLoad:
         assert store.get("k") == {"from": "file"}
 
     def test_domoticz_copy_ignored_when_domoticz_db_not_used(self, plugin, domoticz):
-        domoticz.config["PluginStore-TestStore"] = {"Version": 1, "TimeStamp": 2000.0, "Records": {"k": {"from": "domoticz"}}}
+        domoticz.config["PluginStore-TestStore"] = {"FormatVersion": 1, "TimeStamp": 2000.0, "Records": {"k": {"from": "domoticz"}}}
         store = PluginStore("TestStore", 1)
 
         store.load(plugin)
@@ -185,7 +190,7 @@ class TestLoad:
         plugin.pluginconf.pluginConf["useDomoticzDb"] = True
         with open(store_file(plugin), "w", encoding="utf-8") as handle:
             handle.write("{ not json")
-        domoticz.config["PluginStore-TestStore"] = {"Version": 1, "TimeStamp": 2000.0, "Records": {"k": RECORD}}
+        domoticz.config["PluginStore-TestStore"] = {"FormatVersion": 1, "TimeStamp": 2000.0, "Records": {"k": RECORD}}
         store = PluginStore("TestStore", 1)
 
         assert store.load(plugin) is True
@@ -193,7 +198,7 @@ class TestLoad:
 
     def test_invalid_payload_is_rejected(self, plugin, domoticz):
         with open(store_file(plugin), "w", encoding="utf-8") as handle:
-            json.dump({"Version": "1", "Records": []}, handle)
+            json.dump({"FormatVersion": "1", "Records": []}, handle)
 
         assert PluginStore("TestStore", 1).load(plugin) is False
 
@@ -227,7 +232,7 @@ class TestLoad:
         assert store.get("k")["upgraded"] is True
         store.flush(plugin)
         payload = read_payload(store_file(plugin))
-        assert payload["Version"] == 2 and payload["Records"]["k"]["upgraded"] is True
+        assert payload["FormatVersion"] == 2 and payload["Records"]["k"]["upgraded"] is True
 
 
 # ─── Flush ───────────────────────────────────────────────────────────────────
@@ -242,7 +247,7 @@ class TestFlush:
         store.flush(plugin)
 
         payload = read_payload(store_file(plugin))
-        assert payload["Version"] == 1 and payload["Records"] == {"k": RECORD}
+        assert payload["FormatVersion"] == 1 and payload["Records"] == {"k": RECORD}
         reloaded = PluginStore("TestStore", 1)
         reloaded.load(plugin)
         assert reloaded.get("k") == RECORD
@@ -253,7 +258,7 @@ class TestFlush:
         store.set("k", RECORD)
         store.flush(plugin)
         writes = []
-        monkeypatch.setattr(store, "_write_file", lambda p, payload: writes.append(payload) or True)
+        monkeypatch.setattr(store._document, "_write_file", lambda p, payload: writes.append(payload) or True)
 
         store.flush(plugin)
         assert writes == []
