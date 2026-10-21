@@ -185,6 +185,7 @@ from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
 from Modules.tools import (build_list_of_device_model,
                            reconcile_ieee_nwkid, lookupForIEEE,
                            night_shift_jobs, unregister_domoticz_widget)
+from Modules.tools_mac_capa import node_descriptor_fields
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_get_firmware_version,
@@ -194,6 +195,7 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_set_certificate, zigate_set_mode)
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
+from Modules.zigpy_preload import device_has_left_the_network
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
 
 VERSION_FILENAME = ".hidden/VERSION"
@@ -847,16 +849,39 @@ class BasePlugin:
 
 
     def zigpy_get_all_devices(self):
-        """Return all known devices as (EUI64-int, NWK-int) pairs for pre-loading into zigpy."""
+        """Return all known devices for pre-loading into zigpy.
+
+        Each entry is (EUI64-int, NWK-int, node descriptor fields), the third
+        being plain data from node_descriptor_fields() or None when the plugin
+        does not know the device's logical type. The transport turns it into a
+        zigpy NodeDescriptor; without one, zigpy skips the device in every
+        topology scan (issue #2110).
+
+        A device the plugin has recorded as gone is left out, as
+        zigpy_get_device() already does for the same records.
+        """
         result = []
+        departed = []
         for nwk_str, info in self.ListOfDevices.items():
             ieee_str = info.get('IEEE')
             self.log.logging("TransportZigpy", "Debug", "zigpy_get_all_devices pre-populate( %s, %s)" %( ieee_str, nwk_str))
+
+            if device_has_left_the_network(info):
+                departed.append(nwk_str)
+                self.log.logging("TransportZigpy", "Debug", "zigpy_get_all_devices skipping %s, recorded as %s" %(
+                    nwk_str, info.get("Status")))
+                continue
+
             if ieee_str:
                 try:
-                    result.append((int(ieee_str, 16), int(nwk_str, 16)))
+                    result.append((int(ieee_str, 16), int(nwk_str, 16), node_descriptor_fields(nwk_str, info)))
                 except (ValueError, TypeError):
                     self.log.logging("TransportZigpy", "Error", "zigpy_get_all_devices pre-populate( %s, %s) failed !!" %( ieee_str, nwk_str))
+
+        if departed:
+            self.log.logging("TransportZigpy", "Status", "Not pre-loading %s device(s) the plugin has as gone from the network: %s" %(
+                len(departed), ", ".join(sorted(departed))))
+
         return result
 
 
