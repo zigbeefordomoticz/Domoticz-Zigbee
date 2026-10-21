@@ -127,6 +127,11 @@ HARNESS = textwrap.dedent(
             network_info = zigpy.state.NetworkInfo(tx_power=sc["radio_tx_power"]) if "radio_tx_power" in sc else None
             self.state = types.SimpleNamespace(network_info=network_info, node_info=None)
             self.callBackGetAllDevices = None
+            if sc.get("green_power"):
+                # zigpy with Green Power support (> 2.3.0)
+                self.green_power = types.SimpleNamespace()
+        def add_listener(self, listener):
+            self.calls.append("add_listener:%s" % type(listener).__name__)
         async def load_network_info(self, *, load_devices=False):
             self.calls.append("load_network_info")
             if not self.network_formed:
@@ -437,3 +442,19 @@ class TestRestoreUsesAgeMargin:
             level == "Status" and "NWK frame counter 0 raised by %d to %d" % (increment, increment) in msg
             for level, msg in result["logs"]
         )
+
+
+# ─── Green Power listener ────────────────────────────────────────────────────
+
+class TestGreenPowerListener:
+
+    def test_registered_when_zigpy_supports_green_power(self):
+        result = _run(green_power=True)
+        assert result["error"] is None
+        assert result["calls"].count("add_listener:GreenPowerListener") == 1
+        # Registered once the network is started
+        assert result["calls"].index("start_network") < result["calls"].index("add_listener:GreenPowerListener")
+
+    def test_not_registered_without_green_power(self):
+        result = _run()
+        assert not any(c.startswith("add_listener") for c in result["calls"])

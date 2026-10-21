@@ -53,6 +53,9 @@ def stub_external_modules():
             {"Decode004D": MagicMock()}),
         ("Z4D_decoders.z4d_decoder_Discovery_Rsp",
             {"Decode804B": MagicMock()}),
+        ("Z4D_decoders.z4d_decoder_Green_Power",
+            {"Decode9E00": MagicMock(name="Decode9E00"), "Decode9E01": MagicMock(name="Decode9E01"),
+             "Decode9E02": MagicMock(name="Decode9E02")}),
         ("Z4D_decoders.z4d_decoder_groups",
             {"Decode8060": MagicMock(), "Decode8061": MagicMock(),
              "Decode8062": MagicMock(), "Decode8063": MagicMock()}),
@@ -214,6 +217,30 @@ def test_invalid_frame_logs_error(input_module, plugin, data):
     assert "Error" in plugin.log.logging.call_args.args
 
 
+def _logged_text(plugin):
+    return " ".join(str(a) for c in plugin.log.logging.call_args_list for a in c.args)
+
+
+def test_green_power_record_payload_is_masked(input_module, plugin, monkeypatch):
+    # 9e00 carries a Green Power device security key
+    input_module.extract_message_infos.return_value = ("9e00", "5345435245544b4559", "ff")
+    monkeypatch.setattr(input_module, "_decode_message", MagicMock())
+
+    input_module.zigbee_receive_message(plugin, {}, VALID_DATA)
+
+    assert "5345435245544b4559" not in _logged_text(plugin)
+    assert "<masked>" in _logged_text(plugin)
+
+
+def test_other_payload_is_logged(input_module, plugin, monkeypatch):
+    input_module.extract_message_infos.return_value = ("9e01", "0102030405", "ff")
+    monkeypatch.setattr(input_module, "_decode_message", MagicMock())
+
+    input_module.zigbee_receive_message(plugin, {}, VALID_DATA)
+
+    assert "0102030405" in _logged_text(plugin)
+
+
 def test_valid_frame_resets_ping(input_module, plugin, monkeypatch):
     plugin.Ping["Nb Ticks"] = 99
     monkeypatch.setattr(input_module, "_decode_message", MagicMock())
@@ -336,6 +363,12 @@ def test_decoder_keys_format(input_module):
 def test_decoder_values_callable(input_module):
     for decoder in input_module.DECODERS.values():
         assert callable(decoder)
+
+
+def test_green_power_types_in_decoders(input_module):
+    assert input_module.DECODERS["9e00"] is input_module.Decode9E00
+    assert input_module.DECODERS["9e01"] is input_module.Decode9E01
+    assert input_module.DECODERS["9e02"] is input_module.Decode9E02
 
 
 def test_8139_alias(input_module):
