@@ -28,6 +28,9 @@ is reported whole. The DST rules come from the system's IANA time zone. When it
 cannot be determined, the DST attributes are reported as invalid and TimeZone
 carries the current full offset, so a device deriving its local time from
 Time + TimeZone still gets it right.
+
+A device that expects another time base declares it in its device configuration
+with the TimeServerEpoch attribute (see TIME_SERVER_EPOCHS).
 """
 
 import os
@@ -36,11 +39,11 @@ from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from Modules.sendZigateCommand import raw_APS_request
-from Modules.tools import is_ack_tobe_disabled
+from Modules.tools import get_deviceconf_parameter_value, is_ack_tobe_disabled
 from Modules.zigateConsts import ZIGATE_EP
 
 ZIGBEE_EPOCH = datetime(2000, 1, 1, tzinfo=timezone.utc)
-TUYA_EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
+UNIX_EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 INVALID_TIME = 0xFFFFFFFF           # ZCL non-value for UTC and uint32 time attributes
 MAX_TIME = INVALID_TIME - 1
@@ -66,8 +69,13 @@ STATUS_UNSUPPORTED_ATTRIBUTE = "86"
 # zone rules never change offset twice within 6 hours (same step as zigpy PR #1916).
 DST_PROBE_STEP = timedelta(hours=6)
 
-# Models whose LocalTime is local wall-clock seconds since 1970-01-01 instead of 2000-01-01
-TUYA_EPOCH_MODELS = ("TS0601-thermostat",)
+# Device configuration attribute selecting a non-ZCL time base. Without it a device gets
+# ZCL r8 values. 1970_UTC and 2000_LOCAL follow zigbee-herdsman-converters' customTimeResponse().
+TIME_SERVER_EPOCH_ATTRIBUTE = "TimeServerEpoch"
+EPOCH_1970_LOCALTIME = "1970_LOCALTIME"  # LocalTime: local wall clock since 1970-01-01
+EPOCH_1970_UTC = "1970_UTC"              # Time: seconds since 1970-01-01 UTC, LocalTime: local wall clock since 1970-01-01
+EPOCH_2000_LOCAL = "2000_LOCAL"          # Time: local wall clock since 2000-01-01
+TIME_SERVER_EPOCHS = (EPOCH_1970_LOCALTIME, EPOCH_1970_UTC, EPOCH_2000_LOCAL)
 
 
 def get_local_timezone():
@@ -130,12 +138,12 @@ def resolve_time_zone(self, now_utc):
     return zone
 
 
-def _log_once(self, error_code, description):
-    """Log a time zone problem once per plugin instance instead of on every Time cluster read."""
+def _log_once(self, error_code, description, key=None):
+    """Log a configuration problem once per plugin instance (and key) instead of on every Time cluster read."""
     reported = self.__dict__.setdefault("_timeserver_reported", set())
-    if error_code in reported:
+    if (key or error_code) in reported:
         return
-    reported.add(error_code)
+    reported.add(key or error_code)
     self.log.logging(["TimeServer", "Input"], "Log", f"TimeServer - {description}", context={"Error": error_code, "Description": description})
 
 
@@ -261,13 +269,35 @@ def build_time_snapshot(self, now_utc, zone):
         "dst_shift": dst_shift,
         "standard_time": zigbee_time(now_utc + timedelta(seconds=time_zone)),
         "local_time": zigbee_time(now_utc + timedelta(seconds=offset)),
-        "tuya_local_time": int((now_utc - TUYA_EPOCH).total_seconds()) + offset,
+        "unix_time": int((now_utc - UNIX_EPOCH).total_seconds()),
+        "unix_local_time": int((now_utc - UNIX_EPOCH).total_seconds()) + offset,
     }
 
 
-def time_attribute_value(self, nwkid, attribute, snapshot):
-    """Return (status, data_type, value) answering attribute (big-endian hex string) from snapshot."""
+def device_time_epoch(self, nwkid):
+    """The TimeServerEpoch declared by the device's configuration, or None for ZCL r8 values."""
+    model = self.ListOfDevices.get(nwkid, {}).get("Model")
+    if not model:
+        return None
+    epoch = get_deviceconf_parameter_value(self, model, TIME_SERVER_EPOCH_ATTRIBUTE)
+    if epoch is None or epoch in TIME_SERVER_EPOCHS:
+        return epoch
+    _log_once(
+        self,
+        "TimeServer_003",
+        f"{model}: unknown {TIME_SERVER_EPOCH_ATTRIBUTE} {epoch!r} (expected one of {', '.join(TIME_SERVER_EPOCHS)}), ZCL time used",
+        key=f"TimeServer_003/{model}",
+    )
+    return None
+
+
+def time_attribute_value(attribute, snapshot, epoch=None):
+    """Return (status, data_type, value) answering attribute (big-endian hex string) from snapshot, in the device's epoch."""
     if attribute == "0000":  # Time
+        if epoch == EPOCH_1970_UTC:
+            return STATUS_SUCCESS, DATA_TYPE_UTC, snapshot["unix_time"]
+        if epoch == EPOCH_2000_LOCAL:
+            return STATUS_SUCCESS, DATA_TYPE_UTC, snapshot["local_time"]
         return STATUS_SUCCESS, DATA_TYPE_UTC, snapshot["time"]
 
     if attribute == "0001":  # TimeStatus
@@ -289,9 +319,8 @@ def time_attribute_value(self, nwkid, attribute, snapshot):
         return STATUS_SUCCESS, DATA_TYPE_UINT32, snapshot["standard_time"]
 
     if attribute == "0007":  # LocalTime
-        if self.ListOfDevices.get(nwkid, {}).get("Model") in TUYA_EPOCH_MODELS:
-            self.log.logging(["TimeServer", "Input"], "Debug", "time_attribute_value - LocalTime uses EPOCH from 1970-01-01 instead of 2000-01-01", nwkid)
-            return STATUS_SUCCESS, DATA_TYPE_UINT32, snapshot["tuya_local_time"]
+        if epoch in (EPOCH_1970_LOCALTIME, EPOCH_1970_UTC):
+            return STATUS_SUCCESS, DATA_TYPE_UINT32, snapshot["unix_local_time"]
         return STATUS_SUCCESS, DATA_TYPE_UINT32, snapshot["local_time"]
 
     if attribute == "fffd":  # ClusterRevision
@@ -321,7 +350,8 @@ def timeserver_multiple_read_attribute_request(self, Devices, nwkid, src_ep, dst
 
     now_utc = datetime.now(timezone.utc)
     snapshot = build_time_snapshot(self, now_utc, resolve_time_zone(self, now_utc))
-    self.log.logging(["TimeServer","Input"], "Debug", f"Decode0100 - timeserver_multiple_read_attribute_request - nwkid {nwkid} snapshot {snapshot}", nwkid)
+    epoch = device_time_epoch(self, nwkid)
+    self.log.logging(["TimeServer","Input"], "Debug", f"Decode0100 - timeserver_multiple_read_attribute_request - nwkid {nwkid} epoch {epoch or 'ZCL'} snapshot {snapshot}", nwkid)
 
     cluster_frame = "18"  # Profile-wide, Server to Client, Disable default Response
     cmd = "01"            # Read Attributes Response
@@ -329,7 +359,7 @@ def timeserver_multiple_read_attribute_request(self, Devices, nwkid, src_ep, dst
 
     for idx in range(0, len(MsgData), 4):
         attribute = MsgData[idx:idx + 4]
-        status, data_type, value = time_attribute_value(self, nwkid, attribute, snapshot)
+        status, data_type, value = time_attribute_value(attribute, snapshot, epoch)
         self.log.logging(["TimeServer","Input"], "Debug", f"Decode0100 - timeserver_multiple_read_attribute_request - nwkid {nwkid} attribute {attribute} status {status} type {data_type} value {value}", nwkid)
         payload += encode_attribute_record(attribute, status, data_type, value)
 

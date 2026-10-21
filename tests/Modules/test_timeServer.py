@@ -19,8 +19,13 @@ Coverage:
       * for every instant sampled, Local Time computed with the ZCL formula equals
         the zone's wall clock, including the seconds around each transition
       * TimeStatus is Master | MasterZoneDst, never Master | Synchronized
-      * Tuya TS0601-thermostat LocalTime is wall-clock seconds since 1970
-        (regression: the UTC offset was added twice)
+  - TimeServerEpoch device configuration attribute
+      * absent: ZCL r8 values; 1970_LOCALTIME: LocalTime is the wall clock since 1970
+        (TS0601-thermostat, regression: the UTC offset was added twice); 1970_UTC and
+        2000_LOCAL as zigbee-herdsman-converters' customTimeResponse(); the other
+        attributes never change
+      * read from the device's model configuration; an unknown value falls back to
+        ZCL time and is logged once per model
   - resolve_time_zone / get_local_timezone
       * a zone disagreeing with the system clock is not trusted, logged once
       * TZ names with or without a leading ':'; a POSIX TZ rule string does not raise
@@ -67,7 +72,11 @@ def ts():
     _raw_APS_request = MagicMock(name="raw_APS_request")
     stubs = {
         "Modules.sendZigateCommand": _make_stub("Modules.sendZigateCommand", raw_APS_request=_raw_APS_request),
-        "Modules.tools": _make_stub("Modules.tools", is_ack_tobe_disabled=MagicMock(name="is_ack_tobe_disabled", return_value=False)),
+        "Modules.tools": _make_stub(
+            "Modules.tools",
+            get_deviceconf_parameter_value=lambda self, model, attribute, return_default=None: self.DeviceConf.get(model, {}).get(attribute, return_default),
+            is_ack_tobe_disabled=MagicMock(name="is_ack_tobe_disabled", return_value=False),
+        ),
         "Modules.zigateConsts": _make_stub("Modules.zigateConsts", ZIGATE_EP=ZIGATE_EP),
     }
 
@@ -104,11 +113,12 @@ def system_tz(monkeypatch):
     time.tzset()
 
 
-def _plugin(model="SomeModel"):
+def _plugin(model="SomeModel", epoch=None):
     p = MagicMock()
     p.log = MagicMock()
     p.log.logging = MagicMock()
     p.ListOfDevices = {NWKID: {"Model": model}}
+    p.DeviceConf = {model: {"TimeServerEpoch": epoch}} if epoch else {}
     return p
 
 
@@ -236,23 +246,58 @@ def test_time_status_never_master_and_synchronized(ts):
     assert snap["time_status"] & 0x03 == 0x01
 
 
-def test_tuya_local_time_is_wall_clock_since_1970(ts):
+PARIS_SUMMER = datetime(2026, 7, 15, 10, 0, tzinfo=timezone.utc)   # 12:00 CEST
+UNIX_NOW = int(PARIS_SUMMER.timestamp())
+ZIGBEE_NOW = int((PARIS_SUMMER - ZIGBEE_EPOCH).total_seconds())
+
+
+# (TimeServerEpoch, Time 0x0000, LocalTime 0x0007)
+EPOCHS = [
+    pytest.param(None, ZIGBEE_NOW, ZIGBEE_NOW + 7200, id="zcl"),
+    pytest.param("1970_LOCALTIME", ZIGBEE_NOW, UNIX_NOW + 7200, id="1970_LOCALTIME"),
+    pytest.param("1970_UTC", UNIX_NOW, UNIX_NOW + 7200, id="1970_UTC"),
+    pytest.param("2000_LOCAL", ZIGBEE_NOW + 7200, ZIGBEE_NOW + 7200, id="2000_LOCAL"),
+]
+
+
+@pytest.mark.parametrize("epoch, time_value, local_time_value", EPOCHS)
+def test_time_server_epoch(ts, epoch, time_value, local_time_value):
+    snap = ts.build_time_snapshot(_plugin(), PARIS_SUMMER, ZoneInfo("Europe/Paris"))
+
+    assert ts.time_attribute_value("0000", snap, epoch) == ("00", "e2", time_value)
+    assert ts.time_attribute_value("0007", snap, epoch) == ("00", "23", local_time_value)
+    for attribute in ("0001", "0002", "0003", "0004", "0005", "0006"):
+        assert ts.time_attribute_value(attribute, snap, epoch) == ts.time_attribute_value(attribute, snap), attribute
+
+
+def test_tuya_thermostat_local_time_is_wall_clock_since_1970(ts):
     """Regression: TS0601-thermostat got Unix time + 2 x UTC offset."""
-    p = _plugin(model="TS0601-thermostat")
-    now = datetime(2026, 7, 15, 10, 0, tzinfo=timezone.utc)
-    snap = ts.build_time_snapshot(p, now, ZoneInfo("Europe/Paris"))
+    snap = ts.build_time_snapshot(_plugin(), PARIS_SUMMER, ZoneInfo("Europe/Paris"))
 
-    status, data_type, value = ts.time_attribute_value(p, NWKID, "0007", snap)
-
-    assert (status, data_type) == ("00", "23")
-    assert value == int(datetime(2026, 7, 15, 12, 0, tzinfo=timezone.utc).timestamp())
+    assert ts.time_attribute_value("0007", snap, "1970_LOCALTIME")[2] == int(datetime(2026, 7, 15, 12, 0, tzinfo=timezone.utc).timestamp())
 
 
-def test_non_tuya_local_time_uses_zigbee_epoch(ts):
+def test_device_time_epoch_from_model_configuration(ts):
+    assert ts.device_time_epoch(_plugin(model="TS0601-thermostat", epoch="1970_LOCALTIME"), NWKID) == "1970_LOCALTIME"
+    assert ts.device_time_epoch(_plugin(model="TRVZB"), NWKID) is None
+
+
+def test_device_time_epoch_without_model(ts):
     p = _plugin()
-    snap = ts.build_time_snapshot(p, datetime(2026, 7, 15, 10, 0, tzinfo=timezone.utc), ZoneInfo("Europe/Paris"))
+    p.ListOfDevices = {NWKID: {}}
 
-    assert ts.time_attribute_value(p, NWKID, "0007", snap)[2] == _wall_clock(datetime(2026, 7, 15, 10, 0, tzinfo=timezone.utc), ZoneInfo("Europe/Paris"))
+    assert ts.device_time_epoch(p, NWKID) is None
+
+
+def test_device_time_epoch_unknown_value_logged_once_per_model(ts):
+    p = _plugin(model="Thermo", epoch="1970")
+    p.DeviceConf["Other"] = {"TimeServerEpoch": "local"}
+    p.ListOfDevices["5678"] = {"Model": "Other"}
+
+    assert ts.device_time_epoch(p, NWKID) is None
+    assert ts.device_time_epoch(p, NWKID) is None
+    assert ts.device_time_epoch(p, "5678") is None
+    assert p.log.logging.call_count == 2
 
 
 # ── Time zone resolution ─────────────────────────────────────────────────────
@@ -392,11 +437,13 @@ def test_duplicate_sqn_not_answered_twice(ts, new_york_clock):
     assert ts._mock_raw_APS_request.call_count == 1
 
 
-def test_tuya_local_time_in_response(ts, new_york_clock):
-    _request(ts, _plugin(model="TS0601-thermostat"), ["0007"])
+def test_time_server_epoch_in_response(ts, new_york_clock):
+    _request(ts, _plugin(model="TRVZB", epoch="1970_UTC"), ["0000", "0007"])
 
-    unix_local = int(NEW_YORK_NOW.timestamp()) - 14400
-    assert ts._mock_raw_APS_request.call_args[0][5] == "180501" + "0700" + "00" + "23" + _le32(unix_local)
+    unix_now = int(NEW_YORK_NOW.timestamp())
+    assert ts._mock_raw_APS_request.call_args[0][5] == (
+        "180501" + "0000" + "00" + "e2" + _le32(unix_now) + "0700" + "00" + "23" + _le32(unix_now - 14400)
+    )
 
 
 def test_invalid_dst_window_encoded_as_non_value(ts, monkeypatch):
