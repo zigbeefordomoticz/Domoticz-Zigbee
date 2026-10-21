@@ -1025,6 +1025,10 @@ def load_new_param_definition(self):
     - OnOffPollingFreq (manufacturer-specific polling)
     - AC201Polling (OWON/CASAIA specific)
     - Various Netatmo LED and control parameters
+
+    The polling overrides are hidden plugin-wide settings defaulting to 0. Only a
+    non-zero value replaces the certified one, so a Param filled here ends up as it
+    would have at pairing.
     """
     for key in self.ListOfDevices:
         if "Model" not in self.ListOfDevices[key]:
@@ -1049,9 +1053,9 @@ def load_new_param_definition(self):
             if param == "Disabled" and "Disabled" in self.ListOfDevices[key]["Param"] and self.ListOfDevices[key]["Param"][ "Disabled" ]:
                 self.ListOfDevices[key]["Health"] = "Disabled"
                 
-            if param in ("PowerOnAfterOffOn"):
+            if param == "PowerOnAfterOffOn":
                 if "Manufacturer" not in self.ListOfDevices[key]:
-                    return
+                    continue
                 if self.ListOfDevices[key]["Manufacturer"] == "100b":  # Philips
                     self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf["PhilipsPowerOnAfterOffOn"]
 
@@ -1077,7 +1081,7 @@ def load_new_param_definition(self):
                 if "Manufacturer Name" in self.ListOfDevices[key]:
                     devManufName = self.ListOfDevices[key]["Manufacturer Name"]
                 if devManufCode == devManufName == "":
-                    return
+                    continue
 
                 plugin_generic_param = None
                 if devManufCode in POLLING_TABLE_SPECIFICS:
@@ -1085,8 +1089,9 @@ def load_new_param_definition(self):
                 if plugin_generic_param is None and devManufName in POLLING_TABLE_SPECIFICS:
                     plugin_generic_param = POLLING_TABLE_SPECIFICS[devManufName]
 
-                if plugin_generic_param is None:
-                    return False
+                if plugin_generic_param is None or not self.pluginconf.pluginConf.get(plugin_generic_param):
+                    # Hidden plugin-wide setting left at its default (0): keep the certified value, as pairing does
+                    continue
                 self.log.logging("Database", "Log","--->PluginConf %s <-- %s" % (param, plugin_generic_param))
                 self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf[plugin_generic_param]
 
@@ -1103,7 +1108,7 @@ def load_new_param_definition(self):
                 if "Manufacturer Name" in self.ListOfDevices[key]:
                     devManufName = self.ListOfDevices[key]["Manufacturer Name"]
                 if devManufCode == devManufName == "":
-                    return
+                    continue
 
                 plugin_generic_param = None
                 if devManufCode in POLLING_TABLE_SPECIFICS:
@@ -1111,8 +1116,9 @@ def load_new_param_definition(self):
                 if plugin_generic_param is None and devManufName in POLLING_TABLE_SPECIFICS:
                     plugin_generic_param = POLLING_TABLE_SPECIFICS[devManufName]
 
-                if plugin_generic_param is None:
-                    return False
+                if plugin_generic_param is None or not self.pluginconf.pluginConf.get(plugin_generic_param):
+                    # Hidden plugin-wide setting left at its default (0): keep the certified value, as pairing does
+                    continue
                 self.log.logging("Database", "Log","--->PluginConf %s <-- %s" % (param, plugin_generic_param))
                 self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf[plugin_generic_param]
 
@@ -1128,7 +1134,7 @@ def load_new_param_definition(self):
                 if "Manufacturer Name" in self.ListOfDevices[key]:
                     devManufName = self.ListOfDevices[key]["Manufacturer Name"]
                 if devManufCode == devManufName == "":
-                    return
+                    continue
 
                 plugin_generic_param = None
                 if devManufCode in POLLING_TABLE_SPECIFICS:
@@ -1136,8 +1142,9 @@ def load_new_param_definition(self):
                 if plugin_generic_param is None and devManufName in POLLING_TABLE_SPECIFICS:
                     plugin_generic_param = POLLING_TABLE_SPECIFICS[devManufName]
 
-                if plugin_generic_param is None:
-                    return False
+                if plugin_generic_param is None or not self.pluginconf.pluginConf.get(plugin_generic_param):
+                    # Hidden plugin-wide setting left at its default (0): keep the certified value, as pairing does
+                    continue
                 self.log.logging("Database", "Log","--->PluginConf %s <-- %s" % (param, plugin_generic_param))
                 self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf[plugin_generic_param]
 
