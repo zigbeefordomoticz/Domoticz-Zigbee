@@ -5,7 +5,6 @@ from Modules.basicOutputs import handle_unknow_device
 from Modules.domoTools import lastSeenUpdate
 from Modules.livolo import livolo_read_attribute_request
 from Modules.schneider_wiser import wiser_read_attribute_request
-from Modules.timeServer import timeserver_read_attribute_request
 from Modules.tools import (timeStamped, updLQI, updSQN,
                            zigpy_plugin_sanity_check)
 from Modules.schneider_wiser import schneider_multiple_read_attribute_request
@@ -72,7 +71,7 @@ def Decode0100(self, Devices, MsgData, MsgLQI):
         return
     
     if MsgClusterId == '000a':
-        self.log.logging(['Input', 'Schneider'], 'Debug', 'Decode0100 - specific ---- schneider_multiple_read_attribute_request')
+        self.log.logging(['Input', 'TimeServer'], 'Debug', 'Decode0100 - Time Server Cluster %s/%s nbAttribute: %s' % (MsgSrcAddr, MsgSrcEp, nbAttribute))
         timeserver_multiple_read_attribute_request(self, Devices, MsgSrcAddr, MsgSrcEp, MsgDstEp, MsgSqn, MsgClusterId, MsgManufSpec, MsgManufCode, MsgData[24:], nbAttribute)  
         return
 
@@ -81,11 +80,7 @@ def Decode0100(self, Devices, MsgData, MsgLQI):
         Attribute = MsgData[idx:idx + 4]
 
         # Handle different cluster IDs and attributes
-        if MsgClusterId == '000a':
-            self.log.logging('Input', 'Debug', 'Decode0100 - Received Time Server Cluster %s/%s Idx: %s  Attribute: %s' % (MsgSrcAddr, MsgSrcEp, idx, Attribute))
-            timeserver_read_attribute_request(self, MsgSqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgManufSpec, MsgManufCode, Attribute)
-
-        elif MsgClusterId == '0201' and (manuf == '105e' or manuf_name in ('Schneider', 'Schneider Electric')):
+        if MsgClusterId == '0201' and (manuf == '105e' or manuf_name in ('Schneider', 'Schneider Electric')):
             wiser_read_attribute_request(self, Devices, MsgSrcAddr, MsgSrcEp, MsgSqn, MsgClusterId, Attribute)
             self.log.logging('Schneider', 'Debug', 'Decode0100 - Sqn: %s NwkId: %s SrcEP: %s DstEp: %s ClusterId: %s Direction: %s ManufSpec: %s ManufCode: %s nbAttribute: %s' %
                              (MsgSqn, MsgSrcAddr, MsgSrcEp, MsgDstEp, MsgClusterId, MsgDirection, MsgManufSpec, MsgManufCode, nbAttribute))

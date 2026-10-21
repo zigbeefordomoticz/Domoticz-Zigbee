@@ -10,288 +10,329 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
+"""
+Time cluster (0x000a) server, as specified in ZCL revision 8, section 3.12.
 
-import calendar
+The coordinator is the network's master clock. All attributes of one Read
+Attributes request are answered from a single snapshot of the clock, so that
+Time, TimeZone, the DST window and LocalTime are consistent with each other:
+
+    StandardTime = Time + TimeZone                       (TimeZone excludes DST)
+    LocalTime    = StandardTime + DstShift   if DstStart <= Time <= DstEnd
+    LocalTime    = StandardTime              otherwise
+
+DstStart and DstEnd are UTC instants counted from the Zigbee epoch
+(2000-01-01 UTC). They describe the DST period in force, or the next one when
+DST is not in force, so that a southern-hemisphere period crossing the new year
+is reported whole. The DST rules come from the system's IANA time zone. When it
+cannot be determined, the DST attributes are reported as invalid and TimeZone
+carries the current full offset, so a device deriving its local time from
+Time + TimeZone still gets it right.
+"""
+
 import os
 from datetime import datetime, timedelta, timezone
-from zoneinfo import (ZoneInfo,  # ZoneInfoNotFoundError exists in Python 3.9+
-                      ZoneInfoNotFoundError)
+from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from Modules.basicInputs import read_attribute_response
 from Modules.sendZigateCommand import raw_APS_request
-from Modules.tools import is_ack_tobe_disabled, to_little_endian
+from Modules.tools import is_ack_tobe_disabled
 from Modules.zigateConsts import ZIGATE_EP
 
-ZIGBEE_EPOCH = datetime(2000, 1, 1, 0, 0, 0, 0, tzinfo=timezone.utc)
-TUYA_EPOCTime = datetime(1970, 1, 1, 0, 0, 0, 0)
+ZIGBEE_EPOCH = datetime(2000, 1, 1, tzinfo=timezone.utc)
+TUYA_EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+INVALID_TIME = 0xFFFFFFFF           # ZCL non-value for UTC and uint32 time attributes
+MAX_TIME = INVALID_TIME - 1
+TIME_CLUSTER_REVISION = 0x0002      # ZCL r8 section 3.12.1.1
+
+# TimeStatus bits, ZCL r8 Table 3-70. Synchronized is never set: "If the Master
+# bit is 1, the value of this bit is 0."
+TIME_STATUS_MASTER = 0x01
+TIME_STATUS_MASTER_ZONE_DST = 0x04
+
+# ZCL data types used by the Time cluster, and their size in bytes
+DATA_TYPE_MAP8 = "18"
+DATA_TYPE_UINT16 = "21"
+DATA_TYPE_UINT32 = "23"
+DATA_TYPE_INT32 = "2b"
+DATA_TYPE_UTC = "e2"
+DATA_TYPE_SIZE = {DATA_TYPE_MAP8: 1, DATA_TYPE_UINT16: 2, DATA_TYPE_UINT32: 4, DATA_TYPE_INT32: 4, DATA_TYPE_UTC: 4}
+
+STATUS_SUCCESS = "00"
+STATUS_UNSUPPORTED_ATTRIBUTE = "86"
+
+# DST transitions are found with UTC probes, then bisected to the second. Time
+# zone rules never change offset twice within 6 hours (same step as zigpy PR #1916).
+DST_PROBE_STEP = timedelta(hours=6)
+
+# Models whose LocalTime is local wall-clock seconds since 1970-01-01 instead of 2000-01-01
+TUYA_EPOCH_MODELS = ("TS0601-thermostat",)
 
 
 def get_local_timezone():
     """
-    Get the local time zone name from the system environment.
+    Return the system's IANA time zone as a ZoneInfo, or None when it cannot be determined.
 
-    :return: The name of the local time zone.
+    Looked up, in order, from the TZ environment variable, the /etc/localtime symlink
+    and /etc/timezone. A POSIX TZ rule string (e.g. "CET-1CEST,M3.5.0,M10.5.0/3") is
+    not an IANA name and is skipped.
     """
-    return os.environ.get('TZ', 'UTC') or 'UTC'
-
-def is_valid_timezone_system_check(self, tz_name):
-    """Check if a timezone exists by verifying against system time zone files."""
-    tz_path = os.path.join("/usr/share/zoneinfo", tz_name)
-    if not os.path.exists(tz_path):
-        _context = {
-            'Error': "TimeServer_002",
-            'Description': "/usr/share/zoneinfo/ not existing, please check your OS installation",
-            'Local_tz_name': tz_name,
-        }
-        self.log.logging(["TimeServer", "Input"], "Log", "TimeServer - TimeZone system missing", context=_context)
-        return False
-
-    return True
-
-
-def is_valid_timezone(self, tz_name):
-    """Check if a given timezone exists in the system."""
-    try:
-        ZoneInfo(tz_name)  # Try initializing the time zone
-
-    except ZoneInfoNotFoundError:  # Specific exception for missing ZoneInfo
-        _context = {
-            'Error': "TimeServer_003",
-            'Description': "Invalid time zone",
-            'Local_tz_name': tz_name,
-        }
-        self.log.logging(["TimeServer", "Input"], "Log", "TimeServer - calculate_dst_times - invalid time zone", context=_context)
-        return False
-
-    except Exception as e:  # Catch unexpected errors (optional)
-        _context = {
-            'Error': "TimeServer_001",
-            'Description': "Catch unexpected errors",
-            'Local_tz_name': tz_name,
-        }
-        self.log.logging(["TimeServer", "Input"], "Debug", f"TimeServer - Unexpected error checking time zone '{tz_name}': {e}")
-        return False
-
-    return True
-
-
-def calculate_dst_times(self):
-    """
-    Calculate the DST start and end times for the current year in the local time zone.
-
-    :return: Tuple containing DST start time, DST end time, and DST shift in seconds.
-    """
-    # Get the local time zone name
-    local_tz_name = get_local_timezone()
-
-    # If the time zone is UTC, no DST exists → return (0, 0, 0) immediately
-    if local_tz_name == "UTC":
-        return 0, 0, 0
-
-    # Checking Against System TZ Files
-    if not is_valid_timezone_system_check(self, local_tz_name):
-        return 0, 0, 0
-
-    # Check if the time zone exists before proceeding
-    if not is_valid_timezone(self, local_tz_name):
-        return 0, 0, 0
+    candidates = [os.environ.get("TZ", "").lstrip(":")]
 
     try:
-        local_tz = ZoneInfo(local_tz_name)
+        parts = Path("/etc/localtime").resolve().parts
+        if "zoneinfo" in parts:
+            idx = len(parts) - 1 - parts[::-1].index("zoneinfo")
+            candidates.append("/".join(parts[idx + 1:]))
+    except (OSError, RuntimeError):
+        pass
 
-    except Exception as er:
-        _context = {
-            'Error': "TimeServer_004",
-            'Description': str(er),
-            'Type': type(er),
-            'Local_tz_name': local_tz_name,
-        }
-        self.log.logging(["TimeServer","Input"], "Error", "TimeServer - calculate_dst_times - ZoneInfo initialization failed, default to UTC", context=_context)
-        return 0, 0, 0
+    try:
+        candidates.append(Path("/etc/timezone").read_text(encoding="utf-8").strip())
+    except (OSError, UnicodeDecodeError):
+        pass
 
-    current_year = datetime.now().year
+    for tz_name in candidates:
+        if not tz_name:
+            continue
+        try:
+            return ZoneInfo(tz_name)
+        except (ZoneInfoNotFoundError, ValueError, OSError):
+            continue
 
-    # Cache on the plugin instance — each Domoticz plugin instance gets its own
-    # copy, which avoids shared state when multiple instances run in the same process.
+    return None
+
+
+def resolve_time_zone(self, now_utc):
+    """
+    Return the IANA zone to report DST rules from, or None.
+
+    The zone is only trusted when it agrees with the offset the system clock applies
+    right now, so a stale /etc/timezone or a TZ rule string never yields DST values
+    that contradict the local time.
+    """
+    zone = get_local_timezone()
+    if zone is None:
+        _log_once(self, "TimeServer_001", "No IANA time zone found (TZ, /etc/localtime, /etc/timezone), DST attributes reported as invalid")
+        return None
+
+    system_offset = now_utc.astimezone().utcoffset()
+    zone_offset = now_utc.astimezone(zone).utcoffset()
+    if system_offset != zone_offset:
+        _log_once(
+            self,
+            "TimeServer_002",
+            f"Time zone {zone.key} ({zone_offset}) disagrees with the system clock ({system_offset}), DST attributes reported as invalid",
+        )
+        return None
+
+    return zone
+
+
+def _log_once(self, error_code, description):
+    """Log a time zone problem once per plugin instance instead of on every Time cluster read."""
+    reported = self.__dict__.setdefault("_timeserver_reported", set())
+    if error_code in reported:
+        return
+    reported.add(error_code)
+    self.log.logging(["TimeServer", "Input"], "Log", f"TimeServer - {description}", context={"Error": error_code, "Description": description})
+
+
+def zigbee_time(instant):
+    """Seconds from the Zigbee epoch to instant, or INVALID_TIME when not representable."""
+    seconds = int((instant - ZIGBEE_EPOCH).total_seconds())
+    return seconds if 0 <= seconds <= MAX_TIME else INVALID_TIME
+
+
+def _offsets(instant, zone):
+    """(UTC offset, DST shift) in seconds that zone applies at the UTC instant."""
+    local = instant.astimezone(zone)
+    return (
+        int((local.utcoffset() or timedelta(0)).total_seconds()),
+        int((local.dst() or timedelta(0)).total_seconds()),
+    )
+
+
+def scan_offset_periods(zone, year):
+    """
+    Split year-1 .. year+1 into periods of constant (UTC offset, DST shift).
+
+    Return a chronological list of (start, end, offset, shift), start inclusive and
+    end exclusive, both timezone-aware UTC datetimes.
+    """
+    lower = datetime(year - 1, 1, 1, tzinfo=timezone.utc)
+    upper = datetime(year + 2, 1, 1, tzinfo=timezone.utc)
+
+    periods = []
+    period_start = probe = lower
+    current = _offsets(probe, zone)
+
+    while probe < upper:
+        following = min(probe + DST_PROBE_STEP, upper)
+        following_offsets = _offsets(following, zone)
+        if following_offsets != current:
+            # Bisect on whole seconds: left keeps the old offsets, right has the new ones
+            left, right = probe, following
+            while (right - left) > timedelta(seconds=1):
+                middle = left + timedelta(seconds=int((right - left).total_seconds()) // 2)
+                if _offsets(middle, zone) == current:
+                    left = middle
+                else:
+                    right = middle
+            periods.append((period_start, right, current[0], current[1]))
+            period_start = right
+            current = following_offsets
+        probe = following
+
+    periods.append((period_start, upper, current[0], current[1]))
+    return periods
+
+
+def get_offset_periods(self, zone, year):
+    """scan_offset_periods(), cached per plugin instance, zone and year."""
+    # Each Domoticz plugin instance gets its own cache, which avoids shared state
+    # when multiple instances run in the same process.
     instance_cache = self.__dict__.setdefault("_dst_cache", {})
-    if current_year in instance_cache:
-        return instance_cache[current_year]
+    key = (zone.key, year)
+    if key not in instance_cache:
+        instance_cache.clear()
+        instance_cache[key] = scan_offset_periods(zone, year)
+    return instance_cache[key]
 
-    # Find the DST start and end times for the current year
-    dst_start = None
-    dst_end = None
 
-    # Iterate over the year to find DST transitions
-    for month in range(1, 13):
-        num_days = calendar.monthrange(current_year, month)[1]  # Get correct number of days
-        for day in range(1, num_days + 1):
-            try:
-                date = datetime(current_year, month, day, tzinfo=local_tz)
-                if date.dst() != timedelta(0) and dst_start is None:
-                    dst_start = date
-                elif date.dst() == timedelta(0) and dst_start is not None:
-                    dst_end = date
-                    break  # Stop searching once we find dst_end
+def select_dst_period(periods, now_utc, offset, shift):
+    """
+    Return the (start, end, shift) of the DST period in force at now_utc, or of the next one.
 
-            except Exception as er:
-                _context = {
-                    'Error': "TimeServer_005",
-                    'Description': str(er),
-                    'Local_tz_name': local_tz_name,
-                    'Local_tz': local_tz,
-                    'Current_year': current_year,
-                    'Month': month,
-                    'Day': day,
-                    'Date': date
-                }
-                self.log.logging(["TimeServer","Input"], "Error", "Decode0100 - calculate_dst_times - invalid date, default to UTC", context=_context)
-                return 0, 0, 0
+    Only periods sharing the current standard offset qualify, so a political change of
+    standard time is not mistaken for DST. Return None when there is no such period, or
+    when it touches the edge of the scanned range and its true bounds are unknown.
+    """
+    standard_offset = offset - shift
+    for start, end, period_offset, period_shift in periods:
+        if end <= now_utc or period_shift == 0 or period_offset - period_shift != standard_offset:
+            continue
+        if start == periods[0][0] or end == periods[-1][1]:
+            return None
+        return start, end, period_shift
+    return None
 
-        if dst_end:
-            break
 
-    if dst_start is None or dst_end is None:
-        self.log.logging(["TimeServer","Input"], "Log", "No DST transition found for this time zone.")
-        return 0, 0, 0  # Return zero values if no DST change occurs
+def build_time_snapshot(self, now_utc, zone):
+    """
+    Compute every Time cluster value for the UTC instant now_utc.
 
-    # Calculate the DST shift in seconds
-    dst_shift = int(dst_start.dst().total_seconds())
+    zone is the IANA zone from resolve_time_zone(), or None to only use the
+    system's current offset.
+    """
+    if zone is None:
+        offset = int((now_utc.astimezone().utcoffset() or timedelta(0)).total_seconds())
+        shift = 0
+        period = None
+    else:
+        offset, shift = _offsets(now_utc, zone)
+        period = select_dst_period(get_offset_periods(self, zone, now_utc.year), now_utc, offset, shift)
 
-    # Convert DST start and end times to UTC
-    dst_start_utc = int(dst_start.timestamp())
-    dst_end_utc = int(dst_end.timestamp())
+    master_zone_dst = zone is not None and (period is not None or shift == 0)
+    if master_zone_dst:
+        # TimeZone is the standard offset, DST is applied through the DST attributes
+        time_zone = offset - shift
+    else:
+        # DST window unknown: fold the current DST shift into TimeZone instead
+        time_zone = offset
 
-    result = dst_start_utc, dst_end_utc, dst_shift
-    instance_cache[current_year] = result
-    return result
+    if period is not None:
+        start, end, dst_shift = period
+        dst_start = zigbee_time(start)
+        # ZCL tests DstStart <= Time <= DstEnd, DstEnd is the last second of DST
+        dst_end = min(MAX_TIME, zigbee_time(end) - 1)
+    else:
+        dst_start = dst_end = INVALID_TIME
+        dst_shift = 0
+
+    utc_seconds = zigbee_time(now_utc)
+    return {
+        "time": utc_seconds,
+        "time_status": TIME_STATUS_MASTER | (TIME_STATUS_MASTER_ZONE_DST if master_zone_dst else 0),
+        "time_zone": time_zone,
+        "dst_start": dst_start,
+        "dst_end": dst_end,
+        "dst_shift": dst_shift,
+        "standard_time": zigbee_time(now_utc + timedelta(seconds=time_zone)),
+        "local_time": zigbee_time(now_utc + timedelta(seconds=offset)),
+        "tuya_local_time": int((now_utc - TUYA_EPOCH).total_seconds()) + offset,
+    }
+
+
+def time_attribute_value(self, nwkid, attribute, snapshot):
+    """Return (status, data_type, value) answering attribute (big-endian hex string) from snapshot."""
+    if attribute == "0000":  # Time
+        return STATUS_SUCCESS, DATA_TYPE_UTC, snapshot["time"]
+
+    if attribute == "0001":  # TimeStatus
+        return STATUS_SUCCESS, DATA_TYPE_MAP8, snapshot["time_status"]
+
+    if attribute == "0002":  # TimeZone
+        return STATUS_SUCCESS, DATA_TYPE_INT32, snapshot["time_zone"]
+
+    if attribute == "0003":  # DstStart
+        return STATUS_SUCCESS, DATA_TYPE_UINT32, snapshot["dst_start"]
+
+    if attribute == "0004":  # DstEnd
+        return STATUS_SUCCESS, DATA_TYPE_UINT32, snapshot["dst_end"]
+
+    if attribute == "0005":  # DstShift
+        return STATUS_SUCCESS, DATA_TYPE_INT32, snapshot["dst_shift"]
+
+    if attribute == "0006":  # StandardTime
+        return STATUS_SUCCESS, DATA_TYPE_UINT32, snapshot["standard_time"]
+
+    if attribute == "0007":  # LocalTime
+        if self.ListOfDevices.get(nwkid, {}).get("Model") in TUYA_EPOCH_MODELS:
+            self.log.logging(["TimeServer", "Input"], "Debug", "time_attribute_value - LocalTime uses EPOCH from 1970-01-01 instead of 2000-01-01", nwkid)
+            return STATUS_SUCCESS, DATA_TYPE_UINT32, snapshot["tuya_local_time"]
+        return STATUS_SUCCESS, DATA_TYPE_UINT32, snapshot["local_time"]
+
+    if attribute == "fffd":  # ClusterRevision
+        return STATUS_SUCCESS, DATA_TYPE_UINT16, TIME_CLUSTER_REVISION
+
+    # LastSetTime, ValidUntilTime and anything else
+    return STATUS_UNSUPPORTED_ATTRIBUTE, None, None
+
+
+def encode_attribute_record(attribute, status, data_type, value):
+    """One Read Attributes Response record: attribute id (LE), status, then type and value (LE) on success."""
+    record = attribute[2:4] + attribute[:2] + status
+    if status != STATUS_SUCCESS:
+        return record
+    size = DATA_TYPE_SIZE[data_type]
+    return record + data_type + value.to_bytes(size, "little", signed=(data_type == DATA_TYPE_INT32)).hex()
 
 
 def timeserver_multiple_read_attribute_request(self, Devices, nwkid, src_ep, dst_ep, sqn, cluster_id, manuf_specif, manuf_code, MsgData, nbAttribute):
-    """ Handle a read request with multiple attributes on cluster 0x000a"""
+    """ Handle a read request with one or more attributes on cluster 0x000a"""
 
     if sqn == self.ListOfDevices[nwkid].get("SQN_000a"):
         self.log.logging(["TimeServer","Input"], "Debug", f"Decode0100 - timeserver_multiple_read_attribute_request - duplicate request nwkid {nwkid} nbAttribute: {nbAttribute}", nwkid)
         return
 
     self.ListOfDevices[nwkid]["SQN_000a"] = sqn
-    
-    payload = None
-    cmd = "01"
-    status = "00"
-    cluster_frame = "18"
 
-    # Extract all attributes, and build a response
+    now_utc = datetime.now(timezone.utc)
+    snapshot = build_time_snapshot(self, now_utc, resolve_time_zone(self, now_utc))
+    self.log.logging(["TimeServer","Input"], "Debug", f"Decode0100 - timeserver_multiple_read_attribute_request - nwkid {nwkid} snapshot {snapshot}", nwkid)
+
+    cluster_frame = "18"  # Profile-wide, Server to Client, Disable default Response
+    cmd = "01"            # Read Attributes Response
+    payload = cluster_frame + sqn + cmd
+
     for idx in range(0, len(MsgData), 4):
         attribute = MsgData[idx:idx + 4]
-        self.log.logging(["TimeServer","Input"], "Debug", f"Decode0100 - timeserver_multiple_read_attribute_request - nwkid {nwkid} attribute {attribute}", nwkid)
-
-        # Handle different cluster IDs and attributes
-        status, data_type, value = get_response_data_for_timer_attribute_request(self, nwkid, attribute)
-        self.log.logging(["TimeServer","Input"], "Debug", f"Decode0100 - timeserver_multiple_read_attribute_request -  response {data_type} {value}", nwkid)
-        if payload is None:
-            payload = cluster_frame + sqn + cmd
-        payload += attribute[2:4] + attribute[:2] + status + data_type
-
-        payload += to_little_endian(value)
+        status, data_type, value = time_attribute_value(self, nwkid, attribute, snapshot)
+        self.log.logging(["TimeServer","Input"], "Debug", f"Decode0100 - timeserver_multiple_read_attribute_request - nwkid {nwkid} attribute {attribute} status {status} type {data_type} value {value}", nwkid)
+        payload += encode_attribute_record(attribute, status, data_type, value)
 
     self.log.logging(["TimeServer","Input"], "Debug", f"Decode0100 - timeserver_multiple_read_attribute_request Response - nwkid {nwkid} ep: {src_ep} , clusterId: {cluster_id}, sqn: {sqn},payload: {payload}", nwkid)
-        
+
     raw_APS_request( self, nwkid, src_ep, cluster_id, "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
-
-
-def get_response_data_for_timer_attribute_request( self, nwkid, attribute):
-    # Default values
-    data_type = None
-    value = None
-    status = "86"  # Default to unsupported attribute
-
-    if attribute == "0000":  # Time
-        now = datetime.now(timezone.utc)
-        value = f"{int((now - ZIGBEE_EPOCH).total_seconds()):08x}"
-        data_type = "e2"
-        status = "00"
-
-    elif attribute == "0001":  # Time Status: Master, Synchronized, MasterZone
-        value = f"{0x07:02x}"
-        data_type = "18"
-        status = "00"
-
-    elif attribute == "0002":  # Timezone offset
-        now_local = datetime.now().astimezone()
-        offset = now_local.utcoffset()
-        value = f"{int(offset.total_seconds() if offset else 0):08x}"
-        data_type = "2b"
-        status = "00"
-
-    elif attribute in ("0003", "0004", "0005"):  # DST Start / End / Shift
-        dst_start, dst_end, dst_shift = calculate_dst_times(self)
-        if attribute == "0003":
-            value = f"{dst_start:08x}"
-            data_type = "23"
-        elif attribute == "0004":
-            value = f"{dst_end:08x}"
-            data_type = "23"
-        else:
-            value = f"{dst_shift:08x}"
-            data_type = "2b"
-        status = "00"
-
-    elif attribute == "0006":  # Standard Time
-        value = "00000000"
-        data_type = "23"
-        status = "00"
-
-    elif attribute == "0007":  # LocalTime
-        self.log.logging(["TimeServer","Input"], "Debug", f"-->Local Time: {datetime.now()}")
-
-        # Get current time as aware datetime
-        now = datetime.now().astimezone()  # aware datetime based on local time
-
-        # Define epoch time (ensure it's aware or naive depending on your needs)
-        epoch = TUYA_EPOCTime if self.ListOfDevices.get(nwkid, {}).get("Model") == "TS0601-thermostat" else ZIGBEE_EPOCH
-
-        # Check and log if using TUYA_EPOCTime
-        if epoch == TUYA_EPOCTime:
-            self.log.logging(
-                ["TimeServer", "Input"],
-                "Debug",
-                "timeserver_read_attribute_request Response uses EPOCH from 1970-01-01 instead of 2000-01-01",
-            )
-
-        # Get timezone offset (this will be a timedelta)
-        tz_offset = now.utcoffset() or timedelta(seconds=0)
-
-        # Make sure both 'now' and 'epoch' are aware before subtracting them.
-        # If epoch is naive, you might want to make it aware as well, like so:
-        if epoch.tzinfo is None:  # If the epoch is naive, make it aware
-            epoch = epoch.replace(tzinfo=now.tzinfo)
-
-        local_time = int((now + tz_offset - epoch).total_seconds())
-        value = f"{local_time:08x}"
-
-        data_type = "23"  # uint32
-        status = "00"
-
-    return status, data_type, value
-
-
-def timeserver_read_attribute_request(self, sqn, nwkid, ep, cluster, manuf_spec, manuf_code, attribute):
-    """Handles reading various time-related attributes for a Zigbee timeserver."""
-
-    self.log.logging(
-        ["TimeServer","Input"],
-        "Debug",
-        f"timeserver_read_attribute_request [{sqn}] {nwkid}/{ep} Cluster: {cluster} Attribute: {attribute}"
-    )
-
-    self.ListOfDevices[nwkid]["SQN_000a"] = sqn
-
-    status, data_type, value = get_response_data_for_timer_attribute_request(self, nwkid, attribute)
-
-    self.log.logging(
-        ["TimeServer","Input"],
-        "Debug",
-        f"timeserver_read_attribute_request Response: status: {status} attribute: {attribute} value: {value}"
-    )
-
-    read_attribute_response(self, nwkid, ep, sqn, cluster, status, data_type, attribute, value, manuf_code="0000")
