@@ -11,6 +11,7 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 import binascii
+import json
 import time
 
 import zigpy.types as t
@@ -217,3 +218,66 @@ def build_plugin_8048_frame_content(self, ieee):  # leave indication
     frame_payload += "00"  # remove children
 
     return encapsulate_plugin_frame("8048", frame_payload, "%02x" % 0x00)    
+
+
+# Green Power frames (9exx). Plugin-only message types, no ZiGate equivalent.
+GP_FRAME_VERSION = 1
+
+
+def _gp_ieee(device):
+    return "%016x" % t.uint64_t.deserialize(device.ieee.serialize())[0]
+
+
+def _gp_int(value):
+    return None if value is None else int(value)
+
+
+def build_plugin_9e00_frame_content(self, device, recommissioned=False):  # Green Power device commissioned
+    # The record carries the GPD security key: its payload is never logged
+    self.log.logging("TransportPluginEncoder", "Debug", "build_plugin_9e00_frame_content %s recommissioned: %s" % (device.ieee, recommissioned))
+
+    security_key = getattr(device, "security_key", None)
+    record = {
+        "v": GP_FRAME_VERSION,
+        "ieee": _gp_ieee(device),
+        "nwk": "%04x" % device.nwk,
+        "application_id": _gp_int(device.application_id),
+        "src_id": _gp_int(device.src_id),
+        "device_id": _gp_int(device.device_id),
+        "manufacturer_id": _gp_int(device.gpd_manufacturer_id),
+        "model_id": _gp_int(device.gpd_model_id),
+        "commands": [int(x) for x in device.commands],
+        "server_clusters": [int(x) for x in device.server_cluster_ids],
+        "client_clusters": [int(x) for x in device.client_cluster_ids],
+        "switch_configuration": _gp_int(device.switch_configuration),
+        "mac_seq_num_capability": bool(device.mac_seq_num_capability),
+        "rx_on_capability": bool(getattr(device, "rx_on_capability", False)),
+        "fixed_location": bool(getattr(device, "fixed_location", False)),
+        "security_level": _gp_int(device.security_level),
+        "security_key_type": _gp_int(device.security_key_type),
+        "security_key": None if security_key is None else security_key.serialize().hex(),
+        "frame_counter": _gp_int(device.frame_counter),
+        "recommissioned": bool(recommissioned),
+    }
+    frame_payload = json.dumps(record, separators=(",", ":")).encode("utf-8").hex()
+    return encapsulate_plugin_frame("9e00", frame_payload, "%02x" % (device.lqi or 0x00))
+
+
+def build_plugin_9e01_frame_content(self, device, endpoint_id, command_id, command):  # Green Power command
+    self.log.logging("TransportPluginEncoder", "Debug", "build_plugin_9e01_frame_content %s command: 0x%02x" % (device.ieee, command_id))
+
+    frame_payload = _gp_ieee(device)
+    frame_payload += "%04x" % device.nwk
+    frame_payload += "%02x" % (endpoint_id or 0x00)
+    frame_payload += "%02x" % command_id
+    frame_payload += "%08x" % (device.frame_counter or 0)
+    frame_payload += command.serialize().hex() if command is not None else ""
+    return encapsulate_plugin_frame("9e01", frame_payload, "%02x" % (device.lqi or 0x00))
+
+
+def build_plugin_9e02_frame_content(self, device):  # Green Power device removed
+    self.log.logging("TransportPluginEncoder", "Debug", "build_plugin_9e02_frame_content %s" % device.ieee)
+
+    frame_payload = _gp_ieee(device)
+    frame_payload += "%04x" % device.nwk
+    return encapsulate_plugin_frame("9e02", frame_payload, "%02x" % 0x00)

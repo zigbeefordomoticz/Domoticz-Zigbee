@@ -34,6 +34,7 @@ from threading import Thread
 
 from Classes.ZigpyTransport.instrumentation import time_spent_forwarder
 from Classes.ZigpyTransport.tools import handle_thread_error
+from Zigbee.encoder_tools import loggable_plugin_frame
 
 
 def start_forwarder_thread(self):
@@ -128,7 +129,7 @@ def forwarder_thread(self):
                 break
 
             self.statistics._received += 1
-            self.log.logging(["TransportFrwder",], "Debug", "Message to forward: %s" % message)
+            self.log.logging(["TransportFrwder",], "Debug", "Message to forward: %s" % loggable_plugin_frame(message))
             forward_message(self, message)
 
         except queue.Empty:
@@ -158,7 +159,7 @@ def forward_message(self, message):
             so callers (the worker loop) can handle them via their exception
             handling strategy.
         """
-        self.log.logging("TransportFrwder", "Debug", "Receive a message to forward: %s" % (str(message)))
+        self.log.logging("TransportFrwder", "Debug", "Receive a message to forward: %s" % (loggable_plugin_frame(str(message))))
         self.statistics._data += 1
         self.F_out(message)
         self.log.logging("TransportFrwder", "Debug", "message forwarded!!!!")

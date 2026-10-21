@@ -182,6 +182,7 @@ except ImportError:
     zgp_tunneling = None
 from zigpy.backups import NetworkBackup
 
+from Classes.ZigpyTransport.greenPower import register_green_power_listener
 from Classes.ZigpyTransport.instrumentation import write_capture_rx_frames
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8002_frame_content, build_plugin_8014_frame_content,
@@ -245,9 +246,11 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
        not compatible with the retrieved backup.
     6. start_network().
     7. Clamp and apply the TX power to the regulatory domain maximum.
-    8. Plugin only: _preload_devices_from_plugin_db().
-    9. _persist_coordinator_model_strings_in_db().
-    10. Start periodic topology scans if CONF_TOPO_SCAN_ENABLED.
+    8. Plugin only: register the Green Power listener (greenPower.py) when
+       zigpy supports Green Power, so GPD events reach the plugin.
+    9. Plugin only: _preload_devices_from_plugin_db().
+    10. _persist_coordinator_model_strings_in_db().
+    11. Start periodic topology scans if CONF_TOPO_SCAN_ENABLED.
 
     Steps of upstream initialize() that are NOT performed here:
 
@@ -264,6 +267,9 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     - self.ota.start_periodic_broadcasts() when OTA and OTA broadcast are
       enabled. Not needed: radioStart.py forces zigpy OTA off (the plugin
       runs its own OTA).
+    - await self.green_power.startup() (zigpy > 2.3.0), which joins the GP
+      group when GPDs are already known. Not yet: GPDs are not restored at
+      startup.
 
     Re-check this list against upstream on every zigpy version bump.
 
@@ -366,6 +372,8 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     if tx_power is not None:
         await self.set_tx_power(tx_power)
         
+    register_green_power_listener(self)
+
     # Preload devices from plugin DB before registering specific endpoints, so that the plugin device list is available during endpoint registration if needed (e.g. for deConz group membership restoration)
     _preload_devices_from_plugin_db(self)
 
