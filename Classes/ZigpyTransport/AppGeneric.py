@@ -71,6 +71,7 @@ The central function in this module is packet_received(), which intercepts
 every incoming Zigbee frame before (and sometimes instead of) passing it to
 the upstream zigpy stack. The routing logic separates:
 
+    - Green Power tunnels / GPD alias Device_annce → upstream zigpy only
     - ZDO frames (coordinator or ZDO endpoint) → upstream zigpy
     - Mgmt_Permit_Join_rsp (0x8036)            → plugin frame 0x8014
     - Mgmt_Leave_rsp (0x8034)                  → plugin frame 0x8047
@@ -172,6 +173,13 @@ import zigpy.exceptions
 import zigpy.types as zigpy_t
 import zigpy.zdo
 import zigpy.zdo.types as zdo_types
+
+try:
+    import zigpy.zgp.tunneling as zgp_tunneling
+except ImportError:
+    # zigpy without Green Power tunneling: a plugin update without the
+    # requirements upgrade must still start
+    zgp_tunneling = None
 from zigpy.backups import NetworkBackup
 
 from Classes.ZigpyTransport.instrumentation import write_capture_rx_frames
@@ -193,6 +201,7 @@ CLUSTER_MGMT_PERMIT_JOIN_RSP = 0x8036
 CLUSTER_MGMT_LEAVE_RSP       = 0x8034
 PROFILE_ZHA                  = 0x0104
 COORDINATOR_NWK              = "0000"
+GP_ALIAS_ANNCE_IEEE          = b"\xff" * 8  # IEEE in the Device_annce of a Green Power alias
 
 
 async def _load_db(self) -> None:
@@ -1199,6 +1208,31 @@ def _handle_zdo_cluster(self, cluster, sender, hex_message, packet):
     return True
 
 
+# ---------------------------------------------------------------------------
+# Helper: Green Power frames only zigpy must see
+# ---------------------------------------------------------------------------
+def _is_green_power_for_zigpy_only(packet):
+    """
+    True for the Green Power frames that must not reach the plugin decoder:
+
+    - GPDFs tunneled by a proxy (GP Notification / Commissioning Notification,
+      profile a1e0, cluster 0x0021, ep 242). zigpy decrypts them, drops
+      duplicates and checks the frame counter. The plugin would take them as
+      raw frames from the GPD alias or from the proxy NWK.
+    - A sink's Device_annce of a GPD alias, whose IEEE is ff:ff:ff:ff:ff:ff:ff:ff
+      (GP spec A.3.6.3.4.2). The plugin would record a device with that IEEE
+      and start interviewing the alias.
+    """
+    if zgp_tunneling is not None and zgp_tunneling.is_gp_tunnel_packet(packet):
+        return True
+
+    if packet.dst_ep != zigpy.zdo.ZDO_ENDPOINT or packet.cluster_id != zdo_types.ZDOCmd.Device_annce:
+        return False
+
+    # TSN (1) + NWKAddr (2) + IEEEAddr (8) + Capability (1)
+    return packet.data.serialize()[3:11] == GP_ALIAS_ANNCE_IEEE
+
+
 @measure_execution_time
 def packet_received(self, packet: zigpy_t.ZigbeePacket) -> None:
     """
@@ -1211,6 +1245,8 @@ def packet_received(self, packet: zigpy_t.ZigbeePacket) -> None:
     Routing (in order):
 
     1. Always write to capture log.
+    1b. Green Power tunnels and GPD alias Device_annce → upstream only,
+        return (see _is_green_power_for_zigpy_only()).
     2. ZDO / coordinator packets → upstream only, then return.
     3. Mgmt_Permit_Join_rsp (0x8036) → plugin 0x8014 + upstream, return.
     4. Mgmt_Leave_rsp       (0x8034) → plugin 0x8047 + upstream, return.
@@ -1260,6 +1296,12 @@ def packet_received(self, packet: zigpy_t.ZigbeePacket) -> None:
     )
 
     write_capture_rx_frames( self, packet.src, f["profile"], f["cluster"], f["src_ep"], f["dst_ep"], message, hex_msg, f["dst_addressing"], )
+
+    # ── 1b. Green Power → upstream only
+    if _is_green_power_for_zigpy_only(packet):
+        self.log.logging( "TransportZigpy", "Debug", f"packet_received Green Power, zigpy only: {_pkt_summary(f, hex_msg)}" )
+        super(type(self), self).packet_received(packet)
+        return
 
     upstream_called = False
 
