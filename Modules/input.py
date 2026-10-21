@@ -40,6 +40,8 @@ from Z4D_decoders.z4d_decoder_Default_Req import Decode7000
 from Z4D_decoders.z4d_decoder_Default_Rsp import Decode8101
 from Z4D_decoders.z4d_decoder_Device_Annoucement import Decode004D
 from Z4D_decoders.z4d_decoder_Discovery_Rsp import Decode804B
+from Z4D_decoders.z4d_decoder_Green_Power import (Decode9E00, Decode9E01,
+                                                  Decode9E02)
 from Z4D_decoders.z4d_decoder_groups import (Decode8060, Decode8061,
                                              Decode8062, Decode8063)
 from Z4D_decoders.z4d_decoder_helpers import extract_message_infos
@@ -81,6 +83,7 @@ from Z4D_decoders.z4d_decoder_Zigate_PDM import (Decode0302, Decode8006,
                                                  Decode8007)
 from Z4D_decoders.z4d_decoder_Zigate_Time_Srv import Decode8017
 from Zigbee.decode8002 import decode8002_and_process
+from Zigbee.encoder_tools import SENSITIVE_FRAME_TYPES, loggable_plugin_frame
 
 # ---------------------------------------------------------------------------
 # Decoder dispatch table
@@ -168,6 +171,9 @@ DECODERS: dict = {
     "8701": Decode8701,
     "8806": Decode8806,
     "8807": Decode8807,
+    "9e00": Decode9E00,
+    "9e01": Decode9E01,
+    "9e02": Decode9E02,
     "7000": Decode7000,
 }
 
@@ -209,7 +215,7 @@ def zigbee_receive_message(self, Devices, Data):
         self.log.logging(
             "Input", "Error",
             f"zigbee_receive_message - received a non-zigate frame "
-            f"Data: {Data} FS/FE = {FrameStart}/{FrameStop}",
+            f"Data: {loggable_plugin_frame(Data)} FS/FE = {FrameStart}/{FrameStop}",
         )
         return
 
@@ -218,7 +224,7 @@ def zigbee_receive_message(self, Devices, Data):
 
     self.log.logging(
         "Input", "Debug",
-        f"zigbee_receive_message - MsgType: {MsgType}, Data: {MsgData}, "
+        f"zigbee_receive_message - MsgType: {MsgType}, Data: {'<masked>' if MsgType in SENSITIVE_FRAME_TYPES else MsgData}, "
         f"LQI: {int(MsgLQI, 16)}",
     )
 

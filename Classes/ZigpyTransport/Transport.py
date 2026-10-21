@@ -30,6 +30,7 @@ from Classes.ZigpyTransport.instrumentation import (
     instrument_log_command_open, instrument_sendData, open_capture_rx_frames)
 from Classes.ZigpyTransport.zigpyThread import (
     cleanup_unused_concurrency_state, start_zigpy_thread, stop_zigpy_thread)
+from Zigbee.encoder_tools import loggable_plugin_frame
 
 
 class ZigpyTransport(object):
@@ -248,7 +249,7 @@ class ZigpyTransport(object):
         
 
     def receiveData(self, message):
-        self.log.logging("Transport", "Debug", "===> receiveData for Forwarded - Message %s" % (message))
+        self.log.logging("Transport", "Debug", "===> receiveData for Forwarded - Message %s" % (loggable_plugin_frame(message)))
         if self.forwarder_queue is None:
             return
         self.forwarder_queue.put(message)
