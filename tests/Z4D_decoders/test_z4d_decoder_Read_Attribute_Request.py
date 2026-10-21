@@ -66,6 +66,19 @@ class TestDecode0100:
         mod.Decode0100(plugin, {}, _msg(cluster="0000", attr="0000"), LQI)
         rar.assert_called_once()
 
+    def test_time_cluster_answered_once_for_all_attributes(self, mod, plugin, monkeypatch):
+        """Cluster 000a → one timeserver_multiple_read_attribute_request call carrying every attribute."""
+        plugin.ListOfDevices = {ADDR: {"Model": "SomeModel", "Manufacturer Name": "",
+                                       "Manufacturer": ""}}
+        multi = MagicMock()
+        rar = MagicMock()
+        monkeypatch.setattr(mod, "timeserver_multiple_read_attribute_request", multi)
+        monkeypatch.setattr(mod, "read_attribute_response", rar)
+        mod.Decode0100(plugin, {}, _msg(cluster="000a", attr="000000020007", nb="03"), LQI)
+        multi.assert_called_once()
+        assert multi.call_args[0][9] == "000000020007"
+        rar.assert_not_called()
+
     def test_other_cluster_logs(self, mod, plugin, monkeypatch):
         """Unknown cluster/attribute → logs Read Attribute Request."""
         plugin.ListOfDevices = {ADDR: {"Model": "SomeModel", "Manufacturer Name": "",
