@@ -62,6 +62,8 @@ PREAMBLE = textwrap.dedent(
         g.log = MagicMock()
         g.logging = lambda level, message: None
         g.ListOfGroups = {}
+        # As GroupManagement.__init__ once #2094 (skip unchanged group list dumps) is in
+        g.last_written_groups_list = None
         return g
 
     def store_groups(g, groups, file_groups=None, file_age=None):
