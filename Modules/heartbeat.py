@@ -30,6 +30,8 @@ from Modules.domoticzAbstractLayer import (find_widget_unit_from_WidgetID,
                                            is_device_ieee_in_domoticz_db)
 from Modules.domoTools import (reset_device_ieee_unit_if_needed,
                                retrieve_widget_type_list, timedOutDevice)
+from Modules.health_settings import (device_health_timeout,
+                                     is_health_timed_out)
 from Modules.linky import collect_ticmeter_linky
 from Modules.pairingProcess import (binding_needed_clusters_with_coordinator,
                                     processNotinDBDevices)
@@ -438,16 +440,12 @@ def checkHealth(self, NwkId):
         self.ListOfDevices[NwkId]["Stamp"]["LastSeen"] = 0
         self.ListOfDevices[NwkId]["Health"] = "unknown"
 
-    if (
-        int(time.time()) > (self.ListOfDevices[NwkId]["Stamp"]["LastSeen"] + 21200)
-        and self.ListOfDevices[NwkId]["Health"] == "Live"
-    ):
-        if "ZDeviceName" in self.ListOfDevices[NwkId]:
-            self.log.logging("Heartbeat", "Debug", "Device Health - %s NwkId: %s,Ieee: %s , Model: %s seems to be out of the network" % (
-                self.ListOfDevices[NwkId]["ZDeviceName"], NwkId, self.ListOfDevices[NwkId]["IEEE"], self.ListOfDevices[NwkId]["Model"],))
-        else:
-            self.log.logging("Heartbeat", "Debug", "Device Health - NwkId: %s,Ieee: %s , Model: %s seems to be out of the network" % (
-                NwkId, self.ListOfDevices[NwkId]["IEEE"], self.ListOfDevices[NwkId]["Model"]) )
+    health_timeout = device_health_timeout(self.ListOfDevices[NwkId], self.pluginconf.pluginConf["HealthTimeOut"])
+
+    if is_health_timed_out(self.ListOfDevices[NwkId], health_timeout, int(time.time())):
+        self.log.logging("Heartbeat", "Debug", "Device Health - %s NwkId: %s,Ieee: %s , Model: %s not seen for the last %s seconds, it seems to be out of the network" % (
+            self.ListOfDevices[NwkId].get("ZDeviceName", ""), NwkId, self.ListOfDevices[NwkId]["IEEE"],
+            self.ListOfDevices[NwkId]["Model"], health_timeout), NwkId, )
         self.ListOfDevices[NwkId]["Health"] = "Not seen last 24hours"
 
     # If device flag as Not Reachable, don't do anything
