@@ -44,6 +44,7 @@ The functions here override the following ControllerApplication methods:
     handle_join()               — adds NWK sync and invalid IEEE filtering
     handle_leave()              — adds plugin 0x8048 frame delivery
     handle_relays()             — adds debug logging
+    permit_gp()                 — Green Power commissioning only when enabled
     packet_received()           — full routing override for plugin frame delivery
 
 The following are plugin-only additions with no upstream equivalent:
@@ -1089,6 +1090,40 @@ def handle_relays(self, nwk, relays) -> None:
     """
     self.log.logging("TransportZigpy", "Debug","handle_relays (0x%04x %s)" %(nwk, str(relays)))
     super(type(self),self).handle_relays(nwk, relays)
+
+
+async def permit_gp(self, time_s: int) -> None:
+    """
+    Open or close (time_s=0) the Green Power commissioning window.
+
+    Overrides ControllerApplication.permit_gp() (zigpy > 2.3.0) to make Green
+    Power opt-in. Upstream permit() calls permit_gp() first on every permit
+    join, network-wide even when node= targets one router; permit_ncp() does
+    not, so deCONZ calls it explicitly (workerLoop.py PERMIT-TO-JOIN).
+
+    - 'GreenPowerEnable' set: delegates to the upstream implementation.
+    - Not set: opening is dropped, so no proxy commissioning broadcast is
+      sent. Closing is passed on only while a window is open (the setting
+      changed while it was open), so the startup permit(0) stays silent.
+
+    Args:
+        time_s: Window duration in seconds, 0 to close it.
+    """
+    green_power = getattr(self, "green_power", None)
+    if green_power is None:
+        # zigpy without Green Power support
+        return
+
+    if not self.pluginconf.pluginConf.get("GreenPowerEnable") and (time_s or not green_power.is_commissioning):
+        self.log.logging("TransportZigpy", "Debug", "permit_gp(%s) skipped, Green Power not enabled" % time_s)
+        return
+
+    if time_s:
+        self.log.logging("TransportZigpy", "Status", "++ opening Green Power commissioning for %s secondes" % time_s)
+    else:
+        self.log.logging("TransportZigpy", "Status", "++ closing Green Power commissioning")
+
+    await super(type(self),self).permit_gp(time_s)
 
 
 def measure_execution_time(func):
