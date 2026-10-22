@@ -23,8 +23,7 @@ from urllib.parse import urlparse
 
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
-from Classes.WebServer.tools import (MAX_BLOCK_SIZE, DumpHTTPResponseToLog,
-                                     redact_headers)
+from Classes.WebServer.tools import DumpHTTPResponseToLog, redact_headers
 from Modules.domoticzAbstractLayer import (domoticz_error_api,
                                            domoticz_log_api,
                                            domoticz_status_api)
@@ -105,15 +104,11 @@ def onMessage(self, Connection, Data):
     self.logging("Debug", f"Opening: {webFilename}")
 
     _last_modified = get_last_modified(webFilename)
-    set_referer_header(self, Data, _response)
 
     if get_from_cache_or_send(self, Connection, webFilename, Data, _last_modified, _response):
         return
 
-    if "Ranges" in Data["Headers"]:
-        get_range_and_send(self, Connection, webFilename, Data, _response)
-    else:
-        send_file(self, Connection, webFilename, Data, _last_modified, _response)
+    send_file(self, Connection, webFilename, Data, _last_modified, _response)
 
 def handle_rest_api(self, Connection, Data, parsed_query):
     if len(parsed_query) < 3 or parsed_query[0] not in ["rest-z4d","rest-zigate",]:
@@ -192,18 +187,12 @@ def prepare_response_headers(self, webFilename, download=False):
         "Cache-Control": cache_control,
         "Pragma": "no-cache" if cache_control == CACHE_NO_STORE else "",
         "Expires": "0" if cache_control == CACHE_NO_STORE else "",
-        "Accept": "" if self.pluginconf.pluginConf["enableCache"] else "*/*",
     }
 
 
 def get_last_modified(webFilename):
     current_version_on_server = os.path.getmtime(webFilename)
     return strftime("%a, %d %b %Y %H:%M:%S GMT", gmtime(current_version_on_server))
-
-
-def set_referer_header(self, Data, _response):
-    if "Referer" in Data["Headers"]:
-        _response["Headers"]["Referer"] = Data["Headers"]["Referer"]
 
 
 def get_from_cache_or_send(self, Connection, webFilename, Data, _last_modified, _response):
@@ -265,7 +254,7 @@ def send_file(self, Connection, webFilename, Data, _lastmodified, _response):
             _contentType = EXTENSION_MIME_TYPE[ file_extension ]
 
     if _contentType:
-        _response["Headers"]["Content-Type"] = _contentType + "; charset=utf-8"
+        _response["Headers"]["Content-Type"] = with_charset(_contentType)
     if _contentEncoding:
         _response["Headers"]["Content-Encoding"] = _contentEncoding
 
@@ -277,32 +266,11 @@ def send_file(self, Connection, webFilename, Data, _lastmodified, _response):
         self.sendResponse(Connection, _response)
 
 
-def get_range_and_send(self, Connection, webFilename, Data, _response):
-    self.logging("Debug", "Ranges processing")
-
-    RangeProcess = Data["Headers"]["Range"]
-    fileStartPosition = int(RangeProcess[RangeProcess.find("=") + 1 : RangeProcess.find("-")])
-
-    messageFileSize = os.path.getsize(webFilename)
-    messageFile = open(webFilename, mode="rb")
-    messageFile.seek(fileStartPosition)
-
-    fileContent = messageFile.read(MAX_BLOCK_SIZE)
-
-    self.logging(
-        "Debug",
-        f"{Connection.Address}:{Connection.Port} Sent 'GET' request file '{Data['URL']}' from position {fileStartPosition}, {len(fileContent)} bytes will be returned",
-    )
-
-    _response["Status"] = "200 OK"
-    if len(fileContent) == MAX_BLOCK_SIZE:
-        _response["Status"] = "206 Partial Content"
-        _response["Headers"]["Content-Range"] = f"bytes {fileStartPosition}-{messageFile.tell()}/{messageFileSize}"
-
-    Connection.Send(_response)
-
-    if not self.pluginconf.pluginConf["enableKeepalive"]:
-        Connection.Disconnect()
+def with_charset(content_type):
+    """Text types are served as UTF-8; a charset on a binary type (image/png) is meaningless."""
+    if content_type.startswith("text/") or content_type in ("application/json", "application/javascript", "image/svg+xml"):
+        return content_type + "; charset=utf-8"
+    return content_type
 
 
 def get_from_cache_if_available(self, Connection, webFilename, Data, _lastmodified, _response):
