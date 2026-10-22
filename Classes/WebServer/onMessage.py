@@ -14,7 +14,8 @@ import mimetypes
 import os
 import os.path
 import time
-from datetime import datetime
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 from time import gmtime, strftime
 from urllib.parse import urlparse
@@ -294,10 +295,7 @@ def get_from_cache_if_available(self, Connection, webFilename, Data, _lastmodifi
     if not self.pluginconf.pluginConf["enableCache"]:
         return False
 
-    if "If-Modified-Since" not in Data["Headers"]:
-        return False
-
-    if Data["Headers"]["If-Modified-Since"] != _lastmodified:
+    if not is_not_modified_since(Data["Headers"].get("If-Modified-Since"), webFilename):
         return False
 
     # No need to send it back
@@ -305,3 +303,16 @@ def get_from_cache_if_available(self, Connection, webFilename, Data, _lastmodifi
     _response["Status"] = "304 Not Modified"
     self.sendResponse(Connection, _response)
     return True
+
+def is_not_modified_since(if_modified_since, webFilename):
+    """True when webFilename has not changed since the If-Modified-Since date (compared as dates, not strings)."""
+    if not if_modified_since:
+        return False
+    try:
+        since = parsedate_to_datetime(if_modified_since)
+    except (TypeError, ValueError):
+        return False
+    if since.tzinfo is None:
+        since = since.replace(tzinfo=timezone.utc)
+    # HTTP dates have a one-second resolution
+    return int(os.path.getmtime(webFilename)) <= since.timestamp()
