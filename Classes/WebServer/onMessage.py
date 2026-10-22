@@ -72,7 +72,11 @@ def onMessage(self, Connection, Data):
 
     else:
         # Most likely a file from the wwww/ to be served
-        webFilename = get_web_filename(self, url, parsed_query, parsed_url)
+        webFilename = get_web_filename(self, parsed_url)
+        if webFilename is None:
+            # Refused, and answered as any wrong or missing file: with the WebUI index.html
+            self.logging("Log", f"WebUI - refused {url}: outside of www/")
+            webFilename = redirect_to_index_html(self)
 
     self.logging("Debug", f"Downloading: {webFilename}")
 
@@ -118,13 +122,13 @@ def is_download( parsed_query, parsed_url):
     return parsed_query[0] == 'download'
 
 
-def get_web_filename(self, url, parsed_query, parsed_url):
-    if parsed_query[0] == 'download':
-        webFilename = parsed_url.path[len('/download'):]
-    else:
-        _homedir = Path(self.homedirectory)
-        webFilename = _homedir / ("www" + url)
-        self.logging("Debug", f"webFilename: {webFilename}")
+def get_web_filename(self, parsed_url):
+    """Map the URL path onto a file under www/, or None when it would leave www/ (e.g. '/../')."""
+    www_root = os.path.normpath(os.path.join(self.homedirectory, "www"))
+    webFilename = os.path.normpath(os.path.join(www_root, parsed_url.path.lstrip("/")))
+    self.logging("Debug", f"webFilename: {webFilename}")
+    if os.path.commonpath([www_root, webFilename]) != www_root:
+        return None
     return webFilename
 
 
