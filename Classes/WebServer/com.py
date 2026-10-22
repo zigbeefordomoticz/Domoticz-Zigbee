@@ -18,7 +18,8 @@ import time
 import traceback
 
 
-from Classes.WebServer.tools import MAX_BLOCK_SIZE
+from Classes.WebServer.tools import (MAX_BLOCK_SIZE, redact_headers,
+                                     redact_raw_request)
 
 def startWebServer(self):
 
@@ -156,11 +157,11 @@ def handle_client(self, client_socket, client_addr):
             try:
                 # Let's receive the first chunck (to get the headers)
                 incoming_data = receive_data(self, client_socket)
-                self.logging("Debug", f"incoming_data {incoming_data}")
+                self.logging("Debug", f"incoming_data {len(incoming_data)} bytes")
 
                 try:
                     incoming_data = incoming_data.decode('utf-8')
-                    self.logging("Debug", f"incoming_data decoded {incoming_data}")
+                    self.logging("Debug", f"incoming_data decoded {redact_raw_request(incoming_data)}")
 
                 except UnicodeDecodeError:
                     self.logging("Debug", "Received non-UTF-8 data, handling as binary")
@@ -173,7 +174,7 @@ def handle_client(self, client_socket, client_addr):
                 method, path, headers, body = parse_http_request(incoming_data)
                 content_length = int(headers.get('Content-Length', 0))
 
-                self.logging("Debug", f"handle_client from method: {method} path: {path} content_length: {content_length} len_body: {len(body)} headers: {headers}")
+                self.logging("Debug", f"handle_client from method: {method} path: {path} content_length: {content_length} len_body: {len(body)} headers: {redact_headers(headers)}")
 
                 received_length = len(body)
 
