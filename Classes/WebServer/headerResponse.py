@@ -22,15 +22,13 @@ def prepResponseMessage(self, _response):
     _response["Data"] = {}
     _response["Status"] = "200 OK"
 
-    if not plugin_conf.get("enableCache", False):
-        _response["Headers"].update({
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            "Pragma": "no-cache",
-            "Expires": "0",
-            "Accept": "*/*"
-        })
-    else:
-        _response["Headers"]["Cache-Control"] = "private"
+    # REST answers reflect live state: never cached, whatever enableCache says (it is for the WebUI files)
+    _response["Headers"].update({
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
+        "Accept": "*/*"
+    })
 
     return _response
 

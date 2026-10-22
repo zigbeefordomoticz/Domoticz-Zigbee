@@ -14,15 +14,19 @@ import gzip
 import os
 import types
 from dataclasses import dataclass
+from email.utils import parsedate_to_datetime
 
 import pytest
 
 from Classes.WebServer.com import (decode_http_data, handle_client,
                                    parse_http_request)
+from Classes.WebServer.headerResponse import (prepResponseMessage,
+                                              setupHeadersResponse)
 from Classes.WebServer.onMessage import onMessage
 from Classes.WebServer.sendresponse import sendResponse
 
-HASHED_BUNDLE = "main.0123456789abcdef.js"
+HASHED_BUNDLE = "main.0123456789abcdef.js"   # webpack builder
+ESBUILD_BUNDLE = "chunk-5NFAGTK3.js"          # esbuild (application) builder
 SECRET = b"TOP-SECRET-OUTSIDE-WWW"
 INDEX_MTIME = 1_790_000_000  # Mon, 21 Sep 2026 14:13:20 GMT
 # Domoticz session cookie: browsers send it to :9440 too, cookies are not scoped by port
@@ -115,6 +119,7 @@ def home(tmp_path):
     (tmp_path / "www" / "z4d" / "index.html").write_bytes(b"<html>index</html>")
     os.utime(tmp_path / "www" / "z4d" / "index.html", (INDEX_MTIME, INDEX_MTIME))
     (tmp_path / "www" / "z4d" / HASHED_BUNDLE).write_bytes(b"console.log(1)")
+    (tmp_path / "www" / "z4d" / ESBUILD_BUNDLE).write_bytes(b"console.log(2)")
     (tmp_path / "www" / "z4d" / "assets" / "z4d_logo.png").write_bytes(b"\x89PNG")
     (tmp_path / "Logs").mkdir()
     (tmp_path / "Logs" / "PluginZigbee_01.log").write_bytes(b"plugin log line")
@@ -295,3 +300,66 @@ def test_wrong_or_missing_path_gets_index_html(ws, path):
 def test_content_type_comes_from_the_served_file(ws):
     reply = get(ws, "/z4d/" + HASHED_BUNDLE + "?v=1")
     assert reply.headers["Content-Type"].startswith("text/javascript")
+
+
+# ─── Cache policy ─────────────────────────────────────────────────────────────
+
+IMMUTABLE = "public, max-age=31536000, immutable"
+NO_STORE = "no-cache, no-store, must-revalidate"
+
+
+@pytest.mark.parametrize("path, cache_control", [
+    ("/z4d/" + HASHED_BUNDLE, IMMUTABLE),
+    ("/z4d/" + ESBUILD_BUNDLE, IMMUTABLE),
+    ("/z4d/index.html", "no-cache"),
+    ("/z4d/device", "no-cache"),            # Angular route -> index.html
+    ("/z4d/main.fedcba9876543210.js", "no-cache"),  # missing bundle -> index.html, never immutable
+    ("/z4d/assets/z4d_logo.png", "no-cache"),
+])
+def test_cache_control_per_resource(ws, path, cache_control):
+    reply = get(ws, path)
+    assert reply.status == 200
+    assert reply.headers["Cache-Control"] == cache_control
+    assert "Pragma" not in reply.headers
+    assert "Expires" not in reply.headers
+
+
+def test_index_html_can_be_revalidated(ws):
+    first = get(ws, "/z4d/index.html")
+    again = get(ws, "/z4d/index.html", {"If-Modified-Since": first.headers["Last-Modified"]})
+    assert again.status == 304
+    assert again.headers["Cache-Control"] == "no-cache"
+
+
+def test_log_download_is_never_stored(ws, home):
+    reply = get(ws, _log_url(home))
+    assert reply.headers["Cache-Control"] == NO_STORE
+
+
+@pytest.mark.parametrize("path", ["/z4d/" + HASHED_BUNDLE, "/z4d/index.html"])
+def test_nothing_is_stored_when_the_cache_is_disabled(home, path):
+    reply = get(FakeWebServer(home, enableCache=0), path)
+    assert reply.headers["Cache-Control"] == NO_STORE
+    assert reply.headers["Pragma"] == "no-cache"
+
+
+@pytest.mark.parametrize("enableCache", [0, 1])
+def test_rest_answers_are_never_stored(home, enableCache):
+    response = prepResponseMessage(FakeWebServer(home, enableCache=enableCache), setupHeadersResponse())
+    assert response["Headers"]["Cache-Control"] == NO_STORE
+
+
+def test_every_response_is_dated(ws):
+    for path in ("/z4d/index.html", "/../secret.txt"):
+        assert parsedate_to_datetime(get(ws, path).headers["Date"]).tzinfo is not None
+
+
+@pytest.mark.parametrize("accept_encoding", ["gzip", None])
+def test_vary_accept_encoding_when_compression_is_enabled(home, accept_encoding):
+    ws = FakeWebServer(home, enableGzip=1)
+    reply = get(ws, "/z4d/" + HASHED_BUNDLE, {"Accept-Encoding": accept_encoding} if accept_encoding else None)
+    assert reply.headers["Vary"] == "Accept-Encoding"
+
+
+def test_no_vary_when_compression_is_disabled(ws):
+    assert "Vary" not in get(ws, "/z4d/" + HASHED_BUNDLE, {"Accept-Encoding": "gzip"}).headers
