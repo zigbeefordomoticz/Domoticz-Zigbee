@@ -44,7 +44,6 @@ HTTP_HEADERS = {
     "Access-Control-Allow-Methods",
     "Access-Control-Allow-Origin",
     "Referrer-Policy",
-    "Cookie",
     "Connection",
     "Cache-Control",
     "Pragma",
