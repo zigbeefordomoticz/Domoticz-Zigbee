@@ -11,6 +11,7 @@ and assert on the bytes that would go on the wire.
 """
 
 import gzip
+import os
 import types
 from dataclasses import dataclass
 
@@ -23,6 +24,7 @@ from Classes.WebServer.sendresponse import sendResponse
 
 HASHED_BUNDLE = "main.0123456789abcdef.js"
 SECRET = b"TOP-SECRET-OUTSIDE-WWW"
+INDEX_MTIME = 1_790_000_000  # Mon, 21 Sep 2026 14:13:20 GMT
 # Domoticz session cookie: browsers send it to :9440 too, cookies are not scoped by port
 DOMOTICZ_COOKIE = "DMZSID=0123abcd_c2VjcmV0dG9rZW4.1790000000"
 
@@ -111,6 +113,7 @@ def get(ws, path, headers=None):
 def home(tmp_path):
     (tmp_path / "www" / "z4d" / "assets").mkdir(parents=True)
     (tmp_path / "www" / "z4d" / "index.html").write_bytes(b"<html>index</html>")
+    os.utime(tmp_path / "www" / "z4d" / "index.html", (INDEX_MTIME, INDEX_MTIME))
     (tmp_path / "www" / "z4d" / HASHED_BUNDLE).write_bytes(b"console.log(1)")
     (tmp_path / "www" / "z4d" / "assets" / "z4d_logo.png").write_bytes(b"\x89PNG")
     (tmp_path / "Logs").mkdir()
@@ -245,3 +248,30 @@ def test_gzip_is_negotiated_whatever_the_header_case(home, name):
     reply = get(ws, "/z4d/" + HASHED_BUNDLE, {name: "gzip, deflate"})
     assert reply.headers["Content-Encoding"] == "gzip"
     assert gzip.decompress(reply.body) == b"console.log(1)"
+
+
+# ─── If-Modified-Since is compared as a date ──────────────────────────────────
+
+@pytest.mark.parametrize("if_modified_since", [
+    "Mon, 21 Sep 2026 14:13:20 GMT",     # the Last-Modified the server sent
+    "Mon, 21 Sep 2026 14:13:20 +0000",   # same instant, numeric zone
+    "Mon, 21 Sep 2026 16:13:20 +0200",   # same instant, another zone
+    "Tue, 22 Sep 2026 08:00:00 GMT",     # later than the file
+])
+def test_unchanged_file_is_answered_304(ws, if_modified_since):
+    reply = get(ws, "/z4d/index.html", {"If-Modified-Since": if_modified_since})
+    assert reply.status == 304
+    assert reply.body == b""
+
+
+@pytest.mark.parametrize("if_modified_since", ["Mon, 21 Sep 2026 14:13:19 GMT", "yesterday", ""])
+def test_changed_file_or_bad_date_is_sent_in_full(ws, if_modified_since):
+    reply = get(ws, "/z4d/index.html", {"If-Modified-Since": if_modified_since})
+    assert reply.status == 200
+    assert reply.body == b"<html>index</html>"
+
+
+def test_no_304_when_the_cache_is_disabled(home):
+    ws = FakeWebServer(home, enableCache=0)
+    reply = get(ws, "/z4d/index.html", {"If-Modified-Since": "Tue, 22 Sep 2026 08:00:00 GMT"})
+    assert reply.status == 200
