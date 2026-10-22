@@ -42,6 +42,11 @@ def close_all_clients(self):
     self.clients.clear()
 
 
+def canonical_header_name(name):
+    """HTTP header names are case-insensitive: store 'content-length' as 'Content-Length'."""
+    return "-".join(part.capitalize() for part in name.strip().split("-"))
+
+
 def parse_http_request(data):
     """
     Parse an HTTP request string into its components.
@@ -56,7 +61,8 @@ def parse_http_request(data):
         tuple: A tuple containing:
             - method (str): The HTTP method (e.g., 'GET', 'POST').
             - path (str): The requested path (e.g., '/index.html').
-            - headers (dict): A dictionary of headers where keys are header names and values are header values.
+            - headers (dict): A dictionary of headers where keys are header names (canonical case, e.g.
+              'Content-Length') and values are header values.
             - body (bytes): The body of the request as a bytes object.
 
     Raises:
@@ -75,7 +81,7 @@ def parse_http_request(data):
         if not line.strip():
             break
         key, value = line.split(":", 1)
-        headers[key.strip()] = value.strip()
+        headers[canonical_header_name(key)] = value.strip()
 
     # Parse body if present
     if "Content-Length" in headers:

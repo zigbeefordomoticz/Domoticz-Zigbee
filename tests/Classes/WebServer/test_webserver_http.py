@@ -10,6 +10,7 @@ parse_http_request() -> onMessage() -> sendResponse() -- against a fake socket
 and assert on the bytes that would go on the wire.
 """
 
+import gzip
 import types
 from dataclasses import dataclass
 
@@ -227,3 +228,20 @@ def test_handle_client_debug_log_redacts_credentials(ws, cookie_header):
     assert "<redacted>" in _logged(ws)
     assert "DMZSID" not in _logged(ws)
     assert "YWRtaW46c2VjcmV0" not in _logged(ws)
+
+
+# ─── Header names are case-insensitive ────────────────────────────────────────
+
+def test_parse_http_request_canonicalises_header_names():
+    method, path, headers, body = parse_http_request(
+        "POST /rest-z4d/1/x HTTP/1.1\r\nhost: pi\r\ncontent-length: 5\r\nIF-MODIFIED-SINCE: x\r\n\r\nhello")
+    assert headers == {"Host": "pi", "Content-Length": "5", "If-Modified-Since": "x"}
+    assert body == "hello"
+
+
+@pytest.mark.parametrize("name", ["Accept-Encoding", "accept-encoding"])
+def test_gzip_is_negotiated_whatever_the_header_case(home, name):
+    ws = FakeWebServer(home, enableGzip=1)
+    reply = get(ws, "/z4d/" + HASHED_BUNDLE, {name: "gzip, deflate"})
+    assert reply.headers["Content-Encoding"] == "gzip"
+    assert gzip.decompress(reply.body) == b"console.log(1)"
