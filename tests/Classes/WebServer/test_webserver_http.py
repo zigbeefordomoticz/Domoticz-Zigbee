@@ -275,3 +275,23 @@ def test_no_304_when_the_cache_is_disabled(home):
     ws = FakeWebServer(home, enableCache=0)
     reply = get(ws, "/z4d/index.html", {"If-Modified-Since": "Tue, 22 Sep 2026 08:00:00 GMT"})
     assert reply.status == 200
+
+
+# ─── Wrong or missing paths get index.html, typed as such ─────────────────────
+
+@pytest.mark.parametrize("path", [
+    "/", "/z4d/", "/z4d/device", "/z4d/settings/advanced",                       # Angular routes
+    "/z4d/main.fedcba9876543210.js", "/z4d/assets/missing.png", "/favicon.ico",  # missing files
+    "/rest-z4d/1",                                                              # incomplete REST URL
+])
+def test_wrong_or_missing_path_gets_index_html(ws, path):
+    reply = get(ws, path)
+    assert reply.status == 200
+    assert reply.body == b"<html>index</html>"
+    # Typed from the file served: a missing .js used to come back as HTML typed text/javascript
+    assert reply.headers["Content-Type"].startswith("text/html")
+
+
+def test_content_type_comes_from_the_served_file(ws):
+    reply = get(ws, "/z4d/" + HASHED_BUNDLE + "?v=1")
+    assert reply.headers["Content-Type"].startswith("text/javascript")
