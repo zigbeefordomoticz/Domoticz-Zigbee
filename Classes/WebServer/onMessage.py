@@ -67,8 +67,12 @@ def onMessage(self, Connection, Data):
 
     self.logging("Debug", f"Download: {is_download( parsed_query, parsed_url)}")
     if is_download( parsed_query, parsed_url):
-        # we have to serve a file for download purposes, let's remove '/download' to get the filename to access
-        webFilename = parsed_url.path[len('/download'):]
+        # Only the plugin log files can be downloaded (rest_logPlugin hands out /download/<pluginLogs>/<file>)
+        webFilename = get_download_filename(self, parsed_url)
+        if webFilename is None:
+            # Refused, and answered as any wrong or missing file: with the WebUI index.html
+            self.logging("Log", f"WebUI - refused {url}: not a plugin log file")
+            webFilename = redirect_to_index_html(self)
 
     else:
         # Most likely a file from the wwww/ to be served
@@ -120,6 +124,24 @@ def handle_rest_api(self, Connection, Data, parsed_query):
 
 def is_download( parsed_query, parsed_url):
     return parsed_query[0] == 'download'
+
+
+def get_download_filename(self, parsed_url):
+    """Map /download/<absolute path> onto a file under the plugin log directory, or None."""
+    log_root = self.pluginconf.pluginConf.get("pluginLogs")
+    if not log_root:
+        return None
+    log_root = os.path.normpath(os.path.abspath(log_root))
+    downloadFilename = os.path.normpath(parsed_url.path[len('/download'):])
+    if not os.path.isabs(downloadFilename):
+        return None
+    try:
+        if os.path.commonpath([log_root, downloadFilename]) != log_root:
+            return None
+    except ValueError:
+        # Not on the same drive (Windows)
+        return None
+    return downloadFilename
 
 
 def get_web_filename(self, parsed_url):
