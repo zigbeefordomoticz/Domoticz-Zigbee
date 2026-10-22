@@ -13,6 +13,7 @@
 import mimetypes
 import os
 import os.path
+import re
 import time
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
@@ -27,6 +28,13 @@ from Classes.WebServer.tools import (MAX_BLOCK_SIZE, DumpHTTPResponseToLog,
 from Modules.domoticzAbstractLayer import (domoticz_error_api,
                                            domoticz_log_api,
                                            domoticz_status_api)
+
+# The WebUI build names its bundles after their content: main.0eca488920832a0f.js (webpack),
+# main-5NFAGTK3.js (esbuild). A new release brings new names, so these can be cached for good.
+HASHED_FILENAME = re.compile(r"\.[0-9a-f]{16,}\.\w+$|-[0-9A-Z]{8}\.\w+$")
+CACHE_IMMUTABLE = "public, max-age=31536000, immutable"
+CACHE_REVALIDATE = "no-cache"
+CACHE_NO_STORE = "no-cache, no-store, must-revalidate"
 
 
 def measure_execution_time(func):
@@ -66,8 +74,9 @@ def onMessage(self, Connection, Data):
     if handle_rest_api(self, Connection, Data, parsed_query):
         return
 
-    self.logging("Debug", f"Download: {is_download( parsed_query, parsed_url)}")
-    if is_download( parsed_query, parsed_url):
+    download = is_download( parsed_query, parsed_url)
+    self.logging("Debug", f"Download: {download}")
+    if download:
         # Only the plugin log files can be downloaded (rest_logPlugin hands out /download/<pluginLogs>/<file>)
         webFilename = get_download_filename(self, parsed_url)
         if webFilename is None:
@@ -89,7 +98,7 @@ def onMessage(self, Connection, Data):
         self.logging("Debug", "Redirect to index.html")
         webFilename = redirect_to_index_html(self)
 
-    response_headers = prepare_response_headers(self)
+    response_headers = prepare_response_headers(self, webFilename, download)
     _response = setupHeadersResponse()
     _response["Headers"].update(response_headers)
 
@@ -162,22 +171,27 @@ def redirect_to_index_html(self):
     return webFilename
 
 
-def prepare_response_headers(self):
+def cache_control_for(self, webFilename, download):
+    if download or not self.pluginconf.pluginConf["enableCache"]:
+        return CACHE_NO_STORE
+    if HASHED_FILENAME.search(os.path.basename(webFilename)):
+        return CACHE_IMMUTABLE
+    # index.html and the unhashed assets: kept, but checked (If-Modified-Since -> 304) on every use,
+    # so that a plugin upgrade is picked up on the next page load
+    return CACHE_REVALIDATE
+
+
+def prepare_response_headers(self, webFilename, download=False):
+    cache_control = cache_control_for(self, webFilename, download)
     return {
         "Connection": (
             "Keep-alive"
             if self.pluginconf.pluginConf["enableKeepalive"]
             else "Close"
         ),
-        "Cache-Control": (
-            "private"
-            if self.pluginconf.pluginConf["enableCache"]
-            else "no-cache, no-store, must-revalidate"
-        ),
-        "Pragma": (
-            "" if self.pluginconf.pluginConf["enableCache"] else "no-cache"
-        ),
-        "Expires": "" if self.pluginconf.pluginConf["enableCache"] else "0",
+        "Cache-Control": cache_control,
+        "Pragma": "no-cache" if cache_control == CACHE_NO_STORE else "",
+        "Expires": "0" if cache_control == CACHE_NO_STORE else "",
         "Accept": "" if self.pluginconf.pluginConf["enableCache"] else "*/*",
     }
 
