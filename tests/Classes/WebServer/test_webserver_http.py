@@ -128,3 +128,39 @@ def test_dot_dot_inside_www_is_allowed(ws):
     reply = get(ws, "/z4d/assets/../index.html")
     assert reply.status == 200
     assert reply.body == b"<html>index</html>"
+
+
+# ─── /download serves the plugin log files only ───────────────────────────────
+
+def _log_url(home, name="PluginZigbee_01.log"):
+    # The URL rest_logging.rest_logPlugin() hands to the WebUI
+    return "/download" + str(home / "Logs") + "/" + name
+
+
+def test_download_serves_the_plugin_log(ws, home):
+    reply = get(ws, _log_url(home))
+    assert reply.status == 200
+    assert reply.body == b"plugin log line"
+
+
+@pytest.mark.parametrize("target", [
+    lambda home: "/download/etc/hosts",
+    lambda home: "/download" + str(home / "secret.txt"),
+    lambda home: _log_url(home, "../secret.txt"),
+    lambda home: "/download",
+])
+def test_download_refuses_anything_outside_the_log_directory(ws, home, target):
+    # Refused and answered, like any wrong path, with the WebUI index.html
+    reply = get(ws, target(home))
+    assert reply.body == b"<html>index</html>"
+    assert any("not a plugin log file" in message for _level, message in ws.logs)
+
+
+def test_download_of_a_missing_log_falls_back_to_index_html(ws, home):
+    reply = get(ws, _log_url(home, "PluginZigbee_99.log"))
+    assert reply.body == b"<html>index</html>"
+
+
+def test_download_refused_when_the_log_directory_is_unknown(home):
+    ws = FakeWebServer(home, pluginLogs="")
+    assert get(ws, _log_url(home)).body == b"<html>index</html>"
