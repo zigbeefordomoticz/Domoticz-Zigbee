@@ -15,7 +15,8 @@ from dataclasses import dataclass
 
 import pytest
 
-from Classes.WebServer.com import decode_http_data, parse_http_request
+from Classes.WebServer.com import (decode_http_data, handle_client,
+                                   parse_http_request)
 from Classes.WebServer.onMessage import onMessage
 from Classes.WebServer.sendresponse import sendResponse
 
@@ -34,6 +35,20 @@ class FakeSocket:
 
     def close(self):
         pass
+
+
+class FakeClientSocket(FakeSocket):
+    """A client connection that sends one request, then closes."""
+
+    def __init__(self, request):
+        super().__init__()
+        self.pending = [request.encode("utf-8")]
+
+    def settimeout(self, timeout):
+        pass
+
+    def recv(self, size):
+        return self.pending.pop(0) if self.pending else b""
 
 
 class FakeWebServer:
@@ -61,6 +76,9 @@ class FakeWebServer:
 
     def do_rest(self, connection, verb, data, version, command, parameters):
         raise AssertionError(f"unexpected REST call {command}")
+
+    def onMessage(self, connection, data):
+        onMessage(self, connection, data)
 
 
 @dataclass
@@ -178,3 +196,34 @@ def test_request_cookie_is_not_echoed_in_the_response(ws, path):
     assert reply.status == 200
     assert "Cookie" not in reply.headers
     assert b"DMZSID" not in reply.raw
+
+
+# ─── Credentials never reach the plugin log ───────────────────────────────────
+
+CREDENTIALS = {"Cookie": DOMOTICZ_COOKIE, "Authorization": "Basic YWRtaW46c2VjcmV0"}
+
+
+def _logged(ws):
+    return "\n".join(message for _level, message in ws.logs)
+
+
+def test_onmessage_debug_log_redacts_credentials(ws):
+    get(ws, "/z4d/index.html", CREDENTIALS)
+    assert "/z4d/index.html" in _logged(ws)
+    assert "DMZSID" not in _logged(ws)
+    assert "YWRtaW46c2VjcmV0" not in _logged(ws)
+
+
+@pytest.mark.parametrize("cookie_header", ["Cookie", "cookie", "COOKIE"])
+def test_handle_client_debug_log_redacts_credentials(ws, cookie_header):
+    ws.clients, ws.webui_running = {}, True
+    request = (f"GET /z4d/index.html HTTP/1.1\r\nHost: pi:9440\r\n{cookie_header}: {DOMOTICZ_COOKIE}\r\n"
+               "Authorization: Basic YWRtaW46c2VjcmV0\r\n\r\n")
+    client = FakeClientSocket(request)
+
+    handle_client(ws, client, ("192.0.2.1", 50000))
+
+    assert client.sent.startswith(b"HTTP/1.1 200 OK")
+    assert "<redacted>" in _logged(ws)
+    assert "DMZSID" not in _logged(ws)
+    assert "YWRtaW46c2VjcmV0" not in _logged(ws)

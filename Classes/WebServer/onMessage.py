@@ -21,7 +21,8 @@ from urllib.parse import urlparse
 
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
-from Classes.WebServer.tools import MAX_BLOCK_SIZE, DumpHTTPResponseToLog
+from Classes.WebServer.tools import (MAX_BLOCK_SIZE, DumpHTTPResponseToLog,
+                                     redact_headers)
 from Modules.domoticzAbstractLayer import (domoticz_error_api,
                                            domoticz_log_api,
                                            domoticz_status_api)
@@ -49,7 +50,7 @@ def measure_execution_time(func):
 
 @measure_execution_time
 def onMessage(self, Connection, Data):
-    self.logging("Debug", f"WebServer onMessage: {Data}")
+    self.logging("Debug", f"WebServer onMessage: {dict(Data, Headers=redact_headers(Data.get('Headers') or {}))}")
 
     headerCode = check_header(Data)
     self.logging("Debug", f"onMessage - headerCode: {headerCode}")
