@@ -145,7 +145,6 @@ def execute_rest_command(self, verb, data, version, command, parameters):
         "Cache-Control": "no-cache, no-store, must-revalidate",
         "Pragma": "no-cache",
         "Expires": "0",
-        "Accept": "*/*",
     })
 
     if command == "help":

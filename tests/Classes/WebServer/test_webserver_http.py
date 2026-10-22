@@ -363,3 +363,33 @@ def test_vary_accept_encoding_when_compression_is_enabled(home, accept_encoding)
 
 def test_no_vary_when_compression_is_disabled(ws):
     assert "Vary" not in get(ws, "/z4d/" + HASHED_BUNDLE, {"Accept-Encoding": "gzip"}).headers
+
+
+# ─── Response header hygiene ──────────────────────────────────────────────────
+
+@pytest.mark.parametrize("path", ["/z4d/index.html", "/z4d/" + HASHED_BUNDLE])
+def test_request_only_headers_are_not_sent_back(home, path):
+    for ws in (FakeWebServer(home), FakeWebServer(home, enableCache=0)):
+        reply = get(ws, path, {"Referer": "http://pi:9440/z4d/"})
+        assert not {"Accept", "User-Agent", "Referer"} & set(reply.headers)
+
+
+def test_rest_answers_carry_no_request_only_headers(ws):
+    response = prepResponseMessage(ws, setupHeadersResponse())
+    assert not {"Accept", "User-Agent"} & set(response["Headers"])
+
+
+@pytest.mark.parametrize("path, content_type", [
+    ("/z4d/index.html", "text/html; charset=utf-8"),
+    ("/z4d/" + HASHED_BUNDLE, "text/javascript; charset=utf-8"),
+    ("/z4d/assets/z4d_logo.png", "image/png"),
+])
+def test_charset_only_on_text_types(ws, path, content_type):
+    assert get(ws, path).headers["Content-Type"] == content_type
+
+
+def test_range_request_gets_the_whole_file(ws):
+    # Range is not supported: answering 200 with the full body is valid HTTP
+    reply = get(ws, "/z4d/" + HASHED_BUNDLE, {"Range": "bytes=0-3"})
+    assert reply.status == 200
+    assert reply.body == b"console.log(1)"

@@ -27,7 +27,6 @@ def prepResponseMessage(self, _response):
         "Cache-Control": "no-cache, no-store, must-revalidate",
         "Pragma": "no-cache",
         "Expires": "0",
-        "Accept": "*/*"
     })
 
     return _response
@@ -37,7 +36,6 @@ def setupHeadersResponse():
     _response = {
         "Headers": {
             "Server": "Domoticz",
-            "User-Agent": "Plugin-Zigbee4Domoticz/v1",
             "Access-Control-Allow-Headers": "Cache-Control, Pragma, Origin, Authorization, Content-Type, X-Requested-With",
             "Access-Control-Allow-Methods": "GET, POST, DELETE",
             "Access-Control-Allow-Origin": "*",

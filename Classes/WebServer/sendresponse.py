@@ -40,7 +40,6 @@ http_status_codes = {
 
 HTTP_HEADERS = {
     "Server", 
-    "User-Agent", 
     "Access-Control-Allow-Headers", 
     "Access-Control-Allow-Methods",
     "Access-Control-Allow-Origin",
@@ -49,7 +48,6 @@ HTTP_HEADERS = {
     "Cache-Control",
     "Pragma",
     "Expires",
-    "Accept",
     "Last-Modified",
     "Content-Type",
     "Content-Encoding",
