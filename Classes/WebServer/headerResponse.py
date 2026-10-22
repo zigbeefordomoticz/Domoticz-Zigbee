@@ -35,7 +35,7 @@ def prepResponseMessage(self, _response):
     return _response
 
 
-def setupHeadersResponse(cookie=None):
+def setupHeadersResponse():
     _response = {
         "Headers": {
             "Server": "Domoticz",
@@ -46,9 +46,5 @@ def setupHeadersResponse(cookie=None):
             "Referrer-Policy": "no-referrer"
         }
     }
-
-    # Add cookie only if provided
-    if cookie:
-        _response["Headers"]["Cookie"] = cookie
 
     return _response

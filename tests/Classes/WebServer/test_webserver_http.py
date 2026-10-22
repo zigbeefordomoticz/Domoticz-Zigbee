@@ -21,6 +21,8 @@ from Classes.WebServer.sendresponse import sendResponse
 
 HASHED_BUNDLE = "main.0123456789abcdef.js"
 SECRET = b"TOP-SECRET-OUTSIDE-WWW"
+# Domoticz session cookie: browsers send it to :9440 too, cookies are not scoped by port
+DOMOTICZ_COOKIE = "DMZSID=0123abcd_c2VjcmV0dG9rZW4.1790000000"
 
 
 class FakeSocket:
@@ -66,6 +68,7 @@ class Reply:
     status: int
     headers: dict
     body: bytes
+    raw: bytes
 
 
 def get(ws, path, headers=None):
@@ -82,7 +85,7 @@ def get(ws, path, headers=None):
     for line in header_lines:
         name, value = line.split(":", 1)
         response_headers[name.strip()] = value.strip()
-    return Reply(int(status_line.split()[1]), response_headers, payload)
+    return Reply(int(status_line.split()[1]), response_headers, payload, sock.sent)
 
 
 @pytest.fixture
@@ -164,3 +167,14 @@ def test_download_of_a_missing_log_falls_back_to_index_html(ws, home):
 def test_download_refused_when_the_log_directory_is_unknown(home):
     ws = FakeWebServer(home, pluginLogs="")
     assert get(ws, _log_url(home)).body == b"<html>index</html>"
+
+
+# ─── The Domoticz session cookie is never sent back ───────────────────────────
+
+@pytest.mark.parametrize("path", ["/z4d/index.html", "/z4d/devices", "/z4d/" + HASHED_BUNDLE])
+def test_request_cookie_is_not_echoed_in_the_response(ws, path):
+    # A response "Cookie" header made DMZSID (HttpOnly) readable by any script on :9440
+    reply = get(ws, path, {"Cookie": DOMOTICZ_COOKIE})
+    assert reply.status == 200
+    assert "Cookie" not in reply.headers
+    assert b"DMZSID" not in reply.raw

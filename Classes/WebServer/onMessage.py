@@ -59,7 +59,6 @@ def onMessage(self, Connection, Data):
         return
 
     url, parsed_url, parsed_query = parse_and_decode_query(Data)
-    cookie = Data["Headers"].get("Cookie")
     Data.setdefault("Data", None)
 
     if handle_rest_api(self, Connection, Data, parsed_query):
@@ -88,8 +87,8 @@ def onMessage(self, Connection, Data):
         self.logging("Debug", "Redirect to index.html")
         webFilename = redirect_to_index_html(self)
 
-    response_headers = prepare_response_headers(self,cookie)
-    _response = setupHeadersResponse(cookie)
+    response_headers = prepare_response_headers(self)
+    _response = setupHeadersResponse()
     _response["Headers"].update(response_headers)
 
     self.logging("Debug", f"Opening: {webFilename}")
@@ -161,7 +160,7 @@ def redirect_to_index_html(self):
     return webFilename
 
 
-def prepare_response_headers(self, cookie):
+def prepare_response_headers(self):
     return {
         "Connection": (
             "Keep-alive"
