@@ -230,7 +230,7 @@ def send_file(self, Connection, webFilename, Data, _lastmodified, _response):
     with open(webFilename, mode="rb") as webFile:
         _response["Data"] = webFile.read()
 
-    _contentType, _contentEncoding = mimetypes.guess_type(Data["URL"])
+    _contentType, _contentEncoding = mimetypes.guess_type(str(webFilename))
 
     if _contentType is None:
         filename, file_extension = os.path.splitext(webFilename)
