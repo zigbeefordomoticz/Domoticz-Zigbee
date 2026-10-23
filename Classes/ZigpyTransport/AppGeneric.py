@@ -200,8 +200,8 @@ COORDINATOR_NWK              = "0000"
 # Neighbours drop any coordinator frame whose counter is not above the last one
 # they saw, so the restored counter must cover every frame sent since the backup.
 # ---------------------------------------------------------------------------
-RESTORE_COUNTER_BASE    = 10000       # zigpy's own restore_backup() default
-RESTORE_COUNTER_RATE    = 10          # frames per second of backup age, well above a busy network
+RESTORE_COUNTER_BASE = 10000  # zigpy's own restore_backup() default
+RESTORE_COUNTER_RATE = 10  # frames per second of backup age, well above a busy network
 RESTORE_COUNTER_CEILING = 0xF0000000  # keep the restored counter clear of the 32-bit wrap
 
 
