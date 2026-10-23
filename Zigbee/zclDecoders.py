@@ -78,7 +78,7 @@ def send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpo
         return False
     
     if not must_send_default_response( int(fcf, 16), int(command, 16), int(cluster_id, 16), int(status, 16) ):
-        self.log.logging(["zclDefaultResponse", "zclDecoder"], "Debug", f"must_send_default_response returned False for command {command}", src_nwk_id)
+        self.log.logging("zclDecoder", "Debug", f"must_send_default_response returned False for command {command}", src_nwk_id)
         return
 
     self.log.logging(
