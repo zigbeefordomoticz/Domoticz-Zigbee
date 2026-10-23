@@ -13,18 +13,45 @@
 import mimetypes
 import os
 import os.path
+import re
 import time
-from datetime import datetime
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 from time import gmtime, strftime
 from urllib.parse import urlparse
 
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
-from Classes.WebServer.tools import MAX_BLOCK_SIZE, DumpHTTPResponseToLog
+from Classes.WebServer.tools import DumpHTTPResponseToLog, redact_headers
 from Modules.domoticzAbstractLayer import (domoticz_error_api,
                                            domoticz_log_api,
                                            domoticz_status_api)
+
+# The WebUI build names its bundles after their content: main.0eca488920832a0f.js (webpack),
+# main-5NFAGTK3.js (esbuild). A new release brings new names, so these can be cached for good.
+HASHED_FILENAME = re.compile(r"\.[0-9a-f]{16,}\.\w+$|-[0-9A-Z]{8}\.\w+$")
+CACHE_IMMUTABLE = "public, max-age=31536000, immutable"
+CACHE_REVALIDATE = "no-cache"
+CACHE_NO_STORE = "no-cache, no-store, must-revalidate"
+
+# Content-Security-Policy of the WebUI page, sent as Report-Only: the browser blocks nothing, and posts what it
+# would block to /rest-z4d/1/csp-report, which logs it. Switch to Content-Security-Policy once the reports stop.
+# - the hash is the inline onload="this.media='all'" Angular writes in index.html (critical CSS)
+# - Angular component styles and the charts use inline styles
+# - no frame-ancestors: the Domoticz custom menu frames the WebUI from the Domoticz host and port
+WEBUI_CSP = "; ".join((
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-hashes' 'sha256-MhtPZXr7+LpJUY5qtMutB+qWfQtMaPccfe7QXtCcEYc='",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self' data:",
+    "connect-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "report-uri /rest-z4d/1/csp-report",
+))
 
 
 def measure_execution_time(func):
@@ -49,7 +76,7 @@ def measure_execution_time(func):
 
 @measure_execution_time
 def onMessage(self, Connection, Data):
-    self.logging("Debug", f"WebServer onMessage: {Data}")
+    self.logging("Debug", f"WebServer onMessage: {dict(Data, Headers=redact_headers(Data.get('Headers') or {}))}")
 
     headerCode = check_header(Data)
     self.logging("Debug", f"onMessage - headerCode: {headerCode}")
@@ -59,20 +86,28 @@ def onMessage(self, Connection, Data):
         return
 
     url, parsed_url, parsed_query = parse_and_decode_query(Data)
-    cookie = Data["Headers"].get("Cookie")
     Data.setdefault("Data", None)
 
     if handle_rest_api(self, Connection, Data, parsed_query):
         return
 
-    self.logging("Debug", f"Download: {is_download( parsed_query, parsed_url)}")
-    if is_download( parsed_query, parsed_url):
-        # we have to serve a file for download purposes, let's remove '/download' to get the filename to access
-        webFilename = parsed_url.path[len('/download'):]
+    download = is_download( parsed_query, parsed_url)
+    self.logging("Debug", f"Download: {download}")
+    if download:
+        # Only the plugin log files can be downloaded (rest_logPlugin hands out /download/<pluginLogs>/<file>)
+        webFilename = get_download_filename(self, parsed_url)
+        if webFilename is None:
+            # Refused, and answered as any wrong or missing file: with the WebUI index.html
+            self.logging("Log", f"WebUI - refused {url}: not a plugin log file")
+            webFilename = redirect_to_index_html(self)
 
     else:
         # Most likely a file from the wwww/ to be served
-        webFilename = get_web_filename(self, url, parsed_query, parsed_url)
+        webFilename = get_web_filename(self, parsed_url)
+        if webFilename is None:
+            # Refused, and answered as any wrong or missing file: with the WebUI index.html
+            self.logging("Log", f"WebUI - refused {url}: outside of www/")
+            webFilename = redirect_to_index_html(self)
 
     self.logging("Debug", f"Downloading: {webFilename}")
 
@@ -80,22 +115,18 @@ def onMessage(self, Connection, Data):
         self.logging("Debug", "Redirect to index.html")
         webFilename = redirect_to_index_html(self)
 
-    response_headers = prepare_response_headers(self,cookie)
-    _response = setupHeadersResponse(cookie)
+    response_headers = prepare_response_headers(self, webFilename, download)
+    _response = setupHeadersResponse()
     _response["Headers"].update(response_headers)
 
     self.logging("Debug", f"Opening: {webFilename}")
 
     _last_modified = get_last_modified(webFilename)
-    set_referer_header(self, Data, _response)
 
     if get_from_cache_or_send(self, Connection, webFilename, Data, _last_modified, _response):
         return
 
-    if "Ranges" in Data["Headers"]:
-        get_range_and_send(self, Connection, webFilename, Data, _response)
-    else:
-        send_file(self, Connection, webFilename, Data, _last_modified, _response)
+    send_file(self, Connection, webFilename, Data, _last_modified, _response)
 
 def handle_rest_api(self, Connection, Data, parsed_query):
     if len(parsed_query) < 3 or parsed_query[0] not in ["rest-z4d","rest-zigate",]:
@@ -118,13 +149,31 @@ def is_download( parsed_query, parsed_url):
     return parsed_query[0] == 'download'
 
 
-def get_web_filename(self, url, parsed_query, parsed_url):
-    if parsed_query[0] == 'download':
-        webFilename = parsed_url.path[len('/download'):]
-    else:
-        _homedir = Path(self.homedirectory)
-        webFilename = _homedir / ("www" + url)
-        self.logging("Debug", f"webFilename: {webFilename}")
+def get_download_filename(self, parsed_url):
+    """Map /download/<absolute path> onto a file under the plugin log directory, or None."""
+    log_root = self.pluginconf.pluginConf.get("pluginLogs")
+    if not log_root:
+        return None
+    log_root = os.path.normpath(os.path.abspath(log_root))
+    downloadFilename = os.path.normpath(parsed_url.path[len('/download'):])
+    if not os.path.isabs(downloadFilename):
+        return None
+    try:
+        if os.path.commonpath([log_root, downloadFilename]) != log_root:
+            return None
+    except ValueError:
+        # Not on the same drive (Windows)
+        return None
+    return downloadFilename
+
+
+def get_web_filename(self, parsed_url):
+    """Map the URL path onto a file under www/, or None when it would leave www/ (e.g. '/../')."""
+    www_root = os.path.normpath(os.path.join(self.homedirectory, "www"))
+    webFilename = os.path.normpath(os.path.join(www_root, parsed_url.path.lstrip("/")))
+    self.logging("Debug", f"webFilename: {webFilename}")
+    if os.path.commonpath([www_root, webFilename]) != www_root:
+        return None
     return webFilename
 
 
@@ -135,34 +184,34 @@ def redirect_to_index_html(self):
     return webFilename
 
 
-def prepare_response_headers(self, cookie):
+def cache_control_for(self, webFilename, download):
+    if download or not self.pluginconf.pluginConf["enableCache"]:
+        return CACHE_NO_STORE
+    if HASHED_FILENAME.search(os.path.basename(webFilename)):
+        return CACHE_IMMUTABLE
+    # index.html and the unhashed assets: kept, but checked (If-Modified-Since -> 304) on every use,
+    # so that a plugin upgrade is picked up on the next page load
+    return CACHE_REVALIDATE
+
+
+def prepare_response_headers(self, webFilename, download=False):
+    cache_control = cache_control_for(self, webFilename, download)
     return {
         "Connection": (
             "Keep-alive"
             if self.pluginconf.pluginConf["enableKeepalive"]
             else "Close"
         ),
-        "Cache-Control": (
-            "private"
-            if self.pluginconf.pluginConf["enableCache"]
-            else "no-cache, no-store, must-revalidate"
-        ),
-        "Pragma": (
-            "" if self.pluginconf.pluginConf["enableCache"] else "no-cache"
-        ),
-        "Expires": "" if self.pluginconf.pluginConf["enableCache"] else "0",
-        "Accept": "" if self.pluginconf.pluginConf["enableCache"] else "*/*",
+        "Cache-Control": cache_control,
+        "Pragma": "no-cache" if cache_control == CACHE_NO_STORE else "",
+        "Expires": "0" if cache_control == CACHE_NO_STORE else "",
+        "Content-Security-Policy-Report-Only": WEBUI_CSP if str(webFilename).endswith(".html") else "",
     }
 
 
 def get_last_modified(webFilename):
     current_version_on_server = os.path.getmtime(webFilename)
     return strftime("%a, %d %b %Y %H:%M:%S GMT", gmtime(current_version_on_server))
-
-
-def set_referer_header(self, Data, _response):
-    if "Referer" in Data["Headers"]:
-        _response["Headers"]["Referer"] = Data["Headers"]["Referer"]
 
 
 def get_from_cache_or_send(self, Connection, webFilename, Data, _last_modified, _response):
@@ -203,7 +252,7 @@ def send_file(self, Connection, webFilename, Data, _lastmodified, _response):
     with open(webFilename, mode="rb") as webFile:
         _response["Data"] = webFile.read()
 
-    _contentType, _contentEncoding = mimetypes.guess_type(Data["URL"])
+    _contentType, _contentEncoding = mimetypes.guess_type(str(webFilename))
 
     if _contentType is None:
         filename, file_extension = os.path.splitext(webFilename)
@@ -224,7 +273,7 @@ def send_file(self, Connection, webFilename, Data, _lastmodified, _response):
             _contentType = EXTENSION_MIME_TYPE[ file_extension ]
 
     if _contentType:
-        _response["Headers"]["Content-Type"] = _contentType + "; charset=utf-8"
+        _response["Headers"]["Content-Type"] = with_charset(_contentType)
     if _contentEncoding:
         _response["Headers"]["Content-Encoding"] = _contentEncoding
 
@@ -236,42 +285,18 @@ def send_file(self, Connection, webFilename, Data, _lastmodified, _response):
         self.sendResponse(Connection, _response)
 
 
-def get_range_and_send(self, Connection, webFilename, Data, _response):
-    self.logging("Debug", "Ranges processing")
-
-    RangeProcess = Data["Headers"]["Range"]
-    fileStartPosition = int(RangeProcess[RangeProcess.find("=") + 1 : RangeProcess.find("-")])
-
-    messageFileSize = os.path.getsize(webFilename)
-    messageFile = open(webFilename, mode="rb")
-    messageFile.seek(fileStartPosition)
-
-    fileContent = messageFile.read(MAX_BLOCK_SIZE)
-
-    self.logging(
-        "Debug",
-        f"{Connection.Address}:{Connection.Port} Sent 'GET' request file '{Data['URL']}' from position {fileStartPosition}, {len(fileContent)} bytes will be returned",
-    )
-
-    _response["Status"] = "200 OK"
-    if len(fileContent) == MAX_BLOCK_SIZE:
-        _response["Status"] = "206 Partial Content"
-        _response["Headers"]["Content-Range"] = f"bytes {fileStartPosition}-{messageFile.tell()}/{messageFileSize}"
-
-    Connection.Send(_response)
-
-    if not self.pluginconf.pluginConf["enableKeepalive"]:
-        Connection.Disconnect()
+def with_charset(content_type):
+    """Text types are served as UTF-8; a charset on a binary type (image/png) is meaningless."""
+    if content_type.startswith("text/") or content_type in ("application/json", "application/javascript", "image/svg+xml"):
+        return content_type + "; charset=utf-8"
+    return content_type
 
 
 def get_from_cache_if_available(self, Connection, webFilename, Data, _lastmodified, _response):
     if not self.pluginconf.pluginConf["enableCache"]:
         return False
 
-    if "If-Modified-Since" not in Data["Headers"]:
-        return False
-
-    if Data["Headers"]["If-Modified-Since"] != _lastmodified:
+    if not is_not_modified_since(Data["Headers"].get("If-Modified-Since"), webFilename):
         return False
 
     # No need to send it back
@@ -279,3 +304,16 @@ def get_from_cache_if_available(self, Connection, webFilename, Data, _lastmodifi
     _response["Status"] = "304 Not Modified"
     self.sendResponse(Connection, _response)
     return True
+
+def is_not_modified_since(if_modified_since, webFilename):
+    """True when webFilename has not changed since the If-Modified-Since date (compared as dates, not strings)."""
+    if not if_modified_since:
+        return False
+    try:
+        since = parsedate_to_datetime(if_modified_since)
+    except (TypeError, ValueError):
+        return False
+    if since.tzinfo is None:
+        since = since.replace(tzinfo=timezone.utc)
+    # HTTP dates have a one-second resolution
+    return int(os.path.getmtime(webFilename)) <= since.timestamp()
