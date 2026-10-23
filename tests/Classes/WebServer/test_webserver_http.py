@@ -393,3 +393,57 @@ def test_range_request_gets_the_whole_file(ws):
     reply = get(ws, "/z4d/" + HASHED_BUNDLE, {"Range": "bytes=0-3"})
     assert reply.status == 200
     assert reply.body == b"console.log(1)"
+
+
+# ─── A complete request is answered without waiting for more bytes ────────────
+
+class RecordingClientSocket(FakeClientSocket):
+    """Records, for each recv(), whether the reply was already sent.
+
+    On a real socket, a recv() before the reply blocks until the 1 s timeout.
+    """
+
+    def __init__(self, *packets):
+        super().__init__(packets[0])
+        self.pending += [packet.encode("utf-8") for packet in packets[1:]]
+        self.reads_after_reply = []
+
+    def recv(self, size):
+        self.reads_after_reply.append(bool(self.sent))
+        return super().recv(size)
+
+
+@pytest.fixture
+def recording_ws(ws):
+    ws.clients, ws.webui_running = {}, True
+    ws.received = []
+
+    def answer(connection, data):
+        ws.received.append(data)
+        connection.sendall(b"HTTP/1.1 204 No Content\r\n\r\n")
+
+    ws.onMessage = answer
+    return ws
+
+
+@pytest.mark.parametrize("request_", [
+    "GET /rest-z4d/1/plugin HTTP/1.1\r\nHost: pi:9440\r\n\r\n",
+    'POST /rest-z4d/1/setting HTTP/1.1\r\nHost: pi:9440\r\nContent-Length: 2\r\n\r\n{}',
+])
+def test_complete_request_is_answered_before_reading_again(recording_ws, request_):
+    client = RecordingClientSocket(request_)
+
+    handle_client(recording_ws, client, ("192.0.2.1", 50000))
+
+    # one read for the request, the next one only once the reply is sent (keep-alive)
+    assert client.reads_after_reply == [False, True]
+    assert len(recording_ws.received) == 1
+
+
+def test_body_sent_after_the_headers_is_still_read(recording_ws):
+    client = RecordingClientSocket(
+        "POST /rest-z4d/1/setting HTTP/1.1\r\nHost: pi:9440\r\nContent-Length: 2\r\n\r\n", "{}")
+
+    handle_client(recording_ws, client, ("192.0.2.1", 50000))
+
+    assert recording_ws.received[0]["Data"] == b"{}"
