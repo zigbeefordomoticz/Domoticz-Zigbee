@@ -79,7 +79,6 @@ SETTINGS = {
             "CaptureRxFrames": {"type": "bool","default": 0,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "CaptureTxFrames": {"type": "bool","default": 0,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "enableZclDuplicatecheck": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
-            "BackupFullDevices": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False,"ZigpyRadio": "znp" },
             "ForceAPSAck": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": True, "Advanced": True, },
             "EzspAllowUnsecuredRejoins": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "ezsp" },
             "BellowsNoMoreEndDeviceChildren": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "ezsp" },
