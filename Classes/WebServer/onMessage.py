@@ -35,6 +35,23 @@ CACHE_IMMUTABLE = "public, max-age=31536000, immutable"
 CACHE_REVALIDATE = "no-cache"
 CACHE_NO_STORE = "no-cache, no-store, must-revalidate"
 
+# Content-Security-Policy of the WebUI page, sent as Report-Only: the browser lists what it would block in its
+# console and blocks nothing. Switch to Content-Security-Policy once every screen has run clean.
+# - the hash is the inline onload="this.media='all'" Angular writes in index.html (critical CSS)
+# - Angular component styles and the charts use inline styles
+# - no frame-ancestors: the Domoticz custom menu frames the WebUI from the Domoticz host and port
+WEBUI_CSP = "; ".join((
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-hashes' 'sha256-MhtPZXr7+LpJUY5qtMutB+qWfQtMaPccfe7QXtCcEYc='",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self' data:",
+    "connect-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+))
+
 
 def measure_execution_time(func):
     def wrapper(self, Connection, Data):
@@ -187,6 +204,7 @@ def prepare_response_headers(self, webFilename, download=False):
         "Cache-Control": cache_control,
         "Pragma": "no-cache" if cache_control == CACHE_NO_STORE else "",
         "Expires": "0" if cache_control == CACHE_NO_STORE else "",
+        "Content-Security-Policy-Report-Only": WEBUI_CSP if str(webFilename).endswith(".html") else "",
     }
 
 
