@@ -15,10 +15,10 @@ import gzip
 import hashlib
 import json
 import os
-import re
 import types
 from dataclasses import dataclass
 from email.utils import formatdate, parsedate_to_datetime
+from html.parser import HTMLParser
 from pathlib import Path
 
 import pytest
@@ -551,12 +551,41 @@ def test_no_policy_on_rest_answers(ws):
     assert CSP not in rest_answer(ws).headers
 
 
+class InlineCode(HTMLParser):
+    """Collects what a CSP must allow inline: <script> without src, and on* event handler attributes."""
+
+    def __init__(self):
+        super().__init__()
+        self.inline_scripts = 0
+        self.handlers = []
+
+    def handle_starttag(self, tag, attrs):
+        # HTMLParser lowercases tag and attribute names, whatever their case in the file
+        if tag == "script" and not dict(attrs).get("src"):
+            self.inline_scripts += 1
+        self.handlers += [value for name, value in attrs if name.startswith("on") and value]
+
+
+def inline_code(html):
+    parser = InlineCode()
+    parser.feed(html)
+    parser.close()
+    return parser
+
+
+def test_inline_code_is_found_whatever_the_case():
+    found = inline_code('<SCRIPT>x()</SCRIPT><Script SRC="a.js"></Script><LINK ONLOAD="y()"><img onerror=z()>')
+    assert found.inline_scripts == 1
+    assert found.handlers == ["y()", "z()"]
+
+
 def test_policy_covers_the_shipped_index_html():
     # A WebUI refresh that adds an inline script or changes an inline handler must update WEBUI_CSP
     from Classes.WebServer.onMessage import WEBUI_CSP
-    shipped = (Path(__file__).parents[3] / "www" / "z4d" / "index.html").read_text(encoding="utf-8")
-    assert not re.search(r"<script(?![^>]*\bsrc=)[^>]*>", shipped), "inline <script> in index.html"
-    for handler in re.findall(r"\son\w+=\"([^\"]*)\"", shipped):
+    shipped = inline_code((Path(__file__).parents[3] / "www" / "z4d" / "index.html").read_text(encoding="utf-8"))
+    assert shipped.inline_scripts == 0, "inline <script> in index.html"
+    assert shipped.handlers, "index.html no longer has an inline handler: drop its hash from WEBUI_CSP"
+    for handler in shipped.handlers:
         digest = base64.b64encode(hashlib.sha256(handler.encode()).digest()).decode()
         assert f"'sha256-{digest}'" in WEBUI_CSP, f"inline handler not in WEBUI_CSP: {handler}"
 
