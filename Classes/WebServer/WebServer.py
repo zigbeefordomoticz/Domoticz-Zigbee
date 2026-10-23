@@ -106,7 +106,8 @@ class WebServer(object):
                                                rest_scan_devices_for_group,
                                                rest_zGroup,
                                                rest_zGroup_lst_avlble_dev)
-    from Classes.WebServer.rest_logging import (rest_logErrorHistory,
+    from Classes.WebServer.rest_logging import (rest_csp_report,
+                                                rest_logErrorHistory,
                                                 rest_logErrorHistoryClear,
                                                 rest_logPlugin)
     from Classes.WebServer.rest_NonOptimizedDevice import \

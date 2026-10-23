@@ -35,8 +35,8 @@ CACHE_IMMUTABLE = "public, max-age=31536000, immutable"
 CACHE_REVALIDATE = "no-cache"
 CACHE_NO_STORE = "no-cache, no-store, must-revalidate"
 
-# Content-Security-Policy of the WebUI page, sent as Report-Only: the browser lists what it would block in its
-# console and blocks nothing. Switch to Content-Security-Policy once every screen has run clean.
+# Content-Security-Policy of the WebUI page, sent as Report-Only: the browser blocks nothing, and posts what it
+# would block to /rest-z4d/1/csp-report, which logs it. Switch to Content-Security-Policy once the reports stop.
 # - the hash is the inline onload="this.media='all'" Angular writes in index.html (critical CSS)
 # - Angular component styles and the charts use inline styles
 # - no frame-ancestors: the Domoticz custom menu frames the WebUI from the Domoticz host and port
@@ -50,6 +50,7 @@ WEBUI_CSP = "; ".join((
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
+    "report-uri /rest-z4d/1/csp-report",
 ))
 
 

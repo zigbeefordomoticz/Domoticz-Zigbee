@@ -13,6 +13,7 @@ and assert on the bytes that would go on the wire.
 import base64
 import gzip
 import hashlib
+import json
 import os
 import re
 import types
@@ -22,11 +23,13 @@ from pathlib import Path
 
 import pytest
 
+from Classes.WebServer import dispatcher, rest_logging
 from Classes.WebServer.com import (decode_http_data, handle_client,
                                    parse_http_request)
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
 from Classes.WebServer.onMessage import onMessage
+from Classes.WebServer.rest_logging import rest_csp_report
 from Classes.WebServer.sendresponse import sendResponse
 
 HASHED_BUNDLE = "main.0123456789abcdef.js"   # webpack builder
@@ -556,3 +559,91 @@ def test_policy_covers_the_shipped_index_html():
     for handler in re.findall(r"\son\w+=\"([^\"]*)\"", shipped):
         digest = base64.b64encode(hashlib.sha256(handler.encode()).digest()).decode()
         assert f"'sha256-{digest}'" in WEBUI_CSP, f"inline handler not in WEBUI_CSP: {handler}"
+
+
+# ─── The browser reports policy violations to the plugin log ──────────────────
+
+class ReportingWebServer(FakeWebServer):
+    """Routes /rest-z4d/1/csp-report through the real dispatcher to the real handler."""
+
+    def __init__(self, home, **conf):
+        super().__init__(home, **conf)
+        self.REST_COMMANDS = {"csp-report": {"Name": "csp-report", "Verbs": {"POST"},
+                                             "function": lambda verb, data, parameters: rest_csp_report(self, verb, data, parameters)}}
+
+    def do_rest(self, connection, verb, data, version, command, parameters):
+        dispatcher.do_rest(self, connection, verb, data, version, command, parameters)
+
+
+def csp_violation(blocked="https://evil.example/x.js", directive="script-src-elem", **extra):
+    return {"csp-report": {"document-uri": "http://pi:9440/z4d/devices", "violated-directive": directive,
+                           "effective-directive": directive, "blocked-uri": blocked,
+                           "original-policy": "default-src 'self'", "disposition": "report", **extra}}
+
+
+def post_report(ws, body):
+    body = body if isinstance(body, str) else json.dumps(body)
+    raw = (f"POST /rest-z4d/1/csp-report HTTP/1.1\r\nHost: pi:9440\r\nContent-Type: application/csp-report\r\n"
+           f"Content-Length: {len(body)}\r\n\r\n{body}")
+    method, url, request_headers, request_body = parse_http_request(raw)
+    sock = FakeSocket()
+    onMessage(ws, sock, decode_http_data(ws, method, url, request_headers, request_body.encode("utf-8")))
+    return parse_reply(sock)
+
+
+def csp_log_lines(ws):
+    return [message for level, message in ws.logs if level == "Log" and "Content-Security-Policy" in message]
+
+
+@pytest.fixture
+def reporting_ws(home):
+    return ReportingWebServer(home)
+
+
+def test_policy_reports_to_the_plugin(ws):
+    assert csp_directives(get(ws, "/z4d/index.html"))["report-uri"] == "/rest-z4d/1/csp-report"
+
+
+def test_report_endpoint_is_registered_for_post():
+    class Handlers:
+        REST_COMMANDS = {}
+
+        def __getattr__(self, name):
+            return name
+
+        def logging(self, level, message):
+            pass
+
+    handlers = Handlers()
+    dispatcher.setup_list_rest_commands(handlers)
+    assert handlers.REST_COMMANDS["csp-report"]["Verbs"] == {"POST"}
+    assert handlers.REST_COMMANDS["csp-report"]["function"] == "rest_csp_report"
+
+
+def test_violation_is_logged_once(reporting_ws):
+    for _ in range(3):
+        reply = post_report(reporting_ws, csp_violation(**{"source-file": "http://pi:9440/z4d/main.js", "line-number": 7}))
+        assert reply.status == 204
+        assert reply.body == b""
+    [line] = csp_log_lines(reporting_ws)
+    assert "'https://evil.example/x.js' (script-src-elem) on http://pi:9440/z4d/devices" in line
+    assert "from http://pi:9440/z4d/main.js:7" in line
+
+
+def test_distinct_violations_are_capped(reporting_ws):
+    for n in range(rest_logging.MAX_CSP_REPORTS + 10):
+        assert post_report(reporting_ws, csp_violation(blocked=f"https://cdn{n}.example/x.js")).status == 204
+    assert len(csp_log_lines(reporting_ws)) == rest_logging.MAX_CSP_REPORTS
+
+
+def test_long_fields_are_cut(reporting_ws):
+    post_report(reporting_ws, csp_violation(blocked="https://x.example/" + "a" * 5000))
+    [line] = csp_log_lines(reporting_ws)
+    assert len(line) < 2 * rest_logging.MAX_CSP_FIELD + 200
+
+
+@pytest.mark.parametrize("body", ["not json", "{}", '{"csp-report": "text"}', "[1, 2]", '{"csp-report": null}'])
+def test_junk_report_is_ignored(reporting_ws, body):
+    reply = post_report(reporting_ws, body)
+    assert reply.status == 204
+    assert not csp_log_lines(reporting_ws)
