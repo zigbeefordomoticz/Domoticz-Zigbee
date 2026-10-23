@@ -35,10 +35,9 @@ def prepResponseMessage(self, _response):
 def setupHeadersResponse():
     _response = {
         "Headers": {
+            # No Access-Control-Allow-*: the WebUI calls the REST API from its own origin, and no other
+            # web page should be able to read the answers (device list, settings, paths)
             "Server": "Domoticz",
-            "Access-Control-Allow-Headers": "Cache-Control, Pragma, Origin, Authorization, Content-Type, X-Requested-With",
-            "Access-Control-Allow-Methods": "GET, POST, DELETE",
-            "Access-Control-Allow-Origin": "*",
             "Referrer-Policy": "no-referrer"
         }
     }

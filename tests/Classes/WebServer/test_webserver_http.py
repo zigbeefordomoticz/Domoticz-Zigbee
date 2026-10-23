@@ -104,6 +104,17 @@ def get(ws, path, headers=None):
     sock = FakeSocket()
     onMessage(ws, sock, decode_http_data(ws, method, url, request_headers, body.encode("utf-8")))
 
+    return parse_reply(sock)
+
+
+def send(ws, response):
+    """Send a response built by a REST handler and parse what went on the wire."""
+    sock = FakeSocket()
+    sendResponse(ws, sock, response)
+    return parse_reply(sock)
+
+
+def parse_reply(sock):
     head, _, payload = sock.sent.partition(b"\r\n\r\n")
     status_line, *header_lines = head.decode("utf-8").split("\r\n")
     response_headers = {}
@@ -447,3 +458,22 @@ def test_body_sent_after_the_headers_is_still_read(recording_ws):
     handle_client(recording_ws, client, ("192.0.2.1", 50000))
 
     assert recording_ws.received[0]["Data"] == b"{}"
+
+
+# ─── Other web pages cannot read the answers ──────────────────────────────────
+
+def rest_answer(ws):
+    response = prepResponseMessage(ws, setupHeadersResponse())
+    response["Data"] = '{"PermitToJoin": 0}'
+    return send(ws, response)
+
+
+@pytest.mark.parametrize("path", ["/z4d/index.html", "/z4d/" + HASHED_BUNDLE, "/z4d/missing"])
+def test_static_files_carry_no_cors_header(ws, path):
+    assert not [name for name in get(ws, path).headers if name.startswith("Access-Control-")]
+
+
+def test_rest_answers_carry_no_cors_header(ws):
+    reply = rest_answer(ws)
+    assert reply.body == b'{"PermitToJoin": 0}'
+    assert not [name for name in reply.headers if name.startswith("Access-Control-")]
