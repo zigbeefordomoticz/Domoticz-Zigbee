@@ -13,12 +13,14 @@ Coverage:
   - frame_type                   – bits 00, 01, 10, 11
   - is_manufspecific_8002_payload – bit set, bit clear
   - build_fcf                    – round-trip with decode_fcf
+  - build_default_response_fcf   – direction reversed, DDR always set, manuf bit copied, missing FCF
   - retreive_cmd_payload_from_8002 – non-manuf-specific, manuf-specific, short payload
   - extract_info_from_8085       – full data, partial data
 """
 
 import pytest
 from Modules.tools_fcf import (
+    build_default_response_fcf,
     build_fcf,
     decode_fcf,
     disable_default_response,
@@ -277,3 +279,36 @@ class TestExtractInfoFrom8085:
         step_mod, up_down, step_size, transition = extract_info_from_8085(msg)
         assert step_mod == "aa"
         assert step_size is None
+
+
+# ---------------------------------------------------------------------------
+# build_default_response_fcf  (ZCL 07-5123 rev 8 - 2.4.1.1.3, 2.4.1.1.4, 2.5.12.1.1)
+# ---------------------------------------------------------------------------
+
+class TestBuildDefaultResponseFcf:
+    def test_report_from_server_cluster_is_answered_client_to_server(self):
+        # Attribute Report, Server→Client, Default Response requested (e.g. Sonoff fc12)
+        assert build_default_response_fcf("08") == "10"
+
+    def test_command_from_client_cluster_is_answered_server_to_client(self):
+        # On/Off Toggle from a remote, cluster specific, Client→Server
+        assert build_default_response_fcf("01") == "18"
+
+    def test_manufacturer_specific_bit_is_copied(self):
+        assert build_default_response_fcf("0c", "1286") == "14"
+        assert build_default_response_fcf("05", "1286") == "1c"
+
+    @pytest.mark.parametrize("orig_fcf", range(0x20))
+    def test_frame_is_global_with_reversed_direction_and_ddr_set(self, orig_fcf):
+        fcf = int(build_default_response_fcf("%02x" % orig_fcf), 16)
+        assert fcf & 0b11 == 0                          # global command
+        assert fcf & 0x10                               # Disable Default Response: never answer a response
+        assert fcf & 0x08 != orig_fcf & 0x08            # opposite direction
+        assert fcf & 0x04 == orig_fcf & 0x04            # manufacturer specific copied
+
+    def test_missing_fcf_falls_back_to_server_to_client(self):
+        assert build_default_response_fcf(None) == "18"
+        assert build_default_response_fcf(None, "0000") == "18"
+        assert build_default_response_fcf(None, "1286") == "1c"
+        assert build_default_response_fcf("zz") == "18"
+

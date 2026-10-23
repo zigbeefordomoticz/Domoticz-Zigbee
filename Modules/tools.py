@@ -87,6 +87,7 @@ from Modules.tools_sqn import (  # noqa: F401
 
 # FCF helpers
 from Modules.tools_fcf import (  # noqa: F401
+    build_default_response_fcf,
     build_fcf,
     decode_fcf,
     disable_default_response,

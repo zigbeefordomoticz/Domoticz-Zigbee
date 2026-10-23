@@ -160,6 +160,36 @@ def build_fcf(frame_type_in, manuf_spec, direction, disabled_default="0"):
     return "%02x" % fcf
 
 
+def build_default_response_fcf(orig_fcf, manufcode=None):
+    """
+    Build the Frame Control Field of a ZCL Default Response from the FCF of the received command.
+
+    ZCL 07-5123 rev 8:
+        - Frame Type: global command (0b00)                              - 2.5.12.1.1
+        - Manufacturer Specific: same as the received command            - 2.5.12.1.1
+        - Direction: opposite of the received command                    - 2.4.1.1.3
+          (an attribute report sent by a server cluster is answered Client -> Server)
+        - Disable Default Response: always 1, as for any response frame  - 2.4.1.1.4
+          (the device must not answer our Default Response with one of its own)
+
+    Args:
+        orig_fcf (str): FCF of the received command (2-char hex).
+        manufcode (str, optional): Manufacturer code, only used when orig_fcf is not available.
+
+    Returns:
+        str: FCF of the Default Response (2-char hex).
+    """
+    received_direction = fcf_direction(orig_fcf)
+    if received_direction is None:
+        # No usable FCF: answer as a server to a client command.
+        manuf_spec = "1" if manufcode and manufcode != "0000" else "0"
+        return build_fcf("00", manuf_spec, "1", disabled_default="1")
+
+    manuf_spec = "1" if is_manufspecific_8002_payload(orig_fcf) else "0"
+    direction = "0" if received_direction else "1"
+    return build_fcf("00", manuf_spec, direction, disabled_default="1")
+
+
 def extract_info_from_8085(MsgData):
     step_mod = MsgData[14:16]
     up_down = MsgData[16:18] if len(MsgData) >= 18 else None
