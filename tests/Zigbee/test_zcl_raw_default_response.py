@@ -10,6 +10,7 @@ Coverage:
   - manufacturer specific: FCF bit and little-endian manufacturer code
   - a command from a client cluster is still answered Server→Client
   - no Default Response to a Default Response
+  - logging goes to the zclDefaultResponse debug category
 
 Zigbee.zclRawCommands imports the real Modules.* package, which conflicts with
 the stubs tests/conftest.py installs for the rest of the session. The checks
@@ -102,3 +103,14 @@ def test_no_default_response_to_a_default_response():
         """
     )
 
+
+def test_logged_under_zcl_default_response_category():
+    _run(
+        """
+        p, raw_aps = send(orig_fcf="08")
+        categories = [c.args[0] for c in p.log.logging.call_args_list]
+        assert categories and all(c[0] == "zclDefaultResponse" for c in categories), categories
+        messages = [c.args[2] for c in p.log.logging.call_args_list]
+        assert any("08 (Profile-wide, Server→Client, DDR=0) to FCF: 10 (Profile-wide, Client→Server, DDR=1)" in m for m in messages), messages
+        """
+    )

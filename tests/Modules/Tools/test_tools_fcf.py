@@ -14,6 +14,7 @@ Coverage:
   - is_manufspecific_8002_payload – bit set, bit clear
   - build_fcf                    – round-trip with decode_fcf
   - build_default_response_fcf   – direction reversed, DDR always set, manuf bit copied, missing FCF
+  - describe_fcf                 – decoded text, invalid input
   - retreive_cmd_payload_from_8002 – non-manuf-specific, manuf-specific, short payload
   - extract_info_from_8085       – full data, partial data
 """
@@ -23,6 +24,7 @@ from Modules.tools_fcf import (
     build_default_response_fcf,
     build_fcf,
     decode_fcf,
+    describe_fcf,
     disable_default_response,
     extract_info_from_8085,
     fcf_direction,
@@ -312,3 +314,18 @@ class TestBuildDefaultResponseFcf:
         assert build_default_response_fcf(None, "1286") == "1c"
         assert build_default_response_fcf("zz") == "18"
 
+
+# ---------------------------------------------------------------------------
+# describe_fcf
+# ---------------------------------------------------------------------------
+
+class TestDescribeFcf:
+    def test_report(self):
+        assert describe_fcf("08") == "08 (Profile-wide, Server→Client, DDR=0)"
+
+    def test_manufacturer_specific_cluster_command(self):
+        assert describe_fcf("15") == "15 (Cluster-specific, Manuf, Client→Server, DDR=1)"
+
+    def test_invalid_returns_raw_value(self):
+        assert describe_fcf(None) == "None"
+        assert describe_fcf("zz") == "zz"

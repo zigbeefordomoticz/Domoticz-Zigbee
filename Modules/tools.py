@@ -90,6 +90,7 @@ from Modules.tools_fcf import (  # noqa: F401
     build_default_response_fcf,
     build_fcf,
     decode_fcf,
+    describe_fcf,
     disable_default_response,
     extract_info_from_8085,
     fcf_direction,

@@ -14,11 +14,14 @@ import struct
 
 from Modules.sendZigateCommand import raw_APS_request
 from Modules.tools import (build_default_response_fcf, build_fcf,
-                           fcf_direction, get_and_inc_ZCL_SQN,
+                           describe_fcf, fcf_direction, get_and_inc_ZCL_SQN,
                            is_ack_tobe_disabled)
 from Zigbee.encoder_tools import decode_endian_data
 
 DEFAULT_ACK_MODE = False
+
+# Logged once, under the first enabled category
+DEFAULT_RESPONSE_LOG = ["zclDefaultResponse", "zclCommand", "zclDecoder"]
 
 # General Command Frame
 
@@ -178,7 +181,7 @@ def zcl_raw_default_response( self, nwkid, cie_ep, dst_ep, cluster, response_to_
         - Ignores commands that are themselves Default Responses (command ID "0b").
         - Builds a valid ZCL frame with proper Frame Control Field (FCF) and manufacturer-specific header.
         - Sends the frame via `raw_APS_request()` with high priority.
-        - Logs each step for traceability under the "zclCommand" category.
+        - Logs each step for traceability under the "zclDefaultResponse" category (also "zclCommand", "zclDecoder").
 
     Notes:
         - The FCF is built by `build_default_response_fcf()` from the FCF of the received command.
@@ -187,7 +190,7 @@ def zcl_raw_default_response( self, nwkid, cie_ep, dst_ep, cluster, response_to_
     """
 
     self.log.logging(
-        ["zclCommand", "zclDecoder"], "Debug",
+        DEFAULT_RESPONSE_LOG, "Debug",
         f"zcl_raw_default_response {nwkid} {cie_ep} {dst_ep} {cluster} {sqn} for command "
         f"{response_to_command} with Status: {command_status}, Manufcode: {manufcode}, OrigFCF: {orig_fcf}",
         nwkid
@@ -206,7 +209,11 @@ def zcl_raw_default_response( self, nwkid, cie_ep, dst_ep, cluster, response_to_
 
     frame_control_field = build_default_response_fcf( orig_fcf, manufcode )
     
-    self.log.logging(["zclCommand", "zclDecoder"], "Debug", f"zcl_raw_default_response ==== Source FCF {orig_fcf} to FCF: {frame_control_field}", nwkid)
+    self.log.logging(
+        DEFAULT_RESPONSE_LOG, "Debug",
+        f"zcl_raw_default_response ==== Source FCF {describe_fcf(orig_fcf)} to FCF: {describe_fcf(frame_control_field)}",
+        nwkid
+    )
 
     payload = frame_control_field
     if manufcode and manufcode != "0000":
@@ -214,7 +221,7 @@ def zcl_raw_default_response( self, nwkid, cie_ep, dst_ep, cluster, response_to_
 
     payload += sqn + "0b" + response_to_command + command_status
 
-    self.log.logging(["zclCommand", "zclDecoder"], "Debug", f"zcl_raw_default_response ==== payload: {payload}", nwkid)
+    self.log.logging(DEFAULT_RESPONSE_LOG, "Debug", f"zcl_raw_default_response ==== payload: {payload}", nwkid)
 
     raw_APS_request( self, nwkid, dst_ep, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=cie_ep, highpriority=True, ackIsDisabled=is_ack_tobe_disabled(self, nwkid) )
 
