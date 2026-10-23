@@ -13,7 +13,8 @@
 import struct
 
 from Modules.sendZigateCommand import raw_APS_request
-from Modules.tools import (build_fcf, fcf_direction, get_and_inc_ZCL_SQN,
+from Modules.tools import (build_default_response_fcf, build_fcf,
+                           fcf_direction, get_and_inc_ZCL_SQN,
                            is_ack_tobe_disabled)
 from Zigbee.encoder_tools import decode_endian_data
 
@@ -167,7 +168,7 @@ def zcl_raw_default_response( self, nwkid, cie_ep, dst_ep, cluster, response_to_
         sqn (str): Sequence number of the original ZCL command, as a two-character hexadecimal string.
         command_status (str, optional): ZCL command status to report ("00" for success by default).
         manufcode (str, optional): Manufacturer code as a 4-character hexadecimal string, or None.
-        orig_fcf (int, optional): Original frame control field from the received command, or None.
+        orig_fcf (str, optional): Original frame control field from the received command (2-char hex), or None.
 
     Returns:
         str: The sequence number (`sqn`) of the sent ZCL Default Response.
@@ -180,35 +181,10 @@ def zcl_raw_default_response( self, nwkid, cie_ep, dst_ep, cluster, response_to_
         - Logs each step for traceability under the "zclCommand" category.
 
     Notes:
-        - The FCF bits are derived based on the presence of manufacturer code and direction flag.
+        - The FCF is built by `build_default_response_fcf()` from the FCF of the received command.
         - This method should not be called directly for ZCL command "0b" (Default Response).
         - Ensure that all hex parameters (`sqn`, `response_to_command`, etc.) are two-character strings.
     """
-
-    def build_default_response_fcf(orig_fcf: str) -> str:
-        """
-        Build the FCF for a ZCL Default Response based on the original FCF.
-
-        Rules:
-        - Frame Type: always Profile-wide (00)
-        - Direction: always Server → Client (1)
-        - Manufacturer Specific: copied from original
-        - Disable Default Response: copied from original
-        - Reserved bits: 0
-        """
-        # Extract bits from original FCF
-        orig_fcf = int(orig_fcf, 16)
-
-        manuf_spec = (orig_fcf >> 2) & 0b1
-        disable_def_resp = (orig_fcf >> 4) & 0b1
-
-        # Build new FCF
-        fcf = 0b00                # Frame Type: Profile-wide
-        fcf |= (manuf_spec << 2)  # Manufacturer Specific
-        fcf |= (1 << 3)           # Direction: Server → Client
-        fcf |= (1 << 4)           # Disable Default Response
-
-        return "%02x" %fcf
 
     self.log.logging(
         ["zclCommand", "zclDecoder"], "Debug",
@@ -228,7 +204,7 @@ def zcl_raw_default_response( self, nwkid, cie_ep, dst_ep, cluster, response_to_
     if response_to_command.lower() == "0b":
         return  # Never return a default response to a default response
 
-    frame_control_field = build_default_response_fcf( orig_fcf )
+    frame_control_field = build_default_response_fcf( orig_fcf, manufcode )
     
     self.log.logging(["zclCommand", "zclDecoder"], "Debug", f"zcl_raw_default_response ==== Source FCF {orig_fcf} to FCF: {frame_control_field}", nwkid)
 
