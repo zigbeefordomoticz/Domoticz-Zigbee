@@ -14,7 +14,7 @@ import gzip
 import os
 import types
 from dataclasses import dataclass
-from email.utils import parsedate_to_datetime
+from email.utils import formatdate, parsedate_to_datetime
 
 import pytest
 
@@ -477,3 +477,29 @@ def test_rest_answers_carry_no_cors_header(ws):
     reply = rest_answer(ws)
     assert reply.body == b'{"PermitToJoin": 0}'
     assert not [name for name in reply.headers if name.startswith("Access-Control-")]
+
+
+# ─── The browser never guesses a Content-Type ─────────────────────────────────
+
+@pytest.mark.parametrize("path", ["/z4d/index.html", "/z4d/" + HASHED_BUNDLE, "/z4d/missing.js",
+                                  "/z4d/assets/z4d_logo.png", "/../secret.txt"])
+def test_static_files_are_never_sniffed(ws, path):
+    assert get(ws, path).headers["X-Content-Type-Options"] == "nosniff"
+
+
+def test_rest_answers_are_never_sniffed(ws):
+    assert rest_answer(ws).headers["X-Content-Type-Options"] == "nosniff"
+
+
+def test_not_modified_is_never_sniffed(ws):
+    reply = get(ws, "/z4d/index.html", {"If-Modified-Since": formatdate(INDEX_MTIME, usegmt=True)})
+    assert reply.status == 304
+    assert reply.headers["X-Content-Type-Options"] == "nosniff"
+
+
+def test_error_status_is_never_sniffed(ws):
+    sock = FakeSocket()
+    onMessage(ws, sock, {"Verb": "OPTIONS", "URL": "/rest-z4d/1/plugin", "Headers": {}})
+    reply = parse_reply(sock)
+    assert reply.status == 405
+    assert reply.headers["X-Content-Type-Options"] == "nosniff"

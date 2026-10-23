@@ -121,6 +121,8 @@ def prepare_http_response( self, response_dict, gziped=False, deflated=False , c
                 http_response += f"{x}: {headers[x]}\r\n"
 
     http_response += f"Date: {formatdate(usegmt=True)}\r\n"
+    # The browser must use the Content-Type sent, never guess one (no index.html run as a script)
+    http_response += "X-Content-Type-Options: nosniff\r\n"
 
     if self.pluginconf.pluginConf.get("enableGzip") or self.pluginconf.pluginConf.get("enableDeflate"):
         # The body depends on Accept-Encoding, compressed or not: a cache must not hand gzip to a client that did not ask
