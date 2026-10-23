@@ -34,6 +34,7 @@ def setup_list_rest_commands( self ):
         {"Name": "change-channel", "Verbs": {"PUT"}, "function": self.rest_change_channel},
         {"Name": "change-model", "Verbs": {"PUT"}, "function": self.rest_change_model_name},
         {"Name": "clear-error-history", "Verbs": {"GET"}, "function": self.rest_logErrorHistoryClear },
+        {"Name": "csp-report", "Verbs": {"POST"}, "function": self.rest_csp_report},
         {"Name": "dev-cap", "Verbs": {"GET"}, "function": self.rest_dev_capabilities},
         {"Name": "dev-command", "Verbs": {"PUT"}, "function": self.rest_dev_command},
         {"Name": "device", "Verbs": {"GET"}, "function": self.rest_Device},
