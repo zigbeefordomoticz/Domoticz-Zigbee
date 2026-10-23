@@ -190,6 +190,24 @@ def build_default_response_fcf(orig_fcf, manufcode=None):
     return build_fcf("00", manuf_spec, direction, disabled_default="1")
 
 
+def describe_fcf(fcf):
+    """
+    One-line description of an FCF, for logging.
+
+    Args:
+        fcf (str): 2-char hex string representing the FCF byte.
+
+    Returns:
+        str: e.g. "08 (Profile-wide, Server→Client, DDR=0)", or the raw value if invalid.
+    """
+    if not is_hex(fcf) or len(fcf) != 2:
+        return str(fcf)
+    decoded = decode_fcf(fcf)
+    manuf = ", Manuf" if decoded["Manufacturer Specific"] else ""
+    return "%s (%s%s, %s, DDR=%d)" % (
+        fcf, decoded["Frame Type"], manuf, decoded["Direction"], decoded["Disable Default Response"])
+
+
 def extract_info_from_8085(MsgData):
     step_mod = MsgData[14:16]
     up_down = MsgData[16:18] if len(MsgData) >= 18 else None
