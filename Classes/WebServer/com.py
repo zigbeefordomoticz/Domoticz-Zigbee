@@ -257,6 +257,7 @@ def check_cert_and_key(self, cert_path, key_path):
     try:
         # Attempt to load cert and key to verify correctness
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context.minimum_version = ssl.TLSVersion.TLSv1_2
         context.load_cert_chain(certfile=cert_path, keyfile=key_path)
 
     except ssl.SSLError as e:
@@ -368,9 +369,6 @@ def run_server(self, host='0.0.0.0', port=9440):   # nosec
         self.logging( "Log", f"++ WebUI - SSL Private key {server_private_key}")
 
         context = check_cert_and_key(self, server_certificate, server_private_key)
-        if context:
-            context.minimum_version = ssl.TLSVersion.TLSv1_2
-
         if context:
             self.server = context.wrap_socket( self.server, server_side=True, )
 
