@@ -184,7 +184,7 @@ def handle_client(self, client_socket, client_addr):
 
                 received_length = len(body)
 
-                while received_length <= content_length:
+                while received_length < content_length:
                     self.logging("Debug", f"handle_client received_length: {received_length} content_length: {content_length} {content_length - received_length}")
                     additional_data = receive_data(self, client_socket, content_length - len(body)).decode('utf-8')
                     if not additional_data:
