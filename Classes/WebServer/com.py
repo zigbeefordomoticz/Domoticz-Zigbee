@@ -301,18 +301,6 @@ def set_keepalive(sock, keepalive_time=60, keepalive_interval=10, keepalive_prob
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, keepalive_probes)
 
 
-def is_port_in_use(port, host='0.0.0.0'):  # nosec
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        try:
-            s.bind((host, port))
-        except OSError as e:
-            if e.errno == 98:  # Address already in use
-                return True
-            else:
-                raise
-        return False
-
-
 def run_server(self, host='0.0.0.0', port=9440):   # nosec
     """
     Start the web server by creating and binding a socket on the specified IP and port.
@@ -340,10 +328,6 @@ def run_server(self, host='0.0.0.0', port=9440):   # nosec
     """
 
     self.logging( "Log", f"WebUI - server starting on {host} {port}")
-
-    # if is_port_in_use(port, host):
-    #     self.logging( "Error", f"WebUI cannot start, Port {port} is already in use!!!")
-    #     return
 
     try:
         # Set up the server
