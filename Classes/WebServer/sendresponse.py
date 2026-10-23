@@ -40,9 +40,6 @@ http_status_codes = {
 
 HTTP_HEADERS = {
     "Server", 
-    "Access-Control-Allow-Headers", 
-    "Access-Control-Allow-Methods",
-    "Access-Control-Allow-Origin",
     "Referrer-Policy",
     "Connection",
     "Cache-Control",
