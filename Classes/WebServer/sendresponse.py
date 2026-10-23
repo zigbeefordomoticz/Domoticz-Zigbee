@@ -41,6 +41,7 @@ http_status_codes = {
 HTTP_HEADERS = {
     "Server", 
     "Referrer-Policy",
+    "Content-Security-Policy-Report-Only",
     "Connection",
     "Cache-Control",
     "Pragma",

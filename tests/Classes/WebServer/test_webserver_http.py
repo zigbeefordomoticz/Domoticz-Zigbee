@@ -10,11 +10,15 @@ parse_http_request() -> onMessage() -> sendResponse() -- against a fake socket
 and assert on the bytes that would go on the wire.
 """
 
+import base64
 import gzip
+import hashlib
 import os
+import re
 import types
 from dataclasses import dataclass
 from email.utils import formatdate, parsedate_to_datetime
+from pathlib import Path
 
 import pytest
 
@@ -503,3 +507,52 @@ def test_error_status_is_never_sniffed(ws):
     reply = parse_reply(sock)
     assert reply.status == 405
     assert reply.headers["X-Content-Type-Options"] == "nosniff"
+
+
+# ─── Content-Security-Policy of the WebUI page (report-only) ──────────────────
+
+CSP = "Content-Security-Policy-Report-Only"
+
+
+def csp_directives(reply):
+    return dict(directive.split(" ", 1) for directive in reply.headers[CSP].split("; "))
+
+
+@pytest.mark.parametrize("path", ["/z4d/index.html", "/z4d/dashboard", "/../secret.txt"])
+def test_webui_page_carries_the_policy(ws, path):
+    directives = csp_directives(get(ws, path))
+    assert directives["default-src"] == "'self'"
+    assert directives["object-src"] == "'none'"
+    assert "'unsafe-eval'" not in directives["script-src"]
+    # the Domoticz custom menu frames the WebUI from another origin: never forbid it
+    assert "frame-ancestors" not in directives
+    assert "X-Frame-Options" not in get(ws, path).headers
+
+
+def test_policy_allows_the_inline_handler_of_index_html(ws):
+    handler = "this.media='all'"
+    digest = base64.b64encode(hashlib.sha256(handler.encode()).digest()).decode()
+    assert f"'sha256-{digest}'" in csp_directives(get(ws, "/z4d/index.html"))["script-src"]
+
+
+def test_policy_is_report_only(ws):
+    assert "Content-Security-Policy" not in get(ws, "/z4d/index.html").headers
+
+
+@pytest.mark.parametrize("path", ["/z4d/" + HASHED_BUNDLE, "/z4d/assets/z4d_logo.png"])
+def test_policy_only_on_the_page(ws, path):
+    assert CSP not in get(ws, path).headers
+
+
+def test_no_policy_on_rest_answers(ws):
+    assert CSP not in rest_answer(ws).headers
+
+
+def test_policy_covers_the_shipped_index_html():
+    # A WebUI refresh that adds an inline script or changes an inline handler must update WEBUI_CSP
+    from Classes.WebServer.onMessage import WEBUI_CSP
+    shipped = (Path(__file__).parents[3] / "www" / "z4d" / "index.html").read_text(encoding="utf-8")
+    assert not re.search(r"<script(?![^>]*\bsrc=)[^>]*>", shipped), "inline <script> in index.html"
+    for handler in re.findall(r"\son\w+=\"([^\"]*)\"", shipped):
+        digest = base64.b64encode(hashlib.sha256(handler.encode()).digest()).decode()
+        assert f"'sha256-{digest}'" in WEBUI_CSP, f"inline handler not in WEBUI_CSP: {handler}"
