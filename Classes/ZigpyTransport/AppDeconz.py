@@ -218,7 +218,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
 
     async def coordinator_backup( self ):
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
-            self.callBackBackup(await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
+            self.callBackBackup(await self.backups.create_backup(load_devices=True))
 
 
     async def network_interference_scan(self):
