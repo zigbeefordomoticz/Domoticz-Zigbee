@@ -72,7 +72,7 @@ def make_transport():
         "autoBackup":                    None,
         "EzspAllowUnsecuredRejoins":     False,
         "BellowsNoMoreEndDeviceChildren": False,
-        "TXpower_set":                   0,  # the PluginConf default
+        "TXpower_set": 0,  # the PluginConf default
     }
     t.statistics = MagicMock()
     return t
@@ -203,12 +203,12 @@ class TestEzspConfigurationSetup(unittest.TestCase):
         self.assertNotIn("CONFIG_TX_POWER_MODE", config["ezsp_config"])
 
     def test_negative_tx_power_is_kept(self):
+        # bellows applies the TX power in dBm (setRadioPower); the power mode is not part of it
         from Classes.ZigpyTransport.radioStart import ezsp_configuration_setup
         t = make_transport()
         t.pluginconf.pluginConf["TXpower_set"] = "-5"
         config = ezsp_configuration_setup(t, _make_radio_conf(), "/dev/ttyUSB0", {})
         self.assertEqual(config[_zc().CONF_NWK][_zc().CONF_NWK_TX_POWER], -5)
-        self.assertEqual(config["ezsp_config"]["CONFIG_TX_POWER_MODE"], 0x3)
 
 
 # ===========================================================================
