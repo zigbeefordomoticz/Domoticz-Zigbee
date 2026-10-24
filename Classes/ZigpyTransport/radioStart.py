@@ -393,9 +393,11 @@ def optional_configuration_setup(self, config, radio_conf, set_extendedPanId, se
         )
         config[zigpy.config.CONF_TOPO_SCAN_PERIOD] = 12 * 60
 
+    # Gates the plugin's own backups: the daily one (App*.coordinator_backup) and the one at
+    # shutdown (AppGeneric.shutdown). zigpy's periodic backups are never started, so
+    # CONF_NWK_BACKUP_PERIOD is not set. Keep the else: zigpy defaults this flag to True.
     if self.pluginconf.pluginConf.get("autoBackup"):
         config[zigpy.config.CONF_NWK_BACKUP_ENABLED] = True
-        config[zigpy.config.CONF_NWK_BACKUP_PERIOD] = self.pluginconf.pluginConf["autoBackup"]
     else:
         config[zigpy.config.CONF_NWK_BACKUP_ENABLED] = False
 
