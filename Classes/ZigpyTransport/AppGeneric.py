@@ -235,6 +235,8 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
        not compatible with the retrieved backup.
     6. start_network().
     7. Clamp and apply the TX power to the regulatory domain maximum.
+       Plugin only: state.network_info.tx_power follows the applied value (_apply_tx_power()).
+       Plugin only: with no TX power to apply, _repair_tx_power_left_at_0dbm().
     8. Plugin only: _preload_devices_from_plugin_db().
     9. _persist_coordinator_model_strings_in_db().
     10. Start periodic topology scans if CONF_TOPO_SCAN_ENABLED.
@@ -354,8 +356,10 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         tx_power = max_tx_power
 
     if tx_power is not None:
-        await self.set_tx_power(tx_power)
-        
+        await _apply_tx_power(self, tx_power)
+    else:
+        await _repair_tx_power_left_at_0dbm(self)
+
     # Preload devices from plugin DB before registering specific endpoints, so that the plugin device list is available during endpoint registration if needed (e.g. for deConz group membership restoration)
     _preload_devices_from_plugin_db(self)
 
@@ -365,6 +369,47 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     if self.config[zigpy_conf.CONF_TOPO_SCAN_ENABLED]:
         # Config specifies the period in minutes, not seconds
         self.topology.start_periodic_scans( period=(60 * self.config[zigpy.config.CONF_TOPO_SCAN_PERIOD]) )
+
+
+async def _apply_tx_power(self, tx_power) -> None:
+    """
+    set_tx_power(), then record the TX power the radio took in state.network_info.
+
+    network_info was loaded before the TX power step, and nothing upstream refreshes it, so
+    the start-up "Network settings" dump (radioStart.py) showed the previous value. Updated
+    only when the radio library reports the power it applied (bellows does; radios that do
+    not support it return None).
+    """
+    actual_tx_power = await self.set_tx_power(tx_power)
+    if actual_tx_power is not None and self.state.network_info is not None:
+        self.state.network_info = self.state.network_info.replace(tx_power=int(actual_tx_power))
+
+
+async def _repair_tx_power_left_at_0dbm(self) -> None:
+    """
+    Put back the radio library's default TX power on a coordinator left at 0 dBm.
+
+    Before TXpower_set = 0 meant "leave it to the radio", the plugin forced 0 dBm at every
+    start on every zigpy install that never set it. A radio library that persists the TX
+    power it sets (bellows writes radioTxPower to NVRAM) keeps that 0 dBm, and since the
+    plugin no longer sets anything by default, nothing would ever move it.
+
+    Called by initialize() only when there is no TX power to apply (no TXpower_set, no
+    country code). The radio class opts in with TX_POWER_LEFT_AT_0DBM_REPAIR, the dBm to
+    set; others are left alone. Once set, the radio reports that value, so this runs once.
+    A failure is logged and startup continues.
+    """
+    repair_dbm = getattr(self, "TX_POWER_LEFT_AT_0DBM_REPAIR", None)
+    network_info = self.state.network_info
+    if repair_dbm is None or network_info is None or network_info.tx_power != 0:
+        return
+
+    self.log.logging("TransportZigpy", "Status", f"Coordinator TX power is 0 dBm, left by an older plugin version: setting {repair_dbm} dBm, "
+                     "the radio library's default. Set TX Power in the plugin settings to choose another value")
+    try:
+        await _apply_tx_power(self, repair_dbm)
+    except Exception as e:
+        self.log.logging("TransportZigpy", "Error", f"Setting the coordinator TX power to {repair_dbm} dBm failed ({e!r}), it stays at 0 dBm")
 
 
 async def watchdog_feed(self) -> None:
