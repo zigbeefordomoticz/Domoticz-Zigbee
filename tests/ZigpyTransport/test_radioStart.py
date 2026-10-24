@@ -409,17 +409,16 @@ class TestOptionalConfigurationSetup(unittest.TestCase):
         config = self._base_config()
         optional_configuration_setup(t, config, None, set_extendedPanId=0, set_channel=0)
         self.assertTrue(config.get(_zc().CONF_NWK_BACKUP_ENABLED))
-        self.assertEqual(config.get(_zc().CONF_NWK_BACKUP_PERIOD), 24 * 60)
 
-    def test_auto_backup_period_ignores_flag_value(self):
+    def test_auto_backup_period_not_set(self):
         # autoBackup is a bool; its value must never reach zigpy as the period (minutes)
         from Classes.ZigpyTransport.radioStart import optional_configuration_setup
-        for value in (1, True, 3600):
+        for value in (1, True, 3600, None, 0):
             t = make_transport()
             t.pluginconf.pluginConf["autoBackup"] = value
             config = self._base_config()
             optional_configuration_setup(t, config, None, set_extendedPanId=0, set_channel=0)
-            self.assertEqual(config.get(_zc().CONF_NWK_BACKUP_PERIOD), 24 * 60, value)
+            self.assertNotIn(_zc().CONF_NWK_BACKUP_PERIOD, config, value)
 
     def test_auto_backup_disabled_when_none(self):
         from Classes.ZigpyTransport.radioStart import optional_configuration_setup
