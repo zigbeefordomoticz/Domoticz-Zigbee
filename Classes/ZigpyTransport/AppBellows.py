@@ -32,7 +32,10 @@ from Modules.zigbeeVersionTable import ZNP_MODEL
 LOGGER = logging.getLogger(__name__)
 
 class App_bellows(bellows.zigbee.application.ControllerApplication):
-    
+
+    # bellows persists the TX power it sets (NVRAM radioTxPower): see AppGeneric._repair_tx_power_left_at_0dbm()
+    TX_POWER_LEFT_AT_0DBM_REPAIR = bellows.zigbee.application.DEFAULT_TX_POWER
+
     @classmethod
     async def new(cls, config: dict, auto_form: bool = False, start_radio: bool = True) -> zigpy.application.ControllerApplication:
         LOGGER.debug("new")

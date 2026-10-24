@@ -110,7 +110,8 @@ HARNESS = textwrap.dedent(
             self.backups = FakeBackups(
                 self, sc.get("db_pans", []), sc.get("state_pan", 0), sc.get("restore_fails", False)
             )
-            self.state = types.SimpleNamespace(network_info=None, node_info=None)
+            network_info = types.SimpleNamespace(tx_power=sc["radio_tx_power"]) if "radio_tx_power" in sc else None
+            self.state = types.SimpleNamespace(network_info=network_info, node_info=None)
             self.callBackGetAllDevices = None
         async def load_network_info(self, *, load_devices=False):
             self.calls.append("load_network_info")
@@ -119,16 +120,21 @@ HARNESS = textwrap.dedent(
         async def start_network(self):
             self.calls.append("start_network")
         async def _get_effective_tx_power(self):
-            return None
+            return sc.get("effective_tx_power")
         async def _get_effective_maximum_tx_power(self):
             return None
         async def set_tx_power(self, power):
-            pass
+            self.calls.append("set_tx_power:%s" % power)
+            if sc.get("tx_power_fails"):
+                raise RuntimeError("tx power failed")
         def _persist_coordinator_model_strings_in_db(self):
             pass
 
     plugin_pan = sc.get("plugin_pan")
     AG.do_retrieve_backup = lambda self: backup_with_pan(plugin_pan).as_dict() if plugin_pan is not None else None
+
+    if sc.get("repair_dbm") is not None:
+        FakeApp.TX_POWER_LEFT_AT_0DBM_REPAIR = sc["repair_dbm"]
 
     app = FakeApp()
     result = {"error": None}
@@ -300,3 +306,44 @@ class TestRetrievePreviousBackup:
         assert result["error"] is None
         assert "form_network" not in result["calls"]
         assert _restores(result) == ["restore_backup:%04x" % DB_BACKUP_PAN]
+
+
+# ─── TX power left at 0 dBm by older plugin versions (bellows persists it) ──
+
+def _tx_power_calls(result):
+    return [c for c in result["calls"] if c.startswith("set_tx_power")]
+
+
+class TestRepairTxPowerLeftAt0dBm:
+
+    def test_radio_left_at_0dbm_is_set_to_the_library_default(self):
+        result = _run(repair_dbm=8, radio_tx_power=0)
+        assert result["error"] is None
+        assert _tx_power_calls(result) == ["set_tx_power:8"]
+        assert any(level == "Status" and "left by an older plugin version" in msg for level, msg in result["logs"])
+
+    def test_radio_at_another_power_is_left_alone(self):
+        result = _run(repair_dbm=8, radio_tx_power=8)
+        assert _tx_power_calls(result) == []
+
+    def test_radio_that_does_not_opt_in_is_left_alone(self):
+        # ZNP, deCONZ, BLZ: their TX power is not persisted by the plugin's earlier forcing
+        result = _run(radio_tx_power=0)
+        assert _tx_power_calls(result) == []
+
+    def test_unknown_radio_tx_power_is_left_alone(self):
+        result = _run(repair_dbm=8)
+        assert _tx_power_calls(result) == []
+
+    def test_a_configured_tx_power_wins_and_no_repair_runs(self):
+        result = _run(repair_dbm=8, radio_tx_power=0, effective_tx_power=5)
+        assert _tx_power_calls(result) == ["set_tx_power:5"]
+        assert not any("left by an older plugin version" in msg for _, msg in result["logs"])
+
+    def test_a_failed_repair_is_logged_and_startup_continues(self):
+        result = _run(repair_dbm=8, radio_tx_power=0, tx_power_fails=True)
+        assert result["error"] is None
+        assert "start_network" in result["calls"]
+        errors = _errors(result)
+        assert len(errors) == 1
+        assert "stays at 0 dBm" in errors[0]
