@@ -185,6 +185,22 @@ class TestRecoverLegrandGroups:
         grp.recover_legrand_groups_from_devices(plugin)
         grp.checkToCreateOrUpdateGroup.assert_called_once_with(plugin, NWKID, "02", "fefd")
 
+    @pytest.mark.parametrize("status", ["Leave", "Removed"])
+    def test_a_remote_that_has_left_is_not_recovered(self, grp, status):
+        device = _remote({"01": "fefe"})
+        device["Status"] = status
+        plugin = _FakeSelf({NWKID: device}, {})
+        grp.recover_legrand_groups_from_devices(plugin)
+        grp.checkToCreateOrUpdateGroup.assert_not_called()
+        grp.LookForGroupAndCreateIfNeeded.assert_not_called()
+
+    def test_a_remote_still_in_the_network_is_recovered(self, grp):
+        device = _remote({"01": "fefe"})
+        device["Status"] = "inDB"
+        plugin = _FakeSelf({NWKID: device}, {})
+        grp.recover_legrand_groups_from_devices(plugin)
+        grp.checkToCreateOrUpdateGroup.assert_called_once_with(plugin, NWKID, "01", "fefe")
+
     def test_devices_without_a_legrand_record_are_ignored(self, grp):
         plugin = _FakeSelf({"1111": {"IEEE": "00158d0001aaaaaa", "Ep": {"01": {}}}}, {})
         grp.recover_legrand_groups_from_devices(plugin)
