@@ -48,6 +48,7 @@ HARNESS = textwrap.dedent(
 
     import zigpy.config as zc
     import zigpy.exceptions
+    import zigpy.state
     import zigpy.types as t
     from zigpy.backups import NetworkBackup
 
@@ -110,7 +111,7 @@ HARNESS = textwrap.dedent(
             self.backups = FakeBackups(
                 self, sc.get("db_pans", []), sc.get("state_pan", 0), sc.get("restore_fails", False)
             )
-            network_info = types.SimpleNamespace(tx_power=sc["radio_tx_power"]) if "radio_tx_power" in sc else None
+            network_info = zigpy.state.NetworkInfo(tx_power=sc["radio_tx_power"]) if "radio_tx_power" in sc else None
             self.state = types.SimpleNamespace(network_info=network_info, node_info=None)
             self.callBackGetAllDevices = None
         async def load_network_info(self, *, load_devices=False):
@@ -124,9 +125,11 @@ HARNESS = textwrap.dedent(
         async def _get_effective_maximum_tx_power(self):
             return None
         async def set_tx_power(self, power):
+            # As bellows: the power applied, as a float; None from a radio that does not support it
             self.calls.append("set_tx_power:%s" % power)
             if sc.get("tx_power_fails"):
                 raise RuntimeError("tx power failed")
+            return None if sc.get("tx_power_unsupported") else float(power)
         def _persist_coordinator_model_strings_in_db(self):
             pass
 
@@ -150,6 +153,7 @@ HARNESS = textwrap.dedent(
         except Exception as e:
             result["error"] = type(e).__name__
     result["calls"] = app.calls
+    result["network_tx_power"] = app.state.network_info.tx_power if app.state.network_info is not None else None
     result["logs"] = app.log.records
     print("RESULT=" + json.dumps(result))
     """
@@ -321,6 +325,7 @@ class TestRepairTxPowerLeftAt0dBm:
         assert result["error"] is None
         assert _tx_power_calls(result) == ["set_tx_power:8"]
         assert any(level == "Status" and "left by an older plugin version" in msg for level, msg in result["logs"])
+        assert result["network_tx_power"] == 8
 
     def test_radio_at_another_power_is_left_alone(self):
         result = _run(repair_dbm=8, radio_tx_power=8)
@@ -339,6 +344,7 @@ class TestRepairTxPowerLeftAt0dBm:
         result = _run(repair_dbm=8, radio_tx_power=0, effective_tx_power=5)
         assert _tx_power_calls(result) == ["set_tx_power:5"]
         assert not any("left by an older plugin version" in msg for _, msg in result["logs"])
+        assert result["network_tx_power"] == 5
 
     def test_a_failed_repair_is_logged_and_startup_continues(self):
         result = _run(repair_dbm=8, radio_tx_power=0, tx_power_fails=True)
@@ -347,3 +353,10 @@ class TestRepairTxPowerLeftAt0dBm:
         errors = _errors(result)
         assert len(errors) == 1
         assert "stays at 0 dBm" in errors[0]
+        assert result["network_tx_power"] == 0
+
+    def test_a_radio_that_reports_no_applied_power_keeps_its_recorded_value(self):
+        # zigpy's default _set_tx_power() (deCONZ, BLZ) returns None: nothing to record
+        result = _run(radio_tx_power=3, effective_tx_power=5, tx_power_unsupported=True)
+        assert _tx_power_calls(result) == ["set_tx_power:5"]
+        assert result["network_tx_power"] == 3
