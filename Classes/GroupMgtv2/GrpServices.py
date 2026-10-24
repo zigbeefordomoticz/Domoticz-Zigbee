@@ -99,6 +99,10 @@ def recover_legrand_groups_from_devices(self):
         if not isinstance(device, dict):
             continue
 
+        # A remote recorded as gone ("Leave", "Removed") no longer commands anything
+        if device.get("Status") in ("Leave", "Removed"):
+            continue
+
         legrand = device.get("Legrand")
         if not isinstance(legrand, dict):
             continue
