@@ -26,7 +26,7 @@ from Classes.GroupMgtv2.GrpDomoticz import (LookForGroupAndCreateIfNeeded,
                                             update_domoticz_group_name)
 from Classes.GroupMgtv2.GrpIkeaRemote import (checkIfIkeaRound5BToBeAdded,
                                               checkIfIkeaRound5BToBeRemoved)
-from Modules.domoticzAbstractLayer import     find_first_unit_widget_from_deviceID
+from Modules.domoticzAbstractLayer import find_first_unit_widget_from_deviceID
 from Modules.tools import mainPoweredDevice
 from Modules.zigateConsts import LEGRAND_REMOTES
 
