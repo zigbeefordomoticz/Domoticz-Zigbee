@@ -410,7 +410,9 @@ def optional_configuration_setup(self, config, radio_conf, set_extendedPanId, se
 
     if self.pluginconf.pluginConf.get("autoBackup"):
         config[zigpy.config.CONF_NWK_BACKUP_ENABLED] = True
-        config[zigpy.config.CONF_NWK_BACKUP_PERIOD] = self.pluginconf.pluginConf["autoBackup"]
+        # autoBackup is an on/off flag, not a period. zigpy counts the period in
+        # minutes; keep it at one day, the cadence of plugin.py:_trigger_coordinator_backup
+        config[zigpy.config.CONF_NWK_BACKUP_PERIOD] = 24 * 60
     else:
         config[zigpy.config.CONF_NWK_BACKUP_ENABLED] = False
 
