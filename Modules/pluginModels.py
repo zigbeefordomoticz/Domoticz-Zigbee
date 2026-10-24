@@ -106,11 +106,11 @@ PLUGIN_MODELS_MATRIX = [
         "PluginModelName": "TS0003-QS-Zigbee-S05-LN",},
 
     { "Model": ["TS0207",],
-        "DeviceID": "0402",
+        "DeviceID": [ "0402", ],
         "PluginModelName": "TS0207-waterleak",},
     
     { "Model": ["TS0207",],
-        "DeviceID": "0008",
+        "DeviceID": [ "0008", ],
         "PluginModelName": "TS0207-extender",},
 
     { "Model": ["TS011F",],
@@ -266,19 +266,21 @@ PLUGIN_MODELS_MATRIX = [
         "PluginModelName": "TS0601-_TZE200_dzuqwsyg",},
 
     # SONOFF 66666 'Temperature and humidity sensor',:
+    # The PluginModelName must be the DeviceConf key, which is the config file
+    # name without its '.json' extension.
     {
         "Model": ["66666",],
-        "Manufacturer": "eWeLink",
-        "DeviceID": "0302",
-        "PluginModelName": "66666-temphumi.json"
+        "Manufacturer": [ "eWeLink", ],
+        "DeviceID": [ "0302", ],
+        "PluginModelName": "66666-temphumi"
     },
 
     # SONOFF 66666 'Motion'
     {
         "Model": ["66666",],
-        "Manufacturer": "eWeLink",
-        "DeviceID": "0402",
-        "PluginModelName": "66666-motion.json"
+        "Manufacturer": [ "eWeLink", ],
+        "DeviceID": [ "0402", ],
+        "PluginModelName": "66666-motion"
     }
 
 ]

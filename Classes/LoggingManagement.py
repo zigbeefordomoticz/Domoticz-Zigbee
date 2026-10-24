@@ -96,7 +96,8 @@ class LoggingManagement:
         permitTojoin:           Current permit-to-join state, included in error context snapshots.
         FirmwareVersion:        Coordinator firmware version, recorded in error history.
         FirmwareMajorVersion:   Coordinator firmware major version, recorded in error history.
-        PluginVersion:          Plugin version string, recorded in error history.
+        PluginVersion:          What identifies the running plugin - version, revision and
+                                certified database version - recorded in error history.
         LogErrorHistory:        In-memory dict of persisted error history, loaded from and written to disk.
         threadLogConfig:        Mapping of thread names to their logical group (e.g. Communication, Forwarder).
 

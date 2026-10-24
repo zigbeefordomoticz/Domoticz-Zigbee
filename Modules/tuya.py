@@ -1465,7 +1465,7 @@ def tuya_TS0004_indicate_light(self, nwkid, mode):
 
 def SmartRelayStatus_by_ep( self, nwkid, ep, mode):
     
-    if int(mode) in {0, 1, 2}:
+    if int(mode) not in {0, 1, 2}:
         return
     if ep not in self.ListOfDevices[nwkid]["Ep"]:
         self.log.logging("Heartbeat", "Error", "No ep: %s" %ep, nwkid)
@@ -1475,6 +1475,7 @@ def SmartRelayStatus_by_ep( self, nwkid, ep, mode):
         return
     if "d010" not in self.ListOfDevices[nwkid]["Ep"][ ep ][ "e001" ]:
         self.log.logging("Heartbeat", "Log", "No Attribute: %s" %"d010", nwkid)
+        return
 
     write_attribute(self, nwkid, ZIGATE_EP, ep, "e001", "0000", "00", "d010", "30", "%02x" %int(mode), ackIsDisabled=False)
 

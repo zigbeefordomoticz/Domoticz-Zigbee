@@ -6,6 +6,7 @@ Covers:
   should_skip_message        – zero length or non-zero status
   is_valid_device            – ListOfDevices guard
   handle_special_device      – profile 0xC05E / device 0xE15E skip logic
+  update_device_basic_info   – Green Power never sets the device ProfileID/ZDeviceID (#2119)
   Decode8043 (integration)   – coordinator route, unknown device, normal flow
 """
 
@@ -163,3 +164,36 @@ class TestDecode8043Integration:
         msg = _make_8043(in_clusters=["0006"], out_clusters=["0006"])
         mod.Decode8043(plugin, {}, msg, LQI)
         assert "0006" in plugin.ListOfDevices[ADDR]["Ep"][EP]
+
+
+# ─── update_device_basic_info: Green Power endpoint (#2119) ───────────────────
+
+class TestUpdateDeviceBasicInfoGreenPower:
+
+    def test_green_power_after_application_keeps_device_ids(self, mod, plugin):
+        plugin.ListOfDevices[ADDR] = {"Ep": {}}
+        mod.update_device_basic_info(plugin, ADDR, "0b", "0104", "0210", "02", True, LQI)
+        mod.update_device_basic_info(plugin, ADDR, "f2", "a1e0", "0061", "00", True, LQI)
+        device = plugin.ListOfDevices[ADDR]
+        assert (device["ProfileID"], device["ZDeviceID"], device["ZDeviceVersion"]) == ("0104", "0210", "0000")
+
+    def test_green_power_is_recorded_in_epv2(self, mod, plugin):
+        plugin.ListOfDevices[ADDR] = {"Ep": {}}
+        mod.update_device_basic_info(plugin, ADDR, "f2", "A1E0", "0061", "00", True, LQI)
+        device = plugin.ListOfDevices[ADDR]
+        assert device["Epv2"]["f2"] == {"ProfileID": "A1E0", "ZDeviceID": "0061"}
+        assert "ProfileID" not in device and "ZDeviceID" not in device
+
+    def test_green_power_first_then_application_sets_device_ids(self, mod, plugin):
+        plugin.ListOfDevices[ADDR] = {"Ep": {}}
+        mod.update_device_basic_info(plugin, ADDR, "f2", "a1e0", "0061", "00", False, LQI)
+        mod.update_device_basic_info(plugin, ADDR, "01", "0104", "010a", "00", False, LQI)
+        device = plugin.ListOfDevices[ADDR]
+        assert (device["ProfileID"], device["ZDeviceID"]) == ("0104", "010a")
+
+    def test_non_green_power_last_descriptor_still_wins(self, mod, plugin):
+        plugin.ListOfDevices[ADDR] = {"Ep": {}}
+        mod.update_device_basic_info(plugin, ADDR, "02", "0104", "0051", "00", True, LQI)
+        mod.update_device_basic_info(plugin, ADDR, "01", "c0c9", "0001", "00", True, LQI)
+        device = plugin.ListOfDevices[ADDR]
+        assert (device["ProfileID"], device["ZDeviceID"]) == ("c0c9", "0001")

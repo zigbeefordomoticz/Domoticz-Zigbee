@@ -39,6 +39,7 @@ from typing import Dict
 
 import Modules.tools
 from Classes.AdminWidgets import ADMIN_WIDGET_PREFIXES
+from Classes.PluginStore import PluginStore
 from Modules.domoticzAbstractLayer import getConfigItem, setConfigItem
 from Modules.manufacturer_code import check_and_update_manufcode
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
@@ -46,9 +47,15 @@ from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
 from Modules.pluginModels import check_found_plugin_model
 from Modules.tuyaConst import TUYA_MANUFACTURER_NAME
+from Modules.zigateConsts import APPLICATION_PROFILE_IDS, GREEN_POWER_PROFILE_ID
 from Modules.zlinky import update_zlinky_device_model_if_needed
 
 PLUGIN_DATABASE_RECORD_VERSION = 4
+
+# Record stores persisted next to ListOfDevices (Classes/PluginStore.py), as
+# (name, version, upgrade): a feature whose records must not live in
+# ListOfDevices declares its store here.
+PLUGIN_STORES = ()
 
 CIE_ATTRIBUTES = {
     "Version", 
@@ -232,6 +239,7 @@ def LoadDeviceList(self):
         # Fixing mistake done in the code.
         fixing_consumption_lumi(self, addr)
         fixing_iSQN_None(self, addr)
+        fixing_green_power_device_id(self, addr)
 
         # Cleaning OTA structure if needed
         cleanup_ota(self, addr)
@@ -414,6 +422,21 @@ def is_domoticz_recent(self, dz_timestamp, device_list_txt_filename):
         return True
     return False
 
+def load_plugin_stores(self):
+    """Create and load the stores declared in PLUGIN_STORES into self.PluginStores."""
+    self.PluginStores = {}
+    for name, version, upgrade in PLUGIN_STORES:
+        store = PluginStore(name, version, upgrade=upgrade)
+        store.load(self)
+        self.PluginStores[name] = store
+
+
+def flush_plugin_stores(self):
+    """Write the stores changed since their last flush. A store that failed to load is never written."""
+    for store in getattr(self, "PluginStores", {}).values():
+        store.flush(self)
+
+
 def request_flush_plugin_listofdevices(self):
     self.flush_list_of_devices = True
 
@@ -453,6 +476,8 @@ def flush_plugin_listofdevice(self):  # sourcery skip: merge-nested-ifs
             # An error occured. Probably Dz.Configuration() is not available.
             self.log.logging("Database", "Error", "flush_plugin_listofdevice - flush Plugin db to Domoticz failed, we secure it to %s file" % self.DeviceListName)
             _write_DeviceList_txt(self)
+
+    flush_plugin_stores(self)
 
     self.HBcount = 0
     self.flush_list_of_devices = False
@@ -878,7 +903,9 @@ def CheckDeviceList(self, key, val):
                 self.log.logging("Database", "Status", "Z4D adjusts Model from %s to %s" % (
                     OldModel, self.ListOfDevices[key][attribute]))
 
-    self.ListOfDevices[key]["Health"] = ""
+    # A plugin start is no evidence of liveness: whatever was stored is stale until
+    # the device is heard from, or until checkHealth() rules on the persisted LastSeen.
+    self.ListOfDevices[key]["Health"] = "unknown"
 
     if "IEEE" in device_list_dict:
         self.ListOfDevices[key]["IEEE"] = device_list_dict["IEEE"]
@@ -1011,6 +1038,61 @@ def fixing_iSQN_None(self, key):
                             del self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId]["iSQN"][attribute]
 
 
+def fixing_green_power_device_id(self, key):
+    """Restore the device level ProfileID/ZDeviceID overwritten by the Green Power endpoint (#2119).
+
+    Before #2119 the last Simple Descriptor decoded set the device level
+    ProfileID and ZDeviceID, which on mains powered devices is usually the
+    Green Power proxy endpoint (f2, profile a1e0, device 0061). Copy them back
+    from the best application endpoint recorded in Epv2.
+
+    Args:
+        key: Network ID of the device to process
+    """
+    device = self.ListOfDevices[key]
+    if str(device.get("ProfileID", "")).lower() != GREEN_POWER_PROFILE_ID:
+        return
+
+    application_ep = _select_application_endpoint(device.get("Epv2"))
+    if application_ep is None:
+        return
+
+    ep_info = device["Epv2"][application_ep]
+    self.log.logging("Database", "Status", "Z4D fixes %s ProfileID/ZDeviceID from %s/%s (Green Power) to %s/%s (Ep %s)" % (
+        key, device["ProfileID"], device.get("ZDeviceID"), ep_info["ProfileID"], ep_info["ZDeviceID"], application_ep))
+    device["ProfileID"] = ep_info["ProfileID"]
+    device["ZDeviceID"] = ep_info["ZDeviceID"]
+
+
+def _select_application_endpoint(epv2):
+    """Return the endpoint which best describes the device, or None.
+
+    Green Power endpoints are never selected. A ZHA or ZLL profile is preferred
+    over a vendor specific one, then the lowest endpoint number wins.
+    """
+    if not isinstance(epv2, dict):
+        return None
+
+    candidates = []
+    for ep, ep_info in epv2.items():
+        if not isinstance(ep_info, dict):
+            continue
+        profile = ep_info.get("ProfileID")
+        if not isinstance(profile, str) or not isinstance(ep_info.get("ZDeviceID"), str):
+            continue
+        if profile.lower() == GREEN_POWER_PROFILE_ID:
+            continue
+        try:
+            ep_number = int(ep, 16)
+        except ValueError:
+            continue
+        candidates.append((profile.lower() not in APPLICATION_PROFILE_IDS, ep_number, ep))
+
+    if not candidates:
+        return None
+    return min(candidates)[2]
+
+
 def load_new_param_definition(self):
     """Populate missing device parameters from model definitions.
 
@@ -1025,6 +1107,10 @@ def load_new_param_definition(self):
     - OnOffPollingFreq (manufacturer-specific polling)
     - AC201Polling (OWON/CASAIA specific)
     - Various Netatmo LED and control parameters
+
+    The polling overrides are hidden plugin-wide settings defaulting to 0. Only a
+    non-zero value replaces the certified one, so a Param filled here ends up as it
+    would have at pairing.
     """
     for key in self.ListOfDevices:
         if "Model" not in self.ListOfDevices[key]:
@@ -1049,9 +1135,9 @@ def load_new_param_definition(self):
             if param == "Disabled" and "Disabled" in self.ListOfDevices[key]["Param"] and self.ListOfDevices[key]["Param"][ "Disabled" ]:
                 self.ListOfDevices[key]["Health"] = "Disabled"
                 
-            if param in ("PowerOnAfterOffOn"):
+            if param == "PowerOnAfterOffOn":
                 if "Manufacturer" not in self.ListOfDevices[key]:
-                    return
+                    continue
                 if self.ListOfDevices[key]["Manufacturer"] == "100b":  # Philips
                     self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf["PhilipsPowerOnAfterOffOn"]
 
@@ -1077,7 +1163,7 @@ def load_new_param_definition(self):
                 if "Manufacturer Name" in self.ListOfDevices[key]:
                     devManufName = self.ListOfDevices[key]["Manufacturer Name"]
                 if devManufCode == devManufName == "":
-                    return
+                    continue
 
                 plugin_generic_param = None
                 if devManufCode in POLLING_TABLE_SPECIFICS:
@@ -1085,8 +1171,9 @@ def load_new_param_definition(self):
                 if plugin_generic_param is None and devManufName in POLLING_TABLE_SPECIFICS:
                     plugin_generic_param = POLLING_TABLE_SPECIFICS[devManufName]
 
-                if plugin_generic_param is None:
-                    return False
+                if plugin_generic_param is None or not self.pluginconf.pluginConf.get(plugin_generic_param):
+                    # Hidden plugin-wide setting left at its default (0): keep the certified value, as pairing does
+                    continue
                 self.log.logging("Database", "Log","--->PluginConf %s <-- %s" % (param, plugin_generic_param))
                 self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf[plugin_generic_param]
 
@@ -1103,7 +1190,7 @@ def load_new_param_definition(self):
                 if "Manufacturer Name" in self.ListOfDevices[key]:
                     devManufName = self.ListOfDevices[key]["Manufacturer Name"]
                 if devManufCode == devManufName == "":
-                    return
+                    continue
 
                 plugin_generic_param = None
                 if devManufCode in POLLING_TABLE_SPECIFICS:
@@ -1111,8 +1198,9 @@ def load_new_param_definition(self):
                 if plugin_generic_param is None and devManufName in POLLING_TABLE_SPECIFICS:
                     plugin_generic_param = POLLING_TABLE_SPECIFICS[devManufName]
 
-                if plugin_generic_param is None:
-                    return False
+                if plugin_generic_param is None or not self.pluginconf.pluginConf.get(plugin_generic_param):
+                    # Hidden plugin-wide setting left at its default (0): keep the certified value, as pairing does
+                    continue
                 self.log.logging("Database", "Log","--->PluginConf %s <-- %s" % (param, plugin_generic_param))
                 self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf[plugin_generic_param]
 
@@ -1128,7 +1216,7 @@ def load_new_param_definition(self):
                 if "Manufacturer Name" in self.ListOfDevices[key]:
                     devManufName = self.ListOfDevices[key]["Manufacturer Name"]
                 if devManufCode == devManufName == "":
-                    return
+                    continue
 
                 plugin_generic_param = None
                 if devManufCode in POLLING_TABLE_SPECIFICS:
@@ -1136,8 +1224,9 @@ def load_new_param_definition(self):
                 if plugin_generic_param is None and devManufName in POLLING_TABLE_SPECIFICS:
                     plugin_generic_param = POLLING_TABLE_SPECIFICS[devManufName]
 
-                if plugin_generic_param is None:
-                    return False
+                if plugin_generic_param is None or not self.pluginconf.pluginConf.get(plugin_generic_param):
+                    # Hidden plugin-wide setting left at its default (0): keep the certified value, as pairing does
+                    continue
                 self.log.logging("Database", "Log","--->PluginConf %s <-- %s" % (param, plugin_generic_param))
                 self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf[plugin_generic_param]
 
@@ -1234,6 +1323,9 @@ def profalux_fix_remote_device_model(self):
     - Correct Manufacturer Name ("Profalux")
     - Correct Model name ("Telecommande-Profalux")
     """
+    # Imported here: Modules.profalux imports Modules.tools, which imports this module
+    from Modules.profalux import profalux_model_has_own_config
+
     for x in self.ListOfDevices:
         
         if 'ZDeviceID' not in self.ListOfDevices[ x ] or self.ListOfDevices[ x ]['ZDeviceID'] != '0201':
@@ -1247,6 +1339,9 @@ def profalux_fix_remote_device_model(self):
         if "MacCapa" not in self.ListOfDevices[x]:
             continue
         if self.ListOfDevices[x]["MacCapa"] != "80":
+            continue
+        if profalux_model_has_own_config(self, x):
+            # A remote reporting its own model (MAI-ZTM22C, ...) keeps it
             continue
         if "Model" in self.ListOfDevices[x] and self.ListOfDevices[x]["Model"] != "Telecommande-Profalux":
             self.log.logging("Profalux", "Status", "Z4D forces Model from %s to %s" % (

@@ -20,6 +20,48 @@ from Modules.domoticzAbstractLayer import (domoticz_error_api,
                                            domoticz_status_api)
 
 
+# Violations of the WebUI Content-Security-Policy, POSTed by the browser to the report-uri of WEBUI_CSP.
+# Each distinct violation is logged once per plugin run, and only the first MAX_CSP_REPORTS of them: a screen
+# in a loop, or a web page posting junk to this URL, cannot flood the plugin log.
+CSP_REPORT_FIELDS = ("document-uri", "violated-directive", "effective-directive", "blocked-uri",
+                     "source-file", "line-number", "script-sample")
+MAX_CSP_REPORTS = 50
+MAX_CSP_FIELD = 200
+
+
+def rest_csp_report(self, verb, data, parameters):
+
+    _response = prepResponseMessage(self, setupHeadersResponse())
+    _response["Status"] = "204 No Content"
+    _response["Data"] = None
+
+    seen = getattr(self, "csp_reports_seen", None)
+    if seen is None:
+        seen = self.csp_reports_seen = set()
+    if verb != "POST" or len(seen) >= MAX_CSP_REPORTS:
+        return _response
+
+    try:
+        report = json.loads(data)["csp-report"]
+        fields = {key: str(report.get(key, ""))[:MAX_CSP_FIELD] for key in CSP_REPORT_FIELDS}
+    except (ValueError, TypeError, KeyError, AttributeError):
+        return _response
+
+    directive = fields["effective-directive"] or fields["violated-directive"]
+    violation = (directive, fields["blocked-uri"], fields["source-file"], fields["line-number"])
+    if violation in seen:
+        return _response
+    seen.add(violation)
+
+    message = f"WebUI Content-Security-Policy would block '{fields['blocked-uri']}' ({directive}) on {fields['document-uri']}"
+    if fields["source-file"]:
+        message += f" from {fields['source-file']}:{fields['line-number']}"
+    if fields["script-sample"]:
+        message += f" sample: {fields['script-sample']}"
+    self.logging("Log", message)
+    return _response
+
+
 def rest_logErrorHistory(self, verb, data, parameters):
 
     _response = prepResponseMessage(self, setupHeadersResponse())

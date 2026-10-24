@@ -33,49 +33,67 @@ from Modules.domoticzAbstractLayer import (domoticz_log_api, getConfigItem,
 def write_groups_list(self):
     """
     write GroupsList into Disk
+
+    Called after every mutation of ListOfGroups, because there is no signal telling
+    us when a group membership scan is complete: a Get Group Membership response may
+    simply never come back. Persisting on each mutation is what guarantees the final
+    state reaches the disk, but during a scan most of those calls carry no change at
+    all. Serialize first and skip the file (and the Domoticz Db) when the payload is
+    identical to what was last written.
     """
+    payload = json.dumps(self.ListOfGroups, sort_keys=True, indent=2)
+
+    if payload == self.last_written_groups_list and os.path.isfile(self.GroupListFileName):
+        self.logging("Debug", "Unchanged, skipping dump of: %s" % self.GroupListFileName)
+        return
+
     self.logging("Debug", "Dumping: %s" % self.GroupListFileName)
 
     with open(self.GroupListFileName, "wt") as handle:
-        json.dump(self.ListOfGroups, handle, sort_keys=True, indent=2)
+        handle.write(payload)
 
     if self.pluginconf.pluginConf.get("useDomoticzDb"):
         self.log.logging("Database", "Debug", "Save Plugin Group Db to Domoticz")
         setConfigItem(Key="ListOfGroups", Attribute="b64-grouplist", Value={"TimeStamp": time.time(), "b64-grouplist": self.ListOfGroups})
 
+    # Only once both destinations are written, so a failure on either one leaves the
+    # next call to write again.
+    self.last_written_groups_list = payload
+
 
 def load_groups_list_from_json(self):
     """
-    Load GroupsList into memory
+    Load GroupsList into memory, from the most recent of the json file and,
+    when useDomoticzDb is set, the Domoticz record.
     """
     self.ListOfGroups = {}
-    
+
     if self.GroupListFileName is None:
         return
 
     txt_timestamp = dz_timestamp = 0
+    json_grouplist = domoticz_grouplist = {}
     if os.path.isfile(self.GroupListFileName):
         txt_timestamp = os.path.getmtime(self.GroupListFileName)
+        with open(self.GroupListFileName, "rt") as handle:
+            json_grouplist = json.load(handle)
 
-    if not os.path.isfile(self.GroupListFileName):
+    if self.pluginconf.pluginConf.get("useDomoticzDb"):
+        # The TimeStamp is stored in the record, next to the group list
+        domoticz_record = getConfigItem(Key="ListOfGroups", Attribute="b64-grouplist")
+        domoticz_grouplist = domoticz_record.get("b64-grouplist", {})
+        dz_timestamp = domoticz_record.get("TimeStamp", 0) if domoticz_grouplist else 0
+
+        self.logging( "Debug", "load_groups_list_from_json %s timestamp is %s" % ("Domoticz Db", dz_timestamp))
+        self.logging( "Debug", "load_groups_list_from_json %s timestamp is %s" % (self.GroupListFileName, txt_timestamp))
+
+        self.logging( "Debug", "Groups data loaded where saved on %s" % time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp)), )
+
+    if not txt_timestamp and not dz_timestamp:
         self.logging("Debug", "GroupMgt - Nothing to import from %s" % self.GroupListFileName)
         return
 
-    with open(self.GroupListFileName, "rt") as handle:
-        json_grouplist = json.load(handle)
-
-
-    if self.pluginconf.pluginConf.get("useDomoticzDb"):
-        domoticz_grouplist = getConfigItem(Key="ListOfGroups", Attribute="b64-grouplist")        
-        domoticz_grouplist = domoticz_grouplist.get("b64-grouplist", {})
-        dz_timestamp = domoticz_grouplist.get("TimeStamp", 0) if domoticz_grouplist else 0
-
-        self.ListOfGroups = domoticz_grouplist if dz_timestamp >= txt_timestamp else json_grouplist
-        
-        self.logging( "Debug", "load_groups_list_from_json %s timestamp is %s" % ("Domoticz Db", dz_timestamp))
-        self.logging( "Debug", "load_groups_list_from_json %s timestamp is %s" % (self.GroupListFileName, txt_timestamp))
-        
-        self.logging( "Debug", "Groups data loaded where saved on %s" % time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp)), )
+    self.ListOfGroups = domoticz_grouplist if dz_timestamp >= txt_timestamp else json_grouplist
 
     if dz_timestamp >= txt_timestamp:
         self.logging("Status", "Z4D loads groups from Domoticz Db: %s" % len(self.ListOfGroups))

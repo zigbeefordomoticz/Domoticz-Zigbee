@@ -76,6 +76,7 @@ from Modules.tuyaTS0601 import (ts0601_actuator,
                                 ts0601_extract_data_point_infos)
 from Modules.zigateConsts import (THERMOSTAT_LEVEL_2_MODE,
                                   THERMOSTAT_LEVEL_3_MODE)
+from Modules.zigpy_preload import device_has_left_the_network
 from Modules.zosungIR import zosung_e004_learn_mode, zosung_ed00_send_ir_code
 
 # Matrix between Domoticz Type, Subtype, SwitchType and Plugin DeviceType
@@ -194,6 +195,14 @@ def domoticz_command(self, Devices, DeviceID, Unit, Nwkid, Command, Level, Color
         self.log.logging("Command", "Error", f"Attempted action on a disabled device: {widget_name}/{Nwkid}")
         return
 
+    # A device recorded as gone is not in zigpy's device table (Modules/zigpy_preload.py),
+    # so the command could only fail deep in the transport with an "unknown destination".
+    # Typically a Domoticz timer or script still driving a widget of a departed device.
+    if device_has_left_the_network(self.ListOfDevices.get(Nwkid, {})):
+        self.log.logging("Command", "Error", f"Command {Command} to {widget_name}/{Nwkid} dropped: the device has left the network "
+                         f"(Status {self.ListOfDevices[Nwkid].get('Status')}). Re-pair it, or remove it and its widgets.", Nwkid)
+        return
+
     forceUpdateDev = SWITCH_SELECTORS.get(DeviceType, {}).get("ForceUpdate", False)
 
     if DeviceType not in ACTIONATORS and not self.pluginconf.pluginConf.get("forcePassiveWidget"):
@@ -202,7 +211,7 @@ def domoticz_command(self, Devices, DeviceID, Unit, Nwkid, Command, Level, Color
     
     health_value = self.ListOfDevices.get(Nwkid, {}).get("Health")
     if health_value == "Not Reachable":
-        self.ListOfDevices.setdefault(Nwkid, {})["Health"] = ""
+        self.ListOfDevices.setdefault(Nwkid, {})["Health"] = "unknown"
 
 
     if Command == "Stop":

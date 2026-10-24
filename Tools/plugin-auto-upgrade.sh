@@ -9,6 +9,13 @@ cleanup_venv_full() {
         return 1
     fi
 
+    # VENV_ROOT is derived from PYTHONPATH: only a real venv root may be emptied, never
+    # a system prefix such as /usr/local or a data folder such as /opt/domoticz/userdata.
+    if [[ ! -f "$VENV_ROOT/pyvenv.cfg" ]]; then
+        echo "Warning: '$VENV_ROOT' has no pyvenv.cfg, it is not a virtual environment. Skipping cleanup."
+        return 1
+    fi
+
     echo "Starting full cleanup in $VENV_ROOT..."
 
     # Keep these core folders/files
@@ -30,6 +37,35 @@ cleanup_venv_full() {
     echo "Full cleanup completed."
 }
 
+
+check_venv_from_python3() {
+    #
+    # 3) Last resort: python3 found in PATH runs from a venv
+    #
+    # A venv can be enabled by PATH alone, with neither VIRTUAL_ENV nor PYTHONPATH set:
+    # the official Domoticz Docker image does it with /opt/venv, and any other location
+    # works the same way. Domoticz resolves its embedded Python from PATH as well, so this
+    # venv is the one the plugin imports its modules from.
+    local prefix
+    prefix=$(python3 -c 'import sys; print(sys.prefix if sys.prefix != sys.base_prefix else "")' 2>/dev/null)
+    if [ -z "$prefix" ]; then
+        echo "[check_venv] python3 in PATH is not running from a venv."
+        return
+    fi
+    prefix="${prefix%/}"
+    if [ ! -f "$prefix/pyvenv.cfg" ] || [ ! -f "$prefix/bin/activate" ]; then
+        echo "[check_venv] python3 in PATH runs from '$prefix', but it has no pyvenv.cfg or bin/activate."
+        return
+    fi
+
+    VENV=true
+    VENV_VERSION="V2"
+    VENV_ROOT="$prefix"
+    # Hand the venv over to plugin-auto-upgrade-v2.sh, which only looks at VIRTUAL_ENV.
+    export VIRTUAL_ENV="$VENV_ROOT"
+    echo "[check_venv] Detected virtualenv of python3 in PATH (V2)"
+    echo "[check_venv] Venv root set to '$VENV_ROOT'"
+}
 
 check_venv() {
     # Initialize defaults
@@ -58,6 +94,7 @@ check_venv() {
     # Return if PYTHONPATH is empty
     if [ -z "$PYTHONPATH" ]; then
         echo "[check_venv] PYTHONPATH is empty or not set."
+        check_venv_from_python3
         return
     fi
 
@@ -96,6 +133,7 @@ check_venv() {
 
     if [ "$VENV" = false ]; then
         echo "[check_venv] No valid venv detected in PYTHONPATH."
+        check_venv_from_python3
     fi
 
     # Export for external use
@@ -112,29 +150,41 @@ echo "VENV=$VENV"
 echo "VENV_VERSION=$VENV_VERSION"
 echo "VENV_ROOT=$VENV_ROOT"
 
+# The WebUI passes the Python version Domoticz runs with (e.g. 3.11): hand it over to the
+# upgrade script, so that the modules are installed for that Python and not for python3.
+PYTHON_ARG=()
+if [ -n "$1" ]; then
+    if command -v "python$1" >/dev/null 2>&1; then
+        PYTHON_ARG=("$1")
+        echo "[main] Using python$1"
+    else
+        echo "[main] python$1 not found in PATH, using python3."
+    fi
+fi
+
 # Call the appropriate upgrade script if a venv was detected
 if [ "$VENV" = true ]; then
     case "$VENV_VERSION" in
         V1)
             echo "[main] Running Tools/plugin-auto-upgrade-v1.sh with PYTHONPATH='$VENV_ROOT'"
-            PYTHONPATH="$VENV_ROOT" bash Tools/plugin-auto-upgrade-v1.sh
+            PYTHONPATH="$VENV_ROOT" bash Tools/plugin-auto-upgrade-v1.sh "${PYTHON_ARG[@]}"
             ret=$?   # capture exit code
             ;;
         V2)
             echo "[main] Running Tools/plugin-auto-upgrade-v2.sh with PYTHONPATH='$VENV_ROOT'"
             cleanup_venv_full "$VENV_ROOT"
-            bash Tools/plugin-auto-upgrade-v2.sh
+            bash Tools/plugin-auto-upgrade-v2.sh "${PYTHON_ARG[@]}"
             ret=$?   # capture exit code
             ;;
         *)
             echo "[main] Unknown VENV_VERSION='$VENV_VERSION', default to V1."
-            bash Tools/plugin-auto-upgrade-v1.sh
+            bash Tools/plugin-auto-upgrade-v1.sh "${PYTHON_ARG[@]}"
             ret=$?   # capture exit code
             ;;
     esac
 else
     echo "[main] No venv detected, default to V1."
-    bash Tools/plugin-auto-upgrade-v1.sh
+    bash Tools/plugin-auto-upgrade-v1.sh "${PYTHON_ARG[@]}"
     ret=$?   # capture exit code
 
 fi
