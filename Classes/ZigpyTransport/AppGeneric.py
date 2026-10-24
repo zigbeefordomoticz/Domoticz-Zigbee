@@ -235,6 +235,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
        not compatible with the retrieved backup.
     6. start_network().
     7. Clamp and apply the TX power to the regulatory domain maximum.
+       Plugin only: state.network_info.tx_power follows the applied value (_apply_tx_power()).
        Plugin only: with no TX power to apply, _repair_tx_power_left_at_0dbm().
     8. Plugin only: _preload_devices_from_plugin_db().
     9. _persist_coordinator_model_strings_in_db().
@@ -355,7 +356,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         tx_power = max_tx_power
 
     if tx_power is not None:
-        await self.set_tx_power(tx_power)
+        await _apply_tx_power(self, tx_power)
     else:
         await _repair_tx_power_left_at_0dbm(self)
 
@@ -368,6 +369,20 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     if self.config[zigpy_conf.CONF_TOPO_SCAN_ENABLED]:
         # Config specifies the period in minutes, not seconds
         self.topology.start_periodic_scans( period=(60 * self.config[zigpy.config.CONF_TOPO_SCAN_PERIOD]) )
+
+
+async def _apply_tx_power(self, tx_power) -> None:
+    """
+    set_tx_power(), then record the TX power the radio took in state.network_info.
+
+    network_info was loaded before the TX power step, and nothing upstream refreshes it, so
+    the start-up "Network settings" dump (radioStart.py) showed the previous value. Updated
+    only when the radio library reports the power it applied (bellows does; radios that do
+    not support it return None).
+    """
+    actual_tx_power = await self.set_tx_power(tx_power)
+    if actual_tx_power is not None and self.state.network_info is not None:
+        self.state.network_info = self.state.network_info.replace(tx_power=int(actual_tx_power))
 
 
 async def _repair_tx_power_left_at_0dbm(self) -> None:
@@ -392,7 +407,7 @@ async def _repair_tx_power_left_at_0dbm(self) -> None:
     self.log.logging("TransportZigpy", "Status", f"Coordinator TX power is 0 dBm, left by an older plugin version: setting {repair_dbm} dBm, "
                      "the radio library's default. Set TX Power in the plugin settings to choose another value")
     try:
-        await self.set_tx_power(repair_dbm)
+        await _apply_tx_power(self, repair_dbm)
     except Exception as e:
         self.log.logging("TransportZigpy", "Error", f"Setting the coordinator TX power to {repair_dbm} dBm failed ({e!r}), it stays at 0 dBm")
 
