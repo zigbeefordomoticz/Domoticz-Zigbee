@@ -102,6 +102,9 @@ response_required_commands = {
 # an error occurs.
 # ----------------------------------------------------------
 server_to_client_response_required_commands = {
+    0x0020: {
+        0x00,  # Poll Control - Check-in -> Check-in Response
+    },
     0x0500: {
         0x01,  # IAS Zone - Zone Enroll Request -> Zone Enroll Response
     },
