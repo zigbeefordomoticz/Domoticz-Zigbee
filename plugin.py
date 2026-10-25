@@ -159,7 +159,7 @@ from Modules.checkingUpdate import (is_internet_available,
 from Modules.command import domoticz_command
 from Modules.database import (LoadDeviceList, flush_plugin_listofdevice,
                               checkDevices2LOD, checkListOfDevice2Devices,
-                              import_local_device_conf)
+                              import_local_device_conf, load_plugin_stores)
 from Modules.domoticzAbstractLayer import (
     domo_read_Name, load_list_of_domoticz_widget,
     retrieve_widgetid_from_deviceId_unit)
@@ -284,6 +284,7 @@ class BasePlugin:
         self.DomoticzVersion = None
         self.StartupFolder = None
         self.DeviceListName = None
+        self.PluginStores = {}
         self.pluginParameters = None
 
         self.PluginHealth = {}
@@ -585,6 +586,8 @@ class BasePlugin:
             )
             self.onStop()
             return
+
+        load_plugin_stores(self)
 
         # Log ListOfDevices dictionary
         self.log.logging("Plugin", "Debug", "ListOfDevices:")

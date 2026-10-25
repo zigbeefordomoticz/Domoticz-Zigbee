@@ -39,6 +39,7 @@ from typing import Dict
 
 import Modules.tools
 from Classes.AdminWidgets import ADMIN_WIDGET_PREFIXES
+from Classes.PluginStore import PluginStore
 from Modules.domoticzAbstractLayer import getConfigItem, setConfigItem
 from Modules.manufacturer_code import check_and_update_manufcode
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
@@ -50,6 +51,11 @@ from Modules.zigateConsts import APPLICATION_PROFILE_IDS, GREEN_POWER_PROFILE_ID
 from Modules.zlinky import update_zlinky_device_model_if_needed
 
 PLUGIN_DATABASE_RECORD_VERSION = 4
+
+# Record stores persisted next to ListOfDevices (Classes/PluginStore.py), as
+# (name, version, upgrade): a feature whose records must not live in
+# ListOfDevices declares its store here.
+PLUGIN_STORES = ()
 
 CIE_ATTRIBUTES = {
     "Version", 
@@ -416,6 +422,21 @@ def is_domoticz_recent(self, dz_timestamp, device_list_txt_filename):
         return True
     return False
 
+def load_plugin_stores(self):
+    """Create and load the stores declared in PLUGIN_STORES into self.PluginStores."""
+    self.PluginStores = {}
+    for name, version, upgrade in PLUGIN_STORES:
+        store = PluginStore(name, version, upgrade=upgrade)
+        store.load(self)
+        self.PluginStores[name] = store
+
+
+def flush_plugin_stores(self):
+    """Write the stores changed since their last flush. A store that failed to load is never written."""
+    for store in getattr(self, "PluginStores", {}).values():
+        store.flush(self)
+
+
 def request_flush_plugin_listofdevices(self):
     self.flush_list_of_devices = True
 
@@ -455,6 +476,8 @@ def flush_plugin_listofdevice(self):  # sourcery skip: merge-nested-ifs
             # An error occured. Probably Dz.Configuration() is not available.
             self.log.logging("Database", "Error", "flush_plugin_listofdevice - flush Plugin db to Domoticz failed, we secure it to %s file" % self.DeviceListName)
             _write_DeviceList_txt(self)
+
+    flush_plugin_stores(self)
 
     self.HBcount = 0
     self.flush_list_of_devices = False
