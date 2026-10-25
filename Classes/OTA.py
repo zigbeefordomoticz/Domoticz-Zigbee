@@ -566,10 +566,10 @@ class OTAManagement(object):
         target_ep = update_request.get("Ep")
         force_update = update_request.get("ForceUpdate", False)
 
-        firmware_update(self, brand, file_name, target_nwkid, target_ep, force_update)
+        started = firmware_update(self, brand, file_name, target_nwkid, target_ep, force_update)
 
-        # Allow downgrade if force update is requested
-        if force_update:
+        # Allow downgrade if force update is requested, and only for an update that did start
+        if started and force_update:
             self.authorized_device_downgrade[target_nwkid] = True
 
 
