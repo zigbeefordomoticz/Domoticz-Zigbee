@@ -18,7 +18,8 @@ import time
 import traceback
 
 
-from Classes.WebServer.tools import MAX_BLOCK_SIZE
+from Classes.WebServer.tools import (MAX_BLOCK_SIZE, redact_headers,
+                                     redact_raw_request)
 
 def startWebServer(self):
 
@@ -41,6 +42,11 @@ def close_all_clients(self):
     self.clients.clear()
 
 
+def canonical_header_name(name):
+    """HTTP header names are case-insensitive: store 'content-length' as 'Content-Length'."""
+    return "-".join(part.capitalize() for part in name.strip().split("-"))
+
+
 def parse_http_request(data):
     """
     Parse an HTTP request string into its components.
@@ -55,7 +61,8 @@ def parse_http_request(data):
         tuple: A tuple containing:
             - method (str): The HTTP method (e.g., 'GET', 'POST').
             - path (str): The requested path (e.g., '/index.html').
-            - headers (dict): A dictionary of headers where keys are header names and values are header values.
+            - headers (dict): A dictionary of headers where keys are header names (canonical case, e.g.
+              'Content-Length') and values are header values.
             - body (bytes): The body of the request as a bytes object.
 
     Raises:
@@ -74,7 +81,7 @@ def parse_http_request(data):
         if not line.strip():
             break
         key, value = line.split(":", 1)
-        headers[key.strip()] = value.strip()
+        headers[canonical_header_name(key)] = value.strip()
 
     # Parse body if present
     if "Content-Length" in headers:
@@ -156,11 +163,11 @@ def handle_client(self, client_socket, client_addr):
             try:
                 # Let's receive the first chunck (to get the headers)
                 incoming_data = receive_data(self, client_socket)
-                self.logging("Debug", f"incoming_data {incoming_data}")
+                self.logging("Debug", f"incoming_data {len(incoming_data)} bytes")
 
                 try:
                     incoming_data = incoming_data.decode('utf-8')
-                    self.logging("Debug", f"incoming_data decoded {incoming_data}")
+                    self.logging("Debug", f"incoming_data decoded {redact_raw_request(incoming_data)}")
 
                 except UnicodeDecodeError:
                     self.logging("Debug", "Received non-UTF-8 data, handling as binary")
@@ -173,11 +180,11 @@ def handle_client(self, client_socket, client_addr):
                 method, path, headers, body = parse_http_request(incoming_data)
                 content_length = int(headers.get('Content-Length', 0))
 
-                self.logging("Debug", f"handle_client from method: {method} path: {path} content_length: {content_length} len_body: {len(body)} headers: {headers}")
+                self.logging("Debug", f"handle_client from method: {method} path: {path} content_length: {content_length} len_body: {len(body)} headers: {redact_headers(headers)}")
 
                 received_length = len(body)
 
-                while received_length <= content_length:
+                while received_length < content_length:
                     self.logging("Debug", f"handle_client received_length: {received_length} content_length: {content_length} {content_length - received_length}")
                     additional_data = receive_data(self, client_socket, content_length - len(body)).decode('utf-8')
                     if not additional_data:

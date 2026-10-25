@@ -22,33 +22,24 @@ def prepResponseMessage(self, _response):
     _response["Data"] = {}
     _response["Status"] = "200 OK"
 
-    if not plugin_conf.get("enableCache", False):
-        _response["Headers"].update({
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            "Pragma": "no-cache",
-            "Expires": "0",
-            "Accept": "*/*"
-        })
-    else:
-        _response["Headers"]["Cache-Control"] = "private"
+    # REST answers reflect live state: never cached, whatever enableCache says (it is for the WebUI files)
+    _response["Headers"].update({
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
+    })
 
     return _response
 
 
-def setupHeadersResponse(cookie=None):
+def setupHeadersResponse():
     _response = {
         "Headers": {
+            # No Access-Control-Allow-*: the WebUI calls the REST API from its own origin, and no other
+            # web page should be able to read the answers (device list, settings, paths)
             "Server": "Domoticz",
-            "User-Agent": "Plugin-Zigbee4Domoticz/v1",
-            "Access-Control-Allow-Headers": "Cache-Control, Pragma, Origin, Authorization, Content-Type, X-Requested-With",
-            "Access-Control-Allow-Methods": "GET, POST, DELETE",
-            "Access-Control-Allow-Origin": "*",
             "Referrer-Policy": "no-referrer"
         }
     }
-
-    # Add cookie only if provided
-    if cookie:
-        _response["Headers"]["Cookie"] = cookie
 
     return _response
