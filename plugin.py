@@ -197,6 +197,7 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_set_certificate, zigate_set_mode)
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
+from Modules.zigpy_preload import device_has_left_the_network
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
 
 VERSION_FILENAME = ".hidden/VERSION"
@@ -866,16 +867,32 @@ class BasePlugin:
         does not know the device's logical type. The transport turns it into a
         zigpy NodeDescriptor; without one, zigpy skips the device in every
         topology scan (issue #2110).
+
+        A device the plugin has recorded as gone is left out, as
+        zigpy_get_device() already does for the same records.
         """
         result = []
+        departed = []
         for nwk_str, info in self.ListOfDevices.items():
             ieee_str = info.get('IEEE')
             self.log.logging("TransportZigpy", "Debug", "zigpy_get_all_devices pre-populate( %s, %s)" %( ieee_str, nwk_str))
+
+            if device_has_left_the_network(info):
+                departed.append(nwk_str)
+                self.log.logging("TransportZigpy", "Debug", "zigpy_get_all_devices skipping %s, recorded as %s" %(
+                    nwk_str, info.get("Status")))
+                continue
+
             if ieee_str:
                 try:
                     result.append((int(ieee_str, 16), int(nwk_str, 16), node_descriptor_fields(nwk_str, info)))
                 except (ValueError, TypeError):
                     self.log.logging("TransportZigpy", "Error", "zigpy_get_all_devices pre-populate( %s, %s) failed !!" %( ieee_str, nwk_str))
+
+        if departed:
+            self.log.logging("TransportZigpy", "Status", "Not pre-loading %s device(s) the plugin has as gone from the network: %s" %(
+                len(departed), ", ".join(sorted(departed))))
+
         return result
 
 
