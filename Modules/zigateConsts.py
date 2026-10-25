@@ -1844,13 +1844,13 @@ CFG_RPT_ATTRIBUTESbyCLUSTERS = {
                 "Change": "0001",
             },
             "0020": {
-                "DataType": "29",
+                "DataType": "20",
                 "MinInterval": "0E10",
                 "MaxInterval": "0E10",
                 "TimeOut": "0000",
-                "Change": "0001",
+                "Change": "01",
             },
-            "0021": {"DataType": "21", "MinInterval": "0E10", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "01"},
+            "0021": {"DataType": "20", "MinInterval": "0E10", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "01"},
         }
     },
     # On/Off Cluster
