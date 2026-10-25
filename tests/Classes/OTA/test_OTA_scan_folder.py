@@ -68,13 +68,13 @@ def test_same_image_type_from_two_manufacturers(ota, install_image):
     assert "hue.ota" in ota.ListOfImages["Brands"]["Philips"]
 
 
-@pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: one truncated file aborts the whole scan (and OTAManagement.__init__)")
 def test_a_truncated_file_does_not_stop_the_scan(ota, install_image):
     install_image("Ikea", "good.ota", make_ota_image())
 
     install_image("Ikea", "truncated.ota", b"\x00" * 80 + make_ota_image()[:20])
 
     assert "good.ota" in ota.ListOfImages["Brands"]["Ikea"]
+    assert "truncated.ota" not in ota.ListOfImages["Brands"]["Ikea"]
 
 
 def test_retrieve_image(ota_module, ota, install_image):
