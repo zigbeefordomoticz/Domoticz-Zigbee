@@ -45,7 +45,7 @@ DEFAULT_DEVICE_SETUP = {
     "Stack Version": "",
     "Stamp": {},
     "ZCL Version": "",
-    "Health": "",
+    "Health": "unknown",
 }
 
 

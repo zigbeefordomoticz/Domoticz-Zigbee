@@ -903,7 +903,9 @@ def CheckDeviceList(self, key, val):
                 self.log.logging("Database", "Status", "Z4D adjusts Model from %s to %s" % (
                     OldModel, self.ListOfDevices[key][attribute]))
 
-    self.ListOfDevices[key]["Health"] = ""
+    # A plugin start is no evidence of liveness: whatever was stored is stale until
+    # the device is heard from, or until checkHealth() rules on the persisted LastSeen.
+    self.ListOfDevices[key]["Health"] = "unknown"
 
     if "IEEE" in device_list_dict:
         self.ListOfDevices[key]["IEEE"] = device_list_dict["IEEE"]

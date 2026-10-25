@@ -30,7 +30,8 @@ from Modules.domoticzAbstractLayer import (find_widget_unit_from_WidgetID,
                                            is_device_ieee_in_domoticz_db)
 from Modules.domoTools import (reset_device_ieee_unit_if_needed,
                                retrieve_widget_type_list, timedOutDevice)
-from Modules.health_settings import (device_health_timeout,
+from Modules.health_settings import (HEALTH_UNDETERMINED,
+                                     device_health_timeout,
                                      is_health_timed_out)
 from Modules.linky import collect_ticmeter_linky
 from Modules.pairingProcess import (binding_needed_clusters_with_coordinator,
@@ -427,7 +428,7 @@ def checkHealth(self, NwkId):
 
     # Checking current state of the this Nwk
     if "Health" not in self.ListOfDevices[NwkId]:
-        self.ListOfDevices[NwkId]["Health"] = ""
+        self.ListOfDevices[NwkId]["Health"] = "unknown"
         
     if self.ListOfDevices[NwkId]["Health"] == "Disabled":
         return False
@@ -625,7 +626,7 @@ def hr_process_device(self, Devices, NwkId):
 
     # Check if this is a Main powered device or Not. Source of information are: MacCapa and PowerSource
     _mainPowered = mainPoweredDevice(self, NwkId)
-    _checkHealth = self.ListOfDevices[NwkId]["Health"] == ""
+    _checkHealth = self.ListOfDevices[NwkId]["Health"] in HEALTH_UNDETERMINED
     health = checkHealth(self, NwkId)
 
     # Pinging devices to check they are still Alive
@@ -921,7 +922,7 @@ def processListOfDevices(self, Devices):
             
             if not param["Disabled"] and health == "Disabled":
                 # Device was previously disabled and is now re-enabled; refresh it
-                device["Health"] = ""
+                device["Health"] = "unknown"
                 device.pop("Stamp", None)
                 device["RIA"] = "0"
 
