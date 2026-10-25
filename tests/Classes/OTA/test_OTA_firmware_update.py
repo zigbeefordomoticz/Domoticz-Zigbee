@@ -119,7 +119,6 @@ def test_restapi_empty_request(ota, radio, ikea_image):
     radio.zcl_raw_ota_image_notify.assert_not_called()
 
 
-@pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: a refused forced update still leaves the device authorized for downgrade")
 def test_refused_forced_update_does_not_authorize_a_downgrade(ota, radio, ikea_image):
     ota.ListInUpdate["NwkId"] = "abcd"
 
