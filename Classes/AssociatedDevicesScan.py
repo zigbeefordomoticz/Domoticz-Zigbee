@@ -60,6 +60,12 @@ STATUS_WAITING = "WaitingResponse"
 STATUS_RECEIVED = "Received"
 STATUS_TIMEDOUT = "TimedOut"
 
+# How the outcome is recorded in the report, in the /topology-scan vocabulary
+# (Modules/topologyScan.py: SCAN_OK / SCAN_TIMEOUT) rather than in the internal
+# spelling above, so the report needs no translation on the way out.
+SCAN_STATUS_OK = "ok"
+SCAN_STATUS_TIMEOUT = "timeout"
+
 
 class AssociatedDevicesScan:
 
@@ -101,10 +107,11 @@ class AssociatedDevicesScan:
         # testable in the ordinary pytest session.
         self.send_request = send_request
 
-        # Called with the collected {nwkid: [children]} when the collection
-        # completes, or with None when it is abandoned. Injected rather than
-        # imported so this class never reaches ZigpyTopology, and so stays
-        # importable -- and testable -- without zigpy installed.
+        # Called with the collected {nwkid: [children]} and the per-node outcome
+        # when the collection completes, or with (None, None) when it is
+        # abandoned. Injected rather than imported so this class never reaches
+        # ZigpyTopology, and so stays importable -- and testable -- without
+        # zigpy installed.
         self.on_completed = on_completed
 
         self.phase = PHASE_IDLE
@@ -201,7 +208,20 @@ class AssociatedDevicesScan:
             "Associated Devices collected: %s of %s node(s) answered, %s child(ren) reported in %s s"
             % (answered, len(self.nodes), children, int(time.time() - (self.started_at or time.time()))),
         )
-        self._report(dict(self.collected))
+        self._report(dict(self.collected), self.outcome())
+
+    def outcome(self):
+        """Which nodes were asked and which answered.
+
+        The collected table cannot say: it is flat, so a node that was asked and
+        timed out and a router that answered "no children" are both an empty
+        list. A standalone collection is the whole scan, so its coverage has to
+        be recorded somewhere.
+        """
+        return {
+            nwkid: SCAN_STATUS_OK if status == STATUS_RECEIVED else SCAN_STATUS_TIMEOUT
+            for nwkid, status in self.nodes.items()
+        }
 
     def abort(self, reason):
         """Give up, and let the scan be filed without this table.
@@ -213,15 +233,15 @@ class AssociatedDevicesScan:
         if self.phase == PHASE_IDLE:
             return
         self.logging("Log", "Associated Devices collection abandoned (%s)" % reason)
-        self._report(None)
+        self._report(None, None)
 
-    def _report(self, associated_devices):
+    def _report(self, associated_devices, outcome):
         self.phase = PHASE_IDLE
         self.current = None
         self.nodes = {}
         self.collected = {}
         if self.on_completed:
-            self.on_completed(associated_devices)
+            self.on_completed(associated_devices, outcome)
 
     # ------------------------------------------------------------------
     # Response, handed over by Decode8040()

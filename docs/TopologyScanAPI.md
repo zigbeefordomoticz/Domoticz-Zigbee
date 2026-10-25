@@ -25,6 +25,7 @@ Base path, as for every other endpoint: `/rest-z4d/1/`.
 | DELETE | `/topology-scan` | removes every stored scan |
 | DELETE | `/topology-scan/<timestamp>` | removes one stored scan |
 | GET | `/zigpy-topology-raw` | [the zigpy report file, untouched](#7-get-zigpy-topology-raw) |
+| GET | `/topology-scan-associated-devices` | [starts an Associated Devices collection on its own](#13-get-topology-scan-associated-devices) |
 
 **Build the graph from `GET /topology-scan/<timestamp>`.** It answers nodes,
 neighbours and routes in one response. Three separate calls means three round
@@ -40,6 +41,10 @@ thing is filed as one scan under one timestamp, and `/plugin-health` reports
 `"Topology": "In Progress"` for both halves, so a scan is not finished when
 zigpy's half is. The second half adds a few minutes; nothing is readable through
 these endpoints until it ends.
+
+That second half can also be run on its own, without a full scan:
+`GET /topology-scan-associated-devices` (§13). It is much cheaper, and a mesh's
+parent/child relationships change far more often than its backbone.
 
 ---
 
@@ -88,7 +93,7 @@ was the enumeration that was never trustworthy, not the scan.
 
 | `source` | `tables` |
 |---|---|
-| `zigpy` | `["neighbours", "routes"]` or `["neighbours", "routes", "associated_devices"]` |
+| `zigpy` | `["neighbours", "routes"]`, `["neighbours", "routes", "associated_devices"]` or `["associated_devices"]` |
 | `topologyv2` | `["neighbours", "routes", "associated_devices"]` |
 | `legacy` | `["neighbours"]` |
 
@@ -106,8 +111,9 @@ only neighbours and routes, and the associated device list is collected by the
 plugin afterwards, under the `ZigpyTopologyAssociatedDevices` setting (see
 §6.1.2). A scan stored before that collection existed, one run with the setting
 off, and one whose collection was cut short by a radio restart all come back
-without the table. The other two backends fill all of their tables on every
-scan.
+without the table — and a collection started on its own (§13) comes back with
+**only** that table, and so with no `neighbours` and no `routes` at all. The
+other two backends fill all of their tables on every scan.
 
 ### 2.4 `null` means "no value", not zero
 
@@ -309,11 +315,12 @@ Reading it:
 - **The nwkids are not resolved for you.** Join them against `nodes` to get an
   ieee, a name and a type; a child that is not in `nodes` is a device the plugin
   does not know.
-- **A node absent from the table is not distinguishable from one that answered
-  nothing.** The table is flat — `{nwkid: [children]}` — so a coordinator or
-  router that was asked but timed out reads as `[]`, exactly like one with no
-  children. `scan_status` answers that question for the *neighbour* request
-  only. Known limitation; do not present `[]` as proof a router has no children.
+- **On a full scan, `[]` does not prove a router has no children.** The table is
+  flat — `{nwkid: [children]}` — so a coordinator or router that was asked but
+  timed out reads as `[]`, exactly like one with no children, and `scan_status`
+  answers that question for the *neighbour* request only. On a scan where the
+  collection **is** the scan (§13) there is no such ambiguity: `scan_status`
+  then reports the collection's own outcome.
 - **On a zigpy scan the rows lag the neighbour rows.** The scan's `timestamp` is
   the moment zigpy's neighbour and route tables were read; the associated device
   lists are collected over the following minutes. A device that joined in between
@@ -527,3 +534,66 @@ four-node mesh with an asymmetric link, a node that timed out, a sleepy end
 device with no links, and a two-hop route. It exercises every branch above
 without hardware, which is what to develop the UI against before testing on a
 real mesh.
+
+---
+
+## 13. GET `/topology-scan-associated-devices`
+
+Starts an Associated Devices collection **on its own**, without a full topology
+scan. Same collection that runs as the second half of a zigpy scan (§6.1.2),
+started by itself.
+
+It is much cheaper than a full scan — one ZDP request per router, instead of two
+paginated tables with zigpy's 1.0–1.5 s sleep between pages — and a mesh's
+parent/child relationships change far more often than its backbone. Refreshing
+the tree alone is the cheap way to see where a battery device has reparented.
+
+**Answers immediately.** The collection itself takes minutes. Poll
+`/plugin-health` for `"Topology": "In Progress"`, and when it clears, `GET
+/topology-scan` for the new scan.
+
+```json
+{ "Name": "Req-Topology-AssociatedDevices", "TimeStamp": 1791964683 }
+```
+
+The result is filed as a scan of its own, carrying one table:
+
+```json
+{
+  "timestamp": 1791964683,
+  "source": "zigpy",
+  "tables": ["associated_devices"],
+  "scan": { "requested": 29, "answered": 26, "timeout": 3, "not_scanned": 0 },
+  "nodes": [ … ],
+  "neighbours": [],
+  "routes": []
+}
+```
+
+Two things follow from that, and they are the reason `tables` must be read per
+scan (§2.3):
+
+- **`neighbours` and `routes` are empty, and that is not a failure.** Those
+  tables were never asked for; they are absent from `tables` precisely so the UI
+  greys out a link view rather than drawing an empty mesh.
+- **`scan` and `scan_status` describe the collection**, not a neighbour scan.
+  This is the one scan shape where a node's `associated_devices` of `[]` is
+  unambiguous: `scan_status` of `ok` means it was asked and parents nobody,
+  `timeout` means it never answered.
+
+`ZigpyTopologyAssociatedDevices` is **not** required. That setting decides
+whether a full topology scan also collects the table; asking for the table here
+is the request itself.
+
+| Status | When |
+|---|---|
+| `200 OK` | the collection started |
+| `400 BAD REQUEST` | not a zigpy coordinator — a TopologyV2 scan collects this table with every scan |
+| `400 BAD REQUEST` | `ZigpyTopologyReport` is disabled — the collection is ticked from the zigpy topology lifecycle, which does not run then |
+| `400 BAD REQUEST` | a topology scan is already in progress, of any kind |
+| `400 BAD REQUEST` | no coordinator or router to ask |
+| `503 SERVICE UNAVAILABLE` | the plugin is still starting up |
+
+Refusing while any scan is in progress is deliberate, not a lock-avoidance
+shortcut: two scanners interrogating the same routers at once is exactly what
+zigpy's inter-request pacing exists to prevent.

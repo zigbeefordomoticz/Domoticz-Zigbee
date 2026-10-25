@@ -53,14 +53,17 @@ class ControllerLink:
         return self.load
 
 
-# Every NWK_addr_req the collector issues, as (nwkid, ieee, type, index). One
-# list per test, shared by the `sent` fixture and make_scan().
+# Every NWK_addr_req the collector issues, as (nwkid, ieee, type, index), and
+# every per-node outcome reported. One list per test, reset by the `sent`
+# fixture and shared with make_scan().
 SENT = []
+OUTCOMES = []
 
 
 @pytest.fixture
 def sent():
     del SENT[:]
+    del OUTCOMES[:]
     return SENT
 
 
@@ -69,8 +72,16 @@ def record_request(self, nwkid, ieee, u8RequestType="00", u8StartIndex="00"):
 
 
 def make_scan(list_of_devices=None, load=0):
-    """A collector plus the list of what it reported, as [table_or_None]."""
+    """A collector plus the list of tables it reported, as [table_or_None].
+
+    The per-node outcome reported alongside each table lands in OUTCOMES, so the
+    tests that do not care about it keep reading `reported` as a flat list.
+    """
     reported = []
+
+    def completed(associated_devices, outcome):
+        reported.append(associated_devices)
+        OUTCOMES.append(outcome)
     if list_of_devices is None:
         list_of_devices = {
             "0000": {"IEEE": "00124b0022aabbcc", "LogicalType": "Coordinator"},
@@ -79,7 +90,7 @@ def make_scan(list_of_devices=None, load=0):
         }
     scan = AssociatedDevicesScan(
         "zigpy", PluginConf(), ControllerLink(load), list_of_devices, {}, Log(), record_request,
-        on_completed=reported.append,
+        on_completed=completed,
     )
     return scan, reported
 
@@ -315,6 +326,51 @@ def test_in_progress_tracks_the_phase(sent):
     assert scan.in_progress() is True
     scan.abort("done")
     assert scan.in_progress() is False
+
+
+# ---------------------------------------------------------------------------
+# The per-node outcome
+# ---------------------------------------------------------------------------
+def test_the_outcome_says_which_nodes_answered(sent):
+    """The table is flat, so it cannot tell a node that timed out from a router
+    that answered "no children". A standalone collection is a whole scan, so
+    that distinction has to be recorded somewhere."""
+    scan, reported = make_scan()
+    scan.start_scan()
+
+    scan.continue_scan()
+    answer(scan, "0000", "1a2b")          # answers
+    scan.continue_scan()
+    answer(scan, "1111", "")              # answers, no children
+    for _ in range(NODE_TICK_BUDGET + 1):  # 2222 stays silent
+        scan.continue_scan()
+
+    assert reported == [{"0000": ["1a2b"], "1111": []}]
+    assert OUTCOMES == [{"0000": "ok", "1111": "ok", "2222": "timeout"}]
+
+
+def test_the_outcome_vocabulary_is_the_api_one(sent):
+    """"ok" / "timeout" as /topology-scan spells them, so the report needs no
+    translation on the way out."""
+    scan, _ = make_scan()
+    scan.start_scan()
+    scan.continue_scan()
+    answer(scan, "0000", "1a2b")
+    for _ in range(2 * (NODE_TICK_BUDGET + 1)):
+        scan.continue_scan()
+
+    assert set(OUTCOMES[0].values()) <= {"ok", "timeout"}
+
+
+def test_an_abandoned_collection_reports_no_outcome_either(sent):
+    scan, reported = make_scan()
+    scan.start_scan()
+    scan.continue_scan()
+    answer(scan, "0000", "1a2b")
+    scan.abort("radio is restarting")
+
+    assert reported == [None]
+    assert OUTCOMES == [None]
 
 
 # ---------------------------------------------------------------------------

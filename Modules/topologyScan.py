@@ -86,11 +86,12 @@ TABLE_ASSOCIATED_DEVICES = "associated_devices"
 # backend cannot collect it at all. That distinction is the point of `tables`.
 #
 # The zigpy entry is what the backend can collect at most, not what every scan
-# of it carries: zigpy itself only collects neighbours and routes, and the
-# Associated Devices table is collected by the plugin afterwards, optionally.
-# build_zigpy_scan() therefore reports the tables of the scan in hand -- a scan
-# stored before that collection existed, or run with it switched off, does not
-# claim the table. Every other backend fills all of its tables on every scan.
+# of it carries: zigpy itself only collects neighbours and routes, the
+# Associated Devices table is collected by the plugin afterwards, and that
+# collection can also be run on its own, which produces a scan with the third
+# table and neither of the first two. build_zigpy_scan() therefore reports the
+# tables of the scan in hand, read off the sections the report entry actually
+# holds. Every other backend fills all of its tables on every scan.
 TABLES_PER_SOURCE = {
     SOURCE_LEGACY: (TABLE_NEIGHBOURS,),
     SOURCE_TOPOLOGY_V2: (TABLE_NEIGHBOURS, TABLE_ROUTES, TABLE_ASSOCIATED_DEVICES),
@@ -196,6 +197,47 @@ def topology_scan_in_progress(self):
     """Timestamp of the scan being collected right now, None if none is."""
     coordinator = self.ListOfDevices.get(COORDINATOR_NWKID) or {}
     return coordinator.get("TopologyStartTime") if isinstance(coordinator, Mapping) else None
+
+
+def a_topology_scan_is_running(self):
+    """True while a topology scan is running, whichever backend is running it.
+
+    Not topology_scan_in_progress() above, which answers with the *timestamp* of
+    a TopologyV2 scan and is what the DELETE guard compares against. This one is
+    the yes/no behind /plugin-health's "Topology": "In Progress", and it lives
+    here rather than in WebServer.py so the REST layer can ask it without
+    importing WebServer back -- that would be a cycle, and it would drag the
+    whole Modules.* chain into tests that import nothing but this module.
+
+    The NetworkMap phase only ever moves on a native scan. On a zigpy setup
+    rest_req_topologie() sends ZIGPY-TOPOLOGY-SCAN and never calls
+    networkmap.start_scan(), so the phase stays at 0 and /plugin-health had
+    nothing to report for the backend most installs now run.
+
+    A zigpy scan's own state lives on the controller application, which is
+    absent until the transport is up and on a native setup altogether, hence
+    the separate guards rather than one.
+
+    The Associated Devices collection needs a guard of its own, and it has to
+    come before the controller is asked: it runs *after* zigpy's half of the
+    scan, so by then is_zigpy_topology_in_progress() is already False while the
+    scan as a whole is not finished and nothing has been filed yet. Asking
+    zigpy alone reported the scan as done for the last minutes of every scan.
+    """
+    if self.networkmap and self.networkmap.NetworkMapPhase():
+        return True
+
+    if self.associated_devices_scan and self.associated_devices_scan.in_progress():
+        return True
+
+    if self.zigbee_communication != "zigpy" or not self.zigpy_topology:
+        return False
+
+    controller_link = getattr(self.zigpy_topology, "ControllerLink", None)
+    if controller_link is None or getattr(controller_link, "app", None) is None:
+        return False
+
+    return bool(self.zigpy_topology.is_zigpy_topology_in_progress())
 
 
 def list_topology_scans(self):
@@ -325,13 +367,20 @@ def read_zigpy_reports(self):
 
 
 def build_zigpy_scan(self, timestamp, report):
+    """One scan of the zigpy backend, from one entry of the report file.
+
+    Which sections the entry holds is what the scan collected, and `tables` is
+    read off them -- `in report` rather than a truth test, because a table that
+    was asked for and came back empty is a finding, while a table that was never
+    asked for is not a table at all. Three shapes occur:
+
+      Neighbors + Routes                            zigpy's own scan
+      Neighbors + Routes + AssociatedDevices        it, plus the plugin's half
+      AssociatedDevices                             a standalone collection
+    """
     neighbours_table = report.get("Neighbors") or {}
     routes_table = report.get("Routes") or {}
 
-    # Collected by the plugin after zigpy's own scan, so it is present only in a
-    # scan that ran it to completion. `in report` rather than a truth test: a
-    # collection that found no child at all still asked, and saying so is the
-    # whole point of listing a table.
     collects_associated_devices = "AssociatedDevices" in report
     associated_devices = {
         reporter: sorted({device for device in devices or [] if isinstance(device, str)})
@@ -392,9 +441,20 @@ def build_zigpy_scan(self, timestamp, report):
                 "route_record_required": bool(route.get("route_record_required")),
             })
 
-    tables = (TABLE_NEIGHBOURS, TABLE_ROUTES)
+    tables = ()
+    if "Neighbors" in report:
+        tables += (TABLE_NEIGHBOURS,)
+    if "Routes" in report:
+        tables += (TABLE_ROUTES,)
     if collects_associated_devices:
         tables += (TABLE_ASSOCIATED_DEVICES,)
+
+    if TABLE_NEIGHBOURS not in tables:
+        # A standalone Associated Devices collection. Nothing asked for a
+        # neighbour table, so the coverage this scan reports has to be the
+        # coverage of the collection instead -- otherwise every router reads
+        # not_scanned and the scan looks like a total failure.
+        scan_status = associated_devices_scan_status(report)
 
     return build_scan(
         self, timestamp, SOURCE_ZIGPY, neighbours, routes, associated_devices, scan_status, hints, tables
@@ -421,6 +481,24 @@ def zigpy_reporter_scan_status(neighbors_reported, relationships):
     if neighbors_reported is None:
         return SCAN_OK
     return SCAN_TIMEOUT if neighbors_reported == 0 else SCAN_OK
+
+
+def associated_devices_scan_status(report):
+    """Per-node outcome of an Associated Devices collection, from its own section.
+
+    The collection records which nodes it asked and which answered, because the
+    `AssociatedDevices` table itself cannot say: it is flat, so a node asked
+    that timed out and a router that answered "no children" are both an empty
+    list.
+    """
+    outcome = report.get("AssociatedDevicesScan") or {}
+    if not isinstance(outcome, Mapping):
+        return {}
+    return {
+        nwkid: SCAN_OK if status == SCAN_OK else SCAN_TIMEOUT
+        for nwkid, status in outcome.items()
+        if isinstance(nwkid, str)
+    }
 
 
 def delete_zigpy_scan(self, timestamp):
