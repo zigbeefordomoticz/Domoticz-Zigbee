@@ -987,7 +987,7 @@ class BasePlugin:
             zigateInit_Phase3(self)
             return
 
-        if self.pluginconf.pluginConf["MatomoOptIn"] and self.HeartbeatCount % ( MATOMO_PUBLISHING_PERIOD // HEARTBEAT) == 0:
+        if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"] and self.HeartbeatCount % ( MATOMO_PUBLISHING_PERIOD // HEARTBEAT) == 0:
             matomo_plugin_analytics_infos(self)
 
         if self.transport == "None":
