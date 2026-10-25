@@ -145,3 +145,17 @@ def test_load_json_from_url_retries_on_503(ota_module, ota, monkeypatch):
     assert ota_module._load_json_from_url(ota, "https://example.invalid", retries=3) == []
     assert urlopen.call_count == 3
     assert sleep.call_count == 2
+
+
+@pytest.mark.parametrize("retry_after, expected_delay", [("12", 12.0), ("120", 30.0), ("Wed, 21 Oct 2026 07:28:00 GMT", 1.0)])
+def test_load_json_from_url_honours_retry_after(ota_module, ota, monkeypatch, retry_after, expected_delay):
+    """A numeric Retry-After is used (capped at 30 s); an HTTP-date keeps the 1 s backoff."""
+    error = urllib.error.HTTPError("https://example.invalid", 429, "Too Many Requests", {"Retry-After": retry_after}, None)
+    urlopen = MagicMock(side_effect=[error, io.BytesIO(b"[]")])
+    sleep = MagicMock()
+    monkeypatch.setattr(ota_module.urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr(ota_module.time, "sleep", sleep)
+    monkeypatch.setattr(ota_module.random, "uniform", lambda a, b: 0.0)
+
+    assert ota_module._load_json_from_url(ota, "https://example.invalid") == []
+    sleep.assert_called_once_with(expected_delay)
