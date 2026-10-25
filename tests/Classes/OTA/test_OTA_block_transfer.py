@@ -112,19 +112,36 @@ def test_badly_sized_frame_is_ignored(ota, radio, notified):
     radio.zcl_raw_ota_image_block_response_success.assert_not_called()
 
 
-@pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: an offset past the image gets an Image Block Response with status 0x80 (ZCL8 11.13.6.5.1: Default Response)")
 def test_offset_past_the_image_is_not_answered_with_a_malformed_block(ota, radio, notified):
     ota.ota_image_block_request(block_request(offset=300))
 
     assert all(block["status"] in ("00", "95", "97") for block in _blocks(radio))
 
 
-def test_second_offset_past_the_image_aborts(ota, radio, notified):
-    """Pins today's behaviour: two short-of-data requests in a row produce ABORT (0x95)."""
-    ota.ota_image_block_request(block_request(offset=300))
+def test_offset_past_the_image_gets_a_malformed_default_response(ota, radio, notified):
+    """ZCL8 11.13.6.5.1: Default Response MALFORMED_COMMAND to the Image Block Request (0x03)."""
+    ota.ota_image_block_request(block_request(offset=300, sqn=0x10))
+
+    radio.zcl_raw_default_response.assert_called_once_with(ota, DEVICE_NWKID, "01", DEVICE_EP, "0019", "03", "10", command_status="80")
+    radio.zcl_raw_ota_image_block_response_abort.assert_not_called()
+
+
+def test_second_offset_past_the_image_aborts_with_a_status_only_response(ota, radio, notified):
+    """Two invalid requests in a row: Image Block Response ABORT, status only (ZCL8 11.13.8.2.1)."""
+    ota.ota_image_block_request(block_request(offset=300, sqn=0x10))
     ota.ota_image_block_request(block_request(offset=300, sqn=0x11))
 
-    assert [block["status"] for block in _blocks(radio)] == ["80", "95"]
+    radio.zcl_raw_ota_image_block_response_abort.assert_called_once_with(ota, DEVICE_NWKID, "01", DEVICE_EP, "95", sqn="11")
+    radio.zcl_raw_ota_image_block_response_success.assert_not_called()
+
+
+def test_a_valid_block_resets_the_invalid_offset_count(ota, radio, notified):
+    ota.ota_image_block_request(block_request(offset=300, sqn=0x10))
+    ota.ota_image_block_request(block_request(offset=0, sqn=0x11))
+    ota.ota_image_block_request(block_request(offset=300, sqn=0x12))
+
+    assert radio.zcl_raw_default_response.call_count == 2
+    radio.zcl_raw_ota_image_block_response_abort.assert_not_called()
 
 
 # ─── requests from a device that was not picked ───────────────────────────────
@@ -187,6 +204,8 @@ def test_last_page_does_not_abort_the_upgrade(ota, radio, notified):
     blocks = _blocks(radio)
     assert all(block["status"] == "00" for block in blocks)
     assert b"".join(block["data"] for block in blocks) == notified["OtaImage"][192:]
+    radio.zcl_raw_ota_image_block_response_abort.assert_not_called()
+    radio.zcl_raw_default_response.assert_not_called()
 
 
 def test_page_blocks_are_contiguous_when_the_vendor_caps_the_block_size(ota, radio, notified):
