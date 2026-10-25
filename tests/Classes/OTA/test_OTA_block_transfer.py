@@ -226,6 +226,19 @@ def test_page_request_past_the_image_sends_nothing(ota, radio, notified):
     radio.zcl_raw_ota_image_block_response_success.assert_not_called()
 
 
+def test_blocks_come_from_the_requesting_manufacturer_image(ota, radio, install_image):
+    """Two manufacturers use image type 0x2203: the Philips device gets the Philips file."""
+    install_image("Ikea", "ikea.ota", make_ota_image(manuf_code=0x117C, image_type=0x2203, payload=b"\x11" * 200))
+    hue = install_image("Philips", "hue.ota", make_ota_image(manuf_code=0x100B, image_type=0x2203, payload=b"\x22" * 200))
+    ota.ListInUpdate["AuthorizedForUpdate"].append(DEVICE_NWKID)
+
+    ota.ota_image_block_request(block_request(manuf_code=0x100B, offset=0x40, max_size=0x30))
+
+    [block] = _blocks(radio)
+    assert block["manuf"] == "100b"
+    assert block["data"] == hue["OtaImage"][0x40:0x70]
+
+
 # ─── build_ota_data_block ─────────────────────────────────────────────────────
 
 def test_build_ota_data_block(ota_module, ota):
