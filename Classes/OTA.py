@@ -1443,7 +1443,10 @@ def unpack_headers(self, ota_image: bytes):
     ---------------------------------------------------------------------------
     Optional Fields (based on Field Control bits)
     ---------------------------------------------------------------------------
-    Bit 0 (0x01): Hardware version fields included:
+    They follow the mandatory section in this order (ZCL rev 8, table 11-3):
+    Bit 0 (0x01): Security Credential Version (uint8)
+    Bit 1 (0x02): Upgrade File Destination (IEEE address, uint64)
+    Bit 2 (0x04): Hardware Versions:
       - Minimum Hardware Version (uint16)
       - Maximum Hardware Version (uint16)
 
@@ -1494,6 +1497,7 @@ def unpack_headers(self, ota_image: bytes):
         min_hw_version: Optional[int]
         max_hw_version: Optional[int]
         sec_cred_version: Optional[int]
+        upgrade_file_destination: Optional[int]
         vendor_data: bytes  # raw vendor metadata block
         payload_offset: int # absolute offset of firmware payload inside file
 
@@ -1535,24 +1539,26 @@ def unpack_headers(self, ota_image: bytes):
     ) = struct.unpack(fmt_base, base_slice)
 
 
-    # --- 3. Optional hardware version fields ---
-    # After unpacking base header
+    # --- 3. Optional fields, in the order of ZCL rev 8 table 11-3 ---
     extra_offset = offset + BASE_HEADER_SIZE
 
-    # Bit 0 → Hardware Version
-    min_hw_version, max_hw_version = None, None
-    if field_ctrl & 0x01:
-        fmt_hw = "<H H"
-        hw_size = struct.calcsize(fmt_hw)
-        hw_slice = ota_image[extra_offset : extra_offset + hw_size]
-        min_hw_version, max_hw_version = struct.unpack(fmt_hw, hw_slice)
-        extra_offset += hw_size
-
-    # Bit 2 → Security Credential Version
+    # Bit 0 → Security Credential Version
     sec_cred_version = None
-    if field_ctrl & 0x04:
+    if field_ctrl & 0x01:
         sec_cred_version = ota_image[extra_offset]
         extra_offset += 1
+
+    # Bit 1 → Upgrade File Destination (device specific file)
+    upgrade_file_destination = None
+    if field_ctrl & 0x02:
+        upgrade_file_destination = struct.unpack_from("<Q", ota_image, extra_offset)[0]
+        extra_offset += 8
+
+    # Bit 2 → Minimum / Maximum Hardware Version
+    min_hw_version, max_hw_version = None, None
+    if field_ctrl & 0x04:
+        min_hw_version, max_hw_version = struct.unpack_from("<HH", ota_image, extra_offset)
+        extra_offset += 4
 
     # Vendor-specific data
     vendor_data = ota_image[extra_offset : offset + header_length]
@@ -1574,6 +1580,7 @@ def unpack_headers(self, ota_image: bytes):
         "min_hw_version": min_hw_version,
         "max_hw_version": max_hw_version,
         "security_cred_version": sec_cred_version,
+        "upgrade_file_destination": upgrade_file_destination,
         "vendor_data": vendor_data,
         "payload_offset": offset + header_length,
     }
