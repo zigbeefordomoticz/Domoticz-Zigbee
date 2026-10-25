@@ -62,6 +62,7 @@ Methods:
     query_next_image_request: Handle the OTA query next image request.
 """
 
+import contextlib
 import json
 import math
 import os
@@ -2093,14 +2094,12 @@ def _load_json_from_url(self, url, retries=3, timeout=5):
                 return json.load(response)
 
         except urllib.error.HTTPError as e:
-            if e.code in (429, 500, 502, 503, 504):
-                # transient server-side — worth retrying
-                last_reason = f"HTTP {e.code}: {e.reason}"
-                retry_after = e.headers.get("Retry-After")
-            else:
+            last_reason = f"HTTP {e.code}: {e.reason}"
+            if e.code not in (429, 500, 502, 503, 504):
                 # 400/403/404/... won't fix themselves — fail fast
-                last_reason = f"HTTP {e.code}: {e.reason}"
                 break
+            # transient server-side — worth retrying
+            retry_after = e.headers.get("Retry-After")
 
         except urllib.error.URLError as e:
             # covers DNS failures, connection refused, and URLError-wrapped timeouts
@@ -2120,10 +2119,9 @@ def _load_json_from_url(self, url, retries=3, timeout=5):
         if attempt < retries - 1:
             delay = backoff
             if retry_after:
-                try:
+                # Retry-After may be an HTTP-date: then keep the backoff
+                with contextlib.suppress(ValueError):
                     delay = min(float(retry_after), 30.0)
-                except ValueError:
-                    pass  # Retry-After was an HTTP-date; fall back to backoff
             time.sleep(delay + random.uniform(0, 0.5))  # nosec B311 - jitter only, not security-sensitive
             backoff *= 2
 
