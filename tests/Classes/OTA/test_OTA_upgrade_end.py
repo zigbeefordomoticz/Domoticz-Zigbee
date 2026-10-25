@@ -65,7 +65,6 @@ def test_success_closes_the_session(ota, radio, transferring):
     radio.sendZigateCmd.assert_not_called()
 
 
-@pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: OTAUpdate is keyed by int image type, popped with a hex string, so 'firmware available' is never cleared")
 def test_success_clears_the_firmware_available_flag(ota_module, ota, radio, transferring):
     ota_module.notify_ota_firmware_available(
         ota, DEVICE_NWKID, 0x117C, 0x2203, 0x01000000, {"fileVersion": IMAGE_VERSION, "imageType": 0x2203, "url": "https://example.invalid"}
@@ -75,6 +74,15 @@ def test_success_clears_the_firmware_available_flag(ota_module, ota, radio, tran
     ota.ota_upgrade_end_request(upgrade_end(status="00"))
 
     assert ota.ListOfDevices[DEVICE_NWKID]["OTAUpdate"] == {}
+
+
+def test_success_clears_the_firmware_available_flag_after_a_reload(ota, radio, transferring):
+    """Once the device list went through JSON, the int key is a decimal string."""
+    ota.ListOfDevices[DEVICE_NWKID]["OTAUpdate"] = {str(0x2203): {"currentversion": "1", "newestversion": "2", "url": "u"}, "4204": {"url": "v"}}
+
+    ota.ota_upgrade_end_request(upgrade_end(status="00"))
+
+    assert ota.ListOfDevices[DEVICE_NWKID]["OTAUpdate"] == {"4204": {"url": "v"}}
 
 
 # ─── other statuses ───────────────────────────────────────────────────────────
