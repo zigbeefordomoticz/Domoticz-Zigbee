@@ -163,7 +163,6 @@ def test_authorized_device_without_a_session_starts_one(ota, radio, ikea_image):
     assert ota.ListInUpdate["NwkId"] == DEVICE_NWKID
 
 
-@pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: a second device asking for the same image type is served during another device's transfer")
 def test_other_device_is_not_served_during_a_transfer(ota, radio, notified):
     ota.ListOfDevices[OTHER_NWKID] = {"IEEE": "00158d0000000002", "Ep": {"01": {"0019": {}}}}
     ota.ota_image_block_request(block_request(offset=0x30))
@@ -172,6 +171,10 @@ def test_other_device_is_not_served_during_a_transfer(ota, radio, notified):
 
     assert [block["nwkid"] for block in _blocks(radio)] == [DEVICE_NWKID]
     assert ota.ListInUpdate["intFileOffset"] == 0x30
+    error = next(call for call in ota.log.logging.call_args_list if call.args[1] == "Error")
+    assert error.args[3] == OTHER_NWKID
+    assert error.args[4]["Error code"] == "OTA0202"
+    assert error.args[4]["InProgressNwkId"] == DEVICE_NWKID
 
 
 # ─── Image Page Request ───────────────────────────────────────────────────────

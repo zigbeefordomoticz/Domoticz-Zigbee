@@ -1689,9 +1689,13 @@ def prepare_and_send_block(
         logging(self, "Error", f"prepare_and_send_block {MsgSrcAddr}/{MsgEP} - 0x{intMsgImageType:04X} image not found", MsgSrcAddr)
         return
 
+    # Only the device being upgraded is served: blocks for another one would overwrite
+    # the progress of the transfer in ListInUpdate, whatever the image type.
     nwk_id = self.ListInUpdate.get("NwkId")
-    if nwk_id and intMsgImageType != self.ListInUpdate.get("intImageType") and MsgSrcAddr != nwk_id:
-        logging(self, "Error", f"prepare_and_send_block {MsgSrcAddr}/{MsgEP} - request update while another is in progress {nwk_id}")
+    if nwk_id and MsgSrcAddr != nwk_id:
+        _context = {"Error code": "OTA0202", "InProgressNwkId": nwk_id, "ImageType": f"0x{intMsgImageType:04X}", "ManufCode": f"0x{intMsgManufCode:04X}",
+                    "FileVersion": f"0x{intMsgImageVersion:08X}", "Offset": int(MsgFileOffset, 16)}
+        logging(self, "Error", f"prepare_and_send_block {MsgSrcAddr}/{MsgEP} - request update while another is in progress {nwk_id}", MsgSrcAddr, _context)
         return
 
     logging(
