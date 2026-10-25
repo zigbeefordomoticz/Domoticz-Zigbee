@@ -141,6 +141,8 @@ def test_update_request_with_a_missing_key_is_rejected(rest_ota, webserver):
 
     webserver.OTA.restapi_firmware_update.assert_not_called()
     assert json.loads(response["Data"]) == {"Error": "Missing attributes"}
+    module, level, _, nwkid, context = webserver.log.logging.call_args.args
+    assert (module, level, nwkid, context["Error code"]) == ("WebServer", "Error", "1234", "OTA0401")
 
 
 def test_update_request_reports_success_whatever_the_ota_manager_did(rest_ota, webserver):

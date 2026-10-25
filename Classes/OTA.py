@@ -98,6 +98,30 @@ OTA_NOTIFY_TIMEOUT = 600
 
 OTA_CLUSTER_ID = "0019"
 
+# Error codes put in the context of every OTA Error log ({"Error code": "OTAxxyy", ...}).
+# xx is the area, yy the number within it. Never reuse or renumber a code: users quote them.
+OTA_ERROR_CODES = {
+    # 00 - firmware files (OTAFirmware folders)
+    "OTA0001": "Firmware file cannot be read",
+    "OTA0002": "Firmware file too short to be an OTA image",
+    "OTA0003": "OTA file identifier 0x0BEEF11E not found in the firmware file",
+    "OTA0004": "Truncated or malformed OTA header in the firmware file",
+    # 01 - Query Next Image (reserved)
+    # 02 - image block / page transfer
+    "OTA0201": "Requested image type is not loaded",
+    "OTA0202": "Block request from another device while a transfer is in progress",
+    # 03 - Upgrade End
+    "OTA0301": "Device aborted the upgrade (ABORT 0x95)",
+    "OTA0302": "Device rejected the downloaded image (INVALID_IMAGE 0x96)",
+    "OTA0303": "Unexpected Upgrade End status",
+    # 04 - WebUI / REST API
+    "OTA0401": "Firmware update request with missing attributes",
+    # 05 - online firmware index
+    "OTA0501": "Online firmware index cannot be loaded",
+    # 09 - diagnostics
+    "OTA0901": "OTA block trace file cannot be written",
+}
+
 DEFAULT_OTA_PROFILE = {
     "max_data": 48,
     "min_delay": 0.300,
@@ -327,17 +351,17 @@ class OTAManagement(object):
             f"Offset: {int(MsgFileOffset, 16)} Version: 0x{intMsgImageVersion:08X} "
             f"Type: 0x{intMsgImageType:04X} Manuf: 0x{intMsgManufCode:04X} "
             f"Delay: {MsgBlockRequestDelay} MaxSize: {MsgMaxDataSize} "
-            f"Control: 0x{intMsgFieldControl:02X}"
+            f"Control: 0x{intMsgFieldControl:02X}", MsgSrcAddr
         )
 
         if self.ListInUpdate.get("NwkId") is None:
-            logging(self, "Debug", f"ota_image_block_request - Async request from device: {MsgSrcAddr}")
+            logging(self, "Debug", f"ota_image_block_request - Async request from device: {MsgSrcAddr}", MsgSrcAddr)
             if not ota_aync_request(
                 self, MsgSrcAddr, MsgEP, MsgIEEE, MsgFileOffset, intMsgImageVersion,
                 intMsgImageType, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize,
                 intMsgFieldControl
             ):
-                logging(self, "Debug", f"ota_image_block_request {MsgSrcAddr}/{MsgEP} - Async request failed {self.ListInUpdate}")
+                logging(self, "Debug", f"ota_image_block_request {MsgSrcAddr}/{MsgEP} - Async request failed {self.ListInUpdate}", MsgSrcAddr)
                 return
 
         prepare_and_send_block(
@@ -366,10 +390,10 @@ class OTAManagement(object):
             RequestNodeAddress = MsgData[48:64]
 
         logging( self, "Debug", "ota_image_page_request - Request Firmware %s/%s Offset: %s Version: 0x%08x Type: 0x%04X Manuf: 0x%04X MaxSize: %s PageSize: %s ResponseSpacing: %s Control: 0x%02X" % (
-            MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgMaxDataSize, PageSize , intResponseSpacing, intMsgFieldControl, ),)
+            MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgMaxDataSize, PageSize , intResponseSpacing, intMsgFieldControl, ), MsgSrcAddr)
 
         if self.ListInUpdate["NwkId"] is None:
-            logging(self, "Debug", "ota_image_page_request - Async request from device: %s." % (MsgSrcAddr))
+            logging(self, "Debug", "ota_image_page_request - Async request from device: %s." % (MsgSrcAddr), MsgSrcAddr)
             return
    
         # Page Size: The value indicates the number of bytes to be sent by the server before the client sends another Image Page
@@ -433,48 +457,51 @@ class OTAManagement(object):
         intMsgManufCode = int(MsgData[26:30], 16)
         MsgStatus = MsgData[30:32]
         logging(self, "Log", "OTA upgrade completed - %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s" % (
-            MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus))
+            MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus), MsgSrcAddr)
 
         if self.ListInUpdate["NwkId"] is None:
-            logging(self, "Warning", "ota_upgrade_end_request - Receive Firmware Completed from %s with status %s most likely a duplicated packet as there is nothing in Progress. " % (MsgSrcAddr, MsgStatus))
+            logging(self, "Warning", "ota_upgrade_end_request - Receive Firmware Completed from %s with status %s most likely a duplicated packet as there is nothing in Progress. " % (MsgSrcAddr, MsgStatus), MsgSrcAddr)
             return
 
         if self.ListInUpdate["NwkId"] and MsgSrcAddr != self.ListInUpdate["NwkId"]:
-            logging(self, "Warning", "ota_upgrade_end_request - OTA upgrade completed - %s with status %s not in Upgraded devices" % (MsgSrcAddr, MsgStatus))
+            logging(self, "Warning", "ota_upgrade_end_request - OTA upgrade completed - %s with status %s not in Upgraded devices" % (MsgSrcAddr, MsgStatus), MsgSrcAddr)
             return
 
         if "StartTime" not in self.ListInUpdate:
-            logging(self, "Warning", "ota_upgrade_end_request - OTA upgrade completed - No Start Time for device: %s" % MsgSrcAddr)
+            logging(self, "Warning", "ota_upgrade_end_request - OTA upgrade completed - No Start Time for device: %s" % MsgSrcAddr, MsgSrcAddr)
             return
 
         if MsgStatus == "00":
             logging(self, "Status", "OTA upgrade completed with success - %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s" % (
-                MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus))
+                MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus), MsgSrcAddr)
             ota_upgrade_end_response(self, MsgSQN, MsgSrcAddr, MsgEP, intMsgImageVersion, image_type, intMsgManufCode)
             notify_upgrade_end(self, "OK", MsgSrcAddr, MsgEP, image_type, intMsgManufCode, intMsgImageVersion)
 
         elif MsgStatus == "95":
+            _context = {"Error code": "OTA0301", "Status": MsgStatus, "ImageType": f"0x{image_type:04X}", "ManufCode": f"0x{intMsgManufCode:04X}", "FileVersion": f"0x{intMsgImageVersion:08X}"}
             logging(self, "Error", "OTA Firmware aborted - %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s" % (
-                MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus))
+                MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus), MsgSrcAddr, _context)
             notify_upgrade_end(self, "Aborted", MsgSrcAddr, MsgEP, image_type, intMsgManufCode, intMsgImageVersion)
 
         elif MsgStatus == "96":
+            _context = {"Error code": "OTA0302", "Status": MsgStatus, "ImageType": f"0x{image_type:04X}", "ManufCode": f"0x{intMsgManufCode:04X}", "FileVersion": f"0x{intMsgImageVersion:08X}"}
             logging(self, "Error", "OTA Firmware image validation failed %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s" % (
-                MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus))
+                MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus), MsgSrcAddr, _context)
             notify_upgrade_end(self, "Failed", MsgSrcAddr, MsgEP, image_type, intMsgManufCode, intMsgImageVersion)
 
         elif MsgStatus == "97":
             logging(self, "Warning", "OTA Firmware image wait for data %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s" % (
-                MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus))
+                MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus), MsgSrcAddr)
             return
         elif MsgStatus == "99":
             logging(self, "Warning", "OTA Firmware  The downloaded image was successfully received, but there is a need for additional image %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s" % (
-                MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus))
+                MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus), MsgSrcAddr)
             notify_upgrade_end(self, "More", MsgSrcAddr, MsgEP, image_type, intMsgManufCode, intMsgImageVersion)
 
         else:
+            _context = {"Error code": "OTA0303", "Status": MsgStatus, "ImageType": f"0x{image_type:04X}", "ManufCode": f"0x{intMsgManufCode:04X}", "FileVersion": f"0x{intMsgImageVersion:08X}"}
             logging(self, "Error", "OTA Firmware unexpected error %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s" % (
-                MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus))
+                MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus), MsgSrcAddr, _context)
             notify_upgrade_end(self, "Aborted", MsgSrcAddr, MsgEP, image_type, intMsgManufCode, intMsgImageVersion)
 
         cleanup_after_completed_upgrade(self, MsgSrcAddr, MsgStatus)
@@ -498,7 +525,7 @@ class OTAManagement(object):
             self,
             "Debug",
             "ota_heartbeat - NwkId: %s Process: %s Loaded: 0x%s Block Sent: %s Time: %s Notified: %s Retry Notif: %s Authorized: %s"
-            % (nwk_id, process, image_type, last_block_sent, loaded_time_stamp, notified_time_stamp, retry_notification, authorized_for_update),
+            % (nwk_id, process, image_type, last_block_sent, loaded_time_stamp, notified_time_stamp, retry_notification, authorized_for_update), nwk_id
         )
 
         if nwk_id and self.ListInUpdate["Status"] == "Transfer Progress" and last_block_sent != 0 and (time.time() > ( last_block_sent + 300)):
@@ -591,7 +618,7 @@ class OTAManagement(object):
         # Command: 0x01
 
         fieldcontrol = int(Data[:2],16)
-        logging(self, "Debug", f" Manuf: {Data[2:6]} Type: {Data[6:10]} Version: {Data[10:18]}")
+        logging(self, "Debug", f" Manuf: {Data[2:6]} Type: {Data[6:10]} Version: {Data[10:18]}", srcnwkid)
         manufcode = struct.unpack("H", bytes.fromhex(Data[2:6]))[0]
         imagetype = struct.unpack("H", bytes.fromhex(Data[6:10]))[0]
         currentVersion = struct.unpack("I", bytes.fromhex(Data[10:18]))[0]
@@ -602,7 +629,7 @@ class OTAManagement(object):
             hardware_version = struct.unpack("<H", bytes.fromhex(Data[18:22]))[0]
 
         logging(self, "Debug", "OTA Query Next Image request for %s/%s [%s] - Control: 0x%02X Manuf: 0x%04X Type: 0x%04X Version: 0x%08X HW: %s" % (
-            srcnwkid, srcep, Sqn, fieldcontrol, manufcode, imagetype, currentVersion, hardware_version ))
+            srcnwkid, srcep, Sqn, fieldcontrol, manufcode, imagetype, currentVersion, hardware_version ), srcnwkid)
 
         ota_client = self.ListOfDevices.setdefault(srcnwkid, {}).setdefault("OTAClient", {})
         ota_client["ManufacturerCode"] = manufcode
@@ -620,13 +647,13 @@ class OTAManagement(object):
             imagesize = image_found["intSize"]           # integer
 
             if authorized_device_downgrade:
-                logging(self, "Debug", f"OTA Query Next Image request - Device {srcnwkid} is authorized for downgrade.")
+                logging(self, "Debug", f"OTA Query Next Image request - Device {srcnwkid} is authorized for downgrade.", srcnwkid)
                 fileversion = image_found["originalVersion"] + 0x10100000
             
-            logging(self, "Debug", f"OTA Query Next Image request - Image found fileversion: 0x{fileversion:08x} imagesize: {imagesize}")
+            logging(self, "Debug", f"OTA Query Next Image request - Image found fileversion: 0x{fileversion:08x} imagesize: {imagesize}", srcnwkid)
 
             if "autoServeOTA" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoServeOTA"]:
-                logging(self, "Debug", f"OTA Query Next Image request - autoServeOTA fileversion: 0x{fileversion:08x} imagesize: {imagesize}")
+                logging(self, "Debug", f"OTA Query Next Image request - autoServeOTA fileversion: 0x{fileversion:08x} imagesize: {imagesize}", srcnwkid)
 
                 if srcnwkid not in self.ListInUpdate["AuthorizedForUpdate"]:
                     self.ListInUpdate["AuthorizedForUpdate"].append( srcnwkid )
@@ -636,7 +663,7 @@ class OTAManagement(object):
 
             elif srcnwkid in self.ListInUpdate["AuthorizedForUpdate"]:
                 # We are in the case were we get a request, but do not authorised selfserving OTA
-                logging(self, "Debug", f"OTA Query Next Image request - AuthorizedForUpdate fileversion: 0x{fileversion:08x} imagesize: {imagesize}")
+                logging(self, "Debug", f"OTA Query Next Image request - AuthorizedForUpdate fileversion: 0x{fileversion:08x} imagesize: {imagesize}", srcnwkid)
 
                 return zcl_raw_ota_query_next_image_response(
                     self, Sqn, srcnwkid, ZIGATE_EP, srcep,
@@ -650,21 +677,21 @@ class OTAManagement(object):
                     notify_ota_firmware_available(self, srcnwkid, manufcode, imagetype, currentVersion, _ota_available )
 
         # No Image available.
-        logging( self, "Debug", ( f"OTA Query Next Image request - No Image Available for now " f"Current device manufcode: 0x{manufcode:04x}, " f"imagetype: 0x{imagetype:04x}, " f"currentVersion: 0x{currentVersion:08x}" ) )
+        logging( self, "Debug", ( f"OTA Query Next Image request - No Image Available for now " f"Current device manufcode: 0x{manufcode:04x}, " f"imagetype: 0x{imagetype:04x}, " f"currentVersion: 0x{currentVersion:08x}" ), srcnwkid )
         return zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, 0x98)
 
 
 # Local Routines and other helpers
 def _handle_ota_timeout(self):
     logging(self, "Warning", "Ota timed out on NwkId: %s for block: %s" % (
-        self.ListInUpdate["NwkId"], self.ListInUpdate["intFileOffset"]))
+        self.ListInUpdate["NwkId"], self.ListInUpdate["intFileOffset"]), self.ListInUpdate["NwkId"])
     _reset_ota_state(self)
 
 
 def _retry_notification(self):
     
     self.ListInUpdate["Retry"] += 1
-    logging(self, "Log", "Ota retries notifying device %s" % self.ListInUpdate["NwkId"])
+    logging(self, "Log", "Ota retries notifying device %s" % self.ListInUpdate["NwkId"], self.ListInUpdate["NwkId"])
     
     ota_image_advertize(self, self.ListInUpdate["NwkId"], self.ListInUpdate["Ep"],
                         self.ImageLoaded["ImageVersion"], 
@@ -673,7 +700,7 @@ def _retry_notification(self):
 
 
 def _handle_timeout(self):
-    logging(self, "Warning", "Ota detects Timeout while notifying device %s" % self.ListInUpdate["NwkId"])
+    logging(self, "Warning", "Ota detects Timeout while notifying device %s" % self.ListInUpdate["NwkId"], self.ListInUpdate["NwkId"])
     _reset_ota_state(self)
 
 
@@ -837,7 +864,7 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
 
     in_update = self.ListInUpdate
     if retrieve_image(self, image_type, in_update.get("intManufCode")) is None:
-        logging(self, "Warning", f"ota_send_block - unknown image_type {image_type}")
+        logging(self, "Warning", f"ota_send_block - unknown image_type {image_type}", dest_addr)
         return False
 
     expected_image_type = int(in_update["ImageType"], 16)
@@ -845,7 +872,7 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
         logging(
             self, "Warning",
             f"ota_send_block - inconsistent ImageType Received: {image_type} "
-            f"Expecting: {in_update['ImageType']}"
+            f"Expecting: {in_update['ImageType']}", dest_addr
         )
         return False
 
@@ -882,7 +909,7 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
     # Update progress tracking
     update_list_in_update(self, offset, length)
 
-    logging( self, "Debug", f"ota_send_block - Block sent to {dest_addr}/{dest_ep} " f"Received yet: {offset} Sent now: {offset} Size: {max_data_size} Delay: {block_delay}" )
+    logging( self, "Debug", f"ota_send_block - Block sent to {dest_addr}/{dest_ep} " f"Received yet: {offset} Sent now: {offset} Size: {max_data_size} Delay: {block_delay}", dest_addr )
 
     # Determine OTA block status
     if length == 0 or data is None:
@@ -989,7 +1016,7 @@ def ota_image_advertize(self, dest_addr, dest_ep, image_version, image_type=0xFF
         f"{JITTER_OPTION:02x}"
     )
     
-    logging(self, "Debug", f"ota_image_advertize - Type: 0x{image_type:04x}, Version: 0x{image_version:08X} => datas: {datas}")
+    logging(self, "Debug", f"ota_image_advertize - Type: 0x{image_type:04x}, Version: 0x{image_version:08X} => datas: {datas}", dest_addr)
 
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_ota_image_notify(self, dest_addr, ZIGATE_EP, dest_ep, f"{IMG_NTFY_PAYLOAD_TYPE:02x}", f"{JITTER_OPTION:02x}", f"{manufacturer_code:04x}", f"{image_type:04x}", f"{image_version:08X}")
@@ -1021,7 +1048,7 @@ def ota_upgrade_end_response(self, sqn, dest_addr, dest_ep, file_version, image_
             current_time,        # INT
             upgrade_time,        # INT
         )
-        logging( self, "Log", f"ota_management - zcl_raw_ota_upgrade_end_response( {sqn}, {dest_addr}, {ZIGATE_EP}, {dest_ep}, {manufacturer_code}, {image_type}, {file_version}, {current_time}, {upgrade_time})", )
+        logging( self, "Log", f"ota_management - zcl_raw_ota_upgrade_end_response( {sqn}, {dest_addr}, {ZIGATE_EP}, {dest_ep}, {manufacturer_code}, {image_type}, {file_version}, {current_time}, {upgrade_time})", dest_addr )
 
     else:
         datas = "%02x" % ADDRESS_MODE["short"] + dest_addr + ZIGATE_EP + dest_ep
@@ -1033,7 +1060,7 @@ def ota_upgrade_end_response(self, sqn, dest_addr, dest_ep, file_version, image_
 
         self.ControllerLink.sendData("0504", datas, ackIsDisabled=False, NwkId=dest_addr)
 
-    logging( self, "Log", "ota_management - sending Upgrade End Response, for %s Version: 0x%08X Type: 0x%04x, Manuf: 0x%04X" % (dest_addr, file_version, image_type, manufacturer_code), )
+    logging( self, "Log", "ota_management - sending Upgrade End Response, for %s Version: 0x%08X Type: 0x%04x, Manuf: 0x%04X" % (dest_addr, file_version, image_type, manufacturer_code), dest_addr )
 
     ota_upgrade = self.ListOfDevices[dest_addr].setdefault("OTAUpgrade", {})
 
@@ -1092,7 +1119,7 @@ def ota_management(self, MsgSrcAddr, MsgEP, delay=500):
     # Zigate behaviour
     logging(
         self, "Debug",
-        f"ota_management - Reduce Block request rate to {BlockRequestDelayMs} ms"
+        f"ota_management - Reduce Block request rate to {BlockRequestDelayMs} ms", MsgSrcAddr
     )
 
     self.ControllerLink.sendData(
@@ -1111,7 +1138,7 @@ def cleanup_after_completed_upgrade(self, NwkId, Status):
         NwkId (str): Network ID of the device.
         Status (str): Upgrade status code ("00" indicates success).
     """
-    logging(self, "Debug", f"cleanup_after_completed_upgrade - Cleanup and housekeeping {NwkId} {Status}")
+    logging(self, "Debug", f"cleanup_after_completed_upgrade - Cleanup and housekeeping {NwkId} {Status}", NwkId)
 
     # Reset update tracking
     self.ListInUpdate["NwkId"] = None
@@ -1129,7 +1156,7 @@ def cleanup_after_completed_upgrade(self, NwkId, Status):
         "Debug",
         f"cleanup_after_completed_upgrade - After cleanup "
         f"NwkId: {self.ListInUpdate['NwkId']}, "
-        f"AuthorizedForUpdate: {self.ListInUpdate.get('AuthorizedForUpdate')}"
+        f"AuthorizedForUpdate: {self.ListInUpdate.get('AuthorizedForUpdate')}", NwkId
     )
 
     # Remove downgrade authorization if present
@@ -1167,24 +1194,24 @@ def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_updat
             self,
             "Warning",
             "There is already an Image loaded %s for device: %s please come back later"
-            % (self.ListInUpdate["FileName"], self.ListInUpdate["NwkId"]),
+            % (self.ListInUpdate["FileName"], self.ListInUpdate["NwkId"]), target_nwkid
         )
         return False
 
     if brand not in self.ListOfImages["Brands"]:
-        logging(self, "Warning", "restapi_firmware_update Brands %s unknown" % brand)
+        logging(self, "Warning", "restapi_firmware_update Brands %s unknown" % brand, target_nwkid)
         return False
 
     if file_name not in self.ListOfImages["Brands"][brand]:
-        logging(self, "Warning", "restapi_firmware_update FileName %s unknown in this Brand %s" % (file_name, brand))
+        logging(self, "Warning", "restapi_firmware_update FileName %s unknown in this Brand %s" % (file_name, brand), target_nwkid)
         return False
 
     if target_nwkid not in self.ListOfDevices:
-        logging(self, "Warning", "restapi_firmware_update NwkId: %s unknown" % target_nwkid)
+        logging(self, "Warning", "restapi_firmware_update NwkId: %s unknown" % target_nwkid, target_nwkid)
         return False
 
     if target_ep not in self.ListOfDevices[target_nwkid]["Ep"]:
-        logging(self, "Warning", "restapi_firmware_update NwkId: %s Ep: %s unknown" % (target_nwkid, target_ep))
+        logging(self, "Warning", "restapi_firmware_update NwkId: %s Ep: %s unknown" % (target_nwkid, target_ep), target_nwkid)
         return False
 
     image_type = self.ListOfImages["Brands"][brand][file_name]["ImageType"]
@@ -1203,7 +1230,7 @@ def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_updat
             self,
             "Status",
             "----> Forcing update for Image: 0x%04x from Version: 0x%08X to Version: 0x%08X"
-            % (image_type, self.ListOfImages["Brands"][brand][file_name]["originalVersion"], image_version),
+            % (image_type, self.ListOfImages["Brands"][brand][file_name]["originalVersion"], image_version), target_nwkid
         )
         self.ListOfImages["Brands"][brand][file_name]["intImageVersion"] = image_version
         ota_load_image_to_zigate(self, image_type, image_version, manuf_code=manuf_code)
@@ -1251,7 +1278,7 @@ def is_image_for_query_next_image_request( self, nwkid, manuf_code, image_type, 
 
             # Compliance with Image Type
             if file_version < self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]:
-                logging(self, "Debug", "is_image_for_query_next_image_request - We have newest firmware available for this device")
+                logging(self, "Debug", "is_image_for_query_next_image_request - We have newest firmware available for this device", nwkid)
                 return self.ListOfImages["Brands"][brand_name][file_name]
 
     return None
@@ -1444,11 +1471,13 @@ def _open_image_file(self, filename):  # OK 13/10
             ota_image = file.read()
 
     except OSError as err:
-        logging(self, "Error", f"_open_image_file - error when opening {filename} - {err}")
+        _context = {"Error code": "OTA0001", "File": str(filename), "Exception": str(err)}
+        logging(self, "Error", f"_open_image_file - error when opening {filename} - {err}", None, _context)
         return None
 
     if len(ota_image) < 69:
-        logging(self, "Error", f"_open_image_file - invalid file size read {filename} - {len(ota_image)}")
+        _context = {"Error code": "OTA0002", "File": str(filename), "Size": len(ota_image)}
+        logging(self, "Error", f"_open_image_file - invalid file size read {filename} - {len(ota_image)}", None, _context)
         return None
 
     return ota_image
@@ -1465,7 +1494,8 @@ def offset_start_firmware(self, ota_image):
             logging(self, "Debug", f"Found OTA magic at offset {i}")
             return i
 
-    logging(self, "Error", "Zigbee OTA magic not found in firmware image")
+    _context = {"Error code": "OTA0003", "Size": len(ota_image)}
+    logging(self, "Error", "Zigbee OTA magic not found in firmware image", None, _context)
     return None
 
 
@@ -1698,7 +1728,8 @@ def prepare_and_send_block(
     intMsgImageType = block_request["ImageType"]
 
     if retrieve_image(self, intMsgImageType, block_request["ManufCode"]) is None:
-        logging(self, "Error", f"prepare_and_send_block {MsgSrcAddr}/{MsgEP} - 0x{intMsgImageType:04X} image not found", MsgSrcAddr)
+        _context = {"Error code": "OTA0201", "Request": "Image Block", "ImageType": f"0x{intMsgImageType:04X}", "ManufCode": f"0x{intMsgManufCode:04X}", "FileVersion": f"0x{intMsgImageVersion:08X}", "Offset": int(MsgFileOffset, 16)}
+        logging(self, "Error", f"prepare_and_send_block {MsgSrcAddr}/{MsgEP} - 0x{intMsgImageType:04X} image not found", MsgSrcAddr, _context)
         return
 
     # Only the device being upgraded is served: blocks for another one would overwrite
@@ -2104,12 +2135,12 @@ def notify_ota_firmware_available(self, srcnwkid, manufcode, imagetype, filevers
     # a generic entry reports its canonical folder.
     folder = next((ota_brand_folders(OTA_CODES[supported_manufacturer])[0] for supported_manufacturer in OTA_CODES if OTA_CODES[supported_manufacturer]["ManufCode"] == manufcode), None)
 
-    logging(self, "Status", "Z4D detects a potential new firmware for device %s [%s]" % ( get_device_nickname( self, NwkId=srcnwkid, ), srcnwkid ))
-    logging(self, "Status", "   current version: %s" % fileversion)
-    logging(self, "Status", "     firmware type: %s" % imagetype)
-    logging(self, "Status", "    newest version: %s" % _ota_available["fileVersion"])
-    logging(self, "Status", "     firmware type: %s" % _ota_available["imageType"])
-    logging(self, "Status", "   URL to download: %s" % _ota_available["url"])
+    logging(self, "Status", "Z4D detects a potential new firmware for device %s [%s]" % ( get_device_nickname( self, NwkId=srcnwkid, ), srcnwkid ), srcnwkid)
+    logging(self, "Status", "   current version: %s" % fileversion, srcnwkid)
+    logging(self, "Status", "     firmware type: %s" % imagetype, srcnwkid)
+    logging(self, "Status", "    newest version: %s" % _ota_available["fileVersion"], srcnwkid)
+    logging(self, "Status", "     firmware type: %s" % _ota_available["imageType"], srcnwkid)
+    logging(self, "Status", "   URL to download: %s" % _ota_available["url"], srcnwkid)
 
     if srcnwkid in self.ListOfDevices:
         ota = self.ListOfDevices[srcnwkid].setdefault("OTAUpdate", {})
@@ -2120,11 +2151,11 @@ def notify_ota_firmware_available(self, srcnwkid, manufcode, imagetype, filevers
         }
 
     if folder:
-        logging(self, "Status", "   Folder to store: %s" % folder)
+        logging(self, "Status", "   Folder to store: %s" % folder, srcnwkid)
     else:
-        logging(self, "Status", "   to get this Manufacturer supported: %s" % manufcode)
-        logging(self, "Status", "   provide those informations: %s" % _ota_available)
-        logging(self, "Status", "   open an Issue on GitHub here: https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/new?assignees=&labels=&template=feature_request.md&title=")
+        logging(self, "Status", "   to get this Manufacturer supported: %s" % manufcode, srcnwkid)
+        logging(self, "Status", "   provide those informations: %s" % _ota_available, srcnwkid)
+        logging(self, "Status", "   open an Issue on GitHub here: https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/new?assignees=&labels=&template=feature_request.md&title=", srcnwkid)
 
 
 def _load_json_from_url(self, url, retries=3, timeout=5):
@@ -2171,8 +2202,9 @@ def _load_json_from_url(self, url, retries=3, timeout=5):
             time.sleep(delay + random.uniform(0, 0.5))  # nosec B311 - jitter only, not security-sensitive
             backoff *= 2
 
+    _context = {"Error code": "OTA0501", "Url": url, "Reason": last_reason}
     logging(self, "Error",
-            f"loading_zigbee_ota_index: Unable to access {url} Reason: {last_reason}")
+            f"loading_zigbee_ota_index: Unable to access {url} Reason: {last_reason}", None, _context)
     return []
 
 
@@ -2206,4 +2238,5 @@ def trace_ota_block(self, dest_addr, image_type_hex, offset, size, sequence, raw
             )
 
     except Exception as e:
-        logging(self, "Error", f"OTA trace logging {full_path} failed: {e}")
+        _context = {"Error code": "OTA0901", "File": full_path, "Exception": str(e)}
+        logging(self, "Error", f"OTA trace logging {full_path} failed: {e}", dest_addr, _context)
