@@ -176,7 +176,7 @@ def test_two_vendors_sharing_a_code_both_load(ota_module, scanner):
     })
 
     brand = "Eurotronic-LiXee-Lumi"
-    assert images["ImageType"][0x0101] == brand
+    assert images["ImageType"][(0x1037, 0x0101)] == brand
     assert list(images["Brands"][brand]) == ["zlinky.ota"]
     assert images["Brands"][brand]["zlinky.ota"]["originalVersion"] == 0x00000009
 
@@ -191,7 +191,7 @@ def test_distinct_image_types_under_a_shared_code_all_load(ota_module, scanner):
 
     brand = "Eurotronic-LiXee-Lumi"
     assert set(images["Brands"][brand]) == {"euro.ota", "zlinky.ota", "lumi.ota"}
-    assert {0x0101, 0x0202, 0x0303} <= set(images["ImageType"])
+    assert {(0x1037, 0x0101), (0x1037, 0x0202), (0x1037, 0x0303)} <= set(images["ImageType"])
 
 
 def test_legacy_per_vendor_folders_are_still_scanned(ota_module, scanner):

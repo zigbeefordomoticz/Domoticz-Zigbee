@@ -688,19 +688,15 @@ def _reset_ota_state(self):
     self.ListInUpdate["Process"] = None
 
 
-def ota_load_image_to_zigate(self, image_type, force_version=None):
+def ota_load_image_to_zigate(self, image_type, force_version=None, manuf_code=None):
     # Load the image headers into Zigate
 
-    if image_type not in self.ListOfImages["ImageType"]:
+    entry = retrieve_image(self, image_type, manuf_code)
+    if entry is None:
         _log_debug_unknown_image_type(self, image_type)
         return
 
-    brand = self.ListOfImages["ImageType"][image_type]
-    image_entry = retrieve_image_in_a_brand(self, image_type, brand)
-
-    if image_entry is None:
-        _log_debug_image_not_found(self, image_type, brand)
-        return
+    brand, image_entry = entry
 
     image_entry = self.ListOfImages["Brands"][brand][image_entry]
     decoded_header = image_entry["Decoded Header"]
@@ -717,10 +713,6 @@ def ota_load_image_to_zigate(self, image_type, force_version=None):
 
 def _log_debug_unknown_image_type(self, image_type):
     logging(self, "Debug", f"ota_load_image_to_zigate - Unknown Image {image_type} in {list(self.ListOfImages['ImageType'].keys())}")
-
-
-def _log_debug_image_not_found(self, image_type, brand):
-    logging(self, "Debug", f"ota_load_image_to_zigate - Image {image_type} not found in {list(self.ListOfImages['Brands'][brand].keys())}")
 
 
 def _format_image_data(self, decoded_header, force_version):
@@ -842,9 +834,8 @@ def update_list_in_update(self, offset, length):
 
 def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, block_request, disable_ack=False, block_delay=DEFAULT_OTA_PROFILE["min_delay"]):
 
-    images = self.ListOfImages.get("ImageType", {})
     in_update = self.ListInUpdate
-    if image_type not in images:
+    if retrieve_image(self, image_type, in_update.get("intManufCode")) is None:
         logging(self, "Warning", f"ota_send_block - unknown image_type {image_type}")
         return False
 
@@ -1214,9 +1205,9 @@ def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_updat
             % (image_type, self.ListOfImages["Brands"][brand][file_name]["originalVersion"], image_version),
         )
         self.ListOfImages["Brands"][brand][file_name]["intImageVersion"] = image_version
-        ota_load_image_to_zigate(self, image_type, image_version)
+        ota_load_image_to_zigate(self, image_type, image_version, manuf_code=manuf_code)
     else:
-        ota_load_image_to_zigate(self, image_type)
+        ota_load_image_to_zigate(self, image_type, manuf_code=manuf_code)
     ota_image_advertize(self, target_nwkid, target_ep, image_version=image_version, image_type=image_type, manufacturer_code=manuf_code)
     return True
 
@@ -1286,18 +1277,35 @@ def is_hardware_version_compatible(self, nwkid, image, hardware_version):
     return True
 
 
-def retrieve_image_in_a_brand(self, image_type, brand):
+def retrieve_image_in_a_brand(self, image_type, brand, manuf_code=None):
     brand_images = self.ListOfImages.get("Brands", {}).get(brand, {})
-    
-    return next((image for image, info in brand_images.items() if info.get("ImageType") == image_type), None)
+
+    return next(
+        (image for image, info in brand_images.items() if info.get("ImageType") == image_type and manuf_code in (None, info.get("intManufCode"))),
+        None,
+    )
 
 
-def retrieve_image(self, image_type):
-    for brand, images in self.ListOfImages.get("Brands", {}).items():
-        for image, info in images.items():
-            if image_type == info.get("ImageType"):
-                return brand, image
-    return None
+def retrieve_image(self, image_type, manuf_code=None, exact=False):
+    """(brand, file name) of the loaded image for this image type, or None.
+
+    Image types are manufacturer specific (ZCL rev 8 11.4.2.6): the image whose
+    manufacturer code matches manuf_code wins. Without such a match, the only image of
+    that type is still returned (as before, e.g. the Legrand 0x00C8 requests patched in
+    initialize_block_request), unless several manufacturers use the type or exact is set.
+    """
+    candidates = [
+        (brand, image, info)
+        for brand, images in self.ListOfImages.get("Brands", {}).items()
+        for image, info in images.items()
+        if info.get("ImageType") == image_type
+    ]
+    if manuf_code is not None:
+        matching = [candidate for candidate in candidates if candidate[2].get("intManufCode") == manuf_code]
+        if matching or exact or len(candidates) > 1:
+            candidates = matching
+
+    return candidates[0][:2] if candidates else None
 
 
 def ota_scan_folder(self):  # OK 13/10
@@ -1307,7 +1315,7 @@ def ota_scan_folder(self):  # OK 13/10
     # ListOfImages have 2 entries either from brand or from Image Type
 
     self.ListOfImages["Brands"] = {}
-    self.ListOfImages["ImageType"] = {}
+    self.ListOfImages["ImageType"] = {}   # (manufacturer code, image type) -> brand
     for brand in OTA_CODES:
         if not OTA_CODES[brand]["Enabled"]:
             continue
@@ -1332,19 +1340,22 @@ def ota_scan_folder(self):  # OK 13/10
                     continue
                 image_type, headers, ota_image = header_return
 
+                # An image is identified by manufacturer code AND image type (ZCL rev 8 11.13.6.4)
+                image_key = (headers["manufacturer_code"], image_type)
+
                 # Check if this Image is the latest version.
-                if image_type in self.ListOfImages["ImageType"] and not check_image_valid_version(
+                if image_key in self.ListOfImages["ImageType"] and not check_image_valid_version(
                     self, brand, image_type, ota_image_file, headers
                 ):
                     # Most likely we have a more higher version already loaded!
                     continue
 
-                # Check if the Image type is not used by another brand
-                if image_type in self.ListOfImages["ImageType"] and self.ListOfImages["ImageType"][image_type] != brand:
+                # Check if the same manufacturer code and image type are not used by another brand
+                if image_key in self.ListOfImages["ImageType"] and self.ListOfImages["ImageType"][image_key] != brand:
                     logging(self, "Warning", "ota_scan_folder Firmware %s not loaded, another firmware with the same ImageType and another brand is already loaded" %ota_image_file)
                     continue
 
-                self.ListOfImages["ImageType"][image_type] = brand
+                self.ListOfImages["ImageType"][image_key] = brand
                 self.ListOfImages["Brands"][brand][ota_image_file] = {
                     "Directory": ota_dir,
                     "Process": False,
@@ -1370,7 +1381,7 @@ def check_image_valid_version(self, brand, image_type, ota_image_file, headers):
     # Purpose is to check if the already imported image has a higher version or not.
     # If the version number is the same we will take the existing one
 
-    existing_image = retrieve_image(self, image_type)
+    existing_image = retrieve_image(self, image_type, headers["manufacturer_code"], exact=True)
     if existing_image is None:
         # Strange
         return False
@@ -1685,7 +1696,7 @@ def prepare_and_send_block(
     )
     intMsgImageType = block_request["ImageType"]
 
-    if intMsgImageType not in self.ListOfImages["ImageType"]:
+    if retrieve_image(self, intMsgImageType, block_request["ManufCode"]) is None:
         logging(self, "Error", f"prepare_and_send_block {MsgSrcAddr}/{MsgEP} - 0x{intMsgImageType:04X} image not found", MsgSrcAddr)
         return
 
@@ -1792,13 +1803,9 @@ def ota_aync_request( self, MsgSrcAddr, MsgEP, MsgIEEE, MsgFileOffset, image_ver
         )
         return False
 
-    if image_type not in self.ListOfImages.get("ImageType", {}):
-        logging(self, "Log", f"ota_aync_request: No Firmware available to satisfy this request by {MsgSrcAddr}", MsgSrcAddr)
-        return False
-
-    entry = retrieve_image(self, image_type)
+    entry = retrieve_image(self, image_type, intMsgManufCode)
     if entry is None:
-        logging(self, "Warning", f"ota_aync_request: No Firmware available to satisfy this request by {MsgSrcAddr} !!!", MsgSrcAddr)
+        logging(self, "Log", f"ota_aync_request: No Firmware available to satisfy this request by {MsgSrcAddr}", MsgSrcAddr)
         return False
 
     brand, ota_image_file = entry
@@ -1819,7 +1826,7 @@ def ota_aync_request( self, MsgSrcAddr, MsgEP, MsgIEEE, MsgFileOffset, image_ver
 
     # Loading Image on Zigate
     if not self.ImageLoaded:
-        ota_load_image_to_zigate(self, image_type)
+        ota_load_image_to_zigate(self, image_type, manuf_code=intMsgManufCode)
 
     return True
 
@@ -1984,7 +1991,7 @@ def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgF
     """Start the firmware upgrade process for a device."""
     
     # Retrieve the image entry for the requested image type
-    entry = retrieve_image(self, intMsgImageType)
+    entry = retrieve_image(self, intMsgImageType, intMsgManufCode)
     if entry is None:
         logging(self, "Warning", f"start_upgrade_infos: No firmware available for request by {MsgSrcAddr}", MsgSrcAddr)
         return
