@@ -101,7 +101,7 @@ def test_all_symbols_imported_by_plugin_are_exported():
         names = [
             "check_firmware_level", "check_python_modules_version",
             "check_requirements", "decodeConnection", "get_domoticz_version",
-            "list_all_modules_loaded", "networksize_update",
+            "list_all_modules_loaded", "networksize_update", "plugin_identity",
             "update_DB_device_status_to_reinit",
         ]
         for name in names:
@@ -307,3 +307,83 @@ def test_list_all_modules_loaded_runs_and_logs():
         print("ok")
         """
     ) == "ok"
+
+
+# ---------------------------------------------------------------------------
+# plugin_identity
+# ---------------------------------------------------------------------------
+
+def test_plugin_identity_full():
+    """A release checkout: version, revision and certified database version."""
+    assert _run(
+        """
+        self = types.SimpleNamespace(pluginParameters={
+            "PluginBranch": "stable9",
+            "PluginVersion": "9.1.007",
+            "PluginCommit": "9546837da6a0205d139413df1ba7f9d26ca8abfa",
+            "PluginCommitBranch": "stable9",
+            "CertifiedDbVersion": "8.586",
+        })
+        print(ph.plugin_identity(self))
+        """
+    ) == "stable9-9.1.007 (commit 9546837, Certified DB 8.586)"
+
+
+def test_plugin_identity_names_a_git_branch_of_its_own():
+    """An installation left on a feature branch is worth seeing in the logs."""
+    assert _run(
+        """
+        self = types.SimpleNamespace(pluginParameters={
+            "PluginBranch": "stable9",
+            "PluginVersion": "9.1.007",
+            "PluginCommit": "9546837da6a0205d139413df1ba7f9d26ca8abfa",
+            "PluginCommitBranch": "fix/legrand-remote-group-endpoint",
+            "CertifiedDbVersion": "8.586",
+        })
+        print(ph.plugin_identity(self))
+        """
+    ) == "stable9-9.1.007 (commit 9546837 on fix/legrand-remote-group-endpoint, Certified DB 8.586)"
+
+
+def test_plugin_identity_without_a_revision():
+    """An installation unpacked from an archive has no revision to report."""
+    assert _run(
+        """
+        self = types.SimpleNamespace(pluginParameters={
+            "PluginBranch": "stable9",
+            "PluginVersion": "9.1.007",
+            "PluginCommit": None,
+            "PluginCommitBranch": None,
+            "CertifiedDbVersion": "8.586",
+        })
+        print(ph.plugin_identity(self))
+        """
+    ) == "stable9-9.1.007 (Certified DB 8.586)"
+
+
+def test_plugin_identity_detached_head_reports_the_commit_alone():
+    assert _run(
+        """
+        self = types.SimpleNamespace(pluginParameters={
+            "PluginBranch": "stable9",
+            "PluginVersion": "9.1.007",
+            "PluginCommit": "9546837da6a0205d139413df1ba7f9d26ca8abfa",
+            "PluginCommitBranch": None,
+            "CertifiedDbVersion": "8.586",
+        })
+        print(ph.plugin_identity(self))
+        """
+    ) == "stable9-9.1.007 (commit 9546837, Certified DB 8.586)"
+
+
+def test_plugin_identity_falls_back_on_the_version_alone():
+    """Nothing but the VERSION file: the identity must still be loggable."""
+    assert _run(
+        """
+        self = types.SimpleNamespace(pluginParameters={
+            "PluginBranch": "stable9",
+            "PluginVersion": "9.1.007",
+        })
+        print(ph.plugin_identity(self))
+        """
+    ) == "stable9-9.1.007"
