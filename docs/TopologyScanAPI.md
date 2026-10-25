@@ -285,12 +285,20 @@ meaningful; `scan_status` says why.
 |---|---|---|
 | `ok` | answered this scan | normal |
 | `timeout` | asked, never answered | distinct — this is a finding, not a leaf |
-| `not_supported` | has no neighbour table to ask for (an end device) | normal; expected |
+| `not_supported` | cannot answer the request this scan made | normal; expected |
 | `not_scanned` | scannable, but this scan did not reach it | muted or flagged |
 
 Before this field existed, a node that timed out looked exactly like a leaf with
 no neighbours. Distinguishing `timeout`/`not_scanned` from `not_supported` is the
 single most useful thing the UI can do with this payload.
+
+`not_supported` is relative to what the scan asked for. On a neighbour scan it is
+an end device, which has no neighbour table. On an Associated Devices collection
+it is a coordinator or router whose stack has no extended address response: it
+answered the request — a non-zero ZDP status, or an address with no list after it
+— so it is a permanent gap rather than a mesh fault, and it will read the same on
+every future scan. Both are "asked, can never answer", which is why neither is
+counted in `requested` (§5).
 
 #### 6.1.2 `associated_devices` — the children a router declares
 
@@ -320,7 +328,9 @@ Reading it:
   timed out reads as `[]`, exactly like one with no children, and `scan_status`
   answers that question for the *neighbour* request only. On a scan where the
   collection **is** the scan (§13) there is no such ambiguity: `scan_status`
-  then reports the collection's own outcome.
+  then reports the collection's own outcome, which is one of `ok`, `timeout` or
+  `not_supported` — the last one being a node whose stack cannot produce the
+  list at all, so do not present it as an unreachable device.
 - **On a zigpy scan the rows lag the neighbour rows.** The scan's `timestamp` is
   the moment zigpy's neighbour and route tables were read; the associated device
   lists are collected over the following minutes. A device that joined in between
