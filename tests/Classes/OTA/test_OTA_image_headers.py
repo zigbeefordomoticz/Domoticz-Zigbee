@@ -159,6 +159,9 @@ def test_extract_headers_of_a_truncated_header(ota_module, ota, tmp_path):
     folder = _write(tmp_path, ota, "truncated.ota", data)
 
     assert ota_module.ota_extract_image_headers(ota, folder, "truncated.ota") is None
+    error = next(call for call in ota.log.logging.call_args_list if call.args[1] == "Error")
+    assert error.args[4]["Error code"] == "OTA0004"
+    assert error.args[4]["File"] == "truncated.ota"
 
 
 def test_open_image_file_rejects_short_and_missing_files(ota_module, ota, tmp_path):
