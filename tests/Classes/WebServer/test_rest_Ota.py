@@ -75,18 +75,45 @@ def test_device_information_picks_the_ota_endpoint(rest_ota, webserver):
     assert info["DeviceName"] == "Bulb"
 
 
-@pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: SWBUILD_1 and SWBUILD_3 are swapped in the device list")
 def test_device_information_software_builds(rest_ota, webserver):
     info = rest_ota.get_device_informations(webserver, "1234")
 
     assert (info["SWBUILD_1"], info["SWBUILD_3"]) == ("build-1", "build-3")
 
 
-@pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: the last upgrade is read from 'OTA', but Classes/OTA.py records it under 'OTAUpgrade'")
 def test_device_information_last_upgrade(rest_ota, webserver):
     info = rest_ota.get_device_informations(webserver, "1234")
 
     assert (info["LastUpdate"], info["LastUpdateVersion"], info["LastImageType"]) == ("2025-10-09 10:53:20", "01020304", "2203")
+
+
+def test_device_information_uses_the_webui_field_names(rest_ota, webserver):
+    info = rest_ota.get_device_informations(webserver, "1234")
+
+    assert (info["OTALastTime"], info["OTAVersion"], info["OTAType"]) == ("2025-10-09 10:53:20", "01020304", "2203")
+
+
+def test_device_information_reports_what_the_device_queried(rest_ota, webserver):
+    webserver.ListOfDevices["1234"]["OTAClient"] = {"ManufacturerCode": 0x117C, "ImageType": 0x2203, "CurrentImageVersion": 0x01000000}
+
+    info = rest_ota.get_device_informations(webserver, "1234")
+
+    assert (info["ImageType"], info["CurrentFileVersion"]) == ("2203", "01000000")
+
+
+def test_device_information_of_a_device_never_upgraded(rest_ota, webserver):
+    for key in ("OTAUpgrade", "SWBUILD_1", "SWBUILD_3"):
+        del webserver.ListOfDevices["1234"][key]
+
+    info = rest_ota.get_device_informations(webserver, "1234")
+
+    assert info["LastUpdate"] == info["OTALastTime"] == info["ImageType"] == info["SWBUILD_1"] == ""
+
+
+def test_device_information_falls_back_to_the_legacy_ota_key(rest_ota, webserver):
+    webserver.ListOfDevices["1234"]["OTA"] = webserver.ListOfDevices["1234"].pop("OTAUpgrade")
+
+    assert rest_ota.get_device_informations(webserver, "1234")["LastUpdateVersion"] == "01020304"
 
 
 # ─── PUT /ota-firmware-update ─────────────────────────────────────────────────

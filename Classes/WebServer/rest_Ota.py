@@ -377,27 +377,36 @@ def get_device_informations(self, Nwkid):
         swbuild_3 = self.ListOfDevices[Nwkid]["SWBUILD_3"]
     if "SWBUILD_1" in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]["SWBUILD_1"] != {}:
         swbuild_1 = self.ListOfDevices[Nwkid]["SWBUILD_1"]
-    if "OTA" in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]["OTA"] not in ( '', {} ):
-        prev_ts = 0
+    # Classes/OTA.py records each completed upgrade under "OTAUpgrade" ({timestamp: {Time, Version, Type}});
+    # "OTA" is only read as a fallback for older device entries.
+    upgrades = self.ListOfDevices[Nwkid].get("OTAUpgrade") or self.ListOfDevices[Nwkid].get("OTA")
+    if isinstance(upgrades, dict) and upgrades:
+        latest = upgrades[max(upgrades, key=int)]
+        time_update = latest.get("Time", "")
+        LastImageVersion = latest.get("Version", "")
+        LastImageType = latest.get("Type", "")
 
-        for ts in self.ListOfDevices[Nwkid]["OTA"]:
-            if int(ts) > int(prev_ts):
-                time_update = self.ListOfDevices[Nwkid]["OTA"][ts]["Time"]
-                LastImageVersion = self.ListOfDevices[Nwkid]["OTA"][ts]["Version"]
-                LastImageType = self.ListOfDevices[Nwkid]["OTA"][ts]["Type"]
-                prev_ts = int(ts)
+    # What the device reported in its last Query Next Image Request
+    ota_client = self.ListOfDevices[Nwkid].get("OTAClient", {})
+    image_type = "%04X" % ota_client["ImageType"] if "ImageType" in ota_client else ""
+    current_version = "%08X" % ota_client["CurrentImageVersion"] if "CurrentImageVersion" in ota_client else ""
 
     return {
         "Nwkid": Nwkid,
         "Ep": ep,
         "DeviceName": device_name,
-        "SWBUILD_1": swbuild_3,
-        "SWBUILD_3": swbuild_1,
+        "SWBUILD_1": swbuild_1,
+        "SWBUILD_3": swbuild_3,
         "LastUpdate": time_update,
         "LastUpdateVersion": LastImageVersion,
         "LastImageType": LastImageType,
+        # Names read by the WebUI (Domoticz-Zigbee-UI src/app/shared/models/firmware.ts)
+        "OTALastTime": time_update,
+        "OTAVersion": LastImageVersion,
+        "OTAType": LastImageType,
+        "ImageType": image_type,
+        "CurrentFileVersion": current_version,
     }
-
 
 def fake_rest_ota_devices_for_manufcode():
     return json.dumps(
