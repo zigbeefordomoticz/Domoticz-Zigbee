@@ -1376,7 +1376,13 @@ def ota_extract_image_headers(self, subfolder, image):
         return None
 
     ota_image = ota_image[offset:]  # trim before reading header
-    headers = unpack_headers(self, ota_image)
+    try:
+        headers = unpack_headers(self, ota_image)
+
+    except (ValueError, IndexError, struct.error) as err:
+        # A file cut short after the OTA magic: skip it, keep scanning the others
+        logging(self, "Error", f"ota_extract_image_headers - {subfolder}/{image} has a truncated or malformed OTA header ({err}), skipped")
+        return None
 
     if headers is None:
         return None

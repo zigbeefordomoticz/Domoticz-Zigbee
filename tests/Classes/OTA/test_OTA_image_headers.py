@@ -23,8 +23,6 @@ Run with:
     python -m pytest tests/Classes/OTA/test_OTA_image_headers.py -v
 """
 
-import struct
-
 import pytest
 from ota_builders import make_ota_image
 
@@ -154,8 +152,6 @@ def test_extract_headers_of_a_file_without_magic(ota_module, ota, tmp_path):
     assert ota_module.ota_extract_image_headers(ota, folder, "garbage.bin") is None
 
 
-@pytest.mark.xfail(strict=True, raises=struct.error,
-                   reason="OTA review 2026-10-25: a header truncated after the magic raises struct.error instead of skipping the file")
 def test_extract_headers_of_a_truncated_header(ota_module, ota, tmp_path):
     # 80 bytes of padding, then the first 20 bytes of a header: the magic is found
     # but the 56-byte base header does not fit.
