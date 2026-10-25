@@ -146,6 +146,7 @@ def add_to_neighbors_table( self, ieee_parent, nwkid_parent, neighbor_info_dict)
                 "device_type": neighbor_info_dict[ "device_type"],
                 "rx_on_when_idle": neighbor_info_dict[ "rx_on_when_idle"],
                 "lqi_from_device": neighbor_info_dict[ "lqi"],
+                "depth": neighbor_info_dict[ "depth"],
                 "permit_joining": neighbor_info_dict[ "permit_joining"]}
         )
         self.log.logging("ZigpyTopology", "Debug", f"build_zigpy_neighbors adding relation {self.neighbors_table[nwkid_parent]['relationship']}")
@@ -159,6 +160,7 @@ def parse_neigbor_infos( neighbor ):
         "rx_on_when_idle": convert_rx_on_when_idle(neighbor.rx_on_when_idle),
         "relationship": convert_relationship_code(neighbor.relationship),
         "permit_joining": convert_permit_joining(neighbor.permit_joining),
+        "depth": neighbor.depth,
         "lqi": neighbor.lqi
     }
 

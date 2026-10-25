@@ -125,6 +125,8 @@ class WebServer(object):
     from Classes.WebServer.rest_recreateWidget import rest_recreate_widgets
     from Classes.WebServer.rest_Topology import (rest_netTopologie,
                                                  rest_req_topologie)
+    from Classes.WebServer.rest_TopologyScan import (rest_topology_scan,
+                                                     rest_zigpy_topology_raw)
     from Classes.WebServer.rest_ZLinky import rest_zlinky, rest_zlinky_stge
     from Classes.WebServer.sendresponse import sendResponse
     from Classes.WebServer.tools import (DumpHTTPResponseToLog,
