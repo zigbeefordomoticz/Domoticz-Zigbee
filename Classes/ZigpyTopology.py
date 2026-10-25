@@ -35,6 +35,9 @@ class ZigpyTopology:
         self.new_scan_detected = None
         self.neighbors_table = {}
         self.pairing_in_progress = pairing_in_progress
+        # zigpy's half of a scan, held between the moment zigpy finishes and the
+        # moment the whole scan is filed. See prepare_topology_report().
+        self.pending_report = None
 
     def copy_zigpy_infos_to_plugin(self, neighbors_list=None, routes_list=None):
         if neighbors_list is None and routes_list is None:
@@ -52,27 +55,120 @@ class ZigpyTopology:
             self.log.logging("ZigpyTopology", "Debug", f"{(traceback.format_exc())}")
 
 
-    def save_topology_report(self):
-        self.log.logging("ZigpyTopology", "Debug", "save_topology_report")
+    def prepare_topology_report(self):
+        """Take zigpy's tables off the controller and hold them, timestamped.
+
+        The report is not written yet: a scan can have a second half, the
+        Associated Devices collection the plugin runs itself, and the whole scan
+        is filed as one entry under one timestamp.
+
+        The timestamp is minted here, when zigpy's tables are read -- it dates
+        the observation of the neighbour and route tables, not the file write.
+        Rows collected afterwards lag it by the length of that collection.
+        """
+        self.log.logging("ZigpyTopology", "Debug", "prepare_topology_report")
         neighbors, routes = self.ControllerLink.app.get_topology()
         neighbors_list = build_zigpy_neighbors(self, neighbors)
         routes_list = build_zigpy_routes(self, routes)
         self.copy_zigpy_infos_to_plugin(neighbors_list, routes_list)
-        save_report_to_file(self, time.time(), neighbors_list, routes_list)
+        self.pending_report = (time.time(), neighbors_list, routes_list)
+        return self.pending_report[0]
+
+
+    def write_topology_report(self, associated_devices=None, associated_devices_outcome=None):
+        """File a scan. Two shapes reach here.
+
+        With a report prepared by prepare_topology_report(), this files zigpy's
+        tables, plus the Associated Devices table when the collection that
+        followed them completed. `associated_devices` is None when that table was
+        not collected at all -- the feature is off, or the collection was
+        abandoned -- and the section is then left out of the entry rather than
+        written empty, so a reader can tell a scan that did not collect the table
+        from one that collected it and found no children.
+
+        With nothing prepared, this is a standalone Associated Devices
+        collection: it is filed as a scan of its own, carrying that table alone.
+        """
+        if self.pending_report is None:
+            return self.write_associated_devices_report(associated_devices, associated_devices_outcome)
+
+        time_stamp, neighbors_list, routes_list = self.pending_report
+        self.pending_report = None
+        save_report_to_file(
+            self, time_stamp, neighbors_list, routes_list, associated_devices, associated_devices_outcome
+        )
+        return time_stamp
+
+
+    def write_associated_devices_report(self, associated_devices, associated_devices_outcome=None):
+        """File a standalone Associated Devices collection as a scan of its own.
+
+        No Neighbors and no Routes section: those tables were not asked for, and
+        an absent section is how the payload says a table was not collected.
+        Writing zigpy's current tables here instead would be a lie --
+        app.get_topology() is the union of everything zigpy ever scanned, not an
+        observation made now.
+        """
+        if associated_devices is None:
+            # An abandoned collection. There is nothing to file, and no zigpy
+            # half waiting on it either.
+            self.log.logging("ZigpyTopology", "Debug", "write_associated_devices_report - nothing collected")
+            return None
+
+        time_stamp = time.time()
+        save_associated_devices_report_to_file(self, time_stamp, associated_devices, associated_devices_outcome)
+        return time_stamp
+
+
+    def save_topology_report(self):
+        """Collect and file in one go, for a scan with no second half."""
+        self.log.logging("ZigpyTopology", "Debug", "save_topology_report")
+        self.prepare_topology_report()
+        return self.write_topology_report()
 
 
     def is_zigpy_topology_in_progress(self):
         return self.ControllerLink.app.is_zigpy_topology_in_progress()
 
 
-def save_report_to_file(self, time_stamp, neighbors, routes):
+def save_report_to_file(self, time_stamp, neighbors, routes, associated_devices=None, associated_devices_outcome=None):
     self.log.logging("ZigpyTopology", "Debug", "save_report_to_file")
+    scan = { "Neighbors": neighbors, "Routes":routes }
+    add_associated_devices_sections(scan, associated_devices, associated_devices_outcome)
+    append_report_entry(self, time_stamp, scan)
+
+
+def save_associated_devices_report_to_file(self, time_stamp, associated_devices, associated_devices_outcome=None):
+    """A scan carrying the Associated Devices table and nothing else."""
+    self.log.logging("ZigpyTopology", "Debug", "save_associated_devices_report_to_file")
+    scan = {}
+    add_associated_devices_sections(scan, associated_devices, associated_devices_outcome)
+    append_report_entry(self, time_stamp, scan)
+
+
+def add_associated_devices_sections(scan, associated_devices, associated_devices_outcome):
+    """Add the Associated Devices sections, only when the table was collected.
+
+    The presence of "AssociatedDevices" is what tells /topology-scan that this
+    scan carries the table, so it is never written just to be empty.
+    "AssociatedDevicesScan" carries which nodes were asked and which answered,
+    which the flat table cannot say -- a node asked that timed out and a router
+    with no children are both an empty list.
+    """
+    if associated_devices is None:
+        return
+    scan["AssociatedDevices"] = associated_devices
+    if associated_devices_outcome is not None:
+        scan["AssociatedDevicesScan"] = associated_devices_outcome
+
+
+def append_report_entry(self, time_stamp, scan):
     zigpy_topology_reports_filename = Path( self.pluginconf.pluginConf["pluginReports"] ) / ( ZIGPY_TOPOLOGY_REPORT_FILENAME + "%02d.json" % self.HardwareID)
     if not os.path.isdir( Path(self.pluginconf.pluginConf["pluginReports"]) ):
         self.log.logging("ZigpyTopology", "Error", "save_report_to_file: Unable to get access to directory %s, please check PluginConf.json" % (self.pluginconf.pluginConf["pluginReports"]), )
         return
 
-    new_report = { time_stamp: { "Neighbors": neighbors, "Routes":routes }}
+    new_report = { time_stamp: scan }
     available_reports = read_topology_report(zigpy_topology_reports_filename)
 
     available_reports.append(new_report)
@@ -97,8 +193,18 @@ def write_json_file(file_path, data):
         
 
 def build_zigpy_neighbors(self, neighbors):
-    """ Build a list of Neighbor tuples """
-    raw_neighbors_set = set()
+    """ Build the neighbours table reported by this scan """
+    # One fresh table per scan, as build_zigpy_routes() already does for routes.
+    #
+    # The table used to be kept across scans and only ever appended to, because
+    # add_to_neighbors_table() skips a pair the table already holds. A pair's
+    # LQI, relationship, device type and rx-on-when-idle therefore stayed at
+    # whatever they were the first time that pair was ever seen: zigpy handed
+    # over fresh readings on every scan and all of them were thrown away. Two
+    # consecutive reports came out byte-identical, so reports could not be
+    # compared with each other, and a device that had since left the network was
+    # still reported with its old links.
+    self.neighbors_table = {}
     ieee2nwk_keys = set(self.IEEE2NWK.keys())
 
     for ieee, neighbor_list in neighbors.items():
@@ -107,6 +213,15 @@ def build_zigpy_neighbors(self, neighbors):
             continue
         
         nwkid_parent = self.IEEE2NWK[ ieee_parent ]
+
+        # Record the node even when it reported nothing. zigpy lists every node
+        # it asked, and leaves an empty list behind for one that did not answer
+        # -- the assignment above never happens on a delivery timeout, so the
+        # defaultdict read on its listener_event line creates one. Dropping
+        # those made a node that timed out indistinguishable from a node that
+        # was never scanned at all. See issue #2111.
+        ensure_neighbors_table_entry(self, ieee_parent, nwkid_parent)["neighbors_reported"] = len(neighbor_list)
+
         for neighbor in neighbor_list:
             neighbor_info_dict = parse_neigbor_infos(neighbor)
             
@@ -121,23 +236,37 @@ def build_zigpy_neighbors(self, neighbors):
     return self.neighbors_table
 
 
-def add_to_neighbors_table( self, ieee_parent, nwkid_parent, neighbor_info_dict):
-    nwkid_neighbor = neighbor_info_dict["nwkid_neighbor"]
-    ieee_neighbor = neighbor_info_dict["ieee_neighbor"]
-    
+def ensure_neighbors_table_entry(self, ieee_parent, nwkid_parent):
+    """This node's entry in the table being built, created if it is the first row.
+
+    "neighbors_reported" is how many rows zigpy got back from the node, counted
+    before the rows the plugin cannot resolve are dropped -- so zero rows means
+    the node itself said nothing, rather than the plugin having filtered
+    everything away. That is what tells a timeout from a node whose every
+    neighbour is unknown here.
+    """
     if nwkid_parent not in self.neighbors_table:
         self.neighbors_table[ nwkid_parent ] = {
             "ieee": ieee_parent,
+            "neighbors_reported": 0,
             "relationship": [],  # Initialize as empty list
         }
-        
-    # Check if the relationship exists before adding it
+    return self.neighbors_table[ nwkid_parent ]
+
+
+def add_to_neighbors_table( self, ieee_parent, nwkid_parent, neighbor_info_dict):
+    nwkid_neighbor = neighbor_info_dict["nwkid_neighbor"]
+    ieee_neighbor = neighbor_info_dict["ieee_neighbor"]
+
+    ensure_neighbors_table_entry(self, ieee_parent, nwkid_parent)
+
+    # Guard against the same pair turning up twice within one scan. Across
+    # scans there is nothing to guard: build_zigpy_neighbors() starts over.
     relationship_exists = any(
         rel["nwkid"] == nwkid_neighbor and rel["ieee"] == ieee_neighbor
         for rel in self.neighbors_table[nwkid_parent]["relationship"]
     )
             
-    # Add relationship if it doesn't exist already
     if not relationship_exists:
         self.neighbors_table[nwkid_parent]["relationship"].append(
             { "nwkid": nwkid_neighbor,
@@ -146,6 +275,7 @@ def add_to_neighbors_table( self, ieee_parent, nwkid_parent, neighbor_info_dict)
                 "device_type": neighbor_info_dict[ "device_type"],
                 "rx_on_when_idle": neighbor_info_dict[ "rx_on_when_idle"],
                 "lqi_from_device": neighbor_info_dict[ "lqi"],
+                "depth": neighbor_info_dict[ "depth"],
                 "permit_joining": neighbor_info_dict[ "permit_joining"]}
         )
         self.log.logging("ZigpyTopology", "Debug", f"build_zigpy_neighbors adding relation {self.neighbors_table[nwkid_parent]['relationship']}")
@@ -159,6 +289,7 @@ def parse_neigbor_infos( neighbor ):
         "rx_on_when_idle": convert_rx_on_when_idle(neighbor.rx_on_when_idle),
         "relationship": convert_relationship_code(neighbor.relationship),
         "permit_joining": convert_permit_joining(neighbor.permit_joining),
+        "depth": neighbor.depth,
         "lqi": neighbor.lqi
     }
 
@@ -228,7 +359,7 @@ def parse_route_infos( route):
         "dst_nwk": route.DstNWK.serialize()[::-1].hex(),
         "route_status": convert_route_status_code(route.RouteStatus),
         "memory_constrained": route.MemoryConstrained,
-        "many_to_one": route.RouteRecordRequired,
+        "many_to_one": route.ManyToOne,
         "route_record_required": route.RouteRecordRequired,
         "next_hop": route.NextHop.serialize()[::-1].hex()
     }

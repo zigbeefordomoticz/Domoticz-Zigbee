@@ -32,7 +32,10 @@ from Modules.zigbeeVersionTable import ZNP_MODEL
 LOGGER = logging.getLogger(__name__)
 
 class App_bellows(bellows.zigbee.application.ControllerApplication):
-    
+
+    # bellows persists the TX power it sets (NVRAM radioTxPower): see AppGeneric._repair_tx_power_left_at_0dbm()
+    TX_POWER_LEFT_AT_0DBM_REPAIR = bellows.zigbee.application.DEFAULT_TX_POWER
+
     @classmethod
     async def new(cls, config: dict, auto_form: bool = False, start_radio: bool = True) -> zigpy.application.ControllerApplication:
         LOGGER.debug("new")
@@ -105,9 +108,6 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         FirmwareBranch, FirmwareMajorVersion, FirmwareVersion = bellows_extract_versioning_for_plugin(self, brd_manuf, brd_name, version)
         self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion,version))
         
-        #if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
-        #    self.callBackBackup( await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
-
         # Makes 0x0000 default Lightlink group , used by Ikea
         coordinator = self.get_device(self.state.node_info.ieee)
         if self.pluginconf.pluginConf["zigatePartOfGroup0000"]:
@@ -223,7 +223,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
     async def coordinator_backup( self ):
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
-            self.callBackBackup(await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
+            self.callBackBackup(await self.backups.create_backup(load_devices=True))
 
 
     async def network_interference_scan(self):

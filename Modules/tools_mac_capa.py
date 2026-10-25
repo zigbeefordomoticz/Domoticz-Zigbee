@@ -198,3 +198,161 @@ def is_ack_tobe_disabled(self, nwkid):
         return False
 
     return False
+
+# Node descriptor material handed to zigpy for a pre-loaded device.
+#
+# zigpy fills Device.node_desc only for a device it interviewed itself, and the
+# plugin registers its own devices with add_device(), which leaves it None. A
+# device with no node_desc is skipped by zigpy's topology scan before any
+# request is sent, so on an existing install a scan reaches almost nothing.
+# See issue #2110.
+
+COORDINATOR_NWKID = "0000"
+
+CAPABILITY_FULL_FUNCTION_DEVICE = "Full-Function Device"
+CAPABILITY_REDUCED_FUNCTION_DEVICE = "Reduced-Function Device"
+
+NODE_DESCRIPTOR_LOGICAL_TYPES = {
+    "coordinator": "coordinator",
+    "router": "router",
+    "end device": "end_device",
+    "end_device": "end_device",
+}
+
+NODE_DESCRIPTOR_DEVICE_TYPES = {"FFD": "router", "RFD": "end_device"}
+
+# decodeMacCapa()'s bit positions, so a Capability list can be turned back into
+# the MAC capability byte it was decoded from
+CAPABILITY_TO_MAC_CAPABILITY_BIT = {
+    "Able to act Coordinator": 0b00000001,
+    CAPABILITY_FULL_FUNCTION_DEVICE: 0b00000010,
+    "Main Powered": 0b00000100,
+    "Receiver during Idle": 0b00001000,
+    "High security": 0b01000000,
+    "NwkAddr should be allocated": 0b10000000,
+}
+
+MAC_CAPABILITY_FULL_FUNCTION_DEVICE = 0b00000010
+
+
+def node_descriptor_fields(nwkid, device_record):
+    """What the plugin knows of a device's node descriptor, as plain data.
+
+    Plain data rather than a zigpy NodeDescriptor, so that plugin.py and this
+    module stay free of zigpy imports: the transport builds the real struct.
+
+    "raw" is the node descriptor the plugin captured off the wire and never
+    rewrites, which the transport parses in preference to everything else here --
+    it is the very thing being reconstructed, and it is the only source that can
+    tell a coordinator from a router. It is kept across restarts
+    (MANDATORY_ATTRIBUTES in Modules/database.py). The remaining keys are the
+    fallback for a device that never answered a Node Descriptor request.
+
+    Returns None when neither a raw descriptor nor a device type is known, so
+    that the caller registers the device the way it does today -- without a
+    descriptor -- rather than with a guessed one. Guessing matters here: a device
+    wrongly presented as a router is one zigpy will interrogate on every single
+    scan.
+    """
+    if not device_record:
+        return None
+
+    raw = device_record.get("_rawNodeDescriptor")
+    raw = raw.strip() if isinstance(raw, str) and raw.strip() else None
+
+    logical_type = _node_descriptor_logical_type(nwkid, device_record)
+    if logical_type is None and raw is None:
+        return None
+
+    return {
+        "raw": raw,
+        "logical_type": logical_type,
+        "mac_capability": _node_descriptor_mac_capability(device_record),
+        # "Manufacturer" usually holds the 4-hex manufacturer code, but some
+        # device modules put a name in it ("Legrand"), hence the range check
+        "manufacturer_code": _node_descriptor_int(device_record.get("Manufacturer"), 0xFFFF),
+        "maximum_buffer_size": _node_descriptor_int(device_record.get("Max Buffer Size"), 0xFF),
+        "maximum_incoming_transfer_size": _node_descriptor_int(device_record.get("Max Rx"), 0xFFFF),
+        "maximum_outgoing_transfer_size": _node_descriptor_int(device_record.get("Max Tx"), 0xFFFF),
+        "server_mask": _node_descriptor_int(device_record.get("server_mask"), 0xFFFF),
+        "descriptor_capability_field": _node_descriptor_int(device_record.get("descriptor_capability"), 0xFF),
+    }
+
+
+def _node_descriptor_logical_type(nwkid, device_record):
+    """Router, end device or coordinator, read from the least-rewritten source.
+
+    "Capability" is preferred over LogicalType, DeviceType and MacCapa because it
+    holds what the device announced: it is written once at pairing from
+    decodeMacCapa(), and the only later change to it is "Main Powered" being
+    dropped for a device known to misreport its power source. The other three
+    are rewritten per model afterwards, and in opposite directions for the same
+    models -- ReArrangeMacCapaBasedOnModel() marks TI0001 and the TS06xx
+    switches Router/FFD while mainPoweredDevice() marks the very same models
+    End Device/RFD, so whichever ran last is what LogicalType holds.
+
+    Reading the announced capability also lands on the right answer for the two
+    device families that correction exists for, without needing to know their
+    model names: Livolo announces 0x80 and Aqara Opple 0x84, and neither has the
+    full-function bit set, so both come out as end devices -- which is what
+    NetworkMap.is_a_router() concluded too, there by excluding them by name.
+    """
+    if nwkid == COORDINATOR_NWKID:
+        return "coordinator"
+
+    capability = device_record.get("Capability")
+    if isinstance(capability, (list, tuple, set)):
+        if CAPABILITY_FULL_FUNCTION_DEVICE in capability:
+            return "router"
+        if CAPABILITY_REDUCED_FUNCTION_DEVICE in capability:
+            return "end_device"
+
+    # Nothing was announced, or the record predates it being kept: fall back to
+    # whatever is left, corrections and all.
+    logical_type = NODE_DESCRIPTOR_LOGICAL_TYPES.get(
+        str(device_record.get("LogicalType") or "").strip().lower()
+    )
+    if logical_type:
+        return logical_type
+
+    device_type = NODE_DESCRIPTOR_DEVICE_TYPES.get(device_record.get("DeviceType"))
+    if device_type:
+        return device_type
+
+    mac_capability = _node_descriptor_int(device_record.get("MacCapa"), 0xFF)
+    if mac_capability:
+        return "router" if mac_capability & MAC_CAPABILITY_FULL_FUNCTION_DEVICE else "end_device"
+
+    return None
+
+
+def _node_descriptor_mac_capability(device_record):
+    """The MAC capability byte, re-encoded from the announced Capability.
+
+    Same reason as the logical type: MacCapa itself is rewritten per model, and
+    Capability is what the device said.
+    """
+    capability = device_record.get("Capability")
+    if isinstance(capability, (list, tuple, set)) and capability:
+        flags = 0
+        for name, bit in CAPABILITY_TO_MAC_CAPABILITY_BIT.items():
+            if name in capability:
+                flags |= bit
+        return flags
+
+    return _node_descriptor_int(device_record.get("MacCapa"), 0xFF)
+
+
+def _node_descriptor_int(value, maximum):
+    """A node descriptor field as an int, or 0 when the record holds no usable value."""
+    if isinstance(value, bool) or value is None:
+        return 0
+    if isinstance(value, int):
+        return value if 0 <= value <= maximum else 0
+    if not isinstance(value, str) or not value.strip():
+        return 0
+    try:
+        number = int(value.strip(), 16)
+    except ValueError:
+        return 0
+    return number if 0 <= number <= maximum else 0

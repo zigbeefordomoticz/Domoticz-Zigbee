@@ -34,6 +34,7 @@ def setup_list_rest_commands( self ):
         {"Name": "change-channel", "Verbs": {"PUT"}, "function": self.rest_change_channel},
         {"Name": "change-model", "Verbs": {"PUT"}, "function": self.rest_change_model_name},
         {"Name": "clear-error-history", "Verbs": {"GET"}, "function": self.rest_logErrorHistoryClear },
+        {"Name": "csp-report", "Verbs": {"POST"}, "function": self.rest_csp_report},
         {"Name": "dev-cap", "Verbs": {"GET"}, "function": self.rest_dev_capabilities},
         {"Name": "dev-command", "Verbs": {"PUT"}, "function": self.rest_dev_command},
         {"Name": "device", "Verbs": {"GET"}, "function": self.rest_Device},
@@ -76,6 +77,8 @@ def setup_list_rest_commands( self ):
         {"Name": "sw-reset-zigate", "Verbs": {"GET"}, "function": self.rest_reset_zigate},
         {"Name": "sw-reset-coordinator", "Verbs": {"GET"}, "function": self.rest_reset_zigate},
         {"Name": "topologie", "Verbs": {"GET", "DELETE"}, "function": self.rest_netTopologie},
+        {"Name": "topology-scan", "Verbs": {"GET", "DELETE"}, "function": self.rest_topology_scan},
+        {"Name": "topology-scan-associated-devices", "Verbs": {"GET"}, "function": self.rest_topology_scan_associated_devices},
         {"Name": "unbinding", "Verbs": {"PUT"}, "function": self.rest_unbinding},
         {"Name": "unbinding-group", "Verbs": {"PUT"}, "function": self.rest_group_unbinding},
         {"Name": "upgrade-certified-devices", "Verbs": {"GET"}, "function": self.rest_certified_devices_update},
@@ -85,6 +88,7 @@ def setup_list_rest_commands( self ):
         {"Name": "ieee2nwk-raw", "Verbs": {"GET"}, "function": self.rest_IEEE2NWK_raw},
         {"Name": "zgroup-list-available-device", "Verbs": {"GET"}, "function": self.rest_zGroup_lst_avlble_dev },
         {"Name": "zgroup", "Verbs": {"GET", "PUT"}, "function": self.rest_zGroup},
+        {"Name": "zigpy-topology-raw", "Verbs": {"GET"}, "function": self.rest_zigpy_topology_raw},
         {"Name": "zigate-erase-PDM", "Verbs": {"GET"}, "function": self.rest_zigate_erase_PDM},
         {"Name": "zigate-mode", "Verbs": {"GET"}, "function": self.rest_zigate_mode},
         {"Name": "zigate", "Verbs": {"GET"}, "function": self.rest_zigate },
@@ -142,7 +146,6 @@ def execute_rest_command(self, verb, data, version, command, parameters):
         "Cache-Control": "no-cache, no-store, must-revalidate",
         "Pragma": "no-cache",
         "Expires": "0",
-        "Accept": "*/*",
     })
 
     if command == "help":

@@ -73,12 +73,12 @@ SETTINGS = {
             "autoRestore": {"type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": True,},
             "ZigpyTopologyReport": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "ZigpyTopologyReportAutoBackup": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
+            "ZigpyTopologyAssociatedDevices": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "ZigpyAutoTopology": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "MonitorLoopLatency": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
             "CaptureRxFrames": {"type": "bool","default": 0,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "CaptureTxFrames": {"type": "bool","default": 0,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "enableZclDuplicatecheck": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
-            "BackupFullDevices": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False,"ZigpyRadio": "znp" },
             "ForceAPSAck": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": True, "Advanced": True, },
             "EzspAllowUnsecuredRejoins": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "ezsp" },
             "BellowsNoMoreEndDeviceChildren": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "ezsp" },
@@ -139,6 +139,7 @@ SETTINGS = {
             "forcePassiveWidget": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "allowForceCreationDomoDevice": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": True, "Advanced": True, },
             "ForceDeviceTimedOut_afterXhours": { "type": "int", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
+            "HealthTimeOut": { "type": "int", "default": 21200, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "resetPluginDS": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": True, "Advanced": True, },
             "resetConfigureReporting": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, },
             "checkConfigurationReporting": { "type": "int", "default": 75600, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
@@ -393,6 +394,7 @@ SETTINGS = {
             "z4dCertifiedDevices": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "zclCommand": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "zclDecoder": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "zclDefaultResponse": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "zdpCommand": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "zdpDecoder": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "zigateCommand": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True }
@@ -570,9 +572,10 @@ def loading_settings_from_domoticz(self):
     domoticz_settings = {}
 
     try:
-        domoticz_settings = getConfigItem(Key="PluginConf", Attribute="b64-settings",)
-        domoticz_settings = domoticz_settings.get("b64-settings",{})
-        dz_timestamp = domoticz_settings.get("TimeStamp",0) if domoticz_settings else 0
+        # The TimeStamp is stored in the record, next to the settings
+        domoticz_record = getConfigItem(Key="PluginConf", Attribute="b64-settings",)
+        domoticz_settings = domoticz_record.get("b64-settings",{})
+        dz_timestamp = domoticz_record.get("TimeStamp",0) if domoticz_settings else 0
 
     except Exception as e:
         Domoticz.Error("Cannot load PluginConf from Domoticz DB: %s" % e)
@@ -624,6 +627,9 @@ def load_settings(self):
     if self.zigbee_communication != "zigpy":
         # Force to 0 as this parameter is only relevant to Zigpy
         self.pluginConf["ZigpyTopologyReport"] = False
+        # Second half of a zigpy topology scan; nothing runs it on a native ZiGate,
+        # where the TopologyV2 scan collects the same table on its own.
+        self.pluginConf["ZigpyTopologyAssociatedDevices"] = False
     
     if dz_timestamp >= txt_timestamp:
         Domoticz.Status("Z4D loads pluginconf from Domoticz Db: %s" % len(self.pluginConf))

@@ -18,7 +18,8 @@ import time
 import traceback
 
 
-from Classes.WebServer.tools import MAX_BLOCK_SIZE
+from Classes.WebServer.tools import (MAX_BLOCK_SIZE, redact_headers,
+                                     redact_raw_request)
 
 def startWebServer(self):
 
@@ -41,6 +42,11 @@ def close_all_clients(self):
     self.clients.clear()
 
 
+def canonical_header_name(name):
+    """HTTP header names are case-insensitive: store 'content-length' as 'Content-Length'."""
+    return "-".join(part.capitalize() for part in name.strip().split("-"))
+
+
 def parse_http_request(data):
     """
     Parse an HTTP request string into its components.
@@ -55,7 +61,8 @@ def parse_http_request(data):
         tuple: A tuple containing:
             - method (str): The HTTP method (e.g., 'GET', 'POST').
             - path (str): The requested path (e.g., '/index.html').
-            - headers (dict): A dictionary of headers where keys are header names and values are header values.
+            - headers (dict): A dictionary of headers where keys are header names (canonical case, e.g.
+              'Content-Length') and values are header values.
             - body (bytes): The body of the request as a bytes object.
 
     Raises:
@@ -74,7 +81,7 @@ def parse_http_request(data):
         if not line.strip():
             break
         key, value = line.split(":", 1)
-        headers[key.strip()] = value.strip()
+        headers[canonical_header_name(key)] = value.strip()
 
     # Parse body if present
     if "Content-Length" in headers:
@@ -156,11 +163,11 @@ def handle_client(self, client_socket, client_addr):
             try:
                 # Let's receive the first chunck (to get the headers)
                 incoming_data = receive_data(self, client_socket)
-                self.logging("Debug", f"incoming_data {incoming_data}")
+                self.logging("Debug", f"incoming_data {len(incoming_data)} bytes")
 
                 try:
                     incoming_data = incoming_data.decode('utf-8')
-                    self.logging("Debug", f"incoming_data decoded {incoming_data}")
+                    self.logging("Debug", f"incoming_data decoded {redact_raw_request(incoming_data)}")
 
                 except UnicodeDecodeError:
                     self.logging("Debug", "Received non-UTF-8 data, handling as binary")
@@ -173,11 +180,11 @@ def handle_client(self, client_socket, client_addr):
                 method, path, headers, body = parse_http_request(incoming_data)
                 content_length = int(headers.get('Content-Length', 0))
 
-                self.logging("Debug", f"handle_client from method: {method} path: {path} content_length: {content_length} len_body: {len(body)} headers: {headers}")
+                self.logging("Debug", f"handle_client from method: {method} path: {path} content_length: {content_length} len_body: {len(body)} headers: {redact_headers(headers)}")
 
                 received_length = len(body)
 
-                while received_length <= content_length:
+                while received_length < content_length:
                     self.logging("Debug", f"handle_client received_length: {received_length} content_length: {content_length} {content_length - received_length}")
                     additional_data = receive_data(self, client_socket, content_length - len(body)).decode('utf-8')
                     if not additional_data:
@@ -250,6 +257,7 @@ def check_cert_and_key(self, cert_path, key_path):
     try:
         # Attempt to load cert and key to verify correctness
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context.minimum_version = ssl.TLSVersion.TLSv1_2
         context.load_cert_chain(certfile=cert_path, keyfile=key_path)
 
     except ssl.SSLError as e:
@@ -300,18 +308,6 @@ def set_keepalive(sock, keepalive_time=60, keepalive_interval=10, keepalive_prob
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, keepalive_probes)
 
 
-def is_port_in_use(port, host='0.0.0.0'):  # nosec
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        try:
-            s.bind((host, port))
-        except OSError as e:
-            if e.errno == 98:  # Address already in use
-                return True
-            else:
-                raise
-        return False
-
-
 def run_server(self, host='0.0.0.0', port=9440):   # nosec
     """
     Start the web server by creating and binding a socket on the specified IP and port.
@@ -340,10 +336,6 @@ def run_server(self, host='0.0.0.0', port=9440):   # nosec
 
     self.logging( "Log", f"WebUI - server starting on {host} {port}")
 
-    # if is_port_in_use(port, host):
-    #     self.logging( "Error", f"WebUI cannot start, Port {port} is already in use!!!")
-    #     return
-
     try:
         # Set up the server
         if self.httpPort:
@@ -361,9 +353,6 @@ def run_server(self, host='0.0.0.0', port=9440):   # nosec
         self.logging( "Log", f"++ WebUI - SSL Private key {server_private_key}")
 
         context = check_cert_and_key(self, server_certificate, server_private_key)
-        if context:
-            context.minimum_version = ssl.TLSVersion.TLSv1_2
-
         if context:
             self.server = context.wrap_socket( self.server, server_side=True, )
 

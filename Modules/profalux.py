@@ -25,6 +25,21 @@ from Modules.zigateConsts import ZIGATE_EP
 from Zigbee.zclCommands import zcl_configure_reporting_requestv2
 
 
+# Model names the plugin makes up for Profalux devices that do not report a usable one
+PROFALUX_FAKE_MODELS = ("VoletBSO-Profalux", "BSO-Profalux", "Volet-Profalux", "Telecommande-Profalux")
+
+
+def profalux_model_has_own_config(self, nwkid):
+    """True when the device reported a real model that has a device configuration of its own.
+
+    Newer Profalux devices (MOT-C1Z06C, MOT-C1Z06F, MAI-ZTM22C, ...) report their model in Basic.
+    Such a model must be kept, otherwise the device is handled with one of the made-up models
+    and its own configuration (widgets, bindings, reporting) is never used.
+    """
+    model = self.ListOfDevices.get(nwkid, {}).get("Model")
+    return isinstance(model, str) and model in self.DeviceConf and model not in PROFALUX_FAKE_MODELS
+
+
 def profalux_fake_deviceModel(self, nwkid):
 
     """
@@ -47,7 +62,7 @@ def profalux_fake_deviceModel(self, nwkid):
     if "Manufacturer" not in self.ListOfDevices[nwkid]:
         return
 
-    if "Model" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["Model"] in ( "MOT-C1Z06C", "MOT-C1Z06F", ):
+    if profalux_model_has_own_config(self, nwkid):
         # No needs as we have a model Name ;-)
         return
     

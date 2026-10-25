@@ -35,6 +35,7 @@ from Modules.domoticzAbstractLayer import (domo_read_BatteryLevel,
                                            domoticz_status_api)
 from Modules.matomo_request import matomo_opt_in_action, matomo_opt_out_action
 from Modules.sendZigateCommand import sendZigateCmd
+from Modules.topologyScan import a_topology_scan_is_running
 from Modules.tools import get_device_nickname, is_hex
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import zigate_set_mode
@@ -106,7 +107,8 @@ class WebServer(object):
                                                rest_scan_devices_for_group,
                                                rest_zGroup,
                                                rest_zGroup_lst_avlble_dev)
-    from Classes.WebServer.rest_logging import (rest_logErrorHistory,
+    from Classes.WebServer.rest_logging import (rest_csp_report,
+                                                rest_logErrorHistory,
                                                 rest_logErrorHistoryClear,
                                                 rest_logPlugin)
     from Classes.WebServer.rest_NonOptimizedDevice import \
@@ -124,6 +126,9 @@ class WebServer(object):
     from Classes.WebServer.rest_recreateWidget import rest_recreate_widgets
     from Classes.WebServer.rest_Topology import (rest_netTopologie,
                                                  rest_req_topologie)
+    from Classes.WebServer.rest_TopologyScan import (
+        rest_topology_scan, rest_topology_scan_associated_devices,
+        rest_zigpy_topology_raw)
     from Classes.WebServer.rest_ZLinky import rest_zlinky, rest_zlinky_stge
     from Classes.WebServer.sendresponse import sendResponse
     from Classes.WebServer.tools import (DumpHTTPResponseToLog,
@@ -188,6 +193,8 @@ class WebServer(object):
         self.pluginParameters = PluginParameters
         self.networkmap = None
         self.networkenergy = None
+        self.zigpy_topology = None
+        self.associated_devices_scan = None
         self.configureReporting = None
         self.transport = transport
 
@@ -247,6 +254,12 @@ class WebServer(object):
     def update_networkmap(self, networkmap):
         self.networkmap = networkmap
 
+    def update_zigpy_topology(self, zigpy_topology):
+        self.zigpy_topology = zigpy_topology
+
+    def update_associated_devices_scan(self, associated_devices_scan):
+        self.associated_devices_scan = associated_devices_scan
+
     def update_configureReporting(self,configureReporting ):
         self.configureReporting = configureReporting
         
@@ -289,7 +302,7 @@ class WebServer(object):
             if self.groupmgt:
                 health["GroupStatus"] = self.groupmgt.GroupStatus
                 
-            if self.networkmap and self.networkmap.NetworkMapPhase():
+            if a_topology_scan_is_running(self):
                 health["Topology"] = "In Progress"
 
             _response["Data"] = json.dumps(health, sort_keys=True)
@@ -1016,7 +1029,7 @@ class WebServer(object):
                             if _new_param["Disabled"]:
                                 self.ListOfDevices[dev]["Health"] = "Disabled"
                             else:
-                                self.ListOfDevices[dev]["Health"] = ""
+                                self.ListOfDevices[dev]["Health"] = "unknown"
                                 
                         self.ListOfDevices[dev]["Param"] = _new_param
                         

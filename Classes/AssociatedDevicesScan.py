@@ -1,0 +1,354 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Implementation of Zigbee for Domoticz plugin.
+#
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2026
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
+"""
+    Class: AssociatedDevicesScan
+
+    Description: Collects the Associated Devices table of every coordinator and
+        router, as the second half of a zigpy topology scan.
+
+        zigpy's topology scan collects two tables, Neighbors (Mgmt_Lqi_req) and
+        Routes (Mgmt_Rtg_req). The Zigbee specification also exposes the
+        associated device list -- a router's children -- but only through the
+        extended address response (NWK_addr_req with RequestType 0x01), which
+        zigpy never asks for. The plugin already owns that request, its decoder
+        and its paging, so it collects the third table itself and files it with
+        the zigpy scan it belongs to.
+
+        This runs *after* zigpy's scan has finished, never alongside it: zigpy
+        paces itself with a 1.0-1.5 s sleep after every request precisely to
+        avoid flooding the mesh, and two scanners interrogating the same routers
+        at once would undo that and make a timeout impossible to attribute.
+
+        No thread and no event loop of its own: it is a state machine ticked
+        from the plugin heartbeat, one request in flight at a time, which is the
+        same shape as Classes/NetworkMap.py.
+"""
+
+import time
+from collections.abc import Mapping
+
+from Modules.associated_devices import (EXTENDED_REQUEST_TYPE, is_last_page,
+                                        nodes_to_scan, split_device_list)
+from Modules.zigateConsts import MAX_LOAD_ZIGATE
+
+# Phases, mirroring NetworkMap's _NetworkMapPhase
+PHASE_IDLE = 0
+PHASE_RUNNING = 1
+
+# Heartbeats to wait for one node before giving up on it. HEARTBEAT is 5 s, so
+# 2 ticks is the 10 s NetworkMap allows itself for an LQI request (LQIticks < 2).
+NODE_TICK_BUDGET = 2
+
+# Ceiling for the whole collection, as a multiple of what the node list should
+# need. A node whose pages never stop, or a radio that stops answering without
+# the transport noticing, must not keep the scan -- and the report -- pending
+# forever.
+SCAN_BUDGET_FACTOR = 3
+
+STATUS_REQUIRED = "ScanRequired"
+STATUS_WAITING = "WaitingResponse"
+STATUS_RECEIVED = "Received"
+STATUS_TIMEDOUT = "TimedOut"
+# Answered, but with nothing in the answer. A node here will never produce the
+# table, which is not the same fact as a node that said nothing at all, and the
+# report has to be able to tell the two apart.
+STATUS_NO_LIST = "AnsweredWithoutList"
+
+# How the outcome is recorded in the report, in the /topology-scan vocabulary
+# (Modules/topologyScan.py: SCAN_OK / SCAN_TIMEOUT / SCAN_NOT_SUPPORTED) rather
+# than in the internal spelling above, so the report needs no translation on the
+# way out. not_supported already means "this node cannot answer this kind of
+# request" there, which is exactly what a reply carrying no list says.
+SCAN_STATUS_OK = "ok"
+SCAN_STATUS_TIMEOUT = "timeout"
+SCAN_STATUS_NOT_SUPPORTED = "not_supported"
+
+_REPORTED_OUTCOME = {
+    STATUS_RECEIVED: SCAN_STATUS_OK,
+    STATUS_NO_LIST: SCAN_STATUS_NOT_SUPPORTED,
+}
+
+
+class AssociatedDevicesScan:
+
+    def __init__(self, zigbee_communication, PluginConf, ZigateComm, ListOfDevices, DeviceConfig, log,
+                 send_request, on_completed=None):
+        # Every attribute below is read by the send path, because the collector
+        # is what stands in for the plugin on the way down: _request() calls
+        # zdp_NWK_address_request(self, ...) with this object as `self`, the
+        # same shape as Classes/NetworkMap.py. Anything that path reads and this
+        # object does not carry is an AttributeError on the first request of
+        # every node, which reads in the report as a mesh where nothing answered.
+        #
+        # zigbee_communication is read by raw_APS_request() to pick the zigpy or
+        # the native transport -- inside the argument list of its opening
+        # self.log.logging() call, so it is read whether or not that category is
+        # enabled. It was missing, and a collection timed out on all of its
+        # nodes, coordinator included, having sent nothing.
+        self.zigbee_communication = zigbee_communication
+        self.pluginconf = PluginConf
+        self.ControllerLink = ZigateComm
+        self.ListOfDevices = ListOfDevices
+        # DeviceConf, not DeviceConfig: every ZDP request issued here goes
+        # through raw_APS_request() -> device_listening_on_iddle(), which reads
+        # self.DeviceConf. Getting the name wrong broke the first ZDP request of
+        # a scan with an AttributeError that escaped as an HTTP status 0.
+        self.DeviceConf = DeviceConfig
+        self.log = log
+
+        # Also read by raw_APS_request(), to delay commands while a device is
+        # commissioning. A constant rather than the plugin's flag: plugin.py
+        # does not tick this collection while self.pairing_in_progress is set,
+        # so by construction it is False whenever the send path reads it.
+        self.pairing_in_progress = False
+
+        # zdp_NWK_address_request, handed in rather than imported: importing
+        # Zigbee.zdpCommands pulls the real Modules.* chain into whatever imports
+        # this class, which breaks unrelated tests through the stubs
+        # tests/conftest.py installs. Passing it keeps this state machine
+        # testable in the ordinary pytest session.
+        self.send_request = send_request
+
+        # Called with the collected {nwkid: [children]} and the per-node outcome
+        # when the collection completes, or with (None, None) when it is
+        # abandoned. Injected rather than imported so this class never reaches
+        # ZigpyTopology, and so stays importable -- and testable -- without
+        # zigpy installed.
+        self.on_completed = on_completed
+
+        self.phase = PHASE_IDLE
+        self.nodes = {}
+        self.collected = {}
+        self.current = None
+        # The IEEE the request in flight asked about. A reply carrying no
+        # associated device list is matched on it rather than on the nwkid,
+        # because the plugin issues the same NWK_addr_req elsewhere --
+        # Modules/heartbeat.py pings an unresponsive device with RequestType 00,
+        # three times -- and those replies have exactly this shape. Matching the
+        # IEEE this collection asked for cannot confuse the two.
+        self.current_ieee = None
+        self.node_ticks = 0
+        self.scan_ticks = 0
+        self.scan_budget = 0
+        self.started_at = None
+
+    # ------------------------------------------------------------------
+    # Lifecycle
+    # ------------------------------------------------------------------
+    def in_progress(self):
+        """True while this collection is the reason a scan is still running."""
+        return self.phase == PHASE_RUNNING
+
+    def start_scan(self):
+        """Begin asking. Returns False when there is nothing to ask."""
+        self.nodes = {nwkid: STATUS_REQUIRED for nwkid in nodes_to_scan(self.ListOfDevices)}
+        self.collected = {}
+        self.current = None
+        self.current_ieee = None
+        self.node_ticks = 0
+        self.scan_ticks = 0
+        self.scan_budget = SCAN_BUDGET_FACTOR * (NODE_TICK_BUDGET + 1) * max(len(self.nodes), 1)
+        self.started_at = time.time()
+
+        if not self.nodes:
+            self.logging("Debug", "start_scan - no coordinator or router to ask")
+            self.phase = PHASE_IDLE
+            return False
+
+        self.logging("Status", "Z4D starts collecting Associated Devices from %s node(s)" % len(self.nodes))
+        self.phase = PHASE_RUNNING
+        return True
+
+    def continue_scan(self):
+        """One heartbeat of the collection."""
+        if self.phase != PHASE_RUNNING:
+            return
+
+        if self.ControllerLink.loadTransmit() >= MAX_LOAD_ZIGATE:
+            # Queue is busy; wait without spending the node's budget on it.
+            self.logging("Debug", "continue_scan - deferring, transmit queue is loaded")
+            return
+
+        self.scan_ticks += 1
+        if self.scan_ticks > self.scan_budget:
+            self.abort("budget of %s ticks exhausted" % self.scan_budget)
+            return
+
+        if self.current is not None:
+            self.node_ticks += 1
+            if self.node_ticks < NODE_TICK_BUDGET:
+                return
+            self.logging("Debug", "continue_scan - %s did not answer" % self.current)
+            self.nodes[self.current] = STATUS_TIMEDOUT
+            self.current = None
+            self.current_ieee = None
+
+        # Loop rather than one node per tick: a node that cannot be asked at all
+        # must not cost a heartbeat. Each turn either sends a request and
+        # returns, or takes one node out of STATUS_REQUIRED, so this terminates.
+        while True:
+            next_nwkid = next((nwkid for nwkid, status in self.nodes.items() if status == STATUS_REQUIRED), None)
+            if next_nwkid is None:
+                self.finish()
+                return
+            if self._request(next_nwkid):
+                return
+
+    def _request(self, nwkid):
+        """Ask one node. False when it could not be asked at all."""
+        device = self.ListOfDevices.get(nwkid) or {}
+        ieee = device.get("IEEE") if isinstance(device, Mapping) else None
+        if not ieee:
+            # Nothing to address the request with. NWK_addr_req asks by IEEE.
+            self.logging("Debug", "_request - %s has no IEEE recorded, skipping" % nwkid)
+            self.nodes[nwkid] = STATUS_TIMEDOUT
+            return False
+
+        self.logging("Debug", "_request - asking %s for its associated devices" % nwkid)
+        self.nodes[nwkid] = STATUS_WAITING
+        self.current = nwkid
+        self.current_ieee = ieee
+        self.node_ticks = 0
+        self.send_request(self, nwkid, ieee, u8RequestType=EXTENDED_REQUEST_TYPE, u8StartIndex="00")
+        return True
+
+    def finish(self):
+        answered = sum(1 for status in self.nodes.values() if status == STATUS_RECEIVED)
+        no_list = sum(1 for status in self.nodes.values() if status == STATUS_NO_LIST)
+        children = sum(len(devices) for devices in self.collected.values())
+        self.logging(
+            "Status",
+            "Associated Devices collected: %s of %s node(s) answered, %s child(ren) reported, "
+            "%s node(s) cannot report a list, in %s s"
+            % (answered, len(self.nodes), children, no_list,
+               int(time.time() - (self.started_at or time.time()))),
+        )
+        self._report(dict(self.collected), self.outcome())
+
+    def outcome(self):
+        """Which nodes were asked and which answered.
+
+        The collected table cannot say: it is flat, so a node that was asked and
+        timed out and a router that answered "no children" are both an empty
+        list. A standalone collection is the whole scan, so its coverage has to
+        be recorded somewhere.
+
+        Three outcomes, not two. A node that answered without a list is reported
+        not_supported rather than timeout: both leave the node out of the table,
+        but only one of them is a mesh problem, and reporting a live mains
+        powered router as a timeout sends whoever reads the report looking for a
+        radio fault that is not there.
+        """
+        return {
+            nwkid: _REPORTED_OUTCOME.get(status, SCAN_STATUS_TIMEOUT)
+            for nwkid, status in self.nodes.items()
+        }
+
+    def abort(self, reason):
+        """Give up, and let the scan be filed without this table.
+
+        Reporting None rather than what was collected so far is deliberate: a
+        table listed in a scan is a table the backend asked for in full. Half of
+        one would read as routers with no children, which is a different claim.
+        """
+        if self.phase == PHASE_IDLE:
+            return
+        self.logging("Log", "Associated Devices collection abandoned (%s)" % reason)
+        self._report(None, None)
+
+    def _report(self, associated_devices, outcome):
+        self.phase = PHASE_IDLE
+        self.current = None
+        self.current_ieee = None
+        self.nodes = {}
+        self.collected = {}
+        if self.on_completed:
+            self.on_completed(associated_devices, outcome)
+
+    # ------------------------------------------------------------------
+    # Response, handed over by Decode8040()
+    # ------------------------------------------------------------------
+    def response_received(self, nwkid, num_assoc_devices, start_index, device_list):
+        """One extended address response, for a node this scan asked.
+
+        Returns False for a response this scan did not ask for -- the TopologyV2
+        scan issues the same request and must keep working on its own.
+        """
+        if self.phase != PHASE_RUNNING or nwkid not in self.nodes:
+            return False
+
+        children = split_device_list(device_list)
+        self.collected.setdefault(nwkid, [])
+        for child in children:
+            if child not in self.collected[nwkid]:
+                self.collected[nwkid].append(child)
+
+        if not is_last_page(num_assoc_devices, start_index, len(children)):
+            # Decode8040() has already asked for the next page. Give the node a
+            # fresh budget for it rather than timing it out mid-list.
+            self.logging("Debug", "response_received - %s has more associated devices to come" % nwkid)
+            self.node_ticks = 0
+            return True
+
+        self.logging(
+            "Debug", "response_received - %s reported %s associated device(s)" % (nwkid, len(self.collected[nwkid]))
+        )
+        self.nodes[nwkid] = STATUS_RECEIVED
+        if self.current == nwkid:
+            self.current = None
+            self.current_ieee = None
+        return True
+
+    def response_without_list(self, ieee, reason, nwkid=None):
+        """A reply to the request in flight that carries no associated devices.
+
+        Two replies land here, and neither reaches response_received():
+
+          - a non-zero ZDP status. INV_REQUESTTYPE is what a stack that does not
+            implement RequestType 0x01 answers, and Decode8040() returns on the
+            status check before it reads any further.
+          - status 00 carrying only the address, with no NumAssocDev, StartIndex
+            or list: a single device response to an extended request. It is 24
+            characters, so Decode8040() never sets extendedResponse.
+
+        Both mean the node will not produce a list, ever. Recording that is the
+        point: a live mains powered router read as "timeout" is a mesh fault
+        that is not happening, and waiting out its budget first costs a
+        heartbeat per node for an answer already in hand.
+
+        Matched on the IEEE the request in flight asked about, never on the
+        nwkid alone. Modules/heartbeat.py pings an unresponsive device with the
+        same NWK_addr_req at RequestType 00 and those replies have the same two
+        shapes, so a looser match would mark whichever node this collection
+        happens to be waiting on as not_supported on a ping that failed for an
+        unrelated device. Returns False for anything else, which leaves that
+        reply to the rest of Decode8040() untouched.
+        """
+        if self.phase != PHASE_RUNNING or self.current is None:
+            return False
+        if not ieee or not self.current_ieee or ieee.lower() != self.current_ieee.lower():
+            return False
+        if nwkid is not None and nwkid != self.current:
+            # The reply names a device other than the one asked. Not ours.
+            return False
+
+        self.logging(
+            "Debug", "response_without_list - %s reports no associated devices (%s)" % (self.current, reason)
+        )
+        self.nodes[self.current] = STATUS_NO_LIST
+        self.current = None
+        self.current_ieee = None
+        return True
+
+    def logging(self, logType, message):
+        self.log.logging("NetworkMap", logType, message)

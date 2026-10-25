@@ -82,7 +82,7 @@ def send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpo
         return
 
     self.log.logging(
-        "zclDecoder",
+        ["zclDefaultResponse", "zclDecoder"],
         "Debug",
         (
             f"FCF: {fcf} DisableDefResp: {disable_default_response} "
@@ -93,7 +93,7 @@ def send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpo
     )
 
     if not disable_default_response:
-        self.log.logging("zclDecoder", "Debug",f"zcl_decoders sending a default response {disable_default_response} for command {command}", src_nwk_id)
+        self.log.logging(["zclDefaultResponse", "zclDecoder"], "Debug", f"zcl_decoders sending a default response {disable_default_response} for command {command}", src_nwk_id)
         zcl_raw_default_response(self, src_nwk_id, ZIGATE_EP, src_endpoint, cluster_id, command, sqn, command_status="00", manufcode=manufcode, orig_fcf=fcf)
 
 

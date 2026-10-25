@@ -13,6 +13,7 @@
 import gzip
 import json
 import zlib
+from email.utils import formatdate
 
 from Classes.WebServer.tools import MAX_BLOCK_SIZE, DumpHTTPResponseToLog
 
@@ -39,17 +40,12 @@ http_status_codes = {
 
 HTTP_HEADERS = {
     "Server", 
-    "User-Agent", 
-    "Access-Control-Allow-Headers", 
-    "Access-Control-Allow-Methods",
-    "Access-Control-Allow-Origin",
     "Referrer-Policy",
-    "Cookie",
+    "Content-Security-Policy-Report-Only",
     "Connection",
     "Cache-Control",
     "Pragma",
     "Expires",
-    "Accept",
     "Last-Modified",
     "Content-Type",
     "Content-Encoding",
@@ -124,6 +120,14 @@ def prepare_http_response( self, response_dict, gziped=False, deflated=False , c
         for x in HTTP_HEADERS:
             if x in headers and headers[x]:
                 http_response += f"{x}: {headers[x]}\r\n"
+
+    http_response += f"Date: {formatdate(usegmt=True)}\r\n"
+    # The browser must use the Content-Type sent, never guess one (no index.html run as a script)
+    http_response += "X-Content-Type-Options: nosniff\r\n"
+
+    if self.pluginconf.pluginConf.get("enableGzip") or self.pluginconf.pluginConf.get("enableDeflate"):
+        # The body depends on Accept-Encoding, compressed or not: a cache must not hand gzip to a client that did not ask
+        http_response += "Vary: Accept-Encoding\r\n"
 
     # Determine if Compression, Deflate or Chunk to be used.
     orig_size = len(response_body)

@@ -267,6 +267,10 @@ def composite_value(data_type):
     )
 
 
+# Profile of the Green Power proxy endpoint (usually f2). It describes the proxy, never the device itself.
+GREEN_POWER_PROFILE_ID = "a1e0"
+# Application profiles (ZHA, ZLL) which describe what the device really is.
+APPLICATION_PROFILE_IDS = ("0104", "c05e")
 
 ZLL_DEVICES = {
     # https://www.nxp.com/docs/en/user-guide/JN-UG-3091.pdf
@@ -1844,13 +1848,13 @@ CFG_RPT_ATTRIBUTESbyCLUSTERS = {
                 "Change": "0001",
             },
             "0020": {
-                "DataType": "29",
+                "DataType": "20",
                 "MinInterval": "0E10",
                 "MaxInterval": "0E10",
                 "TimeOut": "0000",
-                "Change": "0001",
+                "Change": "01",
             },
-            "0021": {"DataType": "21", "MinInterval": "0E10", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "01"},
+            "0021": {"DataType": "20", "MinInterval": "0E10", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "01"},
         }
     },
     # On/Off Cluster
@@ -1971,7 +1975,7 @@ CFG_RPT_ATTRIBUTESbyCLUSTERS = {
     # Pression Atmo
     "0403": {
         "Attributes": {
-            "0000": {"DataType": "20", "MinInterval": "003C", "MaxInterval": "0384", "TimeOut": "0000", "Change": "01"},
+            "0000": {"DataType": "29", "MinInterval": "003C", "MaxInterval": "0384", "TimeOut": "0000", "Change": "0001"},
             "0010": {
                 "DataType": "29",
                 "MinInterval": "003C",
@@ -1983,7 +1987,7 @@ CFG_RPT_ATTRIBUTESbyCLUSTERS = {
     },
     "0404": {
         "Attributes": {
-            "0000": {"DataType": "20", "MinInterval": "003C", "MaxInterval": "0384", "TimeOut": "0000", "Change": "01"},
+            "0000": {"DataType": "21", "MinInterval": "003C", "MaxInterval": "0384", "TimeOut": "0000", "Change": "0001"},
         }
     },
 

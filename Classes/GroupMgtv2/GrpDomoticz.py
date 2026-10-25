@@ -112,6 +112,17 @@ _COVERING_GROUP_STYLES = {"BlindPercentInverted", "BlindPercent", "VenetianInver
 
 _DEFAULT_WIDGET_TYPE = "ColorControlFull"
 
+# Widget type given to a group that holds nothing a group command can drive, either
+# because it is empty or because its only members are remotes. On/Off is the least
+# capable widget, so it cannot offer the user actions the group cannot perform, and
+# it is recomputed upwards as soon as a real device joins.
+_PLACEHOLDER_WIDGET_TYPE = "Switch"
+
+# Models that are never driven by a group command: they send commands, they do not
+# receive them. They contribute neither state (update_domoticz_group_device) nor a
+# widget type (best_group_widget).
+EXCLUDED_MODELS = {"TRADFRI remote control", "Remote Control N2"} | set(LEGRAND_REMOTES)
+
 @dataclass
 class GroupAccumulator:
     """Aggregates per-device state while iterating over the devices of a group."""
@@ -409,8 +420,10 @@ def best_group_widget(self, GroupId):
     those are incompatible with any further capability negotiation.
 
     If no device contributes a recognisable widget type (e.g. the group
-    contains only the coordinator or devices with no ClusterType), the
-    fallback is ``"ColorControlFull"``.
+    contains only the coordinator, only remotes, or devices with no
+    ClusterType), the fallback is ``_PLACEHOLDER_WIDGET_TYPE`` ("Switch"):
+    nothing in the group can be driven, so the group must not offer more
+    than On/Off.
 
     Parameters
     ----------
@@ -439,7 +452,10 @@ def best_group_widget(self, GroupId):
 
     Notes
     -----
-    Devices with ``NwkId == "0000"`` (the coordinator) are skipped.
+    Devices with ``NwkId == "0000"`` (the coordinator) are skipped, as are
+    the models in ``EXCLUDED_MODELS``: a remote emits group commands and is
+    never driven by them, so it contributes no widget type and must not cap
+    the negotiation either.
     Devices absent from ``self.ListOfDevices`` are skipped with an explicit
     warning log.
 
@@ -470,6 +486,13 @@ def best_group_widget(self, GroupId):
         device_info    = self.ListOfDevices[NwkId]
         device_ep_info = device_info.get("Ep", {}).get(devEp, {})
 
+        if device_info.get("Model") in EXCLUDED_MODELS:
+            # A remote sends group commands, it never receives them, so its own widget
+            # must neither become the group widget nor cap it: a remote offering On/Off
+            # and dimming would otherwise hold a colour bulb down to a dimmer.
+            self.logging("Debug", f"best_group_widget Group={GroupId} NwkId={NwkId} is a remote, not contributing a widget type")
+            continue
+
         if "ClusterType" not in device_ep_info:
             continue
 
@@ -483,7 +506,7 @@ def best_group_widget(self, GroupId):
 
     # --- Persist results ---
     if group_widget_type_candidate is None:
-        group_widget_type_candidate = _DEFAULT_WIDGET_TYPE
+        group_widget_type_candidate = _PLACEHOLDER_WIDGET_TYPE
 
     self.ListOfGroups[GroupId]["GroupWidgetType"] = group_widget_type_candidate
     self.ListOfGroups[GroupId].get("Tradfri Remote", {}).setdefault("Color Mode", group_widget_type_candidate)
@@ -500,8 +523,6 @@ def best_group_widget(self, GroupId):
 
 
 
-
-EXCLUDED_MODELS = {"TRADFRI remote control", "Remote Control N2"} | set(LEGRAND_REMOTES)
 
 def update_domoticz_group_device(self, GroupId):
     """
@@ -1035,7 +1056,7 @@ def resetDevicesHeartBeat(self, GrpId):
 
             # Reset Health status of corresponding device if any in Not Reachable
             if "Health" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Health"] == "Not Reachable":
-                self.ListOfDevices[NwkId]["Health"] = ""
+                self.ListOfDevices[NwkId]["Health"] = "unknown"
 
 
 def is_device_inverted(self, GroupId):

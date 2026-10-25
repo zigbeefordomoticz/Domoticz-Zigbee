@@ -77,7 +77,8 @@ class GroupsManagement(object):
     from Classes.GroupMgtv2.GrpServices import (
         FullRemoveOfGroup, RemoveNwkIdFromAllGroups,
         add_group_member_ship_from_remote, addGroupMemberShip,
-        checkAndTriggerIfMajGroupNeeded, get_available_grp_id)
+        checkAndTriggerIfMajGroupNeeded, get_available_grp_id,
+        recover_legrand_groups_from_devices)
     from Classes.GroupMgtv2.GrpWebServices import (
         ScanAllDevicesForGroupMemberShip, ScanDevicesForGroupMemberShip,
         process_web_request)
@@ -117,6 +118,7 @@ class GroupsManagement(object):
         self.ListOfGroups = {}  # Data structutre to store all groups
         self.log = log
         self.GroupListFileName = None  # Filename of Group caching file
+        self.last_written_groups_list = None  # Serialized ListOfGroups as last written, to skip redundant dumps
         self.ControllerIEEE = None
         self.ScanDevicesToBeDone = []  # List of Devices for which a GrpMemberShip request as to be performed
         self.GroupStatus = "Starting"  # Used by WebServer to display Status of Group!
@@ -133,6 +135,7 @@ class GroupsManagement(object):
         # Open file and load config
         self.GroupListFileName = self.pluginconf.pluginConf["pluginData"] + "/GroupsList-%02d.json" % hardwareID
         self.load_groups_list_from_json()
+        self.recover_legrand_groups_from_devices()
         self.GroupStatus = "ready"
 
     def update_firmware(self, firmwareversion):
