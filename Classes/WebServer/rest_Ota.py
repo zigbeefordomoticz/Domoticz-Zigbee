@@ -467,7 +467,9 @@ def rest_ota_firmware_update(self, verb, data, parameter):
     # Check
     for x in data:
         if "Brand" not in x or "FileName" not in x or "NwkId" not in x or "Ep" not in x or "ForceUpdate" not in x:
-            self.logging("Error", "rest_ota_firmware_update - Missing key parameters  %s " % (data))
+            _context = {"Error code": "OTA0401", "Request": x}
+            if self.log:
+                self.log.logging("WebServer", "Error", "rest_ota_firmware_update - Missing key parameters  %s " % (data), x.get("NwkId") if isinstance(x, dict) else None, _context)
             _response["Data"] = json.dumps({"Error": "Missing attributes"}, sort_keys=True)
             return _response
 
