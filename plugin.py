@@ -1528,6 +1528,11 @@ def zigateInit_Phase3(self):
     if self.networkmap:
         self.webserver.update_networkmap(self.networkmap)
 
+    if self.zigpy_topology:
+        # So /plugin-health can say that a zigpy scan is running: the
+        # NetworkMap phase it used to read never moves on a zigpy setup.
+        self.webserver.update_zigpy_topology(self.zigpy_topology)
+
     # Enable Over The Air Upgrade if applicable
     if self.OTA is None and self.pluginconf.pluginConf["allowOTA"]:
         self.log.logging("Plugin", "Status", "Z4D starts Over-The-Air Management")
