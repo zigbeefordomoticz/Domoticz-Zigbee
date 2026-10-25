@@ -652,12 +652,14 @@ def zcl_raw_ota_image_block_response_wait_for_data( self, nwkid, EPIn, EPout, wa
     return sqn
 
 
-def zcl_raw_ota_image_block_response_abort(self, nwkid, EPIn, EPout, abortstatus):
+def zcl_raw_ota_image_block_response_abort(self, nwkid, EPIn, EPout, abortstatus, sqn=None):
+    # sqn: the sequence number of the Image Block Request being answered, if any
     zcl_command_formated_logging( self, "OTA_Image_Block_Response_Abort (Raw)", nwkid, EPout, "0019", abortstatus)
     
     Command = "05"
     cluster_frame = 0b00011001    # Cluster Specific / Server to Client / With Default Response
-    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    if sqn is None:
+        sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + Command + abortstatus
     raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
     return sqn   

@@ -46,6 +46,8 @@ _OTA_DEPS = {
     "Modules.tools": dict(get_device_nickname=MagicMock(name="get_device_nickname")),
     "Modules.zigateConsts": dict(ADDRESS_MODE={"short": 2, "ieee": 3, "group": 4}, ZIGATE_EP="01"),
     "Zigbee.zclRawCommands": dict(
+        zcl_raw_default_response=MagicMock(name="zcl_raw_default_response"),
+        zcl_raw_ota_image_block_response_abort=MagicMock(name="zcl_raw_ota_image_block_response_abort"),
         zcl_raw_ota_image_block_response_success=MagicMock(name="zcl_raw_ota_image_block_response_success"),
         zcl_raw_ota_image_notify=MagicMock(name="zcl_raw_ota_image_notify"),
         zcl_raw_ota_query_next_image_response=MagicMock(name="zcl_raw_ota_query_next_image_response"),

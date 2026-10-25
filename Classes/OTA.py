@@ -83,7 +83,9 @@ import random
 from Modules.sendZigateCommand import sendZigateCmd
 from Modules.tools import get_device_nickname
 from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
-from Zigbee.zclRawCommands import (zcl_raw_ota_image_block_response_success,
+from Zigbee.zclRawCommands import (zcl_raw_default_response,
+                                   zcl_raw_ota_image_block_response_abort,
+                                   zcl_raw_ota_image_block_response_success,
                                    zcl_raw_ota_image_notify,
                                    zcl_raw_ota_query_next_image_response,
                                    zcl_raw_ota_upgrade_end_response)
@@ -892,7 +894,7 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
 
     # Determine OTA block status
     if length == 0 or data is None:
-        logging( self, "Warning", f"OTA {dest_addr}/{dest_ep} short of data, device request offset: {offset} expected size: {max_data_size} got only {length}" )
+        logging( self, "Warning", f"OTA {dest_addr}/{dest_ep} short of data, device request offset: {offset} expected size: {max_data_size} got only {length}", dest_addr )
         
         if self.latest_request_was_malformed:
             # 2nd time in a row we get a malformed request, aborting
@@ -922,6 +924,15 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
 
     # --- Raw mode (controller internal testing) ---
     raw_mode = self.pluginconf.pluginConf.get("ControllerInRawMode", False)
+    if raw_mode and status != 0x00:
+        if status == 0x95:
+            # ABORT: an Image Block Response carrying the status only (ZCL rev 8 11.13.8.2.1)
+            return zcl_raw_ota_image_block_response_abort(self, dest_addr, ZIGATE_EP, dest_ep, "95", sqn=f"{sequence:02x}")
+        # Invalid file offset: Default Response MALFORMED_COMMAND (ZCL rev 8 11.13.6.5.1 / 11.13.7.5.1).
+        # Image Page Requests are the only callers that disable the APS ack.
+        request_command = "04" if disable_ack else "03"
+        return zcl_raw_default_response(self, dest_addr, ZIGATE_EP, dest_ep, OTA_CLUSTER_ID, request_command, f"{sequence:02x}", command_status="80")
+
     if raw_mode:
         raw_data_hex = "".join(f"{b:02x}" for b in raw_ota_data)
 
