@@ -3,6 +3,7 @@ from Modules.domoTools import lastSeenUpdate
 from Modules.errorCodes import DisplayStatusCode
 from Modules.tools import (DeviceExist, loggingMessages, timeStamped,
                            zigpy_plugin_sanity_check)
+from Modules.associated_devices import notify_associated_devices_scan
 from Modules.zb_tables_management import store_NwkAddr_Associated_Devices
 from Z4D_decoders.z4d_decoder_helpers import \
     Network_Address_response_request_next_index
@@ -29,6 +30,11 @@ def Decode8040(self, Devices, MsgData, MsgLQI):
 
     if extendedResponse:
         self.log.logging('Input', 'Debug', '                        , Nb Associated Devices: %s Idx: %s Device List: %s' % (MsgNumAssocDevices, MsgStartIndex, MsgDeviceList))
+
+        # An Associated Devices collection, if one is running, is fed every page
+        # as it arrives -- including the pages of a node whose record the checks
+        # below will not match, which is why this sits ahead of them.
+        notify_associated_devices_scan(self, MsgShortAddress, MsgNumAssocDevices, MsgStartIndex, MsgDeviceList)
 
         if MsgStartIndex + len(MsgDeviceList) // 4 != MsgNumAssocDevices:
             self.log.logging('Input', 'Debug', 'Decode 8040 - Receive an IEEE: %s with a NwkId: %s but would need to continue to get all associated devices' % (MsgIEEE, MsgShortAddress))

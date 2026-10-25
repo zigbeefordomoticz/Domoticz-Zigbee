@@ -84,10 +84,17 @@ TABLE_ASSOCIATED_DEVICES = "associated_devices"
 # What each backend is able to collect. A table listed here but empty in a given
 # scan means the backend asked and got nothing; a table not listed means the
 # backend cannot collect it at all. That distinction is the point of `tables`.
+#
+# The zigpy entry is what the backend can collect at most, not what every scan
+# of it carries: zigpy itself only collects neighbours and routes, and the
+# Associated Devices table is collected by the plugin afterwards, optionally.
+# build_zigpy_scan() therefore reports the tables of the scan in hand -- a scan
+# stored before that collection existed, or run with it switched off, does not
+# claim the table. Every other backend fills all of its tables on every scan.
 TABLES_PER_SOURCE = {
     SOURCE_LEGACY: (TABLE_NEIGHBOURS,),
     SOURCE_TOPOLOGY_V2: (TABLE_NEIGHBOURS, TABLE_ROUTES, TABLE_ASSOCIATED_DEVICES),
-    SOURCE_ZIGPY: (TABLE_NEIGHBOURS, TABLE_ROUTES),
+    SOURCE_ZIGPY: (TABLE_NEIGHBOURS, TABLE_ROUTES, TABLE_ASSOCIATED_DEVICES),
 }
 
 # The three per-device tables TopologyV2 keeps in ListOfDevices
@@ -321,6 +328,16 @@ def build_zigpy_scan(self, timestamp, report):
     neighbours_table = report.get("Neighbors") or {}
     routes_table = report.get("Routes") or {}
 
+    # Collected by the plugin after zigpy's own scan, so it is present only in a
+    # scan that ran it to completion. `in report` rather than a truth test: a
+    # collection that found no child at all still asked, and saying so is the
+    # whole point of listing a table.
+    collects_associated_devices = "AssociatedDevices" in report
+    associated_devices = {
+        reporter: sorted({device for device in devices or [] if isinstance(device, str)})
+        for reporter, devices in (report.get("AssociatedDevices") or {}).items()
+    }
+
     hints = new_hints()
     neighbours = []
     scan_status = {}
@@ -375,7 +392,13 @@ def build_zigpy_scan(self, timestamp, report):
                 "route_record_required": bool(route.get("route_record_required")),
             })
 
-    return build_scan(self, timestamp, SOURCE_ZIGPY, neighbours, routes, {}, scan_status, hints)
+    tables = (TABLE_NEIGHBOURS, TABLE_ROUTES)
+    if collects_associated_devices:
+        tables += (TABLE_ASSOCIATED_DEVICES,)
+
+    return build_scan(
+        self, timestamp, SOURCE_ZIGPY, neighbours, routes, associated_devices, scan_status, hints, tables
+    )
 
 
 def zigpy_reporter_scan_status(neighbors_reported, relationships):
@@ -673,13 +696,19 @@ def build_neighbour_record(reporter, neighbour_nwkid, neighbour_infos):
     }
 
 
-def build_scan(self, timestamp, source, neighbours, routes, associated_devices, scan_status, hints):
-    nodes = build_nodes(self, source, neighbours, routes, associated_devices, scan_status, hints)
+def build_scan(self, timestamp, source, neighbours, routes, associated_devices, scan_status, hints, tables=None):
+    """One scan envelope.
+
+    `tables` overrides what this backend can collect with what this particular
+    scan actually carries; only the zigpy source needs it.
+    """
+    tables = TABLES_PER_SOURCE[source] if tables is None else tables
+    nodes = build_nodes(self, neighbours, routes, associated_devices, scan_status, hints, tables)
     return {
         "timestamp": timestamp,
         "source": source,
         "coordinator": COORDINATOR_NWKID,
-        "tables": list(TABLES_PER_SOURCE[source]),
+        "tables": list(tables),
         "scan": build_scan_statistics(nodes),
         "nodes": nodes,
         "neighbours": neighbours,
@@ -687,7 +716,7 @@ def build_scan(self, timestamp, source, neighbours, routes, associated_devices, 
     }
 
 
-def build_nodes(self, source, neighbours, routes, associated_devices, scan_status, hints):
+def build_nodes(self, neighbours, routes, associated_devices, scan_status, hints, tables):
     """One entry per node, for every device the plugin knows plus every node named
     by the scan.
 
@@ -703,7 +732,7 @@ def build_nodes(self, source, neighbours, routes, associated_devices, scan_statu
     for route in routes:
         nwkids.update(x for x in (route["reporter"], route["destination"], route["next_hop"]) if x)
 
-    carries_associated_devices = TABLE_ASSOCIATED_DEVICES in TABLES_PER_SOURCE[source]
+    carries_associated_devices = TABLE_ASSOCIATED_DEVICES in tables
 
     nodes = []
     for nwkid in sorted(nwkids):
