@@ -16,6 +16,7 @@ from DevicesModules.custom_sunricher import SUNRICHER_DEVICE_PARAMETERS
 from DevicesModules.custom_GammaTroniques import GMMS_TIC_METER_DEVICE_PARAMETERS
 from Modules.ballast_settings import BALLAST_DEVICE_PARAMETERS
 from Modules.danfoss import DANFOSS_DEVICE_PARAMETERS
+from Modules.health_settings import HEALTH_DEVICE_PARAMETERS
 from Modules.ias_settings import IAS_DEVICE_PARAMETERS
 from Modules.legrand_netatmo import LEGRAND_DEVICE_PARAMETERS
 from Modules.linky import LINKY_DEVICE_PARAMETERS
@@ -45,6 +46,7 @@ def initialize_device_settings(self):
         BALLAST_DEVICE_PARAMETERS,
         THERMOSTAT_DEVICE_PARAMETERS,
         LINKY_DEVICE_PARAMETERS,
+        HEALTH_DEVICE_PARAMETERS,
     ]
 
     # Manufacturer-specific device parameters
