@@ -205,7 +205,6 @@ _STUBS = {
         schneider_multiple_read_attribute_request=MagicMock(name="schneider_multiple_read_attribute_request"),
     ),
     "Modules.timeServer": dict(
-        timeserver_read_attribute_request=MagicMock(name="timeserver_read_attribute_request"),
         timeserver_multiple_read_attribute_request=MagicMock(name="timeserver_multiple_read_attribute_request"),
     ),
     "Modules.pluzzy": dict(
