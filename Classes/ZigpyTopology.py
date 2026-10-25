@@ -228,7 +228,7 @@ def parse_route_infos( route):
         "dst_nwk": route.DstNWK.serialize()[::-1].hex(),
         "route_status": convert_route_status_code(route.RouteStatus),
         "memory_constrained": route.MemoryConstrained,
-        "many_to_one": route.RouteRecordRequired,
+        "many_to_one": route.ManyToOne,
         "route_record_required": route.RouteRecordRequired,
         "next_hop": route.NextHop.serialize()[::-1].hex()
     }
