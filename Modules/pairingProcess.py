@@ -33,7 +33,7 @@ from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_OPPLE,
                                        PREFIX_MACADDR_WIZER_LEGACY,
                                        PREFIX_MACADDR_XIAOMI)
 from Modules.orvibo import OrviboRegistration
-from Modules.profalux import profalux_fake_deviceModel
+from Modules.profalux import profalux_fake_deviceModel, profalux_model_has_own_config
 from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST, ReadAttributeReq,
                                     ReadAttributeRequest_0000,
                                     ReadAttributeRequest_0000_for_tuya,
@@ -340,10 +340,12 @@ def interview_state_createDB(self, Devices, NWKID, RIA, status):
         return
 
     # Let's check if we have a profalux device, and if that is a remote. In such case, just drop this
+    # unless the remote reported a model with its own configuration (MAI-ZTM22C has a temperature sensor)
     if (
         "Manufacturer" in self.ListOfDevices[NWKID]
         and self.ListOfDevices[NWKID]["Manufacturer"] == "1110"
         and self.ListOfDevices[NWKID]["ZDeviceID"] == "0201"
+        and not profalux_model_has_own_config(self, NWKID)
     ):  # Remote
         create_device_without_Domoticz_Widgets( self, NWKID)
         return

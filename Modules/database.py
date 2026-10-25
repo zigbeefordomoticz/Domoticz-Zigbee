@@ -1241,6 +1241,9 @@ def profalux_fix_remote_device_model(self):
     - Correct Manufacturer Name ("Profalux")
     - Correct Model name ("Telecommande-Profalux")
     """
+    # Imported here: Modules.profalux imports Modules.tools, which imports this module
+    from Modules.profalux import profalux_model_has_own_config
+
     for x in self.ListOfDevices:
         
         if 'ZDeviceID' not in self.ListOfDevices[ x ] or self.ListOfDevices[ x ]['ZDeviceID'] != '0201':
@@ -1254,6 +1257,9 @@ def profalux_fix_remote_device_model(self):
         if "MacCapa" not in self.ListOfDevices[x]:
             continue
         if self.ListOfDevices[x]["MacCapa"] != "80":
+            continue
+        if profalux_model_has_own_config(self, x):
+            # A remote reporting its own model (MAI-ZTM22C, ...) keeps it
             continue
         if "Model" in self.ListOfDevices[x] and self.ListOfDevices[x]["Model"] != "Telecommande-Profalux":
             self.log.logging("Profalux", "Status", "Z4D forces Model from %s to %s" % (
