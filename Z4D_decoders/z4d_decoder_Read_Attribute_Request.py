@@ -90,7 +90,13 @@ def Decode0100(self, Devices, MsgData, MsgLQI):
             self.log.logging('Schneider', 'Debug', 'Decode0100 - Sqn: %s NwkId: %s SrcEP: %s DstEp: %s ClusterId: %s Direction: %s ManufSpec: %s ManufCode: %s nbAttribute: %s' %
                              (MsgSqn, MsgSrcAddr, MsgSrcEp, MsgDstEp, MsgClusterId, MsgDirection, MsgManufSpec, MsgManufCode, nbAttribute))
 
-        elif MsgClusterId == '0000' and Attribute == 'f000' and manuf_name in ('1021', 'Legrand'):
+        # Identify Legrand from the request itself first: the manufacturer code is in the
+        # frame, while 'Manufacturer Name' is read from Basic attribute 0004 and may not
+        # be stored yet. A remote asking for its operating time seconds after joining,
+        # before attribute 0004 came back, used to fall through to the default branch and
+        # get no answer at all. 'Manufacturer' carries the code and 'Manufacturer Name'
+        # the name, as the Schneider branches above do.
+        elif MsgClusterId == '0000' and Attribute == 'f000' and (MsgManufCode == '1021' or manuf == '1021' or manuf_name == 'Legrand'):
             self.log.logging('Legrand', 'Debug', 'Decode0100 - Sqn: %s NwkId: %s SrcEP: %s DstEp: %s ClusterId: %s Direction: %s ManufSpec: %s ManufCode: %s nbAttribute: %s' %
                              (MsgSqn, MsgSrcAddr, MsgSrcEp, MsgDstEp, MsgClusterId, MsgDirection, MsgManufSpec, MsgManufCode, nbAttribute))
             if self.pluginconf.pluginConf['LegrandCompatibilityMode']:
