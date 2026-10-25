@@ -63,7 +63,6 @@ def test_lookup_returns_a_newer_matching_image_only(ota_module, ota):
     assert ota_module.check_ota_availability_from_index(ota, 0x117C, 0x2203, 0x02000000) == {}
 
 
-@pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: the first newer entry is reported, not the newest one")
 def test_lookup_reports_the_newest_version(ota_module, ota):
     ota.zigbee_ota_index = [_entry(0x02000000), _entry(0x03000000)]
 

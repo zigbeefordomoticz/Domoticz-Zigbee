@@ -2090,7 +2090,12 @@ def check_ota_availability_from_index( self, manufcode, imagetype, fileversion )
     logging(self, "Debug", "check_ota_availability_from_index: Index Size: %s Searching ImageType: 0x%04x (%s) Version: 0x%08x (%s) ManufCode: 0x%04x (%s)" %(
         len(self.zigbee_ota_index), imagetype, imagetype, fileversion, fileversion, manufcode, manufcode,))
 
-    return next((_image for _image in self.zigbee_ota_index if (_image["manufacturerCode"] == manufcode and _image["imageType"] == imagetype and _image["fileVersion"] > fileversion)), {})
+    newer_images = [
+        _image for _image in self.zigbee_ota_index
+        if _image["manufacturerCode"] == manufcode and _image["imageType"] == imagetype and _image["fileVersion"] > fileversion
+    ]
+    # Report the newest one: the index can list several versions of an image
+    return max(newer_images, key=lambda _image: _image["fileVersion"]) if newer_images else {}
 
 
 def notify_ota_firmware_available(self, srcnwkid, manufcode, imagetype, fileversion, _ota_available ):
