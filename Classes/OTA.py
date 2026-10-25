@@ -1195,8 +1195,8 @@ def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_updat
     return True
 
 
-def logging(self, logType, message, nwkid=None):  # OK 13/10
-    self.log.logging("OTA", logType, message, nwkid)
+def logging(self, logType, message, nwkid=None, context=None):  # OK 13/10
+    self.log.logging("OTA", logType, message, nwkid, context)
 
 
 def is_image_for_query_next_image_request( self, nwkid, manuf_code, image_type, file_version, authorized_device_downgrade):
@@ -1381,7 +1381,8 @@ def ota_extract_image_headers(self, subfolder, image):
 
     except (ValueError, IndexError, struct.error) as err:
         # A file cut short after the OTA magic: skip it, keep scanning the others
-        logging(self, "Error", f"ota_extract_image_headers - {subfolder}/{image} has a truncated or malformed OTA header ({err}), skipped")
+        _context = {"Error code": "OTA0004", "Folder": str(subfolder), "File": str(image), "Size": len(ota_image), "Exception": str(err)}
+        logging(self, "Error", f"ota_extract_image_headers - {subfolder}/{image} has a truncated or malformed OTA header ({err}), skipped", None, _context)
         return None
 
     if headers is None:
