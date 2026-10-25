@@ -1859,8 +1859,12 @@ def notify_upgrade_end(
         if "Firmware Update" in self.PluginHealth and len(self.PluginHealth["Firmware Update"]) > 0:
             self.PluginHealth["Firmware Update"]["Progress"] = "Success"
         
-        # And finaly remove if there is firmware URL (need to use )
-        self.ListOfDevices.get(MsgSrcAddr, {}).get("OTAUpdate", {}).pop("%x" %image_type, None)
+        # The firmware announced by the online index is now installed: forget it. OTAUpdate is
+        # keyed by the image type as notify_ota_firmware_available() stores it (an int), which
+        # becomes its decimal string once the device list is reloaded from JSON.
+        ota_update = self.ListOfDevices.get(MsgSrcAddr, {}).get("OTAUpdate", {})
+        for key in (image_type, str(image_type), "%x" % image_type, "%04x" % image_type):
+            ota_update.pop(key, None)
 
     elif Status == "Aborted":
         _textmsg = "Firmware update aborted error code %s for Device %s in %s hour %s min %s sec" % (
