@@ -377,12 +377,24 @@ class OTAManagement(object):
         # The value is determined by the client. The server SHALL wait at the minimum the (response) spacing value before sending more data to the client. 
         # The value is in milliseconds.
         
-        # So we are going to break the pagesize into block of max data size
-        number_blocks = PageSize // MsgMaxDataSize
-        
+        # So we are going to break the page into blocks of at most max data size, as
+        # Image Block Responses with increasing offset and sequence number (ZCL rev 8
+        # 11.13.7.4 / 11.13.8.2.5), until the page or the image is complete. The offset
+        # moves by what was actually sent: ota_send_block() may cap the block size to
+        # the vendor profile.
+        entry = retrieve_image(self, intMsgImageType)
+        if entry is None:
+            _context = {"Error code": "OTA0201", "Request": "Image Page", "ImageType": f"0x{intMsgImageType:04X}", "ManufCode": f"0x{intMsgManufCode:04X}",
+                        "FileVersion": f"0x{intMsgImageVersion:08X}", "Offset": int(MsgFileOffset, 16)}
+            logging(self, "Error", f"ota_image_page_request {MsgSrcAddr}/{MsgEP} - 0x{intMsgImageType:04X} image not found", MsgSrcAddr, _context)
+            return
+        brand, ota_image_file = entry
+        image_size = self.ListOfImages["Brands"][brand][ota_image_file]["intSize"]
+
         _sqn = int(MsgSQN,16)
         _file_offset = int(MsgFileOffset,16)
-        for _ in range( number_blocks ):
+        page_end = min(_file_offset + PageSize, image_size)
+        while _file_offset < page_end:
             prepare_and_send_block(
                 self, 
                 MsgSrcAddr, 
@@ -392,16 +404,18 @@ class OTAManagement(object):
                 intMsgImageType, 
                 intMsgManufCode, 
                 intResponseSpacing, 
-                MsgMaxDataSize, 
+                min(MsgMaxDataSize, page_end - _file_offset),
                 intMsgFieldControl, 
                 "%02x" %_sqn, 
                 disableACK=True
             )
-            
-            _file_offset += MsgMaxDataSize
-            _sqn += 1
-            if _sqn > 0xff:
-                _sqn = 0
+
+            sent_up_to = self.ListInUpdate.get("Sent", 0)
+            if sent_up_to <= _file_offset:
+                # Nothing was sent (error already logged by prepare_and_send_block)
+                break
+            _file_offset = sent_up_to
+            _sqn = (_sqn + 1) & 0xFF
 
 
     def ota_upgrade_end_request(self, MsgData):

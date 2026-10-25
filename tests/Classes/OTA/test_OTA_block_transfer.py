@@ -175,20 +175,33 @@ def test_page_request_without_a_transfer_is_ignored(ota, radio, ikea_image):
     radio.zcl_raw_ota_image_block_response_success.assert_not_called()
 
 
-@pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: a page that is not a multiple of the block size loses its last partial block")
 def test_page_request_covers_the_whole_page(ota, radio, notified):
     ota.ota_image_page_request(page_request(offset=0, max_size=0x30, page_size=0x80))
 
     assert sum(block["size"] for block in _blocks(radio)) == 0x80
 
 
-@pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: the last page of an image runs past its end and ends with ABORT (0x95)")
 def test_last_page_does_not_abort_the_upgrade(ota, radio, notified):
     ota.ota_image_page_request(page_request(offset=192, max_size=0x30, page_size=0x100))
 
     blocks = _blocks(radio)
     assert all(block["status"] == "00" for block in blocks)
     assert b"".join(block["data"] for block in blocks) == notified["OtaImage"][192:]
+
+
+def test_page_blocks_are_contiguous_when_the_vendor_caps_the_block_size(ota, radio, notified):
+    """The device accepts 100-byte blocks, the IKEA profile sends 64: no hole between blocks."""
+    ota.ota_image_page_request(page_request(offset=0, max_size=100, page_size=0x100))
+
+    blocks = _blocks(radio)
+    assert [(block["offset"], block["size"]) for block in blocks] == [(0, 64), (64, 64), (128, 64), (192, 64)]
+    assert b"".join(block["data"] for block in blocks) == notified["OtaImage"][:0x100]
+
+
+def test_page_request_past_the_image_sends_nothing(ota, radio, notified):
+    ota.ota_image_page_request(page_request(offset=256, max_size=0x30, page_size=0x100))
+
+    radio.zcl_raw_ota_image_block_response_success.assert_not_called()
 
 
 # ─── build_ota_data_block ─────────────────────────────────────────────────────
@@ -199,3 +212,13 @@ def test_build_ota_data_block(ota_module, ota):
     assert ota_module.build_ota_data_block(ota, {"Sequence": "05", "Offset": "00000010"}, 8) == (5, 16, 8, bytes(range(16, 24)))
     assert ota_module.build_ota_data_block(ota, {"Sequence": "06", "Offset": "0000005e"}, 8) == (6, 94, 6, bytes(range(94, 100)))
     assert ota_module.build_ota_data_block(ota, {"Sequence": "07", "Offset": "00000064"}, 8) == (7, 100, 0, b"")
+
+
+def test_page_request_for_an_unknown_image_logs_an_error_with_context(ota, radio, notified):
+    ota.ota_image_page_request(page_request(image_type=0x4204))
+
+    radio.zcl_raw_ota_image_block_response_success.assert_not_called()
+    error = next(call for call in ota.log.logging.call_args_list if call.args[1] == "Error")
+    assert error.args[3] == DEVICE_NWKID
+    assert error.args[4]["Error code"] == "OTA0201"
+    assert error.args[4]["ImageType"] == "0x4204"
