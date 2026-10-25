@@ -18,6 +18,52 @@ Release Numbering
 - Odd numbers --> Stable/9.1 (stable branch)
 - Even numbers  --> Beta/9.2 (dev branch)
 
+## October 2026 - stable9 9.1.008 (2026.14)
+
+Pull requests in this release: #2081, #2082, #2083, #2084, #2090, #2091, #2094, #2095, #2097, #2098, #2099, #2100, #2101, #2103, #2104, #2107, #2108, #2109, #2112, #2114, #2115, #2118, #2120, #2121, #2122, #2123, #2124, #2125, #2126, #2127, #2128, #2129, #2130, #2131, #2132, #2134, #2135, #2136, #2141, #2142, #2143, #2144, #2145, #2146, #2147, #2148, #2149, #2150, #2152, #2153, #2157, #2158, #2159, #2160, #2161, #2162, #2164, #2165
+
+Contributors: @pipiche38 (110 commits)
+
+- [Feature] - WebUI: upgrade Angular from 17 to 21, clearing the 23 runtime security advisories open against `@angular/*` (#2104)
+- [Feature] - WebUI: first version of the mesh topology view (Domoticz-Zigbee-UI #269, #291, #292) (#2118)
+- [Feature] - Topology: new `/topology-scan` REST API exposing the relationship, routes and node identity of each stored scan, listing only the active backend's scans (#2106, #2107, #2120); `/plugin-health` now reports a zigpy topology scan as in progress (#2121)
+- [Feature] - Topology: a zigpy topology scan can also collect the Associated Devices table, behind the new setting `ZigpyTopologyAssociatedDevices` (default off) (#2123); `GET /topology-scan-associated-devices` runs that collection on its own (#2124); a node that answers without a list is reported `not_supported` instead of `timeout` (#2125)
+- [Feature] - Health: the silence after which a device is flagged as not seen is now configurable, plugin wide with the new setting `HealthTimeOut` (default 21200 s, the former hardcoded value) and per device with the device Param `HealthTimeOut` (#2084)
+- [Feature] - New `Button_4` switch selector (Off / Click / Double Click / Triple Click / Long Click) for remotes reporting four press types on one attribute, first used by the Sonoff SNZB-01M (#2130)
+- [Feature] - Report the running git revision next to the plugin version, in the `plugin` REST payload and the startup log lines, and stamp each error-history session with it (#2098, #2100)
+- [Issue] - zigpy: the default TX power (0) now means "keep the radio's own TX power" instead of forcing 0 dBm at every start, plus EZSP boost mode; exactly 0 dBm is no longer selectable, use ±1 (#2135). On EZSP, a coordinator an older version left at 0 dBm is set once to bellows' default of 8 dBm: its range increases, and end devices may pick other parents (#2165)
+- [Issue] - Topology (zigpy): a scan no longer skips almost every router, zigpy now gets the node descriptor the plugin already has (#2110, #2112), and devices recorded as gone are no longer pre-loaded and interrogated (#2115). A scan therefore takes minutes, not seconds
+- [Issue] - Topology (zigpy): rebuild the neighbours table on every scan instead of keeping the first scan's readings (#2109); report a node that was asked and never answered as `timeout` instead of dropping it (#2111, #2114); read a route's many-to-one flag from its own field (#2108)
+- [Issue] - Topology (TopologyV2): collect the coordinator's associated devices too (#2122)
+- [Issue] - Refuse a Domoticz command to a device that has left the network (`Status` Leave or Removed), with one Error line naming the widget and what to do (#2131)
+- [Issue] - Groups: a Legrand multi-gang remote records each gang's group on its own endpoint (#2096, #2097); a Legrand remote's groups are rebuilt at load from the device record (#2092, #2103); the group WebUI no longer hides main-powered devices (#2093, #2101)
+- [Issue] - Groups: remotes are left out of the group widget negotiation, and a group with nothing drivable gets an On/Off widget instead of a colour one; coordinator-only `RGB_CW_WW_Z` group widgets migrate to On/Off (#2095)
+- [Issue] - Groups: the group list and settings use the more recent of the json file and the Domoticz record, and with `useDomoticzDb` off the groups load from the json file again (#2157)
+- [Issue] - Legrand: answer a remote's operating-time request whenever the request identifies itself as Legrand, not only once `Manufacturer Name` is stored (#2099)
+- [Issue] - Green Power: the proxy endpoint no longer overwrites a device's ProfileID / ZDeviceID; affected devices are repaired at start, and colour lights then get their colour reporting configured (#2119, #2148)
+- [Issue] - Time cluster server: answer as ZCL r8 specifies, with exact DST start and end, TimeZone without DST and StandardTime filled in; fix two crashes that left devices with no time at all (#2153)
+- [Issue] - ZCL Default Response: send it in the direction opposite to the command it answers, and no longer on top of a Zone Enroll Response or a Poll Control Check-in Response; new debug category `zclDefaultResponse` (#2160)
+- [Issue] - Configure Reporting fallback: declare BatteryVoltage / BatteryPercentageRemaining (0x0001) as uint8 (#2085, #2141), and Pressure (0x0403) / Flow (0x0404) MeasuredValue as int16 / uint16, with `Conf/ZclDefinitions/0404.json` corrected (#2151, #2152)
+- [Issue] - Fill the certified device Params at start-up as pairing does: an early exit stopped the fill, and the polling Params were overwritten with a hidden default that turned polling off. Only missing Params are filled (#2134)
+- [Issue] - Profalux: keep a model that has its own device configuration instead of renaming it, so the MAI-ZTM22C remote uses its own (#2136)
+- [Issue] - Sonoff 66666: fix the model matrix entries that matched no device configuration (#2090), and let `Conf/Local-Devices` override the hardcoded model matrix for every model (#2091)
+- [Issue] - Tuya: the `SmartRelayStatus01`–`04` device Params now write the power-on behaviour for the valid modes (#2137, #2142)
+- [Issue] - Coordinator backup: the daily backup is now always full, like the shutdown backup, instead of alternating with light backups in the rotation; the `BackupFullDevices` setting is removed (#2162)
+- [Issue] - WebUI server hardening: no file access outside `www/` and the plugin logs, the session cookie is no longer echoed or logged, a cache policy that no longer leaves the WebUI stale after an upgrade, no CORS `*`, about 1 s faster answers, and a report-only Content-Security-Policy (#2159)
+- [Issue] - Plugin upgrade: an unrelated APT repository failure no longer aborts the V2 upgrade (#2082); a venv enabled through `PATH` only is detected, which moves the official Docker image from the V1 to the V2 upgrade (#2127); only a directory that really is a venv is cleaned up (#2128); the Python version is passed on to the upgrade script again (#2145); the missing `check_python_and_branch.py` is no longer called (#2146)
+- [Issue] - Docker `customstart.sh`: never stop the container on a failure, and never mark `FIRSTRUN` before the plugin's modules are installed (#2129)
+- [Issue] - `repair_clustertype.py`: ask to stop Domoticz before `--apply`, as restarting the plugin silently undid the repair (#2144)
+- [Issue] - Send the periodic Matomo analytics snapshot only when internet is available (#2133, #2132)
+- [Technical] - Health: the undetermined state has one name, `unknown`, instead of an empty string in most places (#2083)
+- [Technical] - Skip the groups list write when nothing changed (#2094)
+- [Technical] - New `PersistedDocument` engine and `PluginStore` for plugin records kept outside `ListOfDevices`; no store is declared yet (#2158)
+- [Technical] - Register the Namron device parameters, empty for now (#2138, #2147)
+- [Technical] - Stop passing the `autoBackup` flag to zigpy as the backup period, which zigpy never read (#2164)
+- [Technical] - Close CodeQL alerts #1 and #5 on the WebUI server, no behaviour change (#2161)
+- [Technical] - Remove a stray `ManufSpecificCluster` key from `Conf/ZclDefinitions/fc11.json` (#2126)
+- [Technical] - Remove the Livolo bind at device announcement that could never run (#2140, #2143)
+- [Technical] - Issue templates: Domoticz-Zigbee issues are for identified bugs only (#2149); fix the Claude issue triage workflow (#2150); document the release-notes PR list and contributors (#2081)
+
 ## October 2026 - stable9 9.1.007 (2026.13)
 
 Pull requests in this release: #2051, #2052, #2053, #2058, #2060, #2061, #2063, #2064, #2066, #2067, #2068, #2069, #2070, #2071, #2072, #2073, #2074, #2075, #2076, #2079
