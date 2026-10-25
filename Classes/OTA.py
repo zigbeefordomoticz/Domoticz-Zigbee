@@ -628,7 +628,8 @@ class OTAManagement(object):
             if "autoServeOTA" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoServeOTA"]:
                 logging(self, "Debug", f"OTA Query Next Image request - autoServeOTA fileversion: 0x{fileversion:08x} imagesize: {imagesize}")
 
-                self.ListInUpdate["AuthorizedForUpdate"].append( srcnwkid )
+                if srcnwkid not in self.ListInUpdate["AuthorizedForUpdate"]:
+                    self.ListInUpdate["AuthorizedForUpdate"].append( srcnwkid )
                 return zcl_raw_ota_query_next_image_response(
                     self, Sqn, srcnwkid, ZIGATE_EP, srcep,
                     0x00, manufcode, imagetype, fileversion, imagesize)

@@ -120,7 +120,6 @@ def test_auto_serve_offers_the_image_and_authorizes_the_device(ota, radio, ikea_
     assert DEVICE_NWKID in ota.ListInUpdate["AuthorizedForUpdate"]
 
 
-@pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: every query appends the device to AuthorizedForUpdate again")
 def test_auto_serve_authorizes_a_device_once(ota, radio, ikea_image):
     ota.pluginconf.pluginConf["autoServeOTA"] = True
 
