@@ -579,11 +579,13 @@ class OTAManagement(object):
         imagetype = struct.unpack("H", bytes.fromhex(Data[6:10]))[0]
         currentVersion = struct.unpack("I", bytes.fromhex(Data[10:18]))[0]
 
-        if fieldcontrol:
-            hardwareversion = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[18:22], 16)))[0]
+        # Field control bit 0: Hardware Version present (ZCL rev 8, table 11-19)
+        hardware_version = None
+        if fieldcontrol & 0x01 and len(Data) >= 22:
+            hardware_version = struct.unpack("<H", bytes.fromhex(Data[18:22]))[0]
 
-        logging(self, "Debug", "OTA Query Next Image request for %s/%s [%s] - Control: 0x%02X Manuf: 0x%04X Type: 0x%04X Version: 0x%08X" % (
-            srcnwkid, srcep, Sqn, fieldcontrol, manufcode, imagetype, currentVersion ))
+        logging(self, "Debug", "OTA Query Next Image request for %s/%s [%s] - Control: 0x%02X Manuf: 0x%04X Type: 0x%04X Version: 0x%08X HW: %s" % (
+            srcnwkid, srcep, Sqn, fieldcontrol, manufcode, imagetype, currentVersion, hardware_version ))
 
         ota_client = self.ListOfDevices.setdefault(srcnwkid, {}).setdefault("OTAClient", {})
         ota_client["ManufacturerCode"] = manufcode
@@ -593,6 +595,9 @@ class OTAManagement(object):
         authorized_device_downgrade = self.authorized_device_downgrade.get(srcnwkid, False)
 
         image_found = is_image_for_query_next_image_request( self, srcnwkid, manufcode, imagetype, currentVersion , authorized_device_downgrade)
+        if image_found and not is_hardware_version_compatible(self, srcnwkid, image_found, hardware_version):
+            image_found = None
+
         if image_found:
             fileversion = image_found["originalVersion"]   # integer
             imagesize = image_found["intSize"]           # integer
@@ -1232,6 +1237,27 @@ def is_image_for_query_next_image_request( self, nwkid, manuf_code, image_type, 
                 return self.ListOfImages["Brands"][brand_name][file_name]
 
     return None
+
+
+def is_hardware_version_compatible(self, nwkid, image, hardware_version):
+    """ZCL rev 8 11.13.4.4: a hardware version sent by the client SHALL be checked
+    against the minimum / maximum hardware version of the image header.
+
+    A client that does not send its hardware version is not refused.
+    """
+    if hardware_version is None:
+        return True
+
+    header = image["Decoded Header"]
+    min_hw_version = header.get("min_hw_version")
+    max_hw_version = header.get("max_hw_version")
+
+    if (min_hw_version is not None and hardware_version < min_hw_version) or (max_hw_version is not None and hardware_version > max_hw_version):
+        logging(self, "Log", "OTA image for 0x%04X not offered to %s: hardware version 0x%04X outside the image range 0x%04X - 0x%04X" % (
+            header["image_type"], nwkid, hardware_version, min_hw_version or 0, max_hw_version or 0xFFFF), nwkid)
+        return False
+
+    return True
 
 
 def retrieve_image_in_a_brand(self, image_type, brand):
