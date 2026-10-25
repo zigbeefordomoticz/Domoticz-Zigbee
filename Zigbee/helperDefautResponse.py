@@ -95,6 +95,22 @@ response_required_commands = {
 }
 
 
+# ----------------------------------------------------------
+# Cluster-specific commands received Server → Client that the
+# plugin answers with a dedicated response, using the same TSN.
+# ZCL 07-5123 rev 8 - 2.5.12.2: no Default Response then, unless
+# an error occurs.
+# ----------------------------------------------------------
+server_to_client_response_required_commands = {
+    0x0020: {
+        0x00,  # Poll Control - Check-in -> Check-in Response
+    },
+    0x0500: {
+        0x01,  # IAS Zone - Zone Enroll Request -> Zone Enroll Response
+    },
+}
+
+
 def must_send_default_response(
     frame_control: int,
     command_id: int,
@@ -134,6 +150,19 @@ def must_send_default_response(
         if status != 0x00:      # On error → Respond with DR
             return True
         return False            # Otherwise OTA uses dedicated responses
+
+    # ------------------------------------------------------
+    # 2b) Cluster-specific command from a server cluster that
+    #     gets a dedicated response (e.g. Zone Enroll Request)
+    # ------------------------------------------------------
+    cluster_specific = (frame_control & 0x03) == 0x01
+    server_to_client = bool(frame_control & 0x08)
+    if (
+        cluster_specific
+        and server_to_client
+        and command_id in server_to_client_response_required_commands.get(cluster_id, ())
+    ):
+        return status != 0x00   # Success → dedicated response will be sent
 
     # ------------------------------------------------------
     # 3) Command expects a dedicated response?

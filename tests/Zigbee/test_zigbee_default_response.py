@@ -125,6 +125,122 @@ class TestMustSendDefaultResponse(unittest.TestCase):
         )
 
     # ------------------------------------------------------------
+    # IAS Zone Enroll Request (0x0500 / 0x01, cluster specific,
+    # Server → Client) is answered by a Zone Enroll Response with
+    # the same TSN: no Default Response on success (ZCL 2.5.12.2).
+    # ------------------------------------------------------------
+    def test_zone_enroll_request_no_default_response(self):
+        self.assertFalse(
+            must_send_default_response(
+                frame_control=0x09,  # cluster specific, Server → Client, DDR=0
+                command_id=0x01,
+                cluster_id=0x0500,
+                status=0x00
+            )
+        )
+
+    def test_zone_enroll_request_error_default_response(self):
+        self.assertTrue(
+            must_send_default_response(
+                frame_control=0x09,
+                command_id=0x01,
+                cluster_id=0x0500,
+                status=0x01
+            )
+        )
+
+    def test_ias_zone_client_to_server_command_0x01_default_response(self):
+        # Initiate Normal Operation Mode, Client → Server: no dedicated response
+        self.assertTrue(
+            must_send_default_response(
+                frame_control=0x01,
+                command_id=0x01,
+                cluster_id=0x0500,
+                status=0x00
+            )
+        )
+
+    def test_ias_zone_read_attributes_response_default_response(self):
+        # Global command 0x01 (Read Attributes Response) on 0x0500 is not a Zone Enroll Request
+        self.assertTrue(
+            must_send_default_response(
+                frame_control=0x08,
+                command_id=0x01,
+                cluster_id=0x0500,
+                status=0x00
+            )
+        )
+
+    def test_ias_zone_status_change_notification_default_response(self):
+        # Zone Status Change Notification (0x00) has no dedicated response
+        self.assertTrue(
+            must_send_default_response(
+                frame_control=0x09,
+                command_id=0x00,
+                cluster_id=0x0500,
+                status=0x00
+            )
+        )
+
+    # ------------------------------------------------------------
+    # Poll Control Check-in (0x0020 / 0x00, cluster specific,
+    # Server → Client) is answered by a Check-in Response with
+    # the same TSN: no Default Response on success (ZCL 2.5.12.2).
+    # ------------------------------------------------------------
+    def test_poll_checkin_no_default_response(self):
+        self.assertFalse(
+            must_send_default_response(
+                frame_control=0x09,  # cluster specific, Server → Client, DDR=0
+                command_id=0x00,
+                cluster_id=0x0020,
+                status=0x00
+            )
+        )
+
+    def test_poll_checkin_error_default_response(self):
+        self.assertTrue(
+            must_send_default_response(
+                frame_control=0x09,
+                command_id=0x00,
+                cluster_id=0x0020,
+                status=0x01
+            )
+        )
+
+    def test_poll_control_client_to_server_command_0x00_default_response(self):
+        # Check-in Response, Client → Server: no dedicated response
+        self.assertTrue(
+            must_send_default_response(
+                frame_control=0x01,
+                command_id=0x00,
+                cluster_id=0x0020,
+                status=0x00
+            )
+        )
+
+    def test_poll_control_report_attributes_default_response(self):
+        # Global Report Attributes (0x0a) on 0x0020 is not a Check-in
+        self.assertTrue(
+            must_send_default_response(
+                frame_control=0x08,
+                command_id=0x0A,
+                cluster_id=0x0020,
+                status=0x00
+            )
+        )
+
+    def test_poll_control_fast_poll_stop_unchanged(self):
+        # Fast Poll Stop (0x01, Client → Server) stays in response_required_commands
+        self.assertFalse(
+            must_send_default_response(
+                frame_control=0x01,
+                command_id=0x01,
+                cluster_id=0x0020,
+                status=0x00
+            )
+        )
+
+    # ------------------------------------------------------------
     # Commands NOT in response-required table
     # ------------------------------------------------------------
     def test_unknown_cluster_default_response(self):
