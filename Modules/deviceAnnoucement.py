@@ -23,9 +23,7 @@ from time import time
 from Modules.casaia import restart_plugin_reset_ModuleIRCode
 from Modules.domoTools import lastSeenUpdate
 from Modules.legrand_netatmo import legrand_refresh_battery_remote
-from Modules.livolo import livolo_bind
-from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_LIVOLO,
-                                       is_tuya_magic_packet_required)
+from Modules.manufacturer_code import is_tuya_magic_packet_required
 from Modules.pairingProcess import (handle_device_specific_needs,
                                     interview_state_004d,
                                     zigbee_provision_device)
@@ -335,13 +333,6 @@ def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, 
     # New Device coming for provisioning
     # Decode Device Capabiities
     deviceMacCapa = list(decodeMacCapa(MsgMacCapa))
-
-    # There is a dilem here as Livolo and Schneider Wiser share the same IEEE prefix.
-    if (
-        self.pluginconf.pluginConf["Livolo"]
-        and MsgIEEE[: PREFIX_MAC_LEN] == PREFIX_MACADDR_LIVOLO
-    ):
-        livolo_bind(self, NwkId, "06")
 
     # New device comming. The IEEE is not known
     self.log.logging([ "DeviceAnnoucement", "Pairing"], "Debug", "Decode004D - New Device %s %s" % (NwkId, MsgIEEE), NwkId)
