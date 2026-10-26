@@ -160,3 +160,14 @@ def test_update_request_needs_put(rest_ota, webserver):
 
     assert response["Data"] is None
     webserver.OTA.restapi_firmware_update.assert_not_called()
+
+
+def test_firmware_list_rescans_the_folders_first(rest_ota, webserver):
+    """A firmware file copied into OTAFirmware/ shows up in the WebUI without a plugin restart."""
+    webserver.fake_mode.return_value = False
+    webserver.OTA.restapi_list_of_firmware.return_value = [{"Ikea": []}]
+
+    response = rest_ota.rest_ota_firmware_list(webserver, "GET", None, [])
+
+    assert [call[0] for call in webserver.OTA.mock_calls if not call[0].startswith("__")] == ["rescan_firmware_folders", "restapi_list_of_firmware"]
+    assert json.loads(response["Data"]) == [{"Ikea": []}]

@@ -53,6 +53,8 @@ def rest_ota_firmware_list(self, verb, data, parameters):
             _response["Data"] = fake_rest_ota_firmware_list()
             return _response
 
+        # A firmware file dropped into OTAFirmware/ shows up without restarting the plugin
+        self.OTA.rescan_firmware_folders()
         _response["Data"] = json.dumps(self.OTA.restapi_list_of_firmware(), sort_keys=True)
 
     return _response
