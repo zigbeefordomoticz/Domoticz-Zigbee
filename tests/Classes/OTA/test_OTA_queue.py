@@ -326,6 +326,67 @@ def test_request_list_names_the_device_or_falls_back_to_its_ieee(ota, radio, ike
     assert ota.adminWidgets.updateNotificationWidget.call_args.args[1].startswith(f"Firmware update not needed for Device: {expected} - ")
 
 
+
+# ─── Status lines: active or queued ───────────────────────────────────────────
+
+def _status_lines(ota):
+    return [
+        call.args[2] for call in ota.log.logging.call_args_list
+        if call.args[1] == "Status" and call.args[2].startswith(("Firmware update started", "Firmware update queued"))
+    ]
+
+
+def test_status_says_which_device_is_active_and_which_is_queued(ota, radio, ikea_image, devices):
+    """Field test 2026-10-26: "Firmware update queued for d841 (3 request(s) queued or in progress)" did not say d841 waited."""
+    _pick(ota, *SLOTS_FULL, MAINS_6)
+
+    assert _status_lines(ota) == [
+        f"Firmware update started for {DEVICE_NWKID} with bulb.ota: the device is notified (active: {DEVICE_NWKID} - queued: none)",
+        f"Firmware update started for {MAINS_2} with bulb.ota: the device is notified (active: {DEVICE_NWKID}, {MAINS_2} - queued: none)",
+        f"Firmware update started for {MAINS_3} with bulb.ota: the device is notified (active: {DEVICE_NWKID}, {MAINS_2}, {MAINS_3} - queued: none)",
+        f"Firmware update queued for {MAINS_6} with bulb.ota: waits for a free transfer slot (active: {DEVICE_NWKID}, {MAINS_2}, {MAINS_3} - queued: {MAINS_6})",
+    ]
+
+
+def test_status_says_when_a_queued_device_gets_the_free_slot(ota, radio, ikea_image, devices):
+    _pick(ota, *SLOTS_FULL, MAINS_6)
+    _query(ota, radio, DEVICE_NWKID)
+    ota.ota_image_block_request(block_request(nwkid=DEVICE_NWKID))
+    ota.ota_upgrade_end_request(upgrade_end(nwkid=DEVICE_NWKID, status="00"))
+    ota.log.logging.reset_mock()
+
+    ota.heartbeat()
+
+    assert _status_lines(ota) == [
+        f"Firmware update started for {MAINS_6} with bulb.ota: the device is notified (active: {MAINS_2}, {MAINS_3}, {MAINS_6} - queued: none)",
+    ]
+
+
+def test_status_says_when_a_device_asks_and_takes_a_slot(ota, radio, ikea_image, devices):
+    _pick(ota, *SLOTS_FULL, BATTERY_4)
+    ota.log.logging.reset_mock()
+
+    _query(ota, radio, BATTERY_4)      # extra slot for a battery device that asks
+    _query(ota, radio, DEVICE_NWKID)   # notified: already active, nothing more to say
+
+    assert _status_lines(ota) == [
+        f"Firmware update started for {BATTERY_4} with bulb.ota: the device asked for it (active: {DEVICE_NWKID}, {MAINS_2}, {MAINS_3}, {BATTERY_4} - queued: none)",
+    ]
+
+
+def test_status_lists_the_devices_that_did_not_answer(ota_module, ota, radio, ikea_image, devices):
+    _pick(ota, DEVICE_NWKID, MAINS_2)
+    _end_notify_window(ota_module, ota)          # both waiting: no slot, still authorized
+    ota.log.logging.reset_mock()
+
+    _pick(ota, MAINS_3)
+
+    assert _status_lines(ota) == [
+        f"Firmware update started for {MAINS_3} with bulb.ota: the device is notified "
+        f"(active: {MAINS_3} - queued: none - waiting for the device to ask: {DEVICE_NWKID}, {MAINS_2})",
+    ]
+
+
 # ─── ZiGate (native mode) ─────────────────────────────────────────────────────
 
 def test_zigate_serves_one_device_at_a_time(ota, radio, ikea_image, devices):
