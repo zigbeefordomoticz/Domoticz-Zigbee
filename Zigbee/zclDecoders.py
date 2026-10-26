@@ -696,15 +696,22 @@ def buildframe_for_cluster_8501(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint
     ImageVersion = decode_endian_data(Data[10:18], "23")
     ImageOffset = decode_endian_data(Data[18:26], "23")
     MaxDataSize = decode_endian_data(Data[26:28], "20")
-    if len(Data) == 32:
-        MinBlockPeriod = decode_endian_data(Data[28:32], "21")
-    else:
-        MinBlockPeriod = '0000'
 
-    self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8501 %s %s %s %s %s %s %s " % ( 
-        FieldControl, ManufCode, ImageType, ImageVersion, ImageOffset, MaxDataSize, MinBlockPeriod), SrcNwkId)  
-
+    # Optional fields, present when their Field Control bit is set, in this order (ZCL rev 8 11.13.6):
+    # bit 0 Request Node Address (IEEE, 8 bytes), bit 1 Minimum Block Period (2 bytes, in ms)
+    idx = 28
     IEEE = "0000000000000000"
+    if int(FieldControl, 16) & 0x01 and len(Data) >= idx + 16:
+        IEEE = decode_endian_data(Data[idx:idx + 16], "f0")
+        idx += 16
+
+    MinBlockPeriod = "0000"
+    if int(FieldControl, 16) & 0x02 and len(Data) >= idx + 4:
+        MinBlockPeriod = decode_endian_data(Data[idx:idx + 4], "21")
+
+    self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8501 %s %s %s %s %s %s %s %s " % (
+        FieldControl, ManufCode, ImageType, ImageVersion, ImageOffset, MaxDataSize, IEEE, MinBlockPeriod), SrcNwkId)
+
     buildPayload = Sqn + SrcEndPoint + ClusterId + "02" + SrcNwkId + IEEE 
     buildPayload += ImageOffset + ImageVersion + ImageType + ManufCode + MinBlockPeriod + MaxDataSize + FieldControl
     self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8501 payload: %s" %buildPayload, SrcNwkId)
