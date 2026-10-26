@@ -39,7 +39,7 @@ def ikea_image(install_image):
 @pytest.fixture
 def notified(ota_module, ota, radio, ikea_image):
     """The device was picked in the WebUI and notified; no block requested yet."""
-    assert ota_module.firmware_update(ota, "Ikea", "bulb.ota", DEVICE_NWKID, DEVICE_EP)
+    assert ota_module.firmware_update(ota, "Ikea", "bulb.ota", DEVICE_NWKID, DEVICE_EP)["Status"] == "Queued"
     return ikea_image
 
 
@@ -58,7 +58,7 @@ def _blocks(radio):
 
 # ─── Image Block Request ──────────────────────────────────────────────────────
 
-def test_first_block_starts_the_transfer(ota, radio, notified):
+def test_first_block_starts_the_transfer(ota_module, ota, radio, notified, request_of):
     ota.ota_image_block_request(block_request(offset=0, max_size=0x30, sqn=0x10))
 
     [block] = _blocks(radio)
@@ -67,21 +67,24 @@ def test_first_block_starts_the_transfer(ota, radio, notified):
         "version": "01020304", "offset": 0, "size": 0x30, "data": notified["OtaImage"][:0x30],
         "no_ack": False, "delay": 0.25,   # IKEA vendor profile min_delay
     }
-    assert ota.ListInUpdate["Process"] == "Started"
-    assert ota.ListInUpdate["Status"] == "Transfer Progress"
-    assert ota.ListInUpdate["StartTime"] > 0
-    assert ota.PluginHealth["Firmware Update"] == {"Progress": "0%", "Device": DEVICE_NWKID}
+    request = request_of(DEVICE_NWKID)
+    assert request["State"] == ota_module.OTA_TRANSFER
+    assert request["Process"] == "Started"
+    assert request["Status"] == "Transfer Progress"
+    assert request["StartTime"] > 0
+    health = ota.PluginHealth["Firmware Update"]
+    assert (health["Progress"], health["Device"]) == ("0%", DEVICE_NWKID)
     ota.adminWidgets.updateNotificationWidget.assert_called_once()
 
 
-def test_following_blocks_serve_the_requested_offset(ota, radio, notified):
+def test_following_blocks_serve_the_requested_offset(ota, radio, notified, request_of):
     ota.ota_image_block_request(block_request(offset=0, max_size=0x30))
     ota.ota_image_block_request(block_request(offset=0x30, max_size=0x30, sqn=0x11))
 
     second = _blocks(radio)[1]
     assert (second["offset"], second["size"], second["sqn"]) == (0x30, 0x30, "11")
     assert second["data"] == notified["OtaImage"][0x30:0x60]
-    assert ota.ListInUpdate["Process"] == "OnGoing"
+    assert request_of(DEVICE_NWKID)["Process"] == "OnGoing"
 
 
 @pytest.mark.parametrize("max_size, expected", [(0x20, 0x20), (0x64, 64)])
@@ -150,31 +153,41 @@ def test_unauthorized_device_gets_nothing(ota, radio, ikea_image):
     ota.ota_image_block_request(block_request())
 
     radio.zcl_raw_ota_image_block_response_success.assert_not_called()
-    assert ota.ListInUpdate["NwkId"] is None
+    assert ota.ota_requests == {}
 
 
-def test_authorized_device_without_a_session_starts_one(ota, radio, ikea_image):
-    """autoServeOTA path: the device was authorized by its Query Next Image Request."""
-    ota.ListInUpdate["AuthorizedForUpdate"].append(DEVICE_NWKID)
+def test_queued_device_asking_for_blocks_starts_its_transfer(ota_module, ota, radio, notified, request_of):
+    """The device resumes a download without a Query Next Image: it takes its slot."""
+    for _ in range(ota_module.OTA_MAX_NOTIFY_RETRY):
+        ota.heartbeat()
+    assert request_of(DEVICE_NWKID)["State"] == ota_module.OTA_WAITING
 
     ota.ota_image_block_request(block_request())
 
     assert len(_blocks(radio)) == 1
-    assert ota.ListInUpdate["NwkId"] == DEVICE_NWKID
+    assert request_of(DEVICE_NWKID)["State"] == ota_module.OTA_TRANSFER
 
 
-def test_other_device_is_not_served_during_a_transfer(ota, radio, notified):
-    ota.ListOfDevices[OTHER_NWKID] = {"IEEE": "00158d0000000002", "Ep": {"01": {"0019": {}}}}
+def test_two_transfers_do_not_cross(ota, radio, notified, add_device, request_of):
+    """OTA review H4: each device is served from its own request, its offset is its own."""
+    add_device(OTHER_NWKID, "00158d0000000002")
+    ota.restapi_firmware_update([{"NwkId": OTHER_NWKID, "Ep": DEVICE_EP, "Brand": "Ikea", "FileName": "bulb.ota", "ForceUpdate": False}])
+    ota.ota_image_block_request(block_request(offset=0x30))
+
+    ota.ota_image_block_request(block_request(nwkid=OTHER_NWKID, offset=0))
+
+    assert [(block["nwkid"], block["offset"]) for block in _blocks(radio)] == [(DEVICE_NWKID, 0x30), (OTHER_NWKID, 0)]
+    assert request_of(DEVICE_NWKID)["intFileOffset"] == 0x30
+    assert request_of(OTHER_NWKID)["intFileOffset"] == 0
+
+
+def test_device_without_a_request_is_not_served_during_a_transfer(ota, radio, notified, add_device):
+    add_device(OTHER_NWKID, "00158d0000000002")
     ota.ota_image_block_request(block_request(offset=0x30))
 
     ota.ota_image_block_request(block_request(nwkid=OTHER_NWKID, offset=0))
 
     assert [block["nwkid"] for block in _blocks(radio)] == [DEVICE_NWKID]
-    assert ota.ListInUpdate["intFileOffset"] == 0x30
-    error = next(call for call in ota.log.logging.call_args_list if call.args[1] == "Error")
-    assert error.args[3] == OTHER_NWKID
-    assert error.args[4]["Error code"] == "OTA0202"
-    assert error.args[4]["InProgressNwkId"] == DEVICE_NWKID
 
 
 # ─── Image Page Request ───────────────────────────────────────────────────────
@@ -226,11 +239,11 @@ def test_page_request_past_the_image_sends_nothing(ota, radio, notified):
     radio.zcl_raw_ota_image_block_response_success.assert_not_called()
 
 
-def test_blocks_come_from_the_requesting_manufacturer_image(ota, radio, install_image):
+def test_blocks_come_from_the_requesting_manufacturer_image(ota_module, ota, radio, install_image):
     """Two manufacturers use image type 0x2203: the Philips device gets the Philips file."""
     install_image("Ikea", "ikea.ota", make_ota_image(manuf_code=0x117C, image_type=0x2203, payload=b"\x11" * 200))
     hue = install_image("Philips", "hue.ota", make_ota_image(manuf_code=0x100B, image_type=0x2203, payload=b"\x22" * 200))
-    ota.ListInUpdate["AuthorizedForUpdate"].append(DEVICE_NWKID)
+    ota_module.firmware_update(ota, "Philips", "hue.ota", DEVICE_NWKID, DEVICE_EP)
 
     ota.ota_image_block_request(block_request(manuf_code=0x100B, offset=0x40, max_size=0x30))
 
@@ -242,11 +255,11 @@ def test_blocks_come_from_the_requesting_manufacturer_image(ota, radio, install_
 # ─── build_ota_data_block ─────────────────────────────────────────────────────
 
 def test_build_ota_data_block(ota_module, ota):
-    ota.ListInUpdate["OtaImage"] = bytes(range(100))
+    request = {"OtaImage": bytes(range(100))}
 
-    assert ota_module.build_ota_data_block(ota, {"Sequence": "05", "Offset": "00000010"}, 8) == (5, 16, 8, bytes(range(16, 24)))
-    assert ota_module.build_ota_data_block(ota, {"Sequence": "06", "Offset": "0000005e"}, 8) == (6, 94, 6, bytes(range(94, 100)))
-    assert ota_module.build_ota_data_block(ota, {"Sequence": "07", "Offset": "00000064"}, 8) == (7, 100, 0, b"")
+    assert ota_module.build_ota_data_block(ota, request, {"Sequence": "05", "Offset": "00000010"}, 8) == (5, 16, 8, bytes(range(16, 24)))
+    assert ota_module.build_ota_data_block(ota, request, {"Sequence": "06", "Offset": "0000005e"}, 8) == (6, 94, 6, bytes(range(94, 100)))
+    assert ota_module.build_ota_data_block(ota, request, {"Sequence": "07", "Offset": "00000064"}, 8) == (7, 100, 0, b"")
 
 
 def test_page_request_for_an_unknown_image_logs_an_error_with_context(ota, radio, notified):
