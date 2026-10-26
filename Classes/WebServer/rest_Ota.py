@@ -448,6 +448,10 @@ def rest_ota_firmware_update(self, verb, data, parameter):
         # OTA is not enabled!
         return _response
 
+    if verb == "DELETE":
+        # DELETE /ota-firmware-update/<NwkId>: cancel the firmware update of that device
+        return rest_ota_firmware_cancel(self, _response, parameter)
+
     if verb != "PUT":
         # Only Put command with a Valid JSON is allow
         return _response
@@ -482,6 +486,25 @@ def rest_ota_firmware_update(self, verb, data, parameter):
 
     action = {"Name": "OTA requested.", "TimeStamp": int(time()), "Results": results or []}
     _response["Data"] = json.dumps(action, sort_keys=True)
+    return _response
+
+
+def rest_ota_firmware_cancel(self, _response, parameter):
+    """Cancel the queued or running firmware update of one device, from the WebUI.
+
+    Answers {"Name", "TimeStamp", "Results": [{"NwkId", "Status": "Cancelled" | "Rejected", "Reason"}]},
+    the shape of the PUT answer.
+    """
+    if len(parameter) != 1:
+        return _response
+
+    nwkid = parameter[0]
+    if self.OTA.cancel_current_firmware_update(nwkid):
+        result = {"NwkId": nwkid, "Status": "Cancelled", "Reason": None}
+    else:
+        result = {"NwkId": nwkid, "Status": "Rejected", "Reason": "No firmware update queued or in progress for this device"}
+
+    _response["Data"] = json.dumps({"Name": "OTA cancelled.", "TimeStamp": int(time()), "Results": [result]}, sort_keys=True)
     return _response
 
 

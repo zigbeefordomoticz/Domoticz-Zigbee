@@ -186,3 +186,27 @@ def test_firmware_list_rescans_the_folders_first(rest_ota, webserver):
 
     assert [call[0] for call in webserver.OTA.mock_calls if not call[0].startswith("__")] == ["rescan_firmware_folders", "restapi_list_of_firmware"]
     assert json.loads(response["Data"]) == [{"Ikea": []}]
+
+
+def test_cancel_request_is_handed_to_the_ota_manager(rest_ota, webserver):
+    webserver.OTA.cancel_current_firmware_update.return_value = ["1234"]
+
+    response = rest_ota.rest_ota_firmware_update(webserver, "DELETE", None, ["1234"])
+
+    webserver.OTA.cancel_current_firmware_update.assert_called_once_with("1234")
+    assert json.loads(response["Data"])["Results"] == [{"NwkId": "1234", "Status": "Cancelled", "Reason": None}]
+
+
+def test_cancel_of_a_device_without_firmware_update_is_rejected(rest_ota, webserver):
+    webserver.OTA.cancel_current_firmware_update.return_value = []
+
+    response = rest_ota.rest_ota_firmware_update(webserver, "DELETE", None, ["1234"])
+
+    assert json.loads(response["Data"])["Results"][0]["Status"] == "Rejected"
+
+
+def test_cancel_needs_one_device(rest_ota, webserver):
+    response = rest_ota.rest_ota_firmware_update(webserver, "DELETE", None, [])
+
+    assert response["Data"] is None
+    webserver.OTA.cancel_current_firmware_update.assert_not_called()
