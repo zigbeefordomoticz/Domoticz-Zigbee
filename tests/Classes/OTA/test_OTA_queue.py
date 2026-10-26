@@ -365,6 +365,24 @@ def test_cancelled_transfer_gets_abort_at_its_next_request(ota, radio, ikea_imag
     assert (call.args[1], call.args[3], call.args[4], call.kwargs["sqn"]) == (DEVICE_NWKID, DEVICE_EP, "95", "42")
 
 
+def test_upgrade_end_after_the_abort_is_expected_not_a_duplicate(ota, radio, ikea_image):
+    """Field test 2026-10-26 (Legrand NLV, NLF): after the ABORT the device sends Upgrade End
+    status 0x96 (INVALID_IMAGE). It was logged as a Warning "most likely a duplicated packet"."""
+    _pick(ota, DEVICE_NWKID)
+    _query(ota, radio, DEVICE_NWKID)
+    ota.ota_image_block_request(block_request(nwkid=DEVICE_NWKID))
+    ota.cancel_current_firmware_update(DEVICE_NWKID)
+    ota.ota_image_block_request(block_request(nwkid=DEVICE_NWKID, offset=0x30))
+    ota.log.logging.reset_mock()
+
+    ota.ota_upgrade_end_request(upgrade_end(nwkid=DEVICE_NWKID, status="96"))
+
+    levels = [call.args[1] for call in ota.log.logging.call_args_list]
+    assert "Warning" not in levels
+    assert any(call.args[1] == "Status" and "stopped after the cancel" in call.args[2] for call in ota.log.logging.call_args_list)
+    radio.zcl_raw_ota_upgrade_end_response.assert_not_called()
+
+
 def test_abort_only_within_the_window_after_the_cancel(ota_module, ota, radio, ikea_image):
     _pick(ota, DEVICE_NWKID)
     ota.cancel_current_firmware_update(DEVICE_NWKID)
