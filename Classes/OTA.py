@@ -97,8 +97,8 @@ OTA_NOTIFY_TIMEOUT = 600
 # Up to OTA_MAX_TRANSFERS devices are upgraded at the same time. A battery-powered device
 # that asks on its own gets one more slot, up to OTA_MAX_TRANSFERS_WITH_BATTERY, as it may
 # not ask again for hours. The other requests wait in the queue for a free slot.
-OTA_MAX_TRANSFERS = 2
-OTA_MAX_TRANSFERS_WITH_BATTERY = 3
+OTA_MAX_TRANSFERS = 3
+OTA_MAX_TRANSFERS_WITH_BATTERY = 4
 
 # A queued device stays authorized that long: a sleepy device asks for its image on its
 # own schedule (ZCL rev 8 11.8.2). The request is then dropped and the user notified.
