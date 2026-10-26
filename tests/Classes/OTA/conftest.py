@@ -12,9 +12,13 @@ Fixtures:
                 (zcl_raw_*, sendZigateCmd), patched per test
     ota         an OTAManagement built by its real __init__: no internet,
                 an empty firmware folder under tmp_path, zigpy (raw) mode,
-                and one OTA-capable device "1234" in ListOfDevices
+                and one OTA-capable mains-powered device "1234" in ListOfDevices
     install_image(brand, filename, image_bytes)
                 write a firmware file into the brand's folder and rescan
+    add_device(nwkid, ieee, battery=False)
+                one more OTA-capable device in ListOfDevices and IEEE2NWK
+    request_of(nwkid)
+                the OTA request of a device (OTAManagement.ota_requests), or None
 
 The frame and firmware-file builders live in ota_builders.py.
 """
@@ -37,7 +41,8 @@ def _make_stub(name, **attrs):
 
 _OTA_DEPS = {
     "Modules.sendZigateCommand": dict(sendZigateCmd=MagicMock(name="sendZigateCmd")),
-    "Modules.tools": dict(get_device_nickname=MagicMock(name="get_device_nickname", return_value="Bulb")),
+    "Modules.tools": dict(get_device_nickname=MagicMock(name="get_device_nickname", return_value="Bulb"),
+                           mainPoweredDevice=MagicMock(name="mainPoweredDevice", side_effect=lambda self, nwkid: self.ListOfDevices.get(nwkid, {}).get("MacCapa") in ("8e", "84"))),
     "Modules.zigateConsts": dict(ADDRESS_MODE={"short": 2, "ieee": 3, "group": 4}, ZIGATE_EP="01"),
     "Zigbee.zclRawCommands": dict(
         zcl_raw_default_response=MagicMock(name="zcl_raw_default_response"),
@@ -101,6 +106,7 @@ def ota(ota_module, radio, tmp_path):
             "IEEE": DEVICE_IEEE,
             "ZDeviceName": "Bulb",
             "Manufacturer": "117c",
+            "MacCapa": "8e",   # mains powered
             "Ep": {DEVICE_EP: {"0019": {}}},
         }
     }
@@ -137,3 +143,29 @@ def install_image(ota, ota_module, tmp_path):
         return ota.ListOfImages["Brands"][brand].get(filename)
 
     return _install
+
+
+@pytest.fixture
+def add_device(ota):
+    """One more OTA-capable device, mains-powered (MacCapa 0x8e) or battery-powered (0x80)."""
+
+    def _add(nwkid, ieee, battery=False):
+        ota.ListOfDevices[nwkid] = {
+            "IEEE": ieee,
+            "ZDeviceName": f"Device {nwkid}",
+            "MacCapa": "80" if battery else "8e",
+            "Ep": {DEVICE_EP: {"0019": {}}},
+        }
+        ota.IEEE2NWK[ieee] = nwkid
+        return nwkid
+
+    return _add
+
+
+@pytest.fixture
+def request_of(ota):
+    def _request_of(nwkid):
+        ieee = ota.ListOfDevices.get(nwkid, {}).get("IEEE")
+        return ota.ota_requests.get(ieee)
+
+    return _request_of

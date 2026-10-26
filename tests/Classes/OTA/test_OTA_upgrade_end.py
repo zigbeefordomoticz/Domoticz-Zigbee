@@ -31,14 +31,14 @@ IMAGE_VERSION = 0x01020304
 def transferring(ota_module, ota, radio, install_image):
     """The device was notified and has fetched its first block."""
     install_image("Ikea", "bulb.ota", make_ota_image(manuf_code=0x117C, image_type=0x2203, version=IMAGE_VERSION))
-    assert ota_module.firmware_update(ota, "Ikea", "bulb.ota", DEVICE_NWKID, DEVICE_EP)
+    assert ota_module.firmware_update(ota, "Ikea", "bulb.ota", DEVICE_NWKID, DEVICE_EP)["Status"] == "Queued"
     ota.ota_image_block_request(block_request())
     ota.adminWidgets.updateNotificationWidget.reset_mock()
     return ota
 
 
 def _session_closed(ota):
-    return ota.ListInUpdate["NwkId"] is None and ota.ListInUpdate["Status"] is None and ota.ListInUpdate["Process"] is None
+    return ota.ota_requests == {}
 
 
 # ─── SUCCESS ──────────────────────────────────────────────────────────────────
@@ -59,7 +59,6 @@ def test_success_closes_the_session(ota, radio, transferring):
     ota.ota_upgrade_end_request(upgrade_end(status="00"))
 
     assert _session_closed(ota)
-    assert ota.ListInUpdate["AuthorizedForUpdate"] == []
     # Basic and OTA clusters re-read 120 s later, to pick up the new version
     assert ota.ListOfDevices[DEVICE_NWKID]["DelayReadAttributes"]["Clusters"] == ["0000", "0019"]
     radio.sendZigateCmd.assert_not_called()
@@ -93,16 +92,15 @@ def test_non_success_gets_no_upgrade_end_response(ota, radio, transferring, stat
 
     radio.zcl_raw_ota_upgrade_end_response.assert_not_called()
     assert ota.PluginHealth["Firmware Update"]["Progress"] == progress
+    # The slot goes to the next device: one that failed asks again on its own (autoServeOTA)
     assert _session_closed(ota)
-    # Pins today's behaviour: the device stays authorized, so it may retry
-    assert ota.ListInUpdate["AuthorizedForUpdate"] == [DEVICE_NWKID]
 
 
-def test_wait_for_data_status_keeps_the_session(ota, radio, transferring):
+def test_wait_for_data_status_keeps_the_session(ota, radio, transferring, request_of):
     ota.ota_upgrade_end_request(upgrade_end(status="97"))
 
     radio.zcl_raw_ota_upgrade_end_response.assert_not_called()
-    assert ota.ListInUpdate["NwkId"] == DEVICE_NWKID
+    assert request_of(DEVICE_NWKID) is not None
 
 
 # ─── requests that do not belong to the session ──────────────────────────────
@@ -113,27 +111,30 @@ def test_upgrade_end_without_a_session_is_ignored(ota, radio):
     radio.zcl_raw_ota_upgrade_end_response.assert_not_called()
 
 
-def test_upgrade_end_from_another_device_is_ignored(ota, radio, transferring):
+def test_upgrade_end_from_another_device_is_ignored(ota, radio, transferring, add_device, request_of):
+    add_device("5678", "00158d0000000002")
+
     ota.ota_upgrade_end_request(upgrade_end(nwkid="5678", status="00"))
 
     radio.zcl_raw_ota_upgrade_end_response.assert_not_called()
-    assert ota.ListInUpdate["NwkId"] == DEVICE_NWKID
+    assert request_of(DEVICE_NWKID) is not None
 
 
 # ─── stalled transfer ─────────────────────────────────────────────────────────
 
-def test_stalled_transfer_times_out_after_300_seconds(ota, radio, transferring):
-    ota.ListInUpdate["LastBlockSent"] = time.time() - 301
+def test_stalled_transfer_times_out_after_300_seconds(ota, radio, transferring, request_of):
+    request_of(DEVICE_NWKID)["LastBlockSent"] = time.time() - 301
 
     ota.heartbeat()
 
     assert _session_closed(ota)
-    assert ota.ListInUpdate["AuthorizedForUpdate"] == []
+    assert ota.PluginHealth["Firmware Update"]["Progress"] == "Timeout"
+    assert "no block requested for 300 sec" in ota.adminWidgets.updateNotificationWidget.call_args.args[1]
 
 
-def test_transfer_in_progress_is_kept(ota, radio, transferring):
-    ota.ListInUpdate["LastBlockSent"] = time.time() - 200
+def test_transfer_in_progress_is_kept(ota, radio, transferring, request_of):
+    request_of(DEVICE_NWKID)["LastBlockSent"] = time.time() - 200
 
     ota.heartbeat()
 
-    assert ota.ListInUpdate["NwkId"] == DEVICE_NWKID
+    assert request_of(DEVICE_NWKID) is not None
