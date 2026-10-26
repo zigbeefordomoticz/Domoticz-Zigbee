@@ -89,7 +89,7 @@ def test_firmware_update_refused_while_another_is_active(ota_module, ota, radio,
 # ─── restapi_firmware_update ──────────────────────────────────────────────────
 
 def test_restapi_single_device(ota, radio, ikea_image):
-    ota.restapi_firmware_update([_request()])
+    assert ota.restapi_firmware_update([_request()]) == [{"NwkId": DEVICE_NWKID, "Status": "Started", "Reason": None}]
 
     assert ota.ListInUpdate["NwkId"] == DEVICE_NWKID
     radio.zcl_raw_ota_image_notify.assert_called_once()
@@ -102,21 +102,47 @@ def test_restapi_forced_update_authorizes_a_downgrade(ota, radio, ikea_image):
     assert ota.authorized_device_downgrade == {DEVICE_NWKID: True}
 
 
-def test_restapi_several_devices_are_dropped(ota, radio, ikea_image):
-    """Single-device behaviour, changed by #2169: a list of more than one device starts nothing."""
+def test_restapi_several_devices_are_rejected(ota, radio, ikea_image):
+    """Single-device behaviour, changed by #2169: a list of more than one device starts nothing,
+    and every device of the list is reported as rejected."""
     ota.ListOfDevices["5678"] = {"IEEE": "00158d0000000002", "Ep": {"01": {"0019": {}}}}
 
-    ota.restapi_firmware_update([_request(), _request(nwkid="5678")])
+    results = ota.restapi_firmware_update([_request(), _request(nwkid="5678")])
 
+    assert [(result["NwkId"], result["Status"]) for result in results] == [(DEVICE_NWKID, "Rejected"), ("5678", "Rejected")]
     assert ota.ListInUpdate["NwkId"] is None
     assert ota.ListInUpdate["AuthorizedForUpdate"] == []
     radio.zcl_raw_ota_image_notify.assert_not_called()
 
 
 def test_restapi_empty_request(ota, radio, ikea_image):
-    ota.restapi_firmware_update([])
+    assert ota.restapi_firmware_update([]) == []
 
     radio.zcl_raw_ota_image_notify.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "request_fields, reason",
+    [
+        ({"brand": "NoSuchBrand"}, "Unknown brand"),
+        ({"file_name": "missing.ota"}, "Unknown firmware file"),
+        ({"nwkid": "ffff"}, "Unknown device"),
+        ({"ep": "0b"}, "Unknown endpoint"),
+    ],
+)
+def test_restapi_reports_why_a_request_is_rejected(ota, radio, ikea_image, request_fields, reason):
+    [result] = ota.restapi_firmware_update([_request(**request_fields)])
+
+    assert (result["Status"], result["Reason"]) == ("Rejected", reason)
+    radio.zcl_raw_ota_image_notify.assert_not_called()
+
+
+def test_restapi_reports_a_request_refused_while_another_is_active(ota, radio, ikea_image):
+    ota.ListInUpdate["NwkId"] = "abcd"
+
+    [result] = ota.restapi_firmware_update([_request()])
+
+    assert result == {"NwkId": DEVICE_NWKID, "Status": "Rejected", "Reason": "Another firmware update is in progress"}
 
 
 def test_refused_forced_update_does_not_authorize_a_downgrade(ota, radio, ikea_image):

@@ -127,6 +127,8 @@ def _request(nwkid):
 
 
 def test_update_request_is_handed_to_the_ota_manager(rest_ota, webserver):
+    webserver.OTA.restapi_firmware_update.return_value = [{"NwkId": "1234", "Status": "Started", "Reason": None}]
+
     response = _put(rest_ota, webserver, [_request("1234")])
 
     webserver.OTA.restapi_firmware_update.assert_called_once_with([_request("1234")])
@@ -145,14 +147,27 @@ def test_update_request_with_a_missing_key_is_rejected(rest_ota, webserver):
     assert (module, level, nwkid, context["Error code"]) == ("WebServer", "Error", "1234", "OTA0401")
 
 
-def test_update_request_reports_success_whatever_the_ota_manager_did(rest_ota, webserver):
-    """Pins today's behaviour (issue #2169): the OTA manager drops a list of
-    several devices, yet the WebUI is told "OTA requested." and shows a success toast."""
-    webserver.OTA.restapi_firmware_update.return_value = None
+def test_update_request_reports_the_result_of_each_device(rest_ota, webserver):
+    """Issue #2169: the WebUI is told which devices were rejected, and why."""
+    results = [
+        {"NwkId": "1234", "Status": "Rejected", "Reason": "Only one device update at a time is supported"},
+        {"NwkId": "5678", "Status": "Rejected", "Reason": "Only one device update at a time is supported"},
+    ]
+    webserver.OTA.restapi_firmware_update.return_value = results
 
     response = _put(rest_ota, webserver, [_request("1234"), _request("5678")])
 
-    assert json.loads(response["Data"])["Name"] == "OTA requested."
+    data = json.loads(response["Data"])
+    assert data["Name"] == "OTA requested."   # unchanged for the existing WebUI
+    assert data["Results"] == results
+
+
+def test_update_request_reports_no_result_when_the_ota_manager_returns_none(rest_ota, webserver):
+    webserver.OTA.restapi_firmware_update.return_value = None
+
+    response = _put(rest_ota, webserver, [_request("1234")])
+
+    assert json.loads(response["Data"])["Results"] == []
 
 
 def test_update_request_needs_put(rest_ota, webserver):
