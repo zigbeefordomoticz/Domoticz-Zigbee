@@ -252,6 +252,20 @@ def test_blocks_come_from_the_requesting_manufacturer_image(ota_module, ota, rad
     assert block["data"] == hue["OtaImage"][0x40:0x70]
 
 
+def test_pages_come_from_the_requesting_manufacturer_image(ota_module, ota, radio, install_image):
+    """Two manufacturers use image type 0x2203, with different sizes: the Philips device's
+    page past the end of the 256-byte IKEA file is served from the 456-byte Philips file."""
+    install_image("Ikea", "ikea.ota", make_ota_image(manuf_code=0x117C, image_type=0x2203, payload=b"\x11" * 200))
+    hue = install_image("Philips", "hue.ota", make_ota_image(manuf_code=0x100B, image_type=0x2203, payload=b"\x22" * 400))
+    ota_module.firmware_update(ota, "Philips", "hue.ota", DEVICE_NWKID, DEVICE_EP)
+
+    ota.ota_image_page_request(page_request(manuf_code=0x100B, offset=0x100, max_size=0x40, page_size=0x100))
+
+    blocks = _blocks(radio)
+    assert {block["manuf"] for block in blocks} == {"100b"}
+    assert b"".join(block["data"] for block in blocks) == hue["OtaImage"][0x100:]
+
+
 # ─── build_ota_data_block ─────────────────────────────────────────────────────
 
 def test_build_ota_data_block(ota_module, ota):
