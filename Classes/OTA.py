@@ -70,6 +70,7 @@ import tempfile
 import time
 import urllib.error
 import urllib.request
+from collections import deque
 from datetime import datetime
 from os import listdir
 from os.path import exists, isfile, join
@@ -106,6 +107,9 @@ OTA_QUEUE_WAIT = 24 * 3600
 
 # A transfer without any block request for that long (seconds) is dropped.
 OTA_BLOCK_TIMEOUT = 300
+
+# The last finished requests, with their outcome, kept for the WebUI (in memory only).
+OTA_FINISHED_KEPT = 10
 
 # States of an OTA request
 OTA_QUEUED = "Queued"          # waiting for a free transfer slot, not notified yet
@@ -303,6 +307,8 @@ class OTAManagement(object):
         # OTA requests by IEEE, in arrival order: the queue and the transfers in progress.
         # See new_ota_request() for the fields and OTA_QUEUED ... OTA_TRANSFER for the states.
         self.ota_requests = {}
+        # The last OTA_FINISHED_KEPT ended requests, newest first, as the WebUI lists them
+        self.ota_finished = deque(maxlen=OTA_FINISHED_KEPT)
 
         self.zigbee_ota_index = None
         self.zigbee_ota_found_in_index = []
@@ -866,6 +872,9 @@ def end_ota_request(self, request, final_status=None):
     self.ota_requests.pop(request["IEEE"], None)
     if final_status:
         request["Progress"] = final_status
+    finished = ota_request_status(self, request)
+    finished["EndTime"] = int(time.time())
+    self.ota_finished.appendleft(finished)
     update_firmware_health(self, ended=request)
 
 
@@ -1887,6 +1896,8 @@ def prepare_and_send_block(
         "intFileOffset": int(MsgFileOffset, 16),
         "LastBlockSent": time.time()
     })
+    # The WebUI shows the bytes transferred, not only the 5% steps
+    update_firmware_health(self)
 
     logging(
         self,
@@ -2089,7 +2100,8 @@ def update_firmware_health(self, ended=None):
 
     "Device" / "Progress": the requests holding a transfer slot, joined (", "). When the
     last one ends, its outcome stays there. "Requests": every request, "Active" when it
-    holds a transfer slot, "Not Active" when it waits in the queue.
+    holds a transfer slot, "Not Active" when it waits in the queue. "Finished": the last
+    ended requests, newest first, their outcome in "Progress".
     """
     firmware_update_health = self.PluginHealth.setdefault("Firmware Update", {"Progress": "", "Device": ""})
 
@@ -2101,19 +2113,30 @@ def update_firmware_health(self, ended=None):
         firmware_update_health["Device"] = ended["NwkId"]
         firmware_update_health["Progress"] = ended["Progress"]
 
-    firmware_update_health["Requests"] = [
-        {
-            "NwkId": request["NwkId"],
-            "IEEE": request["IEEE"],
-            "Name": ota_device_name(self, request["NwkId"]),
-            "FileName": request["FileName"],
-            "State": request["State"],
-            "Status": "Active" if request["State"] in OTA_ACTIVE_STATES else "Not Active",
-            "Progress": request["Progress"],
-            "QueuedTime": int(request["QueuedTime"]),
-        }
-        for request in self.ota_requests.values()
-    ]
+    firmware_update_health["Requests"] = [ota_request_status(self, request) for request in self.ota_requests.values()]
+    firmware_update_health["Finished"] = list(self.ota_finished)
+
+
+def ota_request_status(self, request):
+    """An OTA request as the WebUI shows it.
+
+    Offset / Size: bytes requested so far, of the image. StartOffset / StartTime: where and
+    when this transfer began (a device may resume a download), 0 before the first block.
+    """
+    return {
+        "NwkId": request["NwkId"],
+        "IEEE": request["IEEE"],
+        "Name": ota_device_name(self, request["NwkId"]),
+        "FileName": request["FileName"],
+        "State": request["State"],
+        "Status": "Active" if request["State"] in OTA_ACTIVE_STATES else "Not Active",
+        "Progress": request["Progress"],
+        "QueuedTime": int(request["QueuedTime"]),
+        "Offset": request.get("intFileOffset", 0),
+        "Size": request["intSize"],
+        "StartOffset": request.get("StartOffset", 0),
+        "StartTime": int(request.get("StartTime", 0)),
+    }
 
 
 def start_upgrade_infos(self, request, MsgSrcAddr, MsgFileOffset, MsgMaxDataSize):
@@ -2122,6 +2145,7 @@ def start_upgrade_infos(self, request, MsgSrcAddr, MsgFileOffset, MsgMaxDataSize
     request.update({
         "NwkId": MsgSrcAddr,
         "intFileOffset": int(MsgFileOffset, 16),
+        "StartOffset": int(MsgFileOffset, 16),
         "LastBlockSent": 0,
         "StartTime": time.time(),
         "Progress": "0%",
