@@ -799,6 +799,17 @@ def ota_slot_available(self, nwkid, device_asks=False):
     return device_asks and active < OTA_MAX_TRANSFERS_WITH_BATTERY and not mainPoweredDevice(self, nwkid)
 
 
+def ota_queue_summary(self):
+    """Which devices hold a transfer slot, and which wait for one: for the Status lines."""
+    def _nwkids(states):
+        return ", ".join(request["NwkId"] for request in self.ota_requests.values() if request["State"] in states) or "none"
+
+    summary = "active: %s - queued: %s" % (_nwkids(OTA_ACTIVE_STATES), _nwkids((OTA_QUEUED,)))
+    if any(request["State"] == OTA_WAITING for request in self.ota_requests.values()):
+        summary += " - waiting for the device to ask: %s" % _nwkids((OTA_WAITING,))
+    return summary
+
+
 def notify_queued_requests(self):
     """Notify the queued devices, oldest request first, while a transfer slot is free."""
     for request in list(self.ota_requests.values()):
@@ -815,6 +826,8 @@ def notify_ota_request(self, request):
         return
 
     request.update({"NwkId": nwkid, "State": OTA_NOTIFYING, "Retry": 0, "NotifiedTimeStamp": time.time(), "Progress": "Notified"})
+    logging(self, "Status", "Firmware update started for %s with %s: the device is notified (%s)" % (
+        nwkid, request["FileName"], ota_queue_summary(self)), nwkid)
     ota_load_image_to_zigate(self, request["intImageType"], request["ImageVersion"] if request["ForceUpdate"] else None, manuf_code=request["intManufCode"])
     ota_image_advertize(self, nwkid, request["Ep"], image_version=request["ImageVersion"], image_type=request["intImageType"], manufacturer_code=request["intManufCode"])
     update_firmware_health(self)
@@ -823,11 +836,16 @@ def notify_ota_request(self, request):
 def start_transfer(self, request):
     """The device asked for its image: its blocks are served from now on. It holds a
     transfer slot until its Upgrade End, or OTA_BLOCK_TIMEOUT without block request."""
-    if request["State"] not in OTA_ACTIVE_STATES:
-        ota_load_image_to_zigate(self, request["intImageType"], request["ImageVersion"] if request["ForceUpdate"] else None, manuf_code=request["intManufCode"])
-
     if request["State"] != OTA_TRANSFER:
+        # Queued or Waiting (not notified now): the device asked on its own and takes a slot
+        takes_a_slot = request["State"] not in OTA_ACTIVE_STATES
+        if takes_a_slot:
+            ota_load_image_to_zigate(self, request["intImageType"], request["ImageVersion"] if request["ForceUpdate"] else None, manuf_code=request["intManufCode"])
+
         request.update({"State": OTA_TRANSFER, "Process": None, "Progress": "0%"})
+        if takes_a_slot:
+            logging(self, "Status", "Firmware update started for %s with %s: the device asked for it (%s)" % (
+                request["NwkId"], request["FileName"], ota_queue_summary(self)), request["NwkId"])
         update_firmware_health(self)
 
     request["LastBlockSent"] = time.time()
@@ -1418,10 +1436,12 @@ def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_updat
 
     request = new_ota_request(self, target_nwkid, target_ep, brand, file_name, force_update)
     self.ota_requests[request["IEEE"]] = request
-    logging(self, "Status", "Firmware update queued for %s with %s (%s request(s) queued or in progress)" % (
-        target_nwkid, file_name, len(self.ota_requests)), target_nwkid)
 
+    # Notified now if a slot is free (notify_ota_request says so), otherwise queued
     notify_queued_requests(self)
+    if request["State"] == OTA_QUEUED:
+        logging(self, "Status", "Firmware update queued for %s with %s: waits for a free transfer slot (%s)" % (
+            target_nwkid, file_name, ota_queue_summary(self)), target_nwkid)
     update_firmware_health(self)
     return firmware_update_result(target_nwkid, "Queued")
 
