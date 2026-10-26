@@ -107,6 +107,12 @@ OTA_QUEUE_WAIT = 24 * 3600
 # A transfer without any block request for that long (seconds) is dropped.
 OTA_BLOCK_TIMEOUT = 300
 
+# With several transfers in progress, the delay between two blocks of a device is multiplied
+# by their number, so that together they request about as many blocks as a single transfer.
+# The scaled delay (seconds) stays below this, so a client never waits long enough to repeat
+# its request; a client asking for a longer delay keeps its own.
+OTA_MAX_SCALED_BLOCK_DELAY = 1.0
+
 # States of an OTA request
 OTA_QUEUED = "Queued"          # waiting for a free transfer slot, not notified yet
 OTA_NOTIFYING = "Notifying"    # Image Notify sent, waiting for the device: holds a slot
@@ -1008,6 +1014,16 @@ def update_transfer_progress(self, request, offset, length):
     request["Sent"] = offset + length
 
 
+def scaled_block_delay(self, block_delay):
+    """The delay (seconds) between two blocks of a device, multiplied by the number of
+    transfers being served, up to OTA_MAX_SCALED_BLOCK_DELAY (never below block_delay)."""
+    transfers = sum(1 for request in self.ota_requests.values() if request["State"] == OTA_TRANSFER)
+    if transfers <= 1:
+        return block_delay
+
+    return max(block_delay, min(block_delay * transfers, OTA_MAX_SCALED_BLOCK_DELAY))
+
+
 def ota_send_block(self, request, dest_addr, dest_ep, image_type, msg_image_version, block_request, disable_ack=False, block_delay=DEFAULT_OTA_PROFILE["min_delay"]):
 
     in_update = request
@@ -1028,7 +1044,7 @@ def ota_send_block(self, request, dest_addr, dest_ep, image_type, msg_image_vers
     manufacturer_code = in_update['intManufCode']
     ota_profile = VENDOR_PROFILES.get( manufacturer_code, DEFAULT_OTA_PROFILE )
     max_data_size = min(block_request["MaxDataSize"], ota_profile["max_data"])
-    block_delay = max(block_delay, ota_profile["min_delay"])
+    block_delay = scaled_block_delay(self, max(block_delay, ota_profile["min_delay"]))
 
     sequence, offset, length, raw_ota_data = build_ota_data_block( self, request, block_request, max_data_size )
 
