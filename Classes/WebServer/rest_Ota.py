@@ -388,8 +388,8 @@ def get_device_informations(self, Nwkid):
 
     # What the device reported in its last Query Next Image Request
     ota_client = self.ListOfDevices[Nwkid].get("OTAClient", {})
-    image_type = "%04X" % ota_client["ImageType"] if "ImageType" in ota_client else ""
-    current_version = "%08X" % ota_client["CurrentImageVersion"] if "CurrentImageVersion" in ota_client else ""
+    image_type = _hex_field(ota_client.get("ImageType"), 4)
+    current_version = _hex_field(ota_client.get("CurrentImageVersion"), 8)
 
     return {
         "Nwkid": Nwkid,
@@ -407,6 +407,22 @@ def get_device_informations(self, Nwkid):
         "ImageType": image_type,
         "CurrentFileVersion": current_version,
     }
+
+def _hex_field(value, width):
+    """An OTAClient field as upper-case hex, "" if missing or unreadable.
+
+    Classes/OTA.py stores integers; device entries written by the former ZiGate
+    code (Modules/inRawAps.py) still hold hex strings such as "2203".
+    """
+    if isinstance(value, str):
+        try:
+            value = int(value, 16)
+        except ValueError:
+            return ""
+    if not isinstance(value, int):
+        return ""
+    return "%0*X" % (width, value)
+
 
 def fake_rest_ota_devices_for_manufcode():
     return json.dumps(
