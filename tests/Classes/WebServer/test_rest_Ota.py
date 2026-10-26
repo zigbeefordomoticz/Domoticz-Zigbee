@@ -101,6 +101,23 @@ def test_device_information_reports_what_the_device_queried(rest_ota, webserver)
     assert (info["ImageType"], info["CurrentFileVersion"]) == ("2203", "01000000")
 
 
+def test_device_information_reads_a_legacy_hex_string_query(rest_ota, webserver):
+    # Written by the former ZiGate code (Modules/inRawAps.py) and kept in DeviceList.txt
+    webserver.ListOfDevices["1234"]["OTAClient"] = {"ManufacturerCode": "117c", "ImageType": "2203", "CurrentImageVersion": "01000000"}
+
+    info = rest_ota.get_device_informations(webserver, "1234")
+
+    assert (info["ImageType"], info["CurrentFileVersion"]) == ("2203", "01000000")
+
+
+def test_device_information_ignores_an_unreadable_query(rest_ota, webserver):
+    webserver.ListOfDevices["1234"]["OTAClient"] = {"ImageType": "zz", "CurrentImageVersion": None}
+
+    info = rest_ota.get_device_informations(webserver, "1234")
+
+    assert (info["ImageType"], info["CurrentFileVersion"]) == ("", "")
+
+
 def test_device_information_of_a_device_never_upgraded(rest_ota, webserver):
     for key in ("OTAUpgrade", "SWBUILD_1", "SWBUILD_3"):
         del webserver.ListOfDevices["1234"][key]
