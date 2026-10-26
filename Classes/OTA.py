@@ -107,6 +107,11 @@ OTA_QUEUE_WAIT = 24 * 3600
 # A transfer without any block request for that long (seconds) is dropped.
 OTA_BLOCK_TIMEOUT = 300
 
+# A transfer cancelled from the WebUI: a block or page request of the device within that long
+# (seconds) is answered ABORT, so that it stops at once and keeps its firmware (ZCL rev 8
+# 11.13.8.2.1) instead of retrying until its own timeout.
+OTA_CANCEL_ABORT_WINDOW = OTA_BLOCK_TIMEOUT
+
 # States of an OTA request
 OTA_QUEUED = "Queued"          # waiting for a free transfer slot, not notified yet
 OTA_NOTIFYING = "Notifying"    # Image Notify sent, waiting for the device: holds a slot
@@ -303,6 +308,9 @@ class OTAManagement(object):
         # OTA requests by IEEE, in arrival order: the queue and the transfers in progress.
         # See new_ota_request() for the fields and OTA_QUEUED ... OTA_TRANSFER for the states.
         self.ota_requests = {}
+        # IEEE -> time its request was cancelled from the WebUI. autoServeOTA does not queue the
+        # device again until the plugin restarts or the WebUI picks it again (firmware_update).
+        self.ota_cancelled = {}
 
         self.zigbee_ota_index = None
         self.zigbee_ota_found_in_index = []
@@ -315,10 +323,21 @@ class OTAManagement(object):
 
 
     def cancel_current_firmware_update(self, nwkid=None):
-        """Drop the OTA request of a device, or every request."""
+        """Cancel the OTA request of a device, or every request, from the WebUI.
+
+        The device is remembered in ota_cancelled: a transfer in progress gets ABORT at its next
+        block or page request, and autoServeOTA does not queue the device again.
+        Returns the NwkIds of the cancelled requests.
+        """
+        cancelled = []
         for request in list(self.ota_requests.values()):
             if nwkid is None or request["NwkId"] == nwkid:
+                self.ota_cancelled[request["IEEE"]] = time.time()
+                logging(self, "Status", "Firmware update of %s with %s cancelled (it was %s)" % (
+                    request["NwkId"], request["FileName"], request["State"]), request["NwkId"])
                 end_ota_request(self, request, "Cancelled")
+                cancelled.append(request["NwkId"])
+        return cancelled
 
 
     def ota_image_block_request(self, MsgData):
@@ -355,6 +374,9 @@ class OTAManagement(object):
             f"Control: 0x{intMsgFieldControl:02X}", MsgSrcAddr
         )
 
+        if abort_cancelled_transfer(self, MsgSrcAddr, MsgEP, MsgSQN):
+            return
+
         request = ota_request_for_block(self, MsgSrcAddr)
         if request is None:
             return
@@ -386,6 +408,9 @@ class OTAManagement(object):
 
         logging( self, "Debug", "ota_image_page_request - Request Firmware %s/%s Offset: %s Version: 0x%08x Type: 0x%04X Manuf: 0x%04X MaxSize: %s PageSize: %s ResponseSpacing: %s Control: 0x%02X" % (
             MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgMaxDataSize, PageSize , intResponseSpacing, intMsgFieldControl, ), MsgSrcAddr)
+
+        if abort_cancelled_transfer(self, MsgSrcAddr, MsgEP, MsgSQN):
+            return
 
         request = ota_request_for_block(self, MsgSrcAddr)
         if request is None:
@@ -455,6 +480,12 @@ class OTAManagement(object):
             MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus), MsgSrcAddr)
 
         request = find_ota_request(self, MsgSrcAddr)
+        if request is None and recently_cancelled(self, MsgSrcAddr):
+            # The device answers the ABORT of a cancelled transfer: expected, not a duplicate
+            logging(self, "Status", "Firmware transfer of %s stopped after the cancel: the device discarded the download (Upgrade End status 0x%s)" % (
+                MsgSrcAddr, MsgStatus), MsgSrcAddr)
+            return
+
         if request is None or request["State"] != OTA_TRANSFER:
             logging(self, "Warning", "ota_upgrade_end_request - Receive Firmware Completed from %s with status %s most likely a duplicated packet as there is no transfer in progress for it. " % (MsgSrcAddr, MsgStatus), MsgSrcAddr)
             return
@@ -627,7 +658,11 @@ class OTAManagement(object):
             image_found = None
 
         if image_found:
-            if request is None and self.pluginconf.pluginConf.get("autoServeOTA", False) and "IEEE" in self.ListOfDevices[srcnwkid]:
+            if request is None and self.ListOfDevices[srcnwkid].get("IEEE") in self.ota_cancelled:
+                # Cancelled from the WebUI: autoServeOTA leaves it alone until it is picked again
+                logging(self, "Debug", f"OTA Query Next Image request - {srcnwkid} was cancelled from the WebUI, not served", srcnwkid)
+
+            elif request is None and self.pluginconf.pluginConf.get("autoServeOTA", False) and "IEEE" in self.ListOfDevices[srcnwkid]:
                 # autoServeOTA: the device that asks is queued, and served now if a slot is free
                 brand, file_name = retrieve_image(self, imagetype, manufcode, exact=True)
                 request = new_ota_request(self, srcnwkid, srcep, brand, file_name, auto_serve=True)
@@ -858,6 +893,26 @@ def ota_request_for_block(self, nwkid):
 
     start_transfer(self, request)
     return request
+
+
+def recently_cancelled(self, nwkid):
+    """The WebUI cancelled the request of this device less than OTA_CANCEL_ABORT_WINDOW ago,
+    and it has not been picked again since."""
+    ieee = self.ListOfDevices.get(nwkid, {}).get("IEEE")
+    cancelled = self.ota_cancelled.get(ieee)
+    return cancelled is not None and ieee not in self.ota_requests and time.time() - cancelled <= OTA_CANCEL_ABORT_WINDOW
+
+
+def abort_cancelled_transfer(self, nwkid, ep, sqn):
+    """Answer ABORT to a block or page request of a device whose request was cancelled from
+    the WebUI less than OTA_CANCEL_ABORT_WINDOW ago: the device stops the download at once and
+    keeps its firmware (ZCL rev 8 11.13.8.2.1). Returns True when it did."""
+    if not recently_cancelled(self, nwkid) or not _is_controller_in_raw_mode(self):
+        return False
+
+    logging(self, "Log", "Firmware transfer of %s was cancelled: ABORT sent to its request" % nwkid, nwkid)
+    zcl_raw_ota_image_block_response_abort(self, nwkid, ZIGATE_EP, ep, "95", sqn=sqn)
+    return True
 
 
 def end_ota_request(self, request, final_status=None):
@@ -1364,6 +1419,8 @@ def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_updat
 
     request = new_ota_request(self, target_nwkid, target_ep, brand, file_name, force_update)
     self.ota_requests[request["IEEE"]] = request
+    # Picked again after a cancel: served as any other request
+    self.ota_cancelled.pop(request["IEEE"], None)
     logging(self, "Status", "Firmware update queued for %s with %s (%s request(s) queued or in progress)" % (
         target_nwkid, file_name, len(self.ota_requests)), target_nwkid)
 

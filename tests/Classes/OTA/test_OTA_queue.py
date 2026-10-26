@@ -25,7 +25,7 @@ Run with:
 import time
 
 import pytest
-from ota_builders import DEVICE_EP, DEVICE_IEEE, DEVICE_NWKID, block_request, make_ota_image, query_next_image, upgrade_end
+from ota_builders import DEVICE_EP, DEVICE_IEEE, DEVICE_NWKID, block_request, make_ota_image, page_request, query_next_image, upgrade_end
 
 IMAGE_VERSION = 0x01020304
 NO_IMAGE_AVAILABLE = 0x98
@@ -324,6 +324,100 @@ def test_request_list_names_the_device_or_falls_back_to_its_ieee(ota, radio, ike
 
     _query(ota, radio, DEVICE_NWKID, version=IMAGE_VERSION)   # already up to date: dropped, the widget says so
     assert ota.adminWidgets.updateNotificationWidget.call_args.args[1].startswith(f"Firmware update not needed for Device: {expected} - ")
+
+
+# ─── Cancel from the WebUI ────────────────────────────────────────────────────
+
+def test_cancel_a_queued_request(ota, radio, ikea_image, devices):
+    _pick(ota, *SLOTS_FULL, MAINS_6)
+
+    assert ota.cancel_current_firmware_update(MAINS_6) == [MAINS_6]
+
+    assert MAINS_6 not in _states(ota)
+    assert _query(ota, radio, MAINS_6) == NO_IMAGE_AVAILABLE
+
+
+def test_cancel_a_transfer_frees_its_slot_for_the_next_device(ota_module, ota, radio, ikea_image, devices):
+    _pick(ota, *SLOTS_FULL, MAINS_6)
+    _query(ota, radio, DEVICE_NWKID)
+    ota.ota_image_block_request(block_request(nwkid=DEVICE_NWKID))
+
+    ota.cancel_current_firmware_update(DEVICE_NWKID)
+    ota.heartbeat()
+
+    assert DEVICE_NWKID not in _states(ota)
+    assert _states(ota)[MAINS_6] == ota_module.OTA_NOTIFYING
+
+
+@pytest.mark.parametrize("request_frame, handler", [(block_request, "ota_image_block_request"), (page_request, "ota_image_page_request")])
+def test_cancelled_transfer_gets_abort_at_its_next_request(ota, radio, ikea_image, request_frame, handler):
+    """ZCL rev 8 11.13.8.2.1: ABORT makes the client stop the download and keep its firmware."""
+    _pick(ota, DEVICE_NWKID)
+    _query(ota, radio, DEVICE_NWKID)
+    ota.ota_image_block_request(block_request(nwkid=DEVICE_NWKID))
+    ota.cancel_current_firmware_update(DEVICE_NWKID)
+    radio.zcl_raw_ota_image_block_response_success.reset_mock()
+
+    getattr(ota, handler)(request_frame(nwkid=DEVICE_NWKID, offset=0x30, sqn=0x42))
+
+    radio.zcl_raw_ota_image_block_response_success.assert_not_called()
+    call = radio.zcl_raw_ota_image_block_response_abort.call_args
+    assert (call.args[1], call.args[3], call.args[4], call.kwargs["sqn"]) == (DEVICE_NWKID, DEVICE_EP, "95", "42")
+
+
+def test_upgrade_end_after_the_abort_is_expected_not_a_duplicate(ota, radio, ikea_image):
+    """Field test 2026-10-26 (Legrand NLV, NLF): after the ABORT the device sends Upgrade End
+    status 0x96 (INVALID_IMAGE). It was logged as a Warning "most likely a duplicated packet"."""
+    _pick(ota, DEVICE_NWKID)
+    _query(ota, radio, DEVICE_NWKID)
+    ota.ota_image_block_request(block_request(nwkid=DEVICE_NWKID))
+    ota.cancel_current_firmware_update(DEVICE_NWKID)
+    ota.ota_image_block_request(block_request(nwkid=DEVICE_NWKID, offset=0x30))
+    ota.log.logging.reset_mock()
+
+    ota.ota_upgrade_end_request(upgrade_end(nwkid=DEVICE_NWKID, status="96"))
+
+    levels = [call.args[1] for call in ota.log.logging.call_args_list]
+    assert "Warning" not in levels
+    assert any(call.args[1] == "Status" and "stopped after the cancel" in call.args[2] for call in ota.log.logging.call_args_list)
+    radio.zcl_raw_ota_upgrade_end_response.assert_not_called()
+
+
+def test_abort_only_within_the_window_after_the_cancel(ota_module, ota, radio, ikea_image):
+    _pick(ota, DEVICE_NWKID)
+    ota.cancel_current_firmware_update(DEVICE_NWKID)
+    ota.ota_cancelled[DEVICE_IEEE] -= ota_module.OTA_CANCEL_ABORT_WINDOW + 1
+
+    ota.ota_image_block_request(block_request(nwkid=DEVICE_NWKID))
+
+    radio.zcl_raw_ota_image_block_response_abort.assert_not_called()
+
+
+def test_auto_serve_does_not_queue_a_cancelled_device_again(ota, radio, ikea_image):
+    ota.pluginconf.pluginConf["autoServeOTA"] = True
+    _pick(ota, DEVICE_NWKID)
+    ota.cancel_current_firmware_update(DEVICE_NWKID)
+
+    assert _query(ota, radio, DEVICE_NWKID) == NO_IMAGE_AVAILABLE
+    assert _states(ota) == {}
+
+
+def test_a_cancelled_device_picked_again_is_served(ota_module, ota, radio, ikea_image):
+    ota.pluginconf.pluginConf["autoServeOTA"] = True
+    _pick(ota, DEVICE_NWKID)
+    ota.cancel_current_firmware_update(DEVICE_NWKID)
+
+    assert _pick(ota, DEVICE_NWKID)[0]["Status"] == "Queued"
+    assert DEVICE_IEEE not in ota.ota_cancelled
+    assert _query(ota, radio, DEVICE_NWKID) == 0x00
+    radio.zcl_raw_ota_image_block_response_abort.reset_mock()
+    ota.ota_image_block_request(block_request(nwkid=DEVICE_NWKID))
+    radio.zcl_raw_ota_image_block_response_abort.assert_not_called()
+
+
+def test_cancel_a_device_without_request(ota, radio, ikea_image):
+    assert ota.cancel_current_firmware_update(DEVICE_NWKID) == []
+    assert ota.ota_cancelled == {}
 
 
 # ─── ZiGate (native mode) ─────────────────────────────────────────────────────
