@@ -302,6 +302,8 @@ class WebServer(object):
                 health["OTAupdateRequests"] = self.PluginHealth["Firmware Update"].get("Requests", [])
                 # The last ended requests, newest first, their outcome in "Progress"
                 health["OTAupdateFinished"] = self.PluginHealth["Firmware Update"].get("Finished", [])
+                # The plugin's clock, which StartTime / EndTime are read against: the browser's may differ
+                health["OTAupdateTime"] = int(time.time())
 
             if self.groupmgt:
                 health["GroupStatus"] = self.groupmgt.GroupStatus
