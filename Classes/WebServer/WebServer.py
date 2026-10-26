@@ -298,6 +298,8 @@ class WebServer(object):
             if "Firmware Update" in self.PluginHealth:
                 health["OTAupdateProgress"] = self.PluginHealth["Firmware Update"]["Progress"]
                 health["OTAupdateDevice"] = self.PluginHealth["Firmware Update"]["Device"]
+                # Every queued or active request, each with Status "Active" / "Not Active"
+                health["OTAupdateRequests"] = self.PluginHealth["Firmware Update"].get("Requests", [])
 
             if self.groupmgt:
                 health["GroupStatus"] = self.groupmgt.GroupStatus

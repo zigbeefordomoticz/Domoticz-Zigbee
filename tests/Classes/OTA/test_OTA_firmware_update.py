@@ -11,20 +11,17 @@ Reference: Zigbee Cluster Library rev 8 (07-5123-08)
     11.8.2   sleepy devices cannot be reliably notified; they query the
              server on their own schedule
 
-Several tests pin today's single-device behaviour on purpose
-(restapi_firmware_update drops a list of more than one device, a second
-request is refused while one is active). Issue #2169 changes that
-behaviour: those tests are expected to be rewritten with it.
-
-Tests marked xfail(strict=True) document a defect found by the OTA review
-of 2026-10-25.
+The queue itself (several devices, transfer slots) is covered by
+test_OTA_queue.py.
 
 Run with:
     python -m pytest tests/Classes/OTA/test_OTA_firmware_update.py -v
 """
 
+import time
+
 import pytest
-from ota_builders import DEVICE_EP, DEVICE_NWKID, make_ota_image, query_next_image
+from ota_builders import DEVICE_EP, DEVICE_IEEE, DEVICE_NWKID, make_ota_image, query_next_image
 
 IMAGE_VERSION = 0x01020304
 FORCED_VERSION = IMAGE_VERSION + 0x10100000
@@ -41,78 +38,81 @@ def _request(nwkid=DEVICE_NWKID, ep=DEVICE_EP, brand="Ikea", file_name="bulb.ota
 
 # ─── firmware_update ──────────────────────────────────────────────────────────
 
-def test_firmware_update_authorizes_and_notifies_the_device(ota_module, ota, radio, ikea_image):
-    assert ota_module.firmware_update(ota, "Ikea", "bulb.ota", DEVICE_NWKID, DEVICE_EP) is True
+def test_firmware_update_queues_and_notifies_the_device(ota_module, ota, radio, ikea_image, request_of):
+    assert ota_module.firmware_update(ota, "Ikea", "bulb.ota", DEVICE_NWKID, DEVICE_EP) == {"NwkId": DEVICE_NWKID, "Status": "Queued", "Reason": None}
 
-    assert ota.ListInUpdate["NwkId"] == DEVICE_NWKID
-    assert ota.ListInUpdate["Ep"] == DEVICE_EP
-    assert ota.ListInUpdate["AuthorizedForUpdate"] == [DEVICE_NWKID]
+    request = request_of(DEVICE_NWKID)
+    assert (request["IEEE"], request["NwkId"], request["Ep"]) == (DEVICE_IEEE, DEVICE_NWKID, DEVICE_EP)
+    assert request["State"] == ota_module.OTA_NOTIFYING
+    assert request["NotifiedTimeStamp"] > 0
     # Image Notify, payload type 3, jitter 100 (ZCL8 11.13.3)
     radio.zcl_raw_ota_image_notify.assert_called_once_with(ota, DEVICE_NWKID, "01", DEVICE_EP, "03", "64", "117c", "2203", "01020304")
-    assert ota.ImageLoaded["NotifiedTimeStamp"] > 0
-    assert ota.ImageLoaded["LoadedTimeStamp"] > 0
     assert ota.ImageLoaded["image_type"] == 0x2203
 
 
-def test_forced_update_advertises_a_bumped_version(ota_module, ota, radio, ikea_image):
+def test_forced_update_advertises_a_bumped_version(ota_module, ota, radio, ikea_image, request_of):
     ota_module.firmware_update(ota, "Ikea", "bulb.ota", DEVICE_NWKID, DEVICE_EP, force_update=True)
 
     radio.zcl_raw_ota_image_notify.assert_called_once_with(ota, DEVICE_NWKID, "01", DEVICE_EP, "03", "64", "117c", "2203", "%08X" % FORCED_VERSION)
+    assert request_of(DEVICE_NWKID)["ImageVersion"] == FORCED_VERSION
+
+
+def test_forced_update_leaves_the_image_untouched(ota_module, ota, radio, ikea_image):
+    """The bumped version belongs to the request: other devices are offered the real one."""
+    ota_module.firmware_update(ota, "Ikea", "bulb.ota", DEVICE_NWKID, DEVICE_EP, force_update=True)
+
+    assert (ikea_image["originalVersion"], ikea_image["intImageVersion"]) == (IMAGE_VERSION, IMAGE_VERSION)
 
 
 @pytest.mark.parametrize(
-    "brand, file_name, nwkid, ep",
+    "brand, file_name, nwkid, ep, reason",
     [
-        ("NoSuchBrand", "bulb.ota", DEVICE_NWKID, DEVICE_EP),
-        ("Ikea", "missing.ota", DEVICE_NWKID, DEVICE_EP),
-        ("Ikea", "bulb.ota", "ffff", DEVICE_EP),
-        ("Ikea", "bulb.ota", DEVICE_NWKID, "0b"),
+        ("NoSuchBrand", "bulb.ota", DEVICE_NWKID, DEVICE_EP, "Unknown brand"),
+        ("Ikea", "missing.ota", DEVICE_NWKID, DEVICE_EP, "Unknown firmware file"),
+        ("Ikea", "bulb.ota", "ffff", DEVICE_EP, "Unknown device"),
+        ("Ikea", "bulb.ota", DEVICE_NWKID, "0b", "Unknown endpoint"),
     ],
 )
-def test_firmware_update_rejects_unknown_targets(ota_module, ota, radio, ikea_image, brand, file_name, nwkid, ep):
-    assert ota_module.firmware_update(ota, brand, file_name, nwkid, ep) is False
+def test_firmware_update_rejects_unknown_targets(ota_module, ota, radio, ikea_image, brand, file_name, nwkid, ep, reason):
+    assert ota_module.firmware_update(ota, brand, file_name, nwkid, ep) == {"NwkId": nwkid, "Status": "Rejected", "Reason": reason}
 
-    assert ota.ListInUpdate["NwkId"] is None
+    assert ota.ota_requests == {}
     radio.zcl_raw_ota_image_notify.assert_not_called()
 
 
-def test_firmware_update_refused_while_another_is_active(ota_module, ota, radio, ikea_image):
-    """Single-device behaviour, changed by #2169."""
-    ota.ListInUpdate["NwkId"] = "abcd"
+def test_firmware_update_rejects_a_device_already_queued(ota_module, ota, radio, ikea_image):
+    ota_module.firmware_update(ota, "Ikea", "bulb.ota", DEVICE_NWKID, DEVICE_EP)
 
-    assert ota_module.firmware_update(ota, "Ikea", "bulb.ota", DEVICE_NWKID, DEVICE_EP) is False
+    result = ota_module.firmware_update(ota, "Ikea", "bulb.ota", DEVICE_NWKID, DEVICE_EP, force_update=True)
 
-    radio.zcl_raw_ota_image_notify.assert_not_called()
-    assert DEVICE_NWKID not in ota.ListInUpdate["AuthorizedForUpdate"]
+    assert result["Status"] == "Rejected"
+    assert result["Reason"] == "A firmware update is already queued or in progress for this device"
+    radio.zcl_raw_ota_image_notify.assert_called_once()
 
 
 # ─── restapi_firmware_update ──────────────────────────────────────────────────
 
-def test_restapi_single_device(ota, radio, ikea_image):
-    assert ota.restapi_firmware_update([_request()]) == [{"NwkId": DEVICE_NWKID, "Status": "Started", "Reason": None}]
+def test_restapi_single_device(ota, radio, ikea_image, request_of):
+    assert ota.restapi_firmware_update([_request()]) == [{"NwkId": DEVICE_NWKID, "Status": "Queued", "Reason": None}]
 
-    assert ota.ListInUpdate["NwkId"] == DEVICE_NWKID
     radio.zcl_raw_ota_image_notify.assert_called_once()
-    assert ota.authorized_device_downgrade == {}
+    assert request_of(DEVICE_NWKID)["ForceUpdate"] is False
 
 
-def test_restapi_forced_update_authorizes_a_downgrade(ota, radio, ikea_image):
+def test_restapi_forced_update_is_kept_with_the_request(ota, radio, ikea_image, request_of):
     ota.restapi_firmware_update([_request(force=True)])
 
-    assert ota.authorized_device_downgrade == {DEVICE_NWKID: True}
+    assert request_of(DEVICE_NWKID)["ForceUpdate"] is True
 
 
-def test_restapi_several_devices_are_rejected(ota, radio, ikea_image):
-    """Single-device behaviour, changed by #2169: a list of more than one device starts nothing,
-    and every device of the list is reported as rejected."""
-    ota.ListOfDevices["5678"] = {"IEEE": "00158d0000000002", "Ep": {"01": {"0019": {}}}}
+def test_restapi_several_devices_are_queued(ota, radio, ikea_image, add_device):
+    """#2169: every device of the list is queued."""
+    add_device("5678", "00158d0000000002")
 
     results = ota.restapi_firmware_update([_request(), _request(nwkid="5678")])
 
-    assert [(result["NwkId"], result["Status"]) for result in results] == [(DEVICE_NWKID, "Rejected"), ("5678", "Rejected")]
-    assert ota.ListInUpdate["NwkId"] is None
-    assert ota.ListInUpdate["AuthorizedForUpdate"] == []
-    radio.zcl_raw_ota_image_notify.assert_not_called()
+    assert [(result["NwkId"], result["Status"]) for result in results] == [(DEVICE_NWKID, "Queued"), ("5678", "Queued")]
+    assert list(ota.ota_requests) == [DEVICE_IEEE, "00158d0000000002"]
 
 
 def test_restapi_empty_request(ota, radio, ikea_image):
@@ -137,25 +137,17 @@ def test_restapi_reports_why_a_request_is_rejected(ota, radio, ikea_image, reque
     radio.zcl_raw_ota_image_notify.assert_not_called()
 
 
-def test_restapi_reports_a_request_refused_while_another_is_active(ota, radio, ikea_image):
-    ota.ListInUpdate["NwkId"] = "abcd"
+def test_restapi_rejects_one_device_and_queues_the_others(ota, radio, ikea_image, add_device):
+    add_device("5678", "00158d0000000002")
 
-    [result] = ota.restapi_firmware_update([_request()])
+    results = ota.restapi_firmware_update([_request(nwkid="ffff"), _request(nwkid="5678")])
 
-    assert result == {"NwkId": DEVICE_NWKID, "Status": "Rejected", "Reason": "Another firmware update is in progress"}
-
-
-def test_refused_forced_update_does_not_authorize_a_downgrade(ota, radio, ikea_image):
-    ota.ListInUpdate["NwkId"] = "abcd"
-
-    ota.restapi_firmware_update([_request(force=True)])
-
-    assert DEVICE_NWKID not in ota.authorized_device_downgrade
+    assert [(result["NwkId"], result["Status"]) for result in results] == [("ffff", "Rejected"), ("5678", "Queued")]
 
 
 # ─── after the notification: the heartbeat ────────────────────────────────────
 
-def test_heartbeat_re_notifies_then_gives_up(ota_module, ota, radio, ikea_image):
+def test_heartbeat_re_notifies_then_gives_the_slot_back(ota_module, ota, radio, ikea_image, request_of):
     ota.restapi_firmware_update([_request()])
     radio.zcl_raw_ota_image_notify.reset_mock()
 
@@ -163,22 +155,52 @@ def test_heartbeat_re_notifies_then_gives_up(ota_module, ota, radio, ikea_image)
         ota.heartbeat()
 
     assert radio.zcl_raw_ota_image_notify.call_count == ota_module.OTA_MAX_NOTIFY_RETRY
-    assert ota.ListInUpdate["NwkId"] is None
-    assert ota.ListInUpdate["AuthorizedForUpdate"] == []
+    # No more notifications, but the device keeps its authorization
+    assert request_of(DEVICE_NWKID)["State"] == ota_module.OTA_WAITING
+    ota.heartbeat()
+    assert radio.zcl_raw_ota_image_notify.call_count == ota_module.OTA_MAX_NOTIFY_RETRY
 
 
-def test_device_asking_after_the_notify_window_is_turned_away(ota_module, ota, radio, ikea_image):
-    """Pins today's behaviour (see the OTA review of 2026-10-25).
-
-    The heartbeat runs every HEARTBEAT (5 s), so the device has about
-    OTA_MAX_NOTIFY_RETRY x 5 s = 50 s to react to the Image Notify. A sleepy
-    device that queries later, on its own schedule (ZCL8 11.8.2), has lost
-    its authorization and gets NO_IMAGE_AVAILABLE unless autoServeOTA is on.
-    """
+def test_device_asking_after_the_notify_window_gets_the_image(ota_module, ota, radio, ikea_image, request_of):
+    """OTA review H1: a sleepy device asks on its own schedule (ZCL8 11.8.2), long after
+    the ~50 s of notifications. It is still authorized, and gets the image."""
     ota.restapi_firmware_update([_request()])
     for _ in range(ota_module.OTA_MAX_NOTIFY_RETRY):
         ota.heartbeat()
 
     ota.query_next_image_request(DEVICE_NWKID, DEVICE_EP, "2a", query_next_image(0x117C, 0x2203, 0x01000000))
 
+    assert radio.zcl_raw_ota_query_next_image_response.call_args.args[5:] == (0x00, 0x117C, 0x2203, IMAGE_VERSION, ikea_image["intSize"])
+    assert request_of(DEVICE_NWKID)["State"] == ota_module.OTA_TRANSFER
+
+
+def test_queued_device_that_never_asks_is_dropped_after_the_queue_wait(ota_module, ota, radio, ikea_image, request_of):
+    ota.restapi_firmware_update([_request()])
+    for _ in range(ota_module.OTA_MAX_NOTIFY_RETRY):
+        ota.heartbeat()
+    request_of(DEVICE_NWKID)["QueuedTime"] = time.time() - ota_module.OTA_QUEUE_WAIT - 1
+
+    ota.heartbeat()
+
+    assert ota.ota_requests == {}
+    assert "did not ask for bulb.ota within 24 hours" in ota.adminWidgets.updateNotificationWidget.call_args.args[1]
+    assert ota.PluginHealth["Firmware Update"]["Progress"] == "Dropped"
+
+
+def test_device_already_up_to_date_is_dropped_when_it_asks(ota, radio, ikea_image):
+    ota.restapi_firmware_update([_request()])
+
+    ota.query_next_image_request(DEVICE_NWKID, DEVICE_EP, "2a", query_next_image(0x117C, 0x2203, IMAGE_VERSION))
+
     assert radio.zcl_raw_ota_query_next_image_response.call_args.args[5:] == (0x98,)
+    assert ota.ota_requests == {}
+    assert "already runs version 0x01020304" in ota.adminWidgets.updateNotificationWidget.call_args.args[1]
+
+
+def test_cancel_drops_the_request(ota, radio, ikea_image):
+    ota.restapi_firmware_update([_request()])
+
+    ota.cancel_current_firmware_update(DEVICE_NWKID)
+
+    assert ota.ota_requests == {}
+    assert ota.PluginHealth["Firmware Update"]["Progress"] == "Cancelled"
