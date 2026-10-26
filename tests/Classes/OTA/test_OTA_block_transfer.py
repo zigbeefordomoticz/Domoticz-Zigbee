@@ -296,3 +296,42 @@ def test_page_request_for_an_unknown_image_logs_an_error_with_context(ota, radio
     assert error.args[3] == DEVICE_NWKID
     assert error.args[4]["Error code"] == "OTA0201"
     assert error.args[4]["ImageType"] == "0x4204"
+
+
+# ─── progress ─────────────────────────────────────────────────────────────────
+
+def _progress_steps(ota):
+    """The percentages of the 'Progress' Status lines, in order."""
+    return [
+        float(call.args[2].rsplit("Progress:", 1)[1].rstrip("%"))
+        for call in ota.log.logging.call_args_list
+        if call.args[1] == "Status" and "Progress:" in call.args[2]
+    ]
+
+
+def _serve_pages(ota, image_size, until):
+    """Page requests as a Legrand NLV sends them (64-byte blocks, 256-byte pages) from 0 to `until`."""
+    for offset in range(0, min(until, image_size), 0x100):
+        ota.ota_image_page_request(page_request(offset=offset, max_size=0x40, page_size=0x100, spacing=200))
+
+
+def test_progress_is_logged_once_per_5_percent_step(ota_module, ota, radio, install_image, request_of):
+    """Field log 2026-10-26: '10.0%' logged by four blocks of one page of a 255 KB image."""
+    image = install_image("Ikea", "big.ota", make_ota_image(manuf_code=0x117C, image_type=0x2203, payload=b"\xAB" * 255_199))
+    ota_module.firmware_update(ota, "Ikea", "big.ota", DEVICE_NWKID, DEVICE_EP)
+
+    _serve_pages(ota, image["intSize"], until=image["intSize"] * 11 // 100)
+
+    # 0 % is the transfer start (start_transfer), not a progress line
+    assert _progress_steps(ota) == [5.0, 10.0]
+    assert request_of(DEVICE_NWKID)["Progress"] == "10%"
+
+
+def test_no_5_percent_step_is_skipped_with_blocks_larger_than_the_rounding(ota_module, ota, radio, install_image):
+    """A 64-byte block is 3 % of a 2 KB image: every 5 % mark is still reported, once."""
+    image = install_image("Ikea", "small.ota", make_ota_image(manuf_code=0x117C, image_type=0x2203, payload=b"\xAB" * 2000))
+    ota_module.firmware_update(ota, "Ikea", "small.ota", DEVICE_NWKID, DEVICE_EP)
+
+    _serve_pages(ota, image["intSize"], until=image["intSize"])
+
+    assert _progress_steps(ota) == [float(step) for step in range(5, 100, 5)]
