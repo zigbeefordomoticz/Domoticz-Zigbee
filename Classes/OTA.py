@@ -408,7 +408,7 @@ class OTAManagement(object):
         # 11.13.7.4 / 11.13.8.2.5), until the page or the image is complete. The offset
         # moves by what was actually sent: ota_send_block() may cap the block size to
         # the vendor profile.
-        entry = retrieve_image(self, intMsgImageType)
+        entry = retrieve_image(self, intMsgImageType, intMsgManufCode)
         if entry is None:
             _context = {"Error code": "OTA0201", "Request": "Image Page", "ImageType": f"0x{intMsgImageType:04X}", "ManufCode": f"0x{intMsgManufCode:04X}",
                         "FileVersion": f"0x{intMsgImageVersion:08X}", "Offset": int(MsgFileOffset, 16)}
