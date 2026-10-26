@@ -313,6 +313,58 @@ def test_health_keeps_the_outcome_of_the_last_transfer(ota, radio, ikea_image):
     assert (health["Device"], health["Progress"], health["Requests"]) == (DEVICE_NWKID, "Success", [])
 
 
+def test_request_list_gives_the_bytes_of_each_block_request(ota, radio, ikea_image):
+    """The WebUI shows bytes, speed and time left: the offset is refreshed at each block, not at each 5% step."""
+    _pick(ota, DEVICE_NWKID)
+    before = ota.PluginHealth["Firmware Update"]["Requests"][0]
+    assert (before["Offset"], before["Size"], before["StartOffset"], before["StartTime"]) == (0, ikea_image["intSize"], 0, 0)
+
+    _query(ota, radio, DEVICE_NWKID)
+    ota.ota_image_block_request(block_request(nwkid=DEVICE_NWKID, offset=0))
+    ota.ota_image_block_request(block_request(nwkid=DEVICE_NWKID, offset=0x30))
+
+    request = ota.PluginHealth["Firmware Update"]["Requests"][0]
+    assert (request["Offset"], request["StartOffset"]) == (0x30, 0)
+    assert request["StartTime"] >= int(time.time()) - 1
+
+
+def test_resumed_transfer_starts_at_the_offset_of_its_first_block(ota, radio, ikea_image):
+    _pick(ota, DEVICE_NWKID)
+    _query(ota, radio, DEVICE_NWKID)
+
+    ota.ota_image_block_request(block_request(nwkid=DEVICE_NWKID, offset=0x60))
+
+    request = ota.PluginHealth["Firmware Update"]["Requests"][0]
+    assert (request["Offset"], request["StartOffset"]) == (0x60, 0x60)
+
+
+def test_finished_requests_keep_their_outcome_newest_first(ota_module, ota, radio, ikea_image, devices, request_of):
+    _pick(ota, DEVICE_NWKID, MAINS_2)
+    _query(ota, radio, DEVICE_NWKID)
+    ota.ota_image_block_request(block_request(nwkid=DEVICE_NWKID, offset=0x30))
+    ota.ota_upgrade_end_request(upgrade_end(nwkid=DEVICE_NWKID, status="00"))
+    _query(ota, radio, MAINS_2)
+    request_of(MAINS_2)["LastBlockSent"] = time.time() - ota_module.OTA_BLOCK_TIMEOUT - 1
+    ota.heartbeat()
+
+    finished = ota.PluginHealth["Firmware Update"]["Finished"]
+
+    assert [(request["NwkId"], request["Progress"]) for request in finished] == [(MAINS_2, "Timeout"), (DEVICE_NWKID, "Success")]
+    assert finished[1]["Offset"] == 0x30
+    assert finished[1]["Name"] == ota.ListOfDevices[DEVICE_NWKID]["ZDeviceName"]
+    assert all(request["EndTime"] >= int(time.time()) - 1 for request in finished)
+    assert ota.PluginHealth["Firmware Update"]["Requests"] == []
+
+
+def test_finished_list_keeps_the_last_requests_only(ota_module, ota, radio, ikea_image, devices):
+    for _ in range(ota_module.OTA_FINISHED_KEPT + 2):
+        _pick(ota, DEVICE_NWKID)
+        _query(ota, radio, DEVICE_NWKID)
+        ota.ota_upgrade_end_request(upgrade_end(nwkid=DEVICE_NWKID, status="00"))
+
+    assert len(ota.PluginHealth["Firmware Update"]["Finished"]) == ota_module.OTA_FINISHED_KEPT
+
+
 @pytest.mark.parametrize("name, expected", [("Bulb", "Bulb"), ("", DEVICE_IEEE), (None, DEVICE_IEEE)])
 def test_request_list_names_the_device_or_falls_back_to_its_ieee(ota, radio, ikea_image, name, expected):
     """Field test 2026-10-26: a device never named in the WebUI has ZDeviceName "", which was shown as is."""
