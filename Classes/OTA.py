@@ -1321,7 +1321,7 @@ def firmware_update_result(nwkid, status, reason=None):
     return {"NwkId": nwkid, "Status": status, "Reason": reason}
 
 
-def firmware_update_rejection(self, brand, file_name, target_nwkid, target_ep):
+def firmware_update_rejection(self, brand, file_name, target_nwkid, target_ep, force_update=False):
     """Why this firmware update cannot start (the reason is logged), or None if it can."""
 
     if brand not in self.ListOfImages["Brands"]:
@@ -1350,7 +1350,21 @@ def firmware_update_rejection(self, brand, file_name, target_nwkid, target_ep):
             target_nwkid, self.ota_requests[ieee]["State"], self.ota_requests[ieee]["FileName"]), target_nwkid)
         return "A firmware update is already queued or in progress for this device"
 
+    current_version = known_version_of_image(self, target_nwkid, self.ListOfImages["Brands"][brand][file_name])
+    if not force_update and current_version is not None and current_version >= self.ListOfImages["Brands"][brand][file_name]["originalVersion"]:
+        logging(self, "Status", "Firmware update of %s with %s not queued: it already runs version 0x%08X, use Force Update to install it" % (
+            target_nwkid, file_name, current_version), target_nwkid)
+        return "The device already runs this firmware version or a newer one"
+
     return None
+
+
+def known_version_of_image(self, nwkid, image):
+    """The version the device reported in its last Query Next Image Request, if that was for this image's manufacturer and type."""
+    ota_client = self.ListOfDevices[nwkid].get("OTAClient", {})
+    if (ota_client.get("ManufacturerCode"), ota_client.get("ImageType")) != (image["intManufCode"], image["ImageType"]):
+        return None
+    return ota_client.get("CurrentImageVersion")
 
 
 def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_update=False):
@@ -1358,7 +1372,7 @@ def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_updat
 
     Returns its firmware_update_result(): "Queued", or "Rejected" with the reason.
     """
-    reason = firmware_update_rejection(self, brand, file_name, target_nwkid, target_ep)
+    reason = firmware_update_rejection(self, brand, file_name, target_nwkid, target_ep, force_update)
     if reason:
         return firmware_update_result(target_nwkid, "Rejected", reason)
 
