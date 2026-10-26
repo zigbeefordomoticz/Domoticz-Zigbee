@@ -152,7 +152,7 @@ def test_device_with_an_update_planned_is_not_reported(ota_module, ota, radio, i
     _query(ota)
 
     ota.pluginconf.pluginConf["autoServeOTA"] = True
-    ota.cancel_current_firmware_update()
+    ota.ota_requests.clear()   # no request left; not a cancel, which autoServeOTA respects
     _query(ota)
 
     assert _available_lines(ota) == []
