@@ -510,6 +510,12 @@ class OTAManagement(object):
             MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus), MsgSrcAddr)
 
         request = find_ota_request(self, MsgSrcAddr)
+        if request is None and recently_cancelled(self, MsgSrcAddr):
+            # The device answers the ABORT of a cancelled transfer: expected, not a duplicate
+            logging(self, "Status", "Firmware transfer of %s stopped after the cancel: the device discarded the download (Upgrade End status 0x%s)" % (
+                MsgSrcAddr, MsgStatus), MsgSrcAddr)
+            return
+
         if request is None or request["State"] != OTA_TRANSFER:
             logging(self, "Warning", "ota_upgrade_end_request - Receive Firmware Completed from %s with status %s most likely a duplicated packet as there is no transfer in progress for it. " % (MsgSrcAddr, MsgStatus), MsgSrcAddr)
             return
@@ -954,15 +960,19 @@ def ota_request_for_block(self, nwkid):
     return request
 
 
+def recently_cancelled(self, nwkid):
+    """The WebUI cancelled the request of this device less than OTA_CANCEL_ABORT_WINDOW ago,
+    and it has not been picked again since."""
+    ieee = self.ListOfDevices.get(nwkid, {}).get("IEEE")
+    cancelled = self.ota_cancelled.get(ieee)
+    return cancelled is not None and ieee not in self.ota_requests and time.time() - cancelled <= OTA_CANCEL_ABORT_WINDOW
+
+
 def abort_cancelled_transfer(self, nwkid, ep, sqn):
     """Answer ABORT to a block or page request of a device whose request was cancelled from
     the WebUI less than OTA_CANCEL_ABORT_WINDOW ago: the device stops the download at once and
     keeps its firmware (ZCL rev 8 11.13.8.2.1). Returns True when it did."""
-    ieee = self.ListOfDevices.get(nwkid, {}).get("IEEE")
-    cancelled = self.ota_cancelled.get(ieee)
-    if cancelled is None or ieee in self.ota_requests or time.time() - cancelled > OTA_CANCEL_ABORT_WINDOW:
-        return False
-    if not _is_controller_in_raw_mode(self):
+    if not recently_cancelled(self, nwkid) or not _is_controller_in_raw_mode(self):
         return False
 
     logging(self, "Log", "Firmware transfer of %s was cancelled: ABORT sent to its request" % nwkid, nwkid)
