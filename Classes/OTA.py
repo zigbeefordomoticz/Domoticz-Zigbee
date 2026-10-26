@@ -942,8 +942,13 @@ def ota_image_advertize(self, dest_addr, dest_ep, image_version, image_type=0xFF
     #   - 2: E_CLD_OTA_ITYPE_MDID_JITTER Include ‘Image Type’, ‘Manufacturer Code’ and ‘Query Jit- ter’ in payload
     #   - 3: E_CLD_OTA_ITYPE_MDID_FVERSION_JITTER Include ‘Image Type’, ‘Manufacturer Code’,
     #        ‘File Version’ and ‘Query Jitter’ in payload
+    #
+    # The notify is unicast: ZCL rev 8 11.13.3.3 recommends payload type 0 with a jitter of 100
+    # for a unicast notify, so the client always answers with a Query Next Image Request.
+    # Clients that apply the broadcast matching rules to a unicast notify with payload type 3
+    # discard it. The image offered (version included) goes in the Query Next Image Response.
 
-    IMG_NTFY_PAYLOAD_TYPE = 3
+    IMG_NTFY_PAYLOAD_TYPE = 0
 
     self.ImageLoaded["Notified"] = True
     self.ImageLoaded["NotifiedTimeStamp"] = time.time()
