@@ -27,7 +27,7 @@ Run with:
 import time
 
 import pytest
-from ota_builders import DEVICE_EP, DEVICE_NWKID, block_request, make_ota_image, query_next_image, upgrade_end
+from ota_builders import DEVICE_EP, DEVICE_IEEE, DEVICE_NWKID, block_request, make_ota_image, query_next_image, upgrade_end
 
 IMAGE_VERSION = 0x01020304
 NO_IMAGE_AVAILABLE = 0x98
@@ -297,6 +297,21 @@ def test_health_keeps_the_outcome_of_the_last_transfer(ota, radio, ikea_image):
 
     health = ota.PluginHealth["Firmware Update"]
     assert (health["Device"], health["Progress"], health["Requests"]) == (DEVICE_NWKID, "Success", [])
+
+
+@pytest.mark.parametrize("name, expected", [("Bulb", "Bulb"), ("", DEVICE_IEEE), (None, DEVICE_IEEE)])
+def test_request_list_names_the_device_or_falls_back_to_its_ieee(ota, radio, ikea_image, name, expected):
+    """Field test 2026-10-26: a device never named in the WebUI has ZDeviceName "", which was shown as is."""
+    if name is None:
+        del ota.ListOfDevices[DEVICE_NWKID]["ZDeviceName"]
+    else:
+        ota.ListOfDevices[DEVICE_NWKID]["ZDeviceName"] = name
+
+    _pick(ota, DEVICE_NWKID)
+    assert ota.PluginHealth["Firmware Update"]["Requests"][0]["Name"] == expected
+
+    _query(ota, radio, DEVICE_NWKID, version=IMAGE_VERSION)   # already up to date: dropped, the widget says so
+    assert ota.adminWidgets.updateNotificationWidget.call_args.args[1].startswith(f"Firmware update not needed for Device: {expected} - ")
 
 
 # ─── ZiGate (native mode) ─────────────────────────────────────────────────────

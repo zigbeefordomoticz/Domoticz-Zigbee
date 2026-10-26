@@ -719,7 +719,8 @@ def _handle_queue_timeout(self, request):
 
 def ota_device_name(self, nwkid):
     device = self.ListOfDevices.get(nwkid, {})
-    return device.get("ZDeviceName", f"{device.get('IEEE', nwkid)}")
+    # ZDeviceName is "" until the user names the device in the WebUI
+    return device.get("ZDeviceName") or device.get("IEEE", nwkid)
 
 
 def new_ota_request(self, nwkid, ep, brand, file_name, force_update=False, auto_serve=False):
