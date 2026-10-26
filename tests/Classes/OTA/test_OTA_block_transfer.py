@@ -181,6 +181,32 @@ def test_two_transfers_do_not_cross(ota, radio, notified, add_device, request_of
     assert request_of(OTHER_NWKID)["intFileOffset"] == 0
 
 
+def test_two_transfers_of_two_different_images(ota, radio, notified, install_image, add_device, request_of):
+    """An IKEA bulb (block requests) and a Legrand NLV (page requests) upgrade at the same time,
+    each from its own file: manufacturer, image type, version and bytes never cross."""
+    legrand = install_image("Legrand", "nlv.ota", make_ota_image(manuf_code=0x1021, image_type=0x0013, version=0x003F45FF, payload=b"\x5A" * 300))
+    add_device(OTHER_NWKID, "00158d0000000002")
+    ota.restapi_firmware_update([{"NwkId": OTHER_NWKID, "Ep": DEVICE_EP, "Brand": "Legrand", "FileName": "nlv.ota", "ForceUpdate": False}])
+
+    def legrand_page(offset):
+        return page_request(nwkid=OTHER_NWKID, offset=offset, version=0x003F45FF, image_type=0x0013, manuf_code=0x1021, max_size=0x40, page_size=0x80)
+
+    ota.ota_image_block_request(block_request(offset=0x00))
+    ota.ota_image_page_request(legrand_page(0x00))
+    ota.ota_image_block_request(block_request(offset=0x30))
+    ota.ota_image_page_request(legrand_page(0x80))
+
+    blocks = _blocks(radio)
+    ikea = [block for block in blocks if block["nwkid"] == DEVICE_NWKID]
+    nlv = [block for block in blocks if block["nwkid"] == OTHER_NWKID]
+    assert {(block["manuf"], block["type"], block["version"]) for block in ikea} == {("117c", "2203", "01020304")}
+    assert {(block["manuf"], block["type"], block["version"]) for block in nlv} == {("1021", "0013", "003f45ff")}
+    assert b"".join(block["data"] for block in ikea) == notified["OtaImage"][:0x60]
+    assert b"".join(block["data"] for block in nlv) == legrand["OtaImage"][:0x100]
+    assert request_of(DEVICE_NWKID)["FileName"] == "bulb.ota"
+    assert request_of(OTHER_NWKID)["FileName"] == "nlv.ota"
+
+
 def test_device_without_a_request_is_not_served_during_a_transfer(ota, radio, notified, add_device):
     add_device(OTHER_NWKID, "00158d0000000002")
     ota.ota_image_block_request(block_request(offset=0x30))
