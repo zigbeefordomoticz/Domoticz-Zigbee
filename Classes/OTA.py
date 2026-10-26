@@ -47,6 +47,7 @@ Attributes:
     ota_requests: The OTA requests by IEEE, in arrival order: the queue and the transfers in progress.
     zigbee_ota_index: The Zigbee OTA index.
     zigbee_ota_found_in_index: The list of Zigbee OTA firmware found in the index.
+    local_image_available_logged: The (IEEE, current version, image version) already reported by log_local_image_available().
     once: Flag indicating if the OTA process has started.
 
 Methods:
@@ -306,6 +307,7 @@ class OTAManagement(object):
 
         self.zigbee_ota_index = None
         self.zigbee_ota_found_in_index = []
+        self.local_image_available_logged = set()
         self.once = True
         
         # Load Zigbee OTA index and scan the folder
@@ -637,6 +639,8 @@ class OTAManagement(object):
             if request is not None:
                 return serve_query_next_image(self, request, Sqn, srcnwkid, srcep)
 
+            log_local_image_available(self, srcnwkid, manufcode, imagetype, currentVersion, image_found)
+
         elif request is not None and (manufcode, imagetype) == (request["intManufCode"], request["intImageType"]):
             # Nothing to offer to a device picked in the WebUI: it already runs this firmware or
             # a newer one, or the firmware does not support its hardware version.
@@ -670,6 +674,21 @@ def _retry_notification(self, request):
     logging(self, "Log", "Ota retries notifying device %s" % request["NwkId"], request["NwkId"])
 
     ota_image_advertize(self, request["NwkId"], request["Ep"], request["ImageVersion"], request["intImageType"], request["intManufCode"])
+
+
+def log_local_image_available(self, nwkid, manufcode, imagetype, current_version, image):
+    """A device asks for an image, a newer local firmware file suits it, but no update is
+    planned for it (autoServeOTA off): it gets NO_IMAGE_AVAILABLE. Say so once per device and
+    pair of versions, at Status level, so the update can be started from the WebUI."""
+    key = (self.ListOfDevices.get(nwkid, {}).get("IEEE", nwkid), current_version, image["originalVersion"])
+    if key in self.local_image_available_logged:
+        return
+    self.local_image_available_logged.add(key)
+
+    entry = retrieve_image(self, imagetype, manufcode, exact=True)
+    file_name = entry[1] if entry else f"0x{manufcode:04X}/0x{imagetype:04X}"
+    logging(self, "Status", "Firmware %s (version 0x%08X) is available for %s [%s], which runs version 0x%08X: start the update from the WebUI" % (
+        file_name, image["originalVersion"], ota_device_name(self, nwkid), nwkid, current_version), nwkid)
 
 
 def _handle_timeout(self, request):

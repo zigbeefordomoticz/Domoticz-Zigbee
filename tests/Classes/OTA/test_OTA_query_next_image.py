@@ -105,6 +105,59 @@ def test_device_not_picked_while_another_is_being_upgraded(ota_module, ota, radi
     assert _response(radio) == (NO_IMAGE_AVAILABLE,)
 
 
+# ─── newer local image, no update planned: one Status line ────────────────────
+
+def _available_lines(ota):
+    return [
+        call.args[2] for call in ota.log.logging.call_args_list
+        if call.args[1] == "Status" and "is available for" in call.args[2]
+    ]
+
+
+def test_newer_local_image_is_reported_at_status_level(ota, radio, ikea_image):
+    """Field test 2026-10-26: the Legrand NLV asked at power-on, got NO_IMAGE_AVAILABLE, and only Debug said why."""
+    _query(ota, version=0x01000000)
+
+    assert _response(radio) == (NO_IMAGE_AVAILABLE,)
+    assert _available_lines(ota) == [
+        "Firmware bulb.ota (version 0x01020304) is available for Bulb [%s], which runs version 0x01000000: start the update from the WebUI" % DEVICE_NWKID
+    ]
+
+
+def test_newer_local_image_is_reported_once_per_device(ota, radio, ikea_image, add_device):
+    for _ in range(3):
+        _query(ota)
+    add_device("abcd", "00158d00000000ab")
+    _query(ota, nwkid="abcd")
+
+    assert [line.split(" [")[1].split("]")[0] for line in _available_lines(ota)] == [DEVICE_NWKID, "abcd"]
+
+
+def test_newer_local_image_is_reported_again_when_the_device_version_changes(ota, radio, ikea_image):
+    _query(ota, version=0x01000000)
+    _query(ota, version=0x01010000)
+
+    assert len(_available_lines(ota)) == 2
+
+
+@pytest.mark.parametrize("device_version", [IMAGE_VERSION, IMAGE_VERSION + 1])
+def test_device_up_to_date_is_not_reported(ota, radio, ikea_image, device_version):
+    _query(ota, version=device_version)
+
+    assert _available_lines(ota) == []
+
+
+def test_device_with_an_update_planned_is_not_reported(ota_module, ota, radio, ikea_image):
+    _queue(ota_module, ota)
+    _query(ota)
+
+    ota.pluginconf.pluginConf["autoServeOTA"] = True
+    ota.ota_requests.clear()   # no request left; not a cancel, which autoServeOTA respects
+    _query(ota)
+
+    assert _available_lines(ota) == []
+
+
 # ─── image offered ────────────────────────────────────────────────────────────
 
 def test_authorized_device_gets_the_image(ota_module, ota, radio, ikea_image):
