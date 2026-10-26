@@ -17,6 +17,8 @@ Run with:
     python -m pytest tests/Classes/OTA/test_OTA_scan_folder.py -v
 """
 
+from pathlib import Path
+
 import pytest
 from ota_builders import make_ota_image
 
@@ -132,3 +134,71 @@ def test_restapi_list_of_firmware_splits_the_file_version(ota, install_image):
         }
     ]
     assert listing[0]["Philips"] == []
+
+
+# ─── Rescan from the WebUI ────────────────────────────────────────────────────
+
+@pytest.fixture
+def drop_file(ota, ota_module):
+    """Write a firmware file into the folder of `brand`, without rescanning (the user copies a file)."""
+
+    def _drop(brand, filename, image_bytes):
+        directory = Path(ota.pluginconf.pluginConf["pluginOTAFirmware"]) / ota_module.ota_brand_folders(ota_module.OTA_CODES[brand])[0]
+        directory.mkdir(parents=True, exist_ok=True)
+        (directory / filename).write_bytes(image_bytes)
+        return directory / filename
+
+    return _drop
+
+
+def _files(ota, brand):
+    return sorted(ota.ListOfImages["Brands"][brand])
+
+
+def test_unchanged_folders_are_not_rescanned(ota, install_image):
+    install_image("Ikea", "bulb.ota", make_ota_image(manuf_code=0x117C, image_type=0x2203, version=0x01020304))
+    images = ota.ListOfImages
+
+    assert ota.rescan_firmware_folders() is False
+    assert ota.ListOfImages is images
+
+
+def test_a_file_dropped_in_the_folder_is_loaded_at_the_next_rescan(ota, drop_file):
+    drop_file("Ikea", "bulb.ota", make_ota_image(manuf_code=0x117C, image_type=0x2203, version=0x01020304))
+    assert _files(ota, "Ikea") == []
+
+    assert ota.rescan_firmware_folders() is True
+
+    assert _files(ota, "Ikea") == ["bulb.ota"]
+    assert [image["FileName"] for image in ota.restapi_list_of_firmware()[0]["Ikea"]] == ["bulb.ota"]
+    assert ota.rescan_firmware_folders() is False
+
+
+def test_a_removed_file_is_dropped_at_the_next_rescan(ota, install_image):
+    install_image("Ikea", "bulb.ota", make_ota_image(manuf_code=0x117C, image_type=0x2203, version=0x01020304))
+    (Path(ota.ListOfImages["Brands"]["Ikea"]["bulb.ota"]["Directory"]) / "bulb.ota").unlink()
+
+    assert ota.rescan_firmware_folders() is True
+    assert _files(ota, "Ikea") == []
+
+
+def test_a_replaced_file_is_reloaded_with_its_new_version(ota, install_image, drop_file):
+    install_image("Ikea", "bulb.ota", make_ota_image(manuf_code=0x117C, image_type=0x2203, version=0x01020304))
+    drop_file("Ikea", "bulb.ota", make_ota_image(manuf_code=0x117C, image_type=0x2203, version=0x01020305, payload=b"\x00" * 64))
+
+    assert ota.rescan_firmware_folders() is True
+    assert ota.ListOfImages["Brands"]["Ikea"]["bulb.ota"]["originalVersion"] == 0x01020305
+
+
+def test_rescan_replaces_the_image_list_instead_of_emptying_it(ota, install_image, drop_file):
+    """The rescan runs in the web server thread: a device asking for its image meanwhile
+    (main thread) must find the old list or the new one, never an empty or partial one."""
+    install_image("Ikea", "bulb.ota", make_ota_image(manuf_code=0x117C, image_type=0x2203, version=0x01020304))
+    before = ota.ListOfImages
+    drop_file("Ikea", "remote.ota", make_ota_image(manuf_code=0x117C, image_type=0x2204, version=0x01000000))
+
+    ota.rescan_firmware_folders()
+
+    assert ota.ListOfImages is not before
+    assert sorted(before["Brands"]["Ikea"]) == ["bulb.ota"]
+    assert _files(ota, "Ikea") == ["bulb.ota", "remote.ota"]
