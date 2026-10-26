@@ -673,7 +673,6 @@ def buildframe_for_cluster_0019(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint
     
     if Command == "04":
         # Image Page request
-        self.log.logging("zclDecoder", "Log", "Image Page request from '%s' for which no tests have been done so far. Please contact us" %SrcNwkId, SrcNwkId)
         return buildframe_for_cluster_8502(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
         
     if Command == "06":
@@ -712,7 +711,7 @@ def buildframe_for_cluster_8501(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint
 
 
 def buildframe_for_cluster_8502(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
-    self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8503 Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" % (
+    self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8502 Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" % (
         '8502', ClusterId, Command, Data, frame), SrcNwkId)
 
     FieldControl = decode_endian_data(Data[:2], "20")
