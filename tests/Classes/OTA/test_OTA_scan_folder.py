@@ -31,7 +31,7 @@ def test_image_is_indexed_by_brand_and_image_type(ota, install_image):
 
     entry = install_image("Ikea", "bulb.ota", image)
 
-    assert ota.ListOfImages["ImageType"][0x2203] == "Ikea"
+    assert ota.ListOfImages["ImageType"][(0x117C, 0x2203)] == "Ikea"
     assert entry["ImageType"] == 0x2203
     assert entry["intManufCode"] == 0x117C
     assert entry["originalVersion"] == 0x01020304
@@ -58,7 +58,6 @@ def test_only_the_highest_version_of_an_image_type_is_kept(ota, install_image, t
     assert ota.ListOfImages["Brands"]["Ikea"]["new.ota"]["originalVersion"] == 0x02000000
 
 
-@pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: images are keyed by image type only, so another manufacturer's image with the same type is dropped")
 def test_same_image_type_from_two_manufacturers(ota, install_image):
     install_image("Ikea", "ikea.ota", make_ota_image(manuf_code=0x117C, image_type=0x0001))
 
@@ -68,13 +67,40 @@ def test_same_image_type_from_two_manufacturers(ota, install_image):
     assert "hue.ota" in ota.ListOfImages["Brands"]["Philips"]
 
 
-@pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: one truncated file aborts the whole scan (and OTAManagement.__init__)")
 def test_a_truncated_file_does_not_stop_the_scan(ota, install_image):
     install_image("Ikea", "good.ota", make_ota_image())
 
     install_image("Ikea", "truncated.ota", b"\x00" * 80 + make_ota_image()[:20])
 
     assert "good.ota" in ota.ListOfImages["Brands"]["Ikea"]
+    assert "truncated.ota" not in ota.ListOfImages["Brands"]["Ikea"]
+
+
+def test_retrieve_image_picks_the_requesting_manufacturer(ota_module, ota, install_image):
+    install_image("Ikea", "ikea.ota", make_ota_image(manuf_code=0x117C, image_type=0x0001))
+    install_image("Philips", "hue.ota", make_ota_image(manuf_code=0x100B, image_type=0x0001))
+
+    assert ota_module.retrieve_image(ota, 0x0001, 0x117C) == ("Ikea", "ikea.ota")
+    assert ota_module.retrieve_image(ota, 0x0001, 0x100B) == ("Philips", "hue.ota")
+    # Several manufacturers use this type, none of them is the requester
+    assert ota_module.retrieve_image(ota, 0x0001, 0x1021) is None
+
+
+def test_retrieve_image_keeps_the_only_image_of_a_type(ota_module, ota, install_image):
+    """Legacy: a single image of that type is still found for another manufacturer code
+    (the Legrand 0x00C8 requests patched in initialize_block_request rely on it)."""
+    install_image("Legrand", "nlv.ota", make_ota_image(manuf_code=0x1021, image_type=0x0013))
+
+    assert ota_module.retrieve_image(ota, 0x0013, 0x00C8) == ("Legrand", "nlv.ota")
+    assert ota_module.retrieve_image(ota, 0x0013, 0x00C8, exact=True) is None
+
+
+def test_two_manufacturers_sharing_a_folder_keep_their_images(ota, install_image):
+    """XIAOMI/ holds Xiaomi, devbis and z03mmc images: same image type, different manufacturers."""
+    install_image("Xiaomi", "xiaomi.ota", make_ota_image(manuf_code=0x115F, image_type=0x0203, version=0x00000020))
+    install_image("Xiaomi", "devbis.ota", make_ota_image(manuf_code=0xDB15, image_type=0x0203, version=0x00000030))
+
+    assert {"xiaomi.ota", "devbis.ota"} <= set(ota.ListOfImages["Brands"]["Xiaomi"])
 
 
 def test_retrieve_image(ota_module, ota, install_image):

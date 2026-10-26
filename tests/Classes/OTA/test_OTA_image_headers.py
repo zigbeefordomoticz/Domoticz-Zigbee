@@ -23,8 +23,6 @@ Run with:
     python -m pytest tests/Classes/OTA/test_OTA_image_headers.py -v
 """
 
-import struct
-
 import pytest
 from ota_builders import make_ota_image
 
@@ -74,7 +72,6 @@ def test_magic_not_found_raises(ota_module, ota):
 
 # ─── optional header fields (ZCL8 11.4.2.4, table 11-3) ──────────────────────
 
-@pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: unpack_headers reads HW versions on bit 0 instead of bit 2 (ZCL8 table 11-3)")
 def test_hardware_versions_are_read_from_bit_2(ota_module, ota):
     image = make_ota_image(field_control=0x04, min_hw=0x0102, max_hw=0x0304)
 
@@ -85,7 +82,6 @@ def test_hardware_versions_are_read_from_bit_2(ota_module, ota):
     assert headers["security_cred_version"] is None
 
 
-@pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: unpack_headers reads the security credential on bit 2 instead of bit 0 (ZCL8 table 11-3)")
 def test_security_credential_version_is_read_from_bit_0(ota_module, ota):
     image = make_ota_image(field_control=0x01, security_credential=0x02)
 
@@ -95,7 +91,6 @@ def test_security_credential_version_is_read_from_bit_0(ota_module, ota):
     assert headers["min_hw_version"] is None
 
 
-@pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: unpack_headers does not skip the 8-byte Upgrade File Destination (bit 1)")
 def test_all_optional_fields_in_spec_order(ota_module, ota):
     image = make_ota_image(field_control=0x07, security_credential=0x03, destination=0x00158D0000000001,
                            min_hw=0x0100, max_hw=0x02FF)
@@ -104,18 +99,11 @@ def test_all_optional_fields_in_spec_order(ota_module, ota):
 
     assert headers["header_length"] == 56 + 1 + 8 + 4
     assert headers["security_cred_version"] == 0x03
+    assert headers["upgrade_file_destination"] == 0x00158D0000000001
     assert (headers["min_hw_version"], headers["max_hw_version"]) == (0x0100, 0x02FF)
 
 
-@pytest.mark.parametrize(
-    "field_control",
-    [
-        0x00,
-        pytest.param(0x01, marks=pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: field control bits swapped")),
-        pytest.param(0x04, marks=pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: field control bits swapped")),
-        pytest.param(0x07, marks=pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: field control bits swapped")),
-    ],
-)
+@pytest.mark.parametrize("field_control", [0x00, 0x01, 0x02, 0x04, 0x07])
 def test_matches_zigpy_header_parser(ota_module, ota, field_control):
     zigpy_image = pytest.importorskip("zigpy.ota.image")
     image = make_ota_image(field_control=field_control, security_credential=0x02, destination=0x00158D0000000001,
@@ -164,8 +152,6 @@ def test_extract_headers_of_a_file_without_magic(ota_module, ota, tmp_path):
     assert ota_module.ota_extract_image_headers(ota, folder, "garbage.bin") is None
 
 
-@pytest.mark.xfail(strict=True, raises=struct.error,
-                   reason="OTA review 2026-10-25: a header truncated after the magic raises struct.error instead of skipping the file")
 def test_extract_headers_of_a_truncated_header(ota_module, ota, tmp_path):
     # 80 bytes of padding, then the first 20 bytes of a header: the magic is found
     # but the 56-byte base header does not fit.
@@ -173,6 +159,9 @@ def test_extract_headers_of_a_truncated_header(ota_module, ota, tmp_path):
     folder = _write(tmp_path, ota, "truncated.ota", data)
 
     assert ota_module.ota_extract_image_headers(ota, folder, "truncated.ota") is None
+    error = next(call for call in ota.log.logging.call_args_list if call.args[1] == "Error")
+    assert error.args[4]["Error code"] == "OTA0004"
+    assert error.args[4]["File"] == "truncated.ota"
 
 
 def test_open_image_file_rejects_short_and_missing_files(ota_module, ota, tmp_path):

@@ -112,19 +112,36 @@ def test_badly_sized_frame_is_ignored(ota, radio, notified):
     radio.zcl_raw_ota_image_block_response_success.assert_not_called()
 
 
-@pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: an offset past the image gets an Image Block Response with status 0x80 (ZCL8 11.13.6.5.1: Default Response)")
 def test_offset_past_the_image_is_not_answered_with_a_malformed_block(ota, radio, notified):
     ota.ota_image_block_request(block_request(offset=300))
 
     assert all(block["status"] in ("00", "95", "97") for block in _blocks(radio))
 
 
-def test_second_offset_past_the_image_aborts(ota, radio, notified):
-    """Pins today's behaviour: two short-of-data requests in a row produce ABORT (0x95)."""
-    ota.ota_image_block_request(block_request(offset=300))
+def test_offset_past_the_image_gets_a_malformed_default_response(ota, radio, notified):
+    """ZCL8 11.13.6.5.1: Default Response MALFORMED_COMMAND to the Image Block Request (0x03)."""
+    ota.ota_image_block_request(block_request(offset=300, sqn=0x10))
+
+    radio.zcl_raw_default_response.assert_called_once_with(ota, DEVICE_NWKID, "01", DEVICE_EP, "0019", "03", "10", command_status="80")
+    radio.zcl_raw_ota_image_block_response_abort.assert_not_called()
+
+
+def test_second_offset_past_the_image_aborts_with_a_status_only_response(ota, radio, notified):
+    """Two invalid requests in a row: Image Block Response ABORT, status only (ZCL8 11.13.8.2.1)."""
+    ota.ota_image_block_request(block_request(offset=300, sqn=0x10))
     ota.ota_image_block_request(block_request(offset=300, sqn=0x11))
 
-    assert [block["status"] for block in _blocks(radio)] == ["80", "95"]
+    radio.zcl_raw_ota_image_block_response_abort.assert_called_once_with(ota, DEVICE_NWKID, "01", DEVICE_EP, "95", sqn="11")
+    radio.zcl_raw_ota_image_block_response_success.assert_not_called()
+
+
+def test_a_valid_block_resets_the_invalid_offset_count(ota, radio, notified):
+    ota.ota_image_block_request(block_request(offset=300, sqn=0x10))
+    ota.ota_image_block_request(block_request(offset=0, sqn=0x11))
+    ota.ota_image_block_request(block_request(offset=300, sqn=0x12))
+
+    assert radio.zcl_raw_default_response.call_count == 2
+    radio.zcl_raw_ota_image_block_response_abort.assert_not_called()
 
 
 # ─── requests from a device that was not picked ───────────────────────────────
@@ -146,7 +163,6 @@ def test_authorized_device_without_a_session_starts_one(ota, radio, ikea_image):
     assert ota.ListInUpdate["NwkId"] == DEVICE_NWKID
 
 
-@pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: a second device asking for the same image type is served during another device's transfer")
 def test_other_device_is_not_served_during_a_transfer(ota, radio, notified):
     ota.ListOfDevices[OTHER_NWKID] = {"IEEE": "00158d0000000002", "Ep": {"01": {"0019": {}}}}
     ota.ota_image_block_request(block_request(offset=0x30))
@@ -155,6 +171,10 @@ def test_other_device_is_not_served_during_a_transfer(ota, radio, notified):
 
     assert [block["nwkid"] for block in _blocks(radio)] == [DEVICE_NWKID]
     assert ota.ListInUpdate["intFileOffset"] == 0x30
+    error = next(call for call in ota.log.logging.call_args_list if call.args[1] == "Error")
+    assert error.args[3] == OTHER_NWKID
+    assert error.args[4]["Error code"] == "OTA0202"
+    assert error.args[4]["InProgressNwkId"] == DEVICE_NWKID
 
 
 # ─── Image Page Request ───────────────────────────────────────────────────────
@@ -175,20 +195,48 @@ def test_page_request_without_a_transfer_is_ignored(ota, radio, ikea_image):
     radio.zcl_raw_ota_image_block_response_success.assert_not_called()
 
 
-@pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: a page that is not a multiple of the block size loses its last partial block")
 def test_page_request_covers_the_whole_page(ota, radio, notified):
     ota.ota_image_page_request(page_request(offset=0, max_size=0x30, page_size=0x80))
 
     assert sum(block["size"] for block in _blocks(radio)) == 0x80
 
 
-@pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: the last page of an image runs past its end and ends with ABORT (0x95)")
 def test_last_page_does_not_abort_the_upgrade(ota, radio, notified):
     ota.ota_image_page_request(page_request(offset=192, max_size=0x30, page_size=0x100))
 
     blocks = _blocks(radio)
     assert all(block["status"] == "00" for block in blocks)
     assert b"".join(block["data"] for block in blocks) == notified["OtaImage"][192:]
+    radio.zcl_raw_ota_image_block_response_abort.assert_not_called()
+    radio.zcl_raw_default_response.assert_not_called()
+
+
+def test_page_blocks_are_contiguous_when_the_vendor_caps_the_block_size(ota, radio, notified):
+    """The device accepts 100-byte blocks, the IKEA profile sends 64: no hole between blocks."""
+    ota.ota_image_page_request(page_request(offset=0, max_size=100, page_size=0x100))
+
+    blocks = _blocks(radio)
+    assert [(block["offset"], block["size"]) for block in blocks] == [(0, 64), (64, 64), (128, 64), (192, 64)]
+    assert b"".join(block["data"] for block in blocks) == notified["OtaImage"][:0x100]
+
+
+def test_page_request_past_the_image_sends_nothing(ota, radio, notified):
+    ota.ota_image_page_request(page_request(offset=256, max_size=0x30, page_size=0x100))
+
+    radio.zcl_raw_ota_image_block_response_success.assert_not_called()
+
+
+def test_blocks_come_from_the_requesting_manufacturer_image(ota, radio, install_image):
+    """Two manufacturers use image type 0x2203: the Philips device gets the Philips file."""
+    install_image("Ikea", "ikea.ota", make_ota_image(manuf_code=0x117C, image_type=0x2203, payload=b"\x11" * 200))
+    hue = install_image("Philips", "hue.ota", make_ota_image(manuf_code=0x100B, image_type=0x2203, payload=b"\x22" * 200))
+    ota.ListInUpdate["AuthorizedForUpdate"].append(DEVICE_NWKID)
+
+    ota.ota_image_block_request(block_request(manuf_code=0x100B, offset=0x40, max_size=0x30))
+
+    [block] = _blocks(radio)
+    assert block["manuf"] == "100b"
+    assert block["data"] == hue["OtaImage"][0x40:0x70]
 
 
 # ─── build_ota_data_block ─────────────────────────────────────────────────────
@@ -199,3 +247,13 @@ def test_build_ota_data_block(ota_module, ota):
     assert ota_module.build_ota_data_block(ota, {"Sequence": "05", "Offset": "00000010"}, 8) == (5, 16, 8, bytes(range(16, 24)))
     assert ota_module.build_ota_data_block(ota, {"Sequence": "06", "Offset": "0000005e"}, 8) == (6, 94, 6, bytes(range(94, 100)))
     assert ota_module.build_ota_data_block(ota, {"Sequence": "07", "Offset": "00000064"}, 8) == (7, 100, 0, b"")
+
+
+def test_page_request_for_an_unknown_image_logs_an_error_with_context(ota, radio, notified):
+    ota.ota_image_page_request(page_request(image_type=0x4204))
+
+    radio.zcl_raw_ota_image_block_response_success.assert_not_called()
+    error = next(call for call in ota.log.logging.call_args_list if call.args[1] == "Error")
+    assert error.args[3] == DEVICE_NWKID
+    assert error.args[4]["Error code"] == "OTA0201"
+    assert error.args[4]["ImageType"] == "0x4204"

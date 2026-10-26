@@ -120,7 +120,6 @@ def test_auto_serve_offers_the_image_and_authorizes_the_device(ota, radio, ikea_
     assert DEVICE_NWKID in ota.ListInUpdate["AuthorizedForUpdate"]
 
 
-@pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: every query appends the device to AuthorizedForUpdate again")
 def test_auto_serve_authorizes_a_device_once(ota, radio, ikea_image):
     ota.pluginconf.pluginConf["autoServeOTA"] = True
 
@@ -140,7 +139,6 @@ def test_forced_update_offers_a_bumped_version(ota, radio, ikea_image):
     assert _response(radio) == (0x00, 0x117C, 0x2203, IMAGE_VERSION + 0x10100000, ikea_image["intSize"])
 
 
-@pytest.mark.xfail(strict=True, reason="OTA review 2026-10-25: the hardware version of the request is never checked (ZCL8 11.13.4.4 SHALL)")
 def test_hardware_version_outside_the_image_range(ota, radio, install_image):
     install_image("Ikea", "bulb.ota", make_ota_image(version=IMAGE_VERSION, field_control=0x04, min_hw=0x0200, max_hw=0x0300))
     ota.pluginconf.pluginConf["autoServeOTA"] = True
@@ -177,3 +175,32 @@ def test_online_index_hit_is_reported_once(ota, radio):
         0x2203: {"currentversion": str(0x01000000), "newestversion": str(0x02000000), "url": "https://example.invalid/bulb.ota"}
     }
     assert ota.zigbee_ota_found_in_index == [(0x117C, 0x2203, 0x01000000)]
+
+
+@pytest.mark.parametrize("hw_version", [0x0200, 0x0250, 0x0300, None])
+def test_hardware_version_inside_the_range_or_not_sent(ota, radio, install_image, hw_version):
+    """The range is inclusive; a client that does not send its hardware version is not refused."""
+    image = install_image("Ikea", "bulb.ota", make_ota_image(version=IMAGE_VERSION, field_control=0x04, min_hw=0x0200, max_hw=0x0300))
+    ota.pluginconf.pluginConf["autoServeOTA"] = True
+
+    _query(ota, hw_version=hw_version)
+
+    assert _response(radio) == (0x00, 0x117C, 0x2203, IMAGE_VERSION, image["intSize"])
+
+
+def test_hardware_version_is_checked_on_a_forced_update_too(ota, radio, install_image):
+    install_image("Ikea", "bulb.ota", make_ota_image(version=IMAGE_VERSION, field_control=0x04, min_hw=0x0200, max_hw=0x0300))
+    ota.ListInUpdate["AuthorizedForUpdate"].append(DEVICE_NWKID)
+    ota.authorized_device_downgrade[DEVICE_NWKID] = True
+
+    _query(ota, hw_version=0x0400)
+
+    assert _response(radio) == (NO_IMAGE_AVAILABLE,)
+
+
+def test_image_without_a_hardware_range_accepts_any_hardware(ota, radio, ikea_image):
+    ota.pluginconf.pluginConf["autoServeOTA"] = True
+
+    _query(ota, hw_version=0x0F00)
+
+    assert _response(radio)[0] == 0x00
