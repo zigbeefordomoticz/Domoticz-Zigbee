@@ -336,6 +336,34 @@ def test_resumed_transfer_starts_at_the_offset_of_its_first_block(ota, radio, ik
     assert (request["Offset"], request["StartOffset"]) == (0x60, 0x60)
 
 
+def test_resumed_transfer_after_a_header_read_starts_at_its_checkpoint(ota, radio, ikea_image, request_of):
+    """Hue / Philips read the header at offset 0, then jump to their checkpoint (production 2026-10-27: 0, 56, 1406, 67780)."""
+    _pick(ota, DEVICE_NWKID)
+    _query(ota, radio, DEVICE_NWKID)
+    ota.ota_image_block_request(block_request(nwkid=DEVICE_NWKID, offset=0))
+    request_of(DEVICE_NWKID)["StartTime"] -= 60
+
+    ota.ota_image_block_request(block_request(nwkid=DEVICE_NWKID, offset=0x400))
+    ota.ota_image_block_request(block_request(nwkid=DEVICE_NWKID, offset=0x430))
+
+    request = ota.PluginHealth["Firmware Update"]["Requests"][0]
+    assert (request["Offset"], request["StartOffset"]) == (0x430, 0x400)
+    assert request["StartTime"] >= int(time.time()) - 1
+
+
+def test_repeated_block_request_keeps_the_transfer_start(ota, radio, ikea_image, request_of):
+    _pick(ota, DEVICE_NWKID)
+    _query(ota, radio, DEVICE_NWKID)
+    ota.ota_image_block_request(block_request(nwkid=DEVICE_NWKID, offset=0))
+    ota.ota_image_block_request(block_request(nwkid=DEVICE_NWKID, offset=0x30))
+    start_time = request_of(DEVICE_NWKID)["StartTime"]
+
+    ota.ota_image_block_request(block_request(nwkid=DEVICE_NWKID, offset=0x30))
+
+    request = request_of(DEVICE_NWKID)
+    assert (request["StartOffset"], request["StartTime"]) == (0, start_time)
+
+
 def test_finished_requests_keep_their_outcome_newest_first(ota_module, ota, radio, ikea_image, devices, request_of):
     _pick(ota, DEVICE_NWKID, MAINS_2)
     _query(ota, radio, DEVICE_NWKID)
