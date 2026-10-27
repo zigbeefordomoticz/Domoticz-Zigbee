@@ -40,6 +40,7 @@ def onoff_module():
             ReadAttributeRequest_0006_400x=MagicMock(name="ReadAttributeRequest_0006_400x")
         ),
         "Modules.tools": dict(
+            get_device_config_param=MagicMock(name="get_device_config_param", return_value=None),
             get_deviceconf_parameter_value=MagicMock(name="get_deviceconf_parameter_value", return_value=False),
             getListOfEpForCluster=MagicMock(name="getListOfEpForCluster", return_value=[]),
             is_int=MagicMock(name="is_int", side_effect=lambda v: str(v).lstrip("-").isdigit()),
@@ -50,6 +51,10 @@ def onoff_module():
             tuya_switch_relay_status=MagicMock(name="tuya_switch_relay_status"),
         ),
         "Modules.zigateConsts": dict(ZIGATE_EP="01"),
+        "Zigbee.zclCommands": dict(
+            zcl_onoff_on=MagicMock(name="zcl_onoff_on"),
+            zcl_onoff_on_with_timed_off=MagicMock(name="zcl_onoff_on_with_timed_off"),
+        ),
     }
     for name, attrs in stubs.items():
         _ensure_stub(name, **attrs)
@@ -145,56 +150,100 @@ def test_invalid_string_value_does_not_write(onoff_module, plugin, monkeypatch):
     write_attribute.assert_not_called()
 
 
-# ─── OnTime (0x4001) vs OffWaitTime (0x4002) ──────────────────────────────────
+
+
+# ─── OnOffOnTimeDelay / OnOffOffWaitTime → On With Timed Off (0x42) ───────────
 #
-# OnTime and OffWaitTime are two distinct attributes of the On/Off cluster:
-# OnTime (0x4001) is how long the device stays on after a timed-off On,
-# OffWaitTime (0x4002) is how long it then refuses to turn on again. Both
-# Params were wired to common_onoff_off_wait_time, so setting OnOffOnTimeDelay
-# silently wrote OffWaitTime and OnTime was unreachable.
+# The OnTime attribute (0x4001) is the countdown itself: the device decrements it
+# while On and an Off resets it to 0, so writing it once when the Param changes
+# only covered the next On. The Params now carry the values sent with EVERY On,
+# as On With Timed Off. Tuya relays (device conf "TuyaOnOffCountdown") use 0x42
+# as a countdown in seconds that does not switch On: On first, then 0x42.
 
 
-def test_common_onoff_on_time_writes_4001(onoff_module, plugin, monkeypatch):
-    monkeypatch.setattr(onoff_module, "getListOfEpForCluster", lambda *a, **kw: [EP])
-    write_attribute = MagicMock()
-    monkeypatch.setattr(onoff_module, "write_attribute", write_attribute)
-
-    onoff_module.common_onoff_on_time(plugin, NWKID, 60)
-
-    args = write_attribute.call_args.args
-    assert args[7] == "4001"
-    assert args[8] == "21"
-    assert args[9] == "003c"
+def _params(monkeypatch, onoff_module, params, raw=True, tuya=False):
+    monkeypatch.setattr(onoff_module, "get_device_config_param", lambda self, nwkid, name: params.get(name))
+    monkeypatch.setattr(onoff_module, "get_deviceconf_parameter_value",
+                        lambda self, model, name, return_default=None: tuya if name == "TuyaOnOffCountdown" else return_default)
+    on = MagicMock(name="zcl_onoff_on")
+    timed = MagicMock(name="zcl_onoff_on_with_timed_off")
+    monkeypatch.setattr(onoff_module, "zcl_onoff_on", on)
+    monkeypatch.setattr(onoff_module, "zcl_onoff_on_with_timed_off", timed)
+    return on, timed
 
 
-def test_common_onoff_off_wait_time_writes_4002(onoff_module, plugin, monkeypatch):
-    monkeypatch.setattr(onoff_module, "getListOfEpForCluster", lambda *a, **kw: [EP])
-    write_attribute = MagicMock()
-    monkeypatch.setattr(onoff_module, "write_attribute", write_attribute)
-
-    onoff_module.common_onoff_off_wait_time(plugin, NWKID, 60)
-
-    args = write_attribute.call_args.args
-    assert args[7] == "4002"
-    assert args[8] == "21"
-    assert args[9] == "003c"
+@pytest.fixture
+def raw_plugin(plugin):
+    plugin.pluginconf.pluginConf = {"ControllerInRawMode": True}
+    return plugin
 
 
-def test_onoff_params_point_at_their_own_handler(onoff_module):
-    """Each Param must target its own attribute, not share one handler."""
+def test_onoff_params_point_at_the_check_callable(onoff_module):
     reg = onoff_module.ONOFF_DEVICE_PARAMETERS
-
-    assert reg["OnOffOnTimeDelay"]["callable"] is onoff_module.common_onoff_on_time
-    assert reg["OnOffOffWaitTime"]["callable"] is onoff_module.common_onoff_off_wait_time
+    assert reg["OnOffOnTimeDelay"]["callable"] is onoff_module.check_onoff_timed_off_param
+    assert reg["OnOffOffWaitTime"]["callable"] is onoff_module.check_onoff_timed_off_param
     assert reg["PowerOnAfterOffOn"]["callable"] is onoff_module.common_onoff_startup_onoff_mode
 
 
-def test_on_time_delay_param_writes_on_time_attribute(onoff_module, plugin, monkeypatch):
-    """End to end through the Param registry, the way paramDevice dispatches."""
-    monkeypatch.setattr(onoff_module, "getListOfEpForCluster", lambda *a, **kw: [EP])
+def test_param_change_writes_nothing(onoff_module, plugin, monkeypatch):
     write_attribute = MagicMock()
     monkeypatch.setattr(onoff_module, "write_attribute", write_attribute)
+    onoff_module.ONOFF_DEVICE_PARAMETERS["OnOffOnTimeDelay"]["callable"](plugin, NWKID, 600)
+    onoff_module.ONOFF_DEVICE_PARAMETERS["OnOffOffWaitTime"]["callable"](plugin, NWKID, 100)
+    write_attribute.assert_not_called()
 
-    onoff_module.ONOFF_DEVICE_PARAMETERS["OnOffOnTimeDelay"]["callable"](plugin, NWKID, 60)
 
-    assert write_attribute.call_args.args[7] == "4001"
+@pytest.mark.parametrize("params, expected", [
+    ({}, None),
+    ({"OnOffOnTimeDelay": 0}, None),
+    ({"OnOffOnTimeDelay": 600}, (600, 0)),
+    ({"OnOffOnTimeDelay": "600", "OnOffOffWaitTime": "10"}, (600, 10)),
+    ({"OnOffOnTimeDelay": "1.5"}, (1.5, 0)),
+    ({"OnOffOnTimeDelay": {"01": 600, "02": 300}}, (600, 0)),
+    ({"OnOffOnTimeDelay": {"02": 300}}, None),
+    ({"OnOffOnTimeDelay": "abc"}, None),
+])
+def test_timed_off_values(onoff_module, plugin, monkeypatch, params, expected):
+    _params(monkeypatch, onoff_module, params)
+    assert onoff_module.onoff_timed_off_values(plugin, NWKID, EP) == expected
+
+
+def test_no_param_lets_the_caller_send_a_plain_on(onoff_module, raw_plugin, monkeypatch):
+    on, timed = _params(monkeypatch, onoff_module, {})
+    assert onoff_module.onoff_on_with_timed_off(raw_plugin, NWKID, EP) is False
+    on.assert_not_called()
+    timed.assert_not_called()
+
+
+def test_zcl_device_gets_on_with_timed_off_in_tenths(onoff_module, raw_plugin, monkeypatch):
+    # Params in seconds, ZCL fields in 1/10 s
+    on, timed = _params(monkeypatch, onoff_module, {"OnOffOnTimeDelay": 600, "OnOffOffWaitTime": 5})
+    assert onoff_module.onoff_on_with_timed_off(raw_plugin, NWKID, EP) is True
+    on.assert_not_called()  # 0x42 switches On by itself on a ZCL device
+    timed.assert_called_once_with(raw_plugin, NWKID, EP, 6000, 50)
+
+
+def test_tuya_device_gets_on_then_countdown_in_seconds(onoff_module, raw_plugin, monkeypatch):
+    calls = []
+    on, timed = _params(monkeypatch, onoff_module, {"OnOffOnTimeDelay": 600.5, "OnOffOffWaitTime": 5}, tuya=True)
+    on.side_effect = lambda *a: calls.append(("on",) + a[1:])
+    timed.side_effect = lambda *a: calls.append(("timed",) + a[1:])
+    assert onoff_module.onoff_on_with_timed_off(raw_plugin, NWKID, EP) is True
+    # On first (it cancels a running countdown), 600.5 s rounded up = 601 s, OffWaitTime = OnTime
+    assert calls == [("on", NWKID, EP), ("timed", NWKID, EP, 601, 601)]
+
+
+def test_long_delays_are_capped_per_device_kind(onoff_module, raw_plugin, monkeypatch):
+    on, timed = _params(monkeypatch, onoff_module, {"OnOffOnTimeDelay": 99999}, tuya=True)
+    onoff_module.onoff_on_with_timed_off(raw_plugin, NWKID, EP)
+    assert timed.call_args.args[3:] == (43200, 43200)  # Tuya: 12 h
+    on, timed = _params(monkeypatch, onoff_module, {"OnOffOnTimeDelay": 99999})
+    onoff_module.onoff_on_with_timed_off(raw_plugin, NWKID, EP)
+    assert timed.call_args.args[3:] == (0xFFFE, 0)  # ZCL: uint16 in 1/10 s
+
+
+def test_native_zigate_falls_back_to_plain_on(onoff_module, plugin, monkeypatch):
+    plugin.pluginconf.pluginConf = {"ControllerInRawMode": False}
+    on, timed = _params(monkeypatch, onoff_module, {"OnOffOnTimeDelay": 600})
+    assert onoff_module.onoff_on_with_timed_off(plugin, NWKID, EP) is False
+    timed.assert_not_called()
