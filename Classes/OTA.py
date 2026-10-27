@@ -345,16 +345,6 @@ class OTAManagement(object):
         MsgMaxDataSize = int(MsgData[58:60], 16)
         intMsgFieldControl = int(MsgData[60:62], 16) if len(MsgData) == 62 else 0
 
-        logging(
-            self,
-            "Debug",
-            f"ota_image_block_request - Request Firmware {MsgSrcAddr}/{MsgEP} "
-            f"Offset: {int(MsgFileOffset, 16)} Version: 0x{intMsgImageVersion:08X} "
-            f"Type: 0x{intMsgImageType:04X} Manuf: 0x{intMsgManufCode:04X} "
-            f"Delay: {MsgBlockRequestDelay} MaxSize: {MsgMaxDataSize} "
-            f"Control: 0x{intMsgFieldControl:02X}", MsgSrcAddr
-        )
-
         request = ota_request_for_block(self, MsgSrcAddr)
         if request is None:
             return
@@ -1057,7 +1047,15 @@ def ota_send_block(self, request, dest_addr, dest_ep, image_type, msg_image_vers
     # Update progress tracking
     update_transfer_progress(self, request, offset, length)
 
-    logging( self, "Debug", f"ota_send_block - Block sent to {dest_addr}/{dest_ep} " f"Received yet: {offset} Sent now: {offset} Size: {max_data_size} Delay: {block_delay}", dest_addr )
+    # One line per block, request and answer: Size is sent / asked, Delay the pause after the
+    # send / the device's Minimum Block Period
+    logging(
+        self, "Debug",
+        f"OTA block {dest_addr}/{dest_ep} [{sequence:02x}] Offset: {offset} Size: {length}/{block_request['MaxDataSize']} "
+        f"Delay: {block_delay} s/{block_request['BlockReqDelay']} ms - Manuf: 0x{manufacturer_code:04X} Type: 0x{image_type:04X} "
+        f"Version: 0x{msg_image_version:08X} Control: 0x{block_request['FieldControl']:02X}{' no APS ack' if disable_ack else ''}",
+        dest_addr
+    )
 
     # Determine OTA block status
     if length == 0 or data is None:
@@ -1864,17 +1862,6 @@ def prepare_and_send_block(
         logging(self, "Error", f"prepare_and_send_block {MsgSrcAddr}/{MsgEP} - 0x{intMsgImageType:04X} image not found", MsgSrcAddr, _context)
         return
 
-    logging(
-        self,
-        "Debug",
-        f"prepare_and_send_block - [{int(MsgSQN, 16):3}] request - {MsgSrcAddr}/{MsgEP} "
-        f"Offset: {int(MsgFileOffset, 16)} Version: 0x{intMsgImageVersion:08X} "
-        f"Type: 0x{intMsgImageType:04X} Code: 0x{intMsgManufCode:04X} "
-        f"Delay: {MsgBlockRequestDelay} MaxSize: {MsgMaxDataSize} "
-        f"Control: 0x{intMsgFieldControl:02X}",
-        MsgSrcAddr
-    )
-
     # Update upgrade process status
     if request.get("Process") is None:
         start_upgrade_infos(self, request, MsgSrcAddr, MsgFileOffset, MsgMaxDataSize)
@@ -1887,16 +1874,6 @@ def prepare_and_send_block(
         "intFileOffset": int(MsgFileOffset, 16),
         "LastBlockSent": time.time()
     })
-
-    logging(
-        self,
-        "Debug",
-        f"prepare_and_send_block - Block Request for {MsgSrcAddr}/{block_request['ReqEp']} "
-        f"Image Type: 0x{block_request['ImageType']:04X} Image Version: {block_request['ImageVersion']:08X} "
-        f"Seq: {MsgSQN} Offset: {block_request['Offset']} Size: {block_request['MaxDataSize']} "
-        f"FieldCtrl: 0x{block_request['FieldControl']:02X}",
-        MsgSrcAddr
-    )
 
     block_request_delay = MsgBlockRequestDelay / 1000.0  # Convert ms to seconds
 
