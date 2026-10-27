@@ -475,7 +475,7 @@ def zcl_raw_send_group_member_ship_identify(self, nwkid, epin, epout, GrpId, ack
 
 # Cluster 0006: On/Off
 ######################
-def raw_zcl_zcl_onoff(self, nwkid, EPIn, EpOut, command, effect=None, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
+def raw_zcl_zcl_onoff(self, nwkid, EPIn, EpOut, command, effect=None, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE, on_time=None, off_wait_time=0):
     self.log.logging("zclCommand", "Debug", "raw_zcl_zcl_onoff %s %s %s %s %s %s" % (nwkid, EPIn, EpOut, command, effect, groupaddrmode), nwkid)
     zcl_command_formated_logging( self, "On/Off (Raw)", nwkid, EpOut, "0006", command, effect, groupaddrmode, ackIsDisabled)
 
@@ -506,7 +506,17 @@ def raw_zcl_zcl_onoff(self, nwkid, EPIn, EpOut, command, effect=None, groupaddrm
     if command == "OffWithEffect":
         # Effect is a 2 uint8, so there is no need to convert to little indian
         payload += effect
-    
+
+    elif command == "OnWithTimedOff":
+        # ZCL 3.8.2.3.6 On With Timed Off: OnOffControl (map8), OnTime (uint16), OffWaitTime (uint16),
+        # both little endian. Units are 1/10 s per the spec; Tuya countdowns use seconds (see onoff_settings).
+        # OnOffControl bit0 = 0: accept the command whatever the current state.
+        if on_time is None:
+            return
+        on_time = max(0, min(int(on_time), 0xFFFE))
+        off_wait_time = max(0, min(int(off_wait_time), 0xFFFE))
+        payload += "00" + struct.pack("<H", on_time).hex() + struct.pack("<H", off_wait_time).hex()
+
     raw_APS_request(self, nwkid, EpOut, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
 
