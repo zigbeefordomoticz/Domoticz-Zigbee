@@ -106,7 +106,8 @@ OTA_MAX_TRANSFERS_WITH_BATTERY = 4
 # own schedule (ZCL rev 8 11.8.2). The request is then dropped and the user notified.
 OTA_QUEUE_WAIT = 24 * 3600
 
-# A transfer without any block request for that long (seconds) is dropped.
+# A transfer without any block request for that long (seconds) is stalled: it gives its slot
+# back and keeps its offset; the device resumes when it asks again within OTA_QUEUE_WAIT.
 OTA_BLOCK_TIMEOUT = 300
 
 # With several transfers in progress, the delay between two blocks of a device is multiplied
@@ -128,6 +129,7 @@ OTA_QUEUED = "Queued"          # waiting for a free transfer slot, not notified 
 OTA_NOTIFYING = "Notifying"    # Image Notify sent, waiting for the device: holds a slot
 OTA_WAITING = "Waiting"        # did not answer the notifications: no slot, still authorized
 OTA_TRANSFER = "Transfer"      # image offered, blocks served: holds a slot
+OTA_STALLED = "Stalled"        # no block request for OTA_BLOCK_TIMEOUT: no slot, still authorized
 OTA_ACTIVE_STATES = (OTA_NOTIFYING, OTA_TRANSFER)
 
 OTA_CLUSTER_ID = "0019"
@@ -317,7 +319,7 @@ class OTAManagement(object):
         }
 
         # OTA requests by IEEE, in arrival order: the queue and the transfers in progress.
-        # See new_ota_request() for the fields and OTA_QUEUED ... OTA_TRANSFER for the states.
+        # See new_ota_request() for the fields and OTA_QUEUED ... OTA_STALLED for the states.
         self.ota_requests = {}
         # The last OTA_FINISHED_KEPT ended requests, newest first, as the WebUI lists them
         self.ota_finished = deque(maxlen=OTA_FINISHED_KEPT)
@@ -724,12 +726,17 @@ class OTAManagement(object):
 
 # Local Routines and other helpers
 def _handle_ota_timeout(self, request):
+    # A device stops asking for blocks (battery device, lamp switched off, lost frames): the
+    # transfer stays listed with its offset and gives its slot back. Most devices resume where
+    # they stopped when they ask again.
     nwkid = request["NwkId"]
-    logging(self, "Warning", "Ota timed out on NwkId: %s for block: %s" % (nwkid, request.get("intFileOffset")), nwkid)
+    logging(self, "Warning", "Ota timed out on NwkId: %s for block: %s - the transfer resumes when the device asks again (within %s h)" % (
+        nwkid, request.get("intFileOffset"), OTA_QUEUE_WAIT // 3600), nwkid)
     self.adminWidgets.updateNotificationWidget(
-        self.Devices, f"Firmware update stopped for Device: {ota_device_name(self, nwkid)} - no block requested for {OTA_BLOCK_TIMEOUT} sec"
+        self.Devices, f"Firmware update stalled for Device: {ota_device_name(self, nwkid)} - no block requested for {OTA_BLOCK_TIMEOUT} sec"
     )
-    end_ota_request(self, request, "Timeout")
+    request.update({"State": OTA_STALLED, "QueuedTime": time.time()})
+    update_firmware_health(self)
 
 
 def _retry_notification(self, request):
@@ -767,6 +774,15 @@ def _handle_timeout(self, request):
 
 def _handle_queue_timeout(self, request):
     nwkid = request["NwkId"]
+    if request["State"] == OTA_STALLED:
+        logging(self, "Status", "Firmware update of %s dropped: the device did not resume %s within %s h" % (
+            nwkid, request["FileName"], OTA_QUEUE_WAIT // 3600), nwkid)
+        self.adminWidgets.updateNotificationWidget(
+            self.Devices, f"Firmware update stopped for Device: {ota_device_name(self, nwkid)} - it did not resume {request['FileName']} within {OTA_QUEUE_WAIT // 3600} hours"
+        )
+        end_ota_request(self, request, "Timeout")
+        return
+
     logging(self, "Status", "Firmware update of %s dropped: the device did not ask for %s within %s h" % (
         nwkid, request["FileName"], OTA_QUEUE_WAIT // 3600), nwkid)
     self.adminWidgets.updateNotificationWidget(

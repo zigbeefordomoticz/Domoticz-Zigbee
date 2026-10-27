@@ -180,8 +180,18 @@ def test_stalled_transfer_frees_the_slot(ota_module, ota, radio, ikea_image, dev
 
     ota.heartbeat()
 
-    assert DEVICE_NWKID not in _states(ota)
+    assert _states(ota)[DEVICE_NWKID] == ota_module.OTA_STALLED
     assert _states(ota)[MAINS_6] == ota_module.OTA_NOTIFYING
+
+
+def test_stalled_device_that_asks_while_the_slots_are_full_is_queued(ota_module, ota, radio, ikea_image, devices, request_of):
+    _pick(ota, *SLOTS_FULL, MAINS_6)
+    _query(ota, radio, DEVICE_NWKID)
+    request_of(DEVICE_NWKID)["LastBlockSent"] = time.time() - ota_module.OTA_BLOCK_TIMEOUT - 1
+    ota.heartbeat()                                  # 1234 stalled, 6666 notified into its slot
+
+    assert _query(ota, radio, DEVICE_NWKID) == NO_IMAGE_AVAILABLE
+    assert _states(ota)[DEVICE_NWKID] == ota_module.OTA_QUEUED
 
 
 def test_silent_devices_give_their_slot_back_and_stay_authorized(ota_module, ota, radio, ikea_image, devices):
@@ -373,7 +383,10 @@ def test_finished_requests_keep_their_outcome_newest_first(ota_module, ota, radi
     ota.ota_upgrade_end_request(upgrade_end(nwkid=DEVICE_NWKID, status="00"))
     _query(ota, radio, MAINS_2)
     request_of(MAINS_2)["LastBlockSent"] = time.time() - ota_module.OTA_BLOCK_TIMEOUT - 1
-    ota.heartbeat()
+    ota.heartbeat()                                  # stalled: still listed
+    assert ota.PluginHealth["Firmware Update"]["Requests"][0]["State"] == ota_module.OTA_STALLED
+    request_of(MAINS_2)["QueuedTime"] = time.time() - ota_module.OTA_QUEUE_WAIT - 1
+    ota.heartbeat()                                  # not resumed within 24 h: finished as Timeout
 
     finished = ota.PluginHealth["Firmware Update"]["Finished"]
 
