@@ -328,6 +328,7 @@ class OTAManagement(object):
         self.zigbee_ota_index = None
         self.zigbee_ota_found_in_index = []
         self.local_image_available_logged = set()
+        self.ota_hw_version_refused = set()
         self.once = True
         # Signature of the firmware folders at the last scan, see ota_folder_signature()
         self.firmware_folders_signature = None
@@ -1586,7 +1587,11 @@ def is_hardware_version_compatible(self, nwkid, image, hardware_version):
     max_hw_version = header.get("max_hw_version")
 
     if (min_hw_version is not None and hardware_version < min_hw_version) or (max_hw_version is not None and hardware_version > max_hw_version):
-        logging(self, "Log", "OTA image for 0x%04X not offered to %s: hardware version 0x%04X outside the image range 0x%04X - 0x%04X" % (
+        # A device asks again every few minutes: say it once per device, image and hardware version
+        refusal = (nwkid, header["image_type"], header.get("image_version"), hardware_version)
+        log_level = "Debug" if refusal in self.ota_hw_version_refused else "Log"
+        self.ota_hw_version_refused.add(refusal)
+        logging(self, log_level, "OTA image for 0x%04X not offered to %s: hardware version 0x%04X outside the image range 0x%04X - 0x%04X" % (
             header["image_type"], nwkid, hardware_version, min_hw_version or 0, max_hw_version or 0xFFFF), nwkid)
         return False
 
