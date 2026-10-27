@@ -1438,6 +1438,8 @@ def ota_extract_image_headers(self, subfolder, image):
 
     offset = offset_start_firmware(self, ota_image)
     if offset is None:
+        _context = {"Error code": "OTA0003", "Folder": str(subfolder), "File": str(image), "Size": len(ota_image)}
+        logging(self, "Error", f"Zigbee OTA magic not found in firmware image {image}", None, _context)
         return None
 
     ota_image = ota_image[offset:]  # trim before reading header
@@ -1484,7 +1486,7 @@ def _open_image_file(self, filename):  # OK 13/10
 
 
 def offset_start_firmware(self, ota_image):
-    """Locate the OTA file identifier 0x0BEEF11E inside the firmware."""
+    """Locate the OTA file identifier 0x0BEEF11E inside the firmware, None when absent."""
     
     MAGIC = 0x0BEEF11E
 
@@ -1494,8 +1496,6 @@ def offset_start_firmware(self, ota_image):
             logging(self, "Debug", f"Found OTA magic at offset {i}")
             return i
 
-    _context = {"Error code": "OTA0003", "Size": len(ota_image)}
-    logging(self, "Error", "Zigbee OTA magic not found in firmware image", None, _context)
     return None
 
 
