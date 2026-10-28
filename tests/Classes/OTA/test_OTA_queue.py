@@ -383,7 +383,10 @@ def test_finished_requests_keep_their_outcome_newest_first(ota_module, ota, radi
     ota.ota_upgrade_end_request(upgrade_end(nwkid=DEVICE_NWKID, status="00"))
     _query(ota, radio, MAINS_2)
     request_of(MAINS_2)["LastBlockSent"] = time.time() - ota_module.OTA_BLOCK_TIMEOUT - 1
-    ota.heartbeat()
+    ota.heartbeat()                                  # stalled: still listed
+    assert ota.PluginHealth["Firmware Update"]["Requests"][0]["State"] == ota_module.OTA_STALLED
+    request_of(MAINS_2)["QueuedTime"] = time.time() - ota_module.OTA_QUEUE_WAIT - 1
+    ota.heartbeat()                                  # not resumed within 24 h: finished as Timeout
 
     finished = ota.PluginHealth["Firmware Update"]["Finished"]
 
