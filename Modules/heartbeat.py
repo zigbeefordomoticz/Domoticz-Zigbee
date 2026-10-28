@@ -447,6 +447,8 @@ def checkHealth(self, NwkId):
         self.log.logging("Heartbeat", "Debug", "Device Health - %s NwkId: %s,Ieee: %s , Model: %s not seen for the last %s seconds, it seems to be out of the network" % (
             self.ListOfDevices[NwkId].get("ZDeviceName", ""), NwkId, self.ListOfDevices[NwkId]["IEEE"],
             self.ListOfDevices[NwkId]["Model"], health_timeout), NwkId, )
+        # Historical value, kept as is: it is persisted in the device list and matched verbatim by the
+        # WebUI. The delay is health_timeout (HealthTimeOut, 6 hours by default), not 24 hours.
         self.ListOfDevices[NwkId]["Health"] = "Not seen last 24hours"
 
     # If device flag as Not Reachable, don't do anything
