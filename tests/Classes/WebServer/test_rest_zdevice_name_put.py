@@ -13,6 +13,9 @@ for each Param holding 'Disabled': 0, reset Health to "unknown".
 The decoded Param is now compared with the stored one: an unchanged device is
 left alone, and Health only follows a change of the Disabled flag.
 
+A Param with a syntax error was decoded to {} and replaced the stored one,
+wiping the device's parameters; it is now reported and the stored Param kept.
+
 Classes.WebServer.WebServer imports the real Modules.* package, which conflicts
 with the stubs tests/conftest.py installs for the session, so the calls run in
 a subprocess.
@@ -59,6 +62,7 @@ CASES = {
     "disable": with_changes({"8012": {"Param": "{'Disabled': 1, 'BatteryPollingFreq': 21600, 'Calibration': 0}"}}),
     "enable": with_changes({"9e44": {"Param": "{'Disabled': 0}"}}),
     "no_param_key": [{"IEEE": DEVICES["8012"]["IEEE"], "ZDeviceName": "Bureau"}],
+    "param_typo": with_changes({"4707": {"ZDeviceName": "Parents", "Param": "{'Disabled': 0, 'BatteryPollingFreq': 21600, 'Calibration': 1"}}),
 }
 
 
@@ -156,3 +160,12 @@ def test_row_without_param_only_renames(results):
     assert devices["8012"]["ZDeviceName"] == "Bureau"
     assert devices["8012"]["Param"] == PARAM
     assert check_param_flagged(devices) == []
+
+
+def test_param_with_syntax_error_keeps_the_stored_param(results):
+    devices = results["param_typo"]["devices"]
+    assert devices["4707"]["Param"] == PARAM
+    assert devices["4707"]["ZDeviceName"] == "Parents"
+    assert devices["4707"]["Health"] == "Live"
+    assert check_param_flagged(devices) == []
+    assert len(results["param_typo"]["errors"]) == 1 and "wrong Parameter syntax" in results["param_typo"]["errors"][0]
