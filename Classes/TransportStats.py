@@ -20,6 +20,11 @@ from Modules.domoticzAbstractLayer import (domoticz_error_api,
 
 MAX_TREND_STAT_TABLE = 120
 
+# Fields of a trend point sent by /plugin-stat (Classes/WebServer/WebServer.py:rest_plugin_stat).
+# Rxps / Txps are averages since the plugin started; RxCount / TxCount are the messages received / sent
+# since the previous point and Time its epoch, so that a client can draw a real rate.
+TREND_REST_FIELDS = ("Rxps", "Txps", "Load", "Time", "RxCount", "TxCount")
+
 
 class TransportStatistics:
     def __init__(self, pluginconf, log, zigbee_communication):
@@ -53,6 +58,7 @@ class TransportStatistics:
         self._max_reading_zigpy_timing = self._cumul_reading_zigpy_timing = self._cnt_reading_zigpy_timing = self._average_reading_zigpy_timing = 0
         self._start = int(time.time())
         self.TrendStats = deque(maxlen=MAX_TREND_STAT_TABLE)
+        self._trend_last = {"received": 0, "sent": 0}
         self.pluginconf = pluginconf
         self.log = log
         self.zigbee_communication = zigbee_communication
@@ -145,12 +151,22 @@ class TransportStatistics:
 
     def addPointforTrendStats(self, TimeStamp):
 
-        uptime = max(1, int(time.time() - self._start))  # Avoid division by zero
+        now = time.time()
+        uptime = max(1, int(now - self._start))  # Avoid division by zero
         Rxps = round(self._received / uptime, 2)
         Txps = round(self._sent / uptime, 2)
 
+        # Messages since the previous point (since the plugin start for the first one). A counter
+        # going backwards is reported as 0 rather than as a negative rate.
+        rx_count = max(0, self._received - self._trend_last["received"])
+        tx_count = max(0, self._sent - self._trend_last["sent"])
+        self._trend_last = {"received": self._received, "sent": self._sent}
+
         # Append new data point
-        self.TrendStats.append({"_TS": TimeStamp, "Rxps": Rxps, "Txps": Txps, "Load": self._Load})
+        self.TrendStats.append({
+            "_TS": TimeStamp, "Rxps": Rxps, "Txps": Txps, "Load": self._Load,
+            "Time": round(now, 1), "RxCount": rx_count, "TxCount": tx_count,
+        })
 
 
     def reTx(self):
