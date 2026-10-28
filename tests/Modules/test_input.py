@@ -340,3 +340,78 @@ def test_decoder_values_callable(input_module):
 
 def test_8139_alias(input_module):
     assert input_module.DECODERS["8139"] is input_module.DECODERS["8140"]
+
+
+# ---------------------------------------------------------------------------
+# Tests: decoder exception context (nwkid + Error code)
+# ---------------------------------------------------------------------------
+
+# 8100 Read Attribute Response: SQN(2) SrcAddr(4) SrcEp(2) Cluster(4) ...
+MSGDATA_8100 = "1a" + "cbc4" + "01" + "0102" + "0008" + "00" + "20" + "0000"
+
+
+def _raise_in_decoder(input_module, msg_type):
+    decoder = input_module.DECODERS[msg_type]
+    decoder.reset_mock()
+    decoder.side_effect = TypeError("'<=' not supported between instances of 'int' and 'str'")
+    return decoder
+
+
+def test_decoder_exception_gives_nwkid_and_context(input_module, plugin):
+    plugin.ListOfDevices = {"cbc4": {}}
+    decoder = _raise_in_decoder(input_module, "8100")
+
+    input_module._decode_message(plugin, "8100", {}, "raw", MSGDATA_8100, "ff")
+
+    decoder.side_effect = None
+    args, kwargs = plugin.log.logging.call_args
+    assert args[:2] == ("Input", "Error")
+    assert "from cbc4" in args[2]
+    assert kwargs["nwkid"] == "cbc4"
+    assert kwargs["context"]["Error code"] == "INPT0001"
+    assert kwargs["context"]["MsgType"] == "8100"
+    assert kwargs["context"]["MsgData"] == MSGDATA_8100
+    assert kwargs["context"]["Exception"].startswith("TypeError: ")
+
+
+def test_decoder_exception_unknown_device_has_no_nwkid(input_module, plugin):
+    """Address read from MsgData but not a known device: nwkid stays None, context still given."""
+    plugin.ListOfDevices = {}
+    decoder = _raise_in_decoder(input_module, "8100")
+
+    input_module._decode_message(plugin, "8100", {}, "raw", MSGDATA_8100, "ff")
+
+    decoder.side_effect = None
+    args, kwargs = plugin.log.logging.call_args
+    assert kwargs["nwkid"] is None
+    assert " from " not in args[2]
+    assert kwargs["context"]["MsgData"] == MSGDATA_8100
+
+
+def test_decoder_exception_type_without_address_offset(input_module, plugin):
+    plugin.ListOfDevices = {"cbc4": {}}
+    decoder = _raise_in_decoder(input_module, "8045")
+
+    input_module._decode_message(plugin, "8045", {}, "raw", MSGDATA_8100, "ff")
+
+    decoder.side_effect = None
+    assert plugin.log.logging.call_args.kwargs["nwkid"] is None
+
+
+@pytest.mark.parametrize("msg_type, msg_data", [
+    ("8102", "1a" + "cbc4" + "01" + "0402"),
+    ("8110", "1a" + "cbc4" + "01" + "0006"),
+    ("8120", "1a" + "cbc4" + "01" + "0006"),
+    ("0100", "1a" + "cbc4" + "01" + "01"),
+    ("0400", "1a" + "cbc4" + "01" + "0500"),
+    ("8085", "1a" + "01" + "0008" + "00" + "cbc4"),
+    ("8095", "1a" + "01" + "0006" + "00" + "cbc4"),
+    ("80a5", "1a" + "01" + "0005" + "00" + "cbc4"),
+])
+def test_source_nwkid_offsets(input_module, plugin, msg_type, msg_data):
+    plugin.ListOfDevices = {"cbc4": {}}
+    assert input_module._source_nwkid(plugin, msg_type, msg_data) == "cbc4"
+
+
+def test_src_nwkid_slice_types_are_dispatched(input_module):
+    assert set(input_module.SRC_NWKID_SLICE) <= set(input_module.DECODERS)
