@@ -20,6 +20,7 @@ import time
 from collections import deque
 
 from Classes.PluginConf import SETTINGS
+from Classes.TransportStats import TREND_REST_FIELDS
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
 from Modules.actuators import actuators
@@ -587,7 +588,7 @@ class WebServer(object):
                     # Rolling window in progress
                     _TS -= minTS
 
-                Statistics["Trend"].append({"_TS": _TS, "Rxps": item["Rxps"], "Txps": item["Txps"], "Load": item["Load"]})
+                Statistics["Trend"].append({"_TS": _TS, **{field: item[field] for field in TREND_REST_FIELDS}})
 
         Statistics["Uptime"] = int(time.time() - Statistics["StartTime"])
         if Statistics["Uptime"] > 0:
