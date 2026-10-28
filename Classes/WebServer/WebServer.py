@@ -942,7 +942,7 @@ class WebServer(object):
                         if item not in self.ListOfDevices[x]:
                             if item == "Param":
                                 device[item] = str({})
-                            if item == "CheckParam":
+                            elif item == "CheckParam":
                                 device[item] = False
                             else:
                                 device[item] = ""
