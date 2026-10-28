@@ -1018,19 +1018,27 @@ class WebServer(object):
                             self.logging( "Debug", "Updating ZDeviceName to %s for IEEE: %s NWKID: %s" % (
                                 self.ListOfDevices[dev]["ZDeviceName"], self.ListOfDevices[dev]["IEEE"], dev), )
                         
-                        if "Param" in self.ListOfDevices[dev] and self.ListOfDevices[dev]["Param"] == x["Param"]:
+                        if "Param" not in x:
                             continue
-                        
+
                         self.logging( "Debug", "--> Initial Param: %s (%s)" %( x["Param"], type(x["Param"])))
                         _new_param = decode_device_param(self, dev, x["Param"])
                         self.logging( "Debug", "--> Converted Param: %s (%s)" %( _new_param, type(_new_param)))
-                        
-                        if "Disabled" in _new_param:
-                            if _new_param["Disabled"]:
-                                self.ListOfDevices[dev]["Health"] = "Disabled"
-                            else:
-                                self.ListOfDevices[dev]["Health"] = "unknown"
-                                
+                        if _new_param is None:
+                            # Wrong syntax, already reported: keep the stored Param rather than wiping it
+                            continue
+
+                        # The page sends every device back, Param as the str(dict) it was given: compare the decoded
+                        # value, or each save re-applies every device's parameters (CheckParam) and resets its Health
+                        if _new_param == self.ListOfDevices[dev].get("Param", {}):
+                            continue
+
+                        # Health only follows a change of the Disabled flag
+                        if _new_param.get("Disabled"):
+                            self.ListOfDevices[dev]["Health"] = "Disabled"
+                        elif self.ListOfDevices[dev].get("Health") == "Disabled":
+                            self.ListOfDevices[dev]["Health"] = "unknown"
+
                         self.ListOfDevices[dev]["Param"] = _new_param
                         
                         self.logging( "Debug", "Updating Param to %s for IEEE: %s NWKID: %s" % (
@@ -1652,7 +1660,8 @@ def validateJSON(self, jsonData, nwkid=None):
         return {}
     
 def decode_device_param(self, nwkid, param):
-    """ Param as edited in the Device Management page: JSON, or the Python repr the page was given (str(dict)). """
+    """ Param as edited in the Device Management page: JSON, or the Python repr the page was given (str(dict)).
+    None when it cannot be read, so the caller keeps the stored Param. """
     if not param:
         return {}
     if isinstance(param, dict):
@@ -1679,7 +1688,7 @@ def decode_device_param(self, nwkid, param):
     _device_name = get_device_nickname(self, NwkId=nwkid)
     self.logging("Error", "When updating Device Management, Device: %s/%s got a wrong Parameter syntax for >%s< (%s) - %s.\n Make sure to use JSON syntax" % (
         _device_name, nwkid, param, type(param), json_error))
-    return {}
+    return None
 
 
 def replace_single_quotes_with_double(json_string):
