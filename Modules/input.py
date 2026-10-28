@@ -171,6 +171,21 @@ DECODERS: dict = {
     "7000": Decode7000,
 }
 
+# Position of the source short address (nwkid) in MsgData, for the message
+# types where it sits at a fixed offset. Used only to give context when a
+# decoder raises, so the Error can be related to a device.
+SRC_NWKID_SLICE = {
+    "0100": (2, 6),
+    "0400": (2, 6),
+    "8100": (2, 6),
+    "8102": (2, 6),
+    "8110": (2, 6),
+    "8120": (2, 6),
+    "8085": (10, 14),
+    "8095": (10, 14),
+    "80a5": (10, 14),
+}
+
 # Expected Zigate frame delimiters (lower-case hex pairs).
 _FRAME_START = "01"
 _FRAME_STOP = "03"
@@ -280,8 +295,28 @@ def _decode_message(self, MsgType, Devices, Data, MsgData, MsgLQI):
             )
 
     except Exception as exc:  # noqa: BLE001
+        nwkid = _source_nwkid(self, MsgType, MsgData)
+        _context = {
+            "Error code": "INPT0001",
+            "MsgType": MsgType,
+            "MsgData": MsgData,
+            "MsgLQI": MsgLQI,
+            "Exception": f"{type(exc).__name__}: {exc}",
+        }
         self.log.logging(
             "Input", "Error",
             f"_decode_message - unhandled exception while processing "
-            f"MsgType {MsgType}: {exc}\n{traceback.format_exc()}",
+            f"MsgType {MsgType}{f' from {nwkid}' if nwkid else ''}: {exc}\n{traceback.format_exc()}",
+            nwkid=nwkid,
+            context=_context,
         )
+
+
+def _source_nwkid(self, MsgType, MsgData):
+    """Return the source nwkid of a message when it can be read from MsgData
+    and is a known device, else None."""
+    if MsgType not in SRC_NWKID_SLICE or not isinstance(MsgData, str):
+        return None
+    start, end = SRC_NWKID_SLICE[MsgType]
+    nwkid = MsgData[start:end]
+    return nwkid if nwkid in self.ListOfDevices else None
