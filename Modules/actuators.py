@@ -21,6 +21,7 @@
 import json
 
 from Modules.basicOutputs import set_poweron_afteroffon
+from Modules.onoff_settings import onoff_on_with_timed_off
 from Modules.readAttributes import (
     ReadAttributeRequest_0006_400x,
     ReadAttributeRequest_0300_Color_Capabilities)
@@ -155,7 +156,8 @@ def actuator_on(self, nwkid, EPout, DeviceType):
 
     elif DeviceType == "WindowCovering":
         zcl_window_covering_on(self, nwkid, EPout)
-    else:
+
+    elif not onoff_on_with_timed_off(self, nwkid, EPout):
         zcl_onoff_on(self, nwkid, EPout)
 
 def actuator_setlevel(self, nwkid, EPout, value, DeviceType, transition="0010", withOnOff=True):
