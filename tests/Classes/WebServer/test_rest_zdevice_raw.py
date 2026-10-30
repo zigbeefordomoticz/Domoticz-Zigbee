@@ -56,6 +56,7 @@ def answers():
             def __init__(self):
                 self.pluginconf = PluginConf()
                 self.Devices = {1: object()}
+                self.DeviceConf = {}
                 self.IEEE2NWK = {IEEE: NWKID}
                 self.ListOfDevices = {NWKID: {
                     "IEEE": IEEE, "Model": "Dimmer switch wo neutral",
