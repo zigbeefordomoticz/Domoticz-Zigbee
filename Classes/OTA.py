@@ -678,6 +678,10 @@ class OTAManagement(object):
         ota_client["ManufacturerCode"] = manufcode
         ota_client["ImageType"] = imagetype
         ota_client["CurrentImageVersion"] = currentVersion
+        # The fields above are the last query. A device may hold several images and ask for each in
+        # turn (NodOn SIN-4-FP-21: 0x0006 for the radio, 0x0106 for the power board): Images keeps
+        # the version of each image type
+        ota_client.setdefault("Images", {})["%04x" % imagetype] = {"ManufacturerCode": manufcode, "CurrentImageVersion": currentVersion}
         
         request = find_ota_request(self, srcnwkid)
         force_update = request is not None and request["ForceUpdate"]
@@ -1547,11 +1551,15 @@ def firmware_update_rejection(self, brand, file_name, target_nwkid, target_ep, f
 
 
 def known_version_of_image(self, nwkid, image):
-    """The version the device reported in its last Query Next Image Request, if that was for this image's manufacturer and type."""
+    """The version the device reported in its last Query Next Image Request for this image's manufacturer and type, or None."""
     ota_client = self.ListOfDevices[nwkid].get("OTAClient", {})
-    if (ota_client.get("ManufacturerCode"), ota_client.get("ImageType")) != (image["intManufCode"], image["ImageType"]):
+    queried = ota_client.get("Images", {}).get("%04x" % image["ImageType"])
+    if queried is None and ota_client.get("ImageType") == image["ImageType"]:
+        # Device entry written before OTAClient had Images
+        queried = ota_client
+    if queried is None or queried.get("ManufacturerCode") != image["intManufCode"]:
         return None
-    return ota_client.get("CurrentImageVersion")
+    return queried.get("CurrentImageVersion")
 
 
 def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_update=False):
