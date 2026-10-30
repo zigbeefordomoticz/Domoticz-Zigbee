@@ -1240,7 +1240,6 @@ class WebServer(object):
                 elif parameters[0] in self.IEEE2NWK:
                     device_infos["Device"] = self.ListOfDevices[self.IEEE2NWK[parameters[0]]]
 
-                _response["Data"] = json.dumps(device_infos, sort_keys=False)
                 _response["Data"] = json.dumps(device_infos, sort_keys=False, cls=ZigbeeJSONEncoder)
 
         return _response
