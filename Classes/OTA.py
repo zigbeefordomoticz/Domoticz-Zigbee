@@ -326,6 +326,9 @@ class OTAManagement(object):
         # IEEE -> time its request was cancelled from the WebUI. autoServeOTA does not queue the
         # device again until the plugin restarts or the WebUI picks it again (firmware_update).
         self.ota_cancelled = {}
+        # Messages of a device about another image than the one of its request, already logged
+        # (request_for_another_image)
+        self.ota_other_image_logged = set()
 
         self.zigbee_ota_index = None
         self.zigbee_ota_found_in_index = []
@@ -400,6 +403,9 @@ class OTAManagement(object):
         if abort_cancelled_transfer(self, MsgSrcAddr, MsgEP, MsgSQN):
             return
 
+        if request_for_another_image(self, MsgSrcAddr, intMsgManufCode, intMsgImageType, "Image Block Request"):
+            return
+
         request = ota_request_for_block(self, MsgSrcAddr)
         if request is None:
             return
@@ -433,6 +439,9 @@ class OTAManagement(object):
             MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgMaxDataSize, PageSize , intResponseSpacing, intMsgFieldControl, ), MsgSrcAddr)
 
         if abort_cancelled_transfer(self, MsgSrcAddr, MsgEP, MsgSQN):
+            return
+
+        if request_for_another_image(self, MsgSrcAddr, intMsgManufCode, intMsgImageType, "Image Page Request"):
             return
 
         request = ota_request_for_block(self, MsgSrcAddr)
@@ -507,6 +516,9 @@ class OTAManagement(object):
             # The device answers the ABORT of a cancelled transfer: expected, not a duplicate
             logging(self, "Status", "Firmware transfer of %s stopped after the cancel: the device discarded the download (Upgrade End status 0x%s)" % (
                 MsgSrcAddr, MsgStatus), MsgSrcAddr)
+            return
+
+        if request_for_another_image(self, MsgSrcAddr, intMsgManufCode, image_type, "Upgrade End Request"):
             return
 
         if request is None or request["State"] != OTA_TRANSFER:
@@ -675,9 +687,7 @@ class OTAManagement(object):
         if hardware_refused:
             image_found = None
 
-        if image_found and request is not None and (image_found["intManufCode"], image_found["ImageType"]) != (request["intManufCode"], request["intImageType"]):
-            logging(self, "Log", "OTA Query Next Image request - %s asks for image 0x%04X/0x%04X, not for the requested firmware %s" % (
-                srcnwkid, manufcode, imagetype, request["FileName"]), srcnwkid)
+        if image_found and request_for_another_image(self, srcnwkid, manufcode, imagetype, "Query Next Image Request"):
             image_found = None
 
         if image_found:
@@ -944,6 +954,30 @@ def drop_unserved_request(self, request, current_version, refused_hardware_versi
     logging(self, "Status", "Firmware update of %s with %s dropped: %s" % (nwkid, request["FileName"], reason), nwkid)
     self.adminWidgets.updateNotificationWidget(self.Devices, f"Firmware update not needed for Device: {ota_device_name(self, nwkid)} - {reason}")
     end_ota_request(self, request, "Not needed")
+
+
+def request_for_another_image(self, nwkid, manuf_code, image_type, message):
+    """True when the device has an OTA request for another image than the one this message is about.
+
+    Some devices hold two images and ask for both in turn (NodOn SIN-4-FP-21: 0x0006 for the
+    radio, 0x0106 for the power board). A device gets one firmware at a time: the message
+    leaves the request alone, it is logged once per request.
+
+    Legrand block and page requests carry manufacturer code 0x00C8: initialize_block_request
+    serves them the image of the request, they are not about another image.
+    """
+    request = find_ota_request(self, nwkid)
+    if request is None or manuf_code == 0x00C8:
+        return False
+    if (manuf_code, image_type) == (request["intManufCode"], request["intImageType"]):
+        return False
+
+    key = (request["IEEE"], request["QueuedTime"], message, manuf_code, image_type)
+    log_level = "Debug" if key in self.ota_other_image_logged else "Log"
+    self.ota_other_image_logged.add(key)
+    logging(self, log_level, "OTA %s from %s for image 0x%04X/0x%04X ignored: the device is being updated with %s (0x%04X/0x%04X)" % (
+        message, nwkid, manuf_code, image_type, request["FileName"], request["intManufCode"], request["intImageType"]), nwkid)
+    return True
 
 
 def ota_request_for_block(self, nwkid):

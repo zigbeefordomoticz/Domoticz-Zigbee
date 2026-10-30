@@ -334,13 +334,24 @@ def test_build_ota_data_block(ota_module, ota):
 
 
 def test_page_request_for_an_unknown_image_logs_an_error_with_context(ota, radio, notified):
-    ota.ota_image_page_request(page_request(image_type=0x4204))
+    # The image of the request is gone from the list (its file was removed, then the folders rescanned)
+    del ota.ListOfImages["Brands"]["Ikea"]["bulb.ota"]
+
+    ota.ota_image_page_request(page_request(image_type=0x2203))
 
     radio.zcl_raw_ota_image_block_response_success.assert_not_called()
     error = next(call for call in ota.log.logging.call_args_list if call.args[1] == "Error")
     assert error.args[3] == DEVICE_NWKID
     assert error.args[4]["Error code"] == "OTA0201"
-    assert error.args[4]["ImageType"] == "0x4204"
+    assert error.args[4]["ImageType"] == "0x2203"
+
+
+def test_page_request_for_another_image_is_ignored_without_error(ota, radio, notified):
+    # Not the image of the request: see test_OTA_other_image.py
+    ota.ota_image_page_request(page_request(image_type=0x4204))
+
+    radio.zcl_raw_ota_image_block_response_success.assert_not_called()
+    assert not any(call.args[1] == "Error" for call in ota.log.logging.call_args_list)
 
 
 # ─── progress ─────────────────────────────────────────────────────────────────
