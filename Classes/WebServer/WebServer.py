@@ -1240,6 +1240,10 @@ class WebServer(object):
                 elif parameters[0] in self.IEEE2NWK:
                     device_infos["Device"] = self.ListOfDevices[self.IEEE2NWK[parameters[0]]]
 
+                # The model configuration's notes (_comment, _description...), for the WebUI device details
+                if "Device" in device_infos:
+                    device_infos["DeviceConfInfo"] = device_conf_info(self.DeviceConf, device_infos["Device"].get("Model"))
+
                 _response["Data"] = json.dumps(device_infos, sort_keys=False)
                 _response["Data"] = json.dumps(device_infos, sort_keys=False, cls=ZigbeeJSONEncoder)
 
@@ -1680,6 +1684,17 @@ def decode_device_param(self, nwkid, param):
     self.logging("Error", "When updating Device Management, Device: %s/%s got a wrong Parameter syntax for >%s< (%s) - %s.\n Make sure to use JSON syntax" % (
         _device_name, nwkid, param, type(param), json_error))
     return {}
+
+
+def device_conf_info(device_conf, model):
+    """ The documentation keys of a model's configuration: the top-level keys starting with "_" (_comment,
+    _description, _blakadder...), as the certified or Local-Devices JSON gives them. {} for an unknown model. """
+    if not isinstance(model, str) or not isinstance(device_conf, dict):
+        return {}
+    model_conf = device_conf.get(model)
+    if not isinstance(model_conf, dict):
+        return {}
+    return {key: value for key, value in model_conf.items() if isinstance(key, str) and key.startswith("_")}
 
 
 def replace_single_quotes_with_double(json_string):
