@@ -35,6 +35,7 @@ def decode8002_and_process(self, frame):
         return frame
     
     if ProfileId == "0000":
+        count_received_message(self, SrcNwkId, "ReceivedZDO")
         frame = zdp_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, frame)
         self.log.logging("Transport8002", "Debug", "decode8002_and_process return ZDP frame: %s" % frame, SrcNwkId)
         return frame
@@ -54,9 +55,21 @@ def decode8002_and_process(self, frame):
 
 
     # Z-Stack doesn't provide Profile Information, so we should assumed that if it is not 0x0000 (ZDP) it is then ZCL
+    count_received_message(self, SrcNwkId, "ReceivedZCL")
     frame = zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, frame)
     self.log.logging("Transport8002", "Debug", "decode8002_and_process return ZCL frame: %s" % frame, SrcNwkId)
     return frame
+
+
+def count_received_message(self, nwkid, counter):
+    """Count a ZDO ("ReceivedZDO") or ZCL ("ReceivedZCL") frame received from nwkid.
+
+    Counts every frame, duplicates included, since the plugin start: the two keys are not
+    in the attributes loaded back by Modules.database.CheckDeviceList.
+    """
+    device = self.ListOfDevices.get(nwkid)
+    if device is not None:
+        device[counter] = device.get(counter, 0) + 1
 
 
 def extract_nwk_infos_from_8002(frame):
