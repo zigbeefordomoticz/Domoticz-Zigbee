@@ -390,6 +390,11 @@ def get_device_informations(self, Nwkid):
     ota_client = self.ListOfDevices[Nwkid].get("OTAClient", {})
     image_type = "%04X" % ota_client["ImageType"] if "ImageType" in ota_client else ""
     current_version = "%08X" % ota_client["CurrentImageVersion"] if "CurrentImageVersion" in ota_client else ""
+    # One entry per image the device asked for: a device may hold several (Classes/OTA.py query_next_image_request)
+    images = [
+        {"ImageType": image_type_key.upper(), "ManufCode": "%04X" % queried["ManufacturerCode"], "CurrentFileVersion": "%08X" % queried["CurrentImageVersion"]}
+        for image_type_key, queried in sorted(ota_client.get("Images", {}).items())
+    ]
 
     return {
         "Nwkid": Nwkid,
@@ -406,6 +411,7 @@ def get_device_informations(self, Nwkid):
         "OTAType": LastImageType,
         "ImageType": image_type,
         "CurrentFileVersion": current_version,
+        "Images": images,
     }
 
 def fake_rest_ota_devices_for_manufcode():
