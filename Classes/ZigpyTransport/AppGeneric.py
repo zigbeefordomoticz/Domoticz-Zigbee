@@ -76,6 +76,8 @@ the upstream zigpy stack. The routing logic separates:
     - ZCL frames from devices (profile 0x0104) → plugin frame 0x8002,
                                                   upstream skipped so the
                                                   plugin owns ZCL responses
+                                                  (the packet's RSSI is still
+                                                  copied onto zigpy's Device)
     - All other frames                          → plugin frame 0x8002
                                                   + upstream zigpy
 
@@ -1259,6 +1261,29 @@ def _handle_zdo_cluster(self, cluster, sender, hex_message, packet):
     return True
 
 
+# ---------------------------------------------------------------------------
+# Helper: keep zigpy's Device.rssi in step with the packet handed to the plugin
+# ---------------------------------------------------------------------------
+def _refresh_device_rssi(self, packet):
+    """
+    Copy the packet's RSSI onto zigpy's Device record.
+
+    zigpy refreshes Device.rssi in its own packet_received(), which a ZCL
+    packet from a device never reaches (the plugin owns the response, see
+    step 5a), or reaches only after the plugin frame is queued (step 5b).
+    decode8002 reads Device.rssi through get_device_rssi() for every ZCL
+    frame, so without this RollingRSSI repeats the RSSI of an older packet.
+    """
+    if packet.rssi is None or packet.src.addr_mode != zigpy_t.AddrMode.NWK:
+        return
+
+    try:
+        dev = super(type(self), self).get_device(None, packet.src.address)
+    except KeyError:
+        return
+    dev.rssi = packet.rssi
+
+
 @measure_execution_time
 def packet_received(self, packet: zigpy_t.ZigbeePacket) -> None:
     """
@@ -1340,6 +1365,9 @@ def packet_received(self, packet: zigpy_t.ZigbeePacket) -> None:
 
     if effective_profile and f["cluster"]:
         self.log.logging( "TransportZigpy", "Debug", f"packet_received device: {_pkt_summary(f, hex_msg)}  lqi={packet.lqi}" )
+
+    # Before the frame is queued: decode8002 reads the RSSI from zigpy's Device
+    _refresh_device_rssi(self, packet)
 
     plugin_frame = build_plugin_8002_frame_content(
         self, f["sender"],
