@@ -201,3 +201,24 @@ def test_zigate_gets_the_header_of_the_requested_file(ota_module, ota, wiser_fil
     ota_module.firmware_update(ota, "Schneider", APP_LACT, DEVICE_NWKID, DEVICE_EP)
 
     assert loaded and loaded[-1] is wiser_files[APP_LACT]["Decoded Header"]
+
+
+# ─── REST: files a device is never offered ────────────────────────────────────
+
+@pytest.mark.parametrize("model, excluded", [
+    ("EH-ZB-HACT", sorted(set(FILES) - {SNP_HACT, APP_HACT})),
+    ("EH-ZB-BMS", sorted(set(FILES) - {BMS_APP})),
+    ("CCTFR6400", sorted({SNP_HACT, SNP_LACT, APP_HACT, APP_LACT, BMS_APP})),
+    ("", sorted(FILES)),
+])
+def test_restapi_excluded_files(ota, wiser_files, model, excluded):
+    _model(ota, model)
+
+    assert ota.restapi_excluded_files(DEVICE_NWKID, "105e") == excluded
+
+
+def test_restapi_excluded_files_of_another_manufacturer_code(ota, wiser_files):
+    _model(ota, "EH-ZB-HACT")
+
+    assert ota.restapi_excluded_files(DEVICE_NWKID, "117c") == []
+    assert ota.restapi_excluded_files(DEVICE_NWKID, "not hex") == []

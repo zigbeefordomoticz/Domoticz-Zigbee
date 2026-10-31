@@ -356,7 +356,11 @@ def rest_ota_devices_for_manufcode(self, verb, data, parameters):
 
         domoticz_log_api("Found device: %s" % x)
 
-        device_list.append(get_device_informations(self, x))
+        device_information = get_device_informations(self, x)
+        # The firmware files of this code the device must never get (Schneider Wiser Heat legacy
+        # models, Classes/OTA.py): the WebUI does not offer them for this device
+        device_information["ExcludedFiles"] = self.OTA.restapi_excluded_files(x, manuf_code)
+        device_list.append(device_information)
     _response["Data"] = json.dumps(device_list, sort_keys=True)
     return _response
 

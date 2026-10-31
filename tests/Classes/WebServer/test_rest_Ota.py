@@ -201,3 +201,18 @@ def test_update_request_needs_put(rest_ota, webserver):
 
     assert response["Data"] is None
     webserver.OTA.restapi_firmware_update.assert_not_called()
+
+
+# ─── device list for a manufacturer code ─────────────────────────────────────
+
+def test_device_list_carries_the_files_the_device_never_gets(rest_ota, webserver):
+    webserver.fake_mode.return_value = False
+    webserver.ListOfDevices["1234"]["Manufacturer"] = "105e"
+    webserver.OTA.restapi_excluded_files.return_value = ["EH_LAC_R_04_01_02.zigbee"]
+
+    response = rest_ota.rest_ota_devices_for_manufcode(webserver, "GET", None, ["105e"])
+
+    devices = json.loads(response["Data"])
+    assert [device["Nwkid"] for device in devices] == ["1234"]
+    assert devices[0]["ExcludedFiles"] == ["EH_LAC_R_04_01_02.zigbee"]
+    webserver.OTA.restapi_excluded_files.assert_called_once_with("1234", "105e")
