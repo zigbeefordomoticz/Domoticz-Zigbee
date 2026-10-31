@@ -20,6 +20,7 @@ import time
 from collections import deque
 
 from Classes.PluginConf import SETTINGS
+from Classes.TransportStats import TREND_REST_FIELDS
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
 from Modules.actuators import actuators
@@ -298,6 +299,12 @@ class WebServer(object):
             if "Firmware Update" in self.PluginHealth:
                 health["OTAupdateProgress"] = self.PluginHealth["Firmware Update"]["Progress"]
                 health["OTAupdateDevice"] = self.PluginHealth["Firmware Update"]["Device"]
+                # Every queued or active request, each with Status "Active" / "Not Active"
+                health["OTAupdateRequests"] = self.PluginHealth["Firmware Update"].get("Requests", [])
+                # The last ended requests, newest first, their outcome in "Progress"
+                health["OTAupdateFinished"] = self.PluginHealth["Firmware Update"].get("Finished", [])
+                # The plugin's clock, which StartTime / EndTime are read against: the browser's may differ
+                health["OTAupdateTime"] = int(time.time())
 
             if self.groupmgt:
                 health["GroupStatus"] = self.groupmgt.GroupStatus
@@ -361,21 +368,26 @@ class WebServer(object):
                 _response["Data"] = json.dumps(fake_zigate, sort_keys=True)
                 return _response
             
+            # While the radio starts, the firmware and network details are not known yet: they are
+            # returned as null instead of failing the request.
             coordinator_infos = {
-                "Firmware Version": self.ControllerData["Firmware Version"],
-                "IEEE": self.ControllerData["IEEE"],
-                "Short Address": self.ControllerData["Short Address"],
-                "Channel": self.ControllerData["Channel"],
-                "PANID": self.ControllerData["PANID"],
-                "Extended PANID": self.ControllerData["Extended PANID"],
-                "Branch Version": self.ControllerData["Branch Version"],
-                "Major Version": self.ControllerData["Major Version"],
-                "Minor Version": self.ControllerData["Minor Version"],
+                "Firmware Version": self.ControllerData.get("Firmware Version"),
+                "IEEE": self.ControllerData.get("IEEE"),
+                "Short Address": self.ControllerData.get("Short Address"),
+                "Channel": self.ControllerData.get("Channel"),
+                "PANID": self.ControllerData.get("PANID"),
+                "Extended PANID": self.ControllerData.get("Extended PANID"),
+                "Branch Version": self.ControllerData.get("Branch Version"),
+                "Major Version": self.ControllerData.get("Major Version"),
+                "Minor Version": self.ControllerData.get("Minor Version"),
             }
             if "Network key" in self.ControllerData:
-                coordinator_infos[ "Network Key"] = self.ControllerData["Network key"] 
+                coordinator_infos[ "Network Key"] = self.ControllerData["Network key"]
 
-            if 0 <= int(self.ControllerData["Branch Version"]) < 20:   
+            if self.ControllerData.get("Branch Version") is None:
+                pass
+
+            elif 0 <= int(self.ControllerData["Branch Version"]) < 20:
                 coordinator_infos["Display Firmware Version"] = "Zig - %s" % self.ControllerData["Minor Version"]
 
             elif 20 <= int(self.ControllerData["Branch Version"]) < 30:
@@ -412,7 +424,7 @@ class WebServer(object):
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
-            _response["Data"] = json.dumps(get_plugin_parameters(self))
+            _response["Data"] = json.dumps(get_plugin_parameters(self, filter=True))
         return _response
 
     def rest_nwk_stat(self, verb, data, parameters):
@@ -581,7 +593,7 @@ class WebServer(object):
                     # Rolling window in progress
                     _TS -= minTS
 
-                Statistics["Trend"].append({"_TS": _TS, "Rxps": item["Rxps"], "Txps": item["Txps"], "Load": item["Load"]})
+                Statistics["Trend"].append({"_TS": _TS, **{field: item[field] for field in TREND_REST_FIELDS}})
 
         Statistics["Uptime"] = int(time.time() - Statistics["StartTime"])
         if Statistics["Uptime"] > 0:
@@ -930,7 +942,7 @@ class WebServer(object):
                         if item not in self.ListOfDevices[x]:
                             if item == "Param":
                                 device[item] = str({})
-                            if item == "CheckParam":
+                            elif item == "CheckParam":
                                 device[item] = False
                             else:
                                 device[item] = ""
@@ -1018,19 +1030,27 @@ class WebServer(object):
                             self.logging( "Debug", "Updating ZDeviceName to %s for IEEE: %s NWKID: %s" % (
                                 self.ListOfDevices[dev]["ZDeviceName"], self.ListOfDevices[dev]["IEEE"], dev), )
                         
-                        if "Param" in self.ListOfDevices[dev] and self.ListOfDevices[dev]["Param"] == x["Param"]:
+                        if "Param" not in x:
                             continue
-                        
+
                         self.logging( "Debug", "--> Initial Param: %s (%s)" %( x["Param"], type(x["Param"])))
                         _new_param = decode_device_param(self, dev, x["Param"])
                         self.logging( "Debug", "--> Converted Param: %s (%s)" %( _new_param, type(_new_param)))
-                        
-                        if "Disabled" in _new_param:
-                            if _new_param["Disabled"]:
-                                self.ListOfDevices[dev]["Health"] = "Disabled"
-                            else:
-                                self.ListOfDevices[dev]["Health"] = "unknown"
-                                
+                        if _new_param is None:
+                            # Wrong syntax, already reported: keep the stored Param rather than wiping it
+                            continue
+
+                        # The page sends every device back, Param as the str(dict) it was given: compare the decoded
+                        # value, or each save re-applies every device's parameters (CheckParam) and resets its Health
+                        if _new_param == self.ListOfDevices[dev].get("Param", {}):
+                            continue
+
+                        # Health only follows a change of the Disabled flag
+                        if _new_param.get("Disabled"):
+                            self.ListOfDevices[dev]["Health"] = "Disabled"
+                        elif self.ListOfDevices[dev].get("Health") == "Disabled":
+                            self.ListOfDevices[dev]["Health"] = "unknown"
+
                         self.ListOfDevices[dev]["Param"] = _new_param
                         
                         self.logging( "Debug", "Updating Param to %s for IEEE: %s NWKID: %s" % (
@@ -1240,7 +1260,10 @@ class WebServer(object):
                 elif parameters[0] in self.IEEE2NWK:
                     device_infos["Device"] = self.ListOfDevices[self.IEEE2NWK[parameters[0]]]
 
-                _response["Data"] = json.dumps(device_infos, sort_keys=False)
+                # The model configuration's notes (_comment, _description...), for the WebUI device details
+                if "Device" in device_infos:
+                    device_infos["DeviceConfInfo"] = device_conf_info(self.DeviceConf, device_infos["Device"].get("Model"))
+
                 _response["Data"] = json.dumps(device_infos, sort_keys=False, cls=ZigbeeJSONEncoder)
 
         return _response
@@ -1419,13 +1442,7 @@ class WebServer(object):
                     return _response
                 if data["Command"] == "":
                     return _response
-                if data["Value"] == "" or data["Value"] is None:
-                    Level = 0
-                else:
-                    if is_hex(str(data["Value"])):
-                        Level = int(str(data["Value"]), 16)
-                    else:
-                        Level = int(str(data["Value"]))
+                Level = dev_command_level(data["Value"])
                 ColorMode = ColorValue = ""
                 color = ""
                 if data["Color"] == "" or data["Color"] is None:
@@ -1652,7 +1669,8 @@ def validateJSON(self, jsonData, nwkid=None):
         return {}
     
 def decode_device_param(self, nwkid, param):
-    """ Param as edited in the Device Management page: JSON, or the Python repr the page was given (str(dict)). """
+    """ Param as edited in the Device Management page: JSON, or the Python repr the page was given (str(dict)).
+    None when it cannot be read, so the caller keeps the stored Param. """
     if not param:
         return {}
     if isinstance(param, dict):
@@ -1679,7 +1697,18 @@ def decode_device_param(self, nwkid, param):
     _device_name = get_device_nickname(self, NwkId=nwkid)
     self.logging("Error", "When updating Device Management, Device: %s/%s got a wrong Parameter syntax for >%s< (%s) - %s.\n Make sure to use JSON syntax" % (
         _device_name, nwkid, param, type(param), json_error))
-    return {}
+    return None
+
+
+def device_conf_info(device_conf, model):
+    """ The documentation keys of a model's configuration: the top-level keys starting with "_" (_comment,
+    _description, _blakadder...), as the certified or Local-Devices JSON gives them. {} for an unknown model. """
+    if not isinstance(model, str) or not isinstance(device_conf, dict):
+        return {}
+    model_conf = device_conf.get(model)
+    if not isinstance(model_conf, dict):
+        return {}
+    return {key: value for key, value in model_conf.items() if isinstance(key, str) and key.startswith("_")}
 
 
 def replace_single_quotes_with_double(json_string):
@@ -1702,6 +1731,26 @@ def remove_last_comma(json_string):
     elif json_string.endswith(',}'):
         return json_string[:-2] + "}"
     return json_string
+
+
+def dev_command_level(value):
+    """Level for a /dev-command request from its "Value" field.
+
+    A JSON number is taken as is: 60 means 60, 20.5 means 20.
+    A string made of hex digits only is read as hexadecimal, as the Web UI
+    sends it: "3c" means 60, and "60" means 96. Any other string is read as
+    decimal ("-5"). An empty string or null means 0.
+
+    Before this, every value was converted with str() first, so a JSON number
+    made of digits was read as hexadecimal too (issue #2213).
+    """
+    if value in ("", None):
+        return 0
+    if isinstance(value, (int, float)):
+        return int(value)
+    if is_hex(value):
+        return int(value, 16)
+    return int(value)
 
 
 def get_plugin_parameters(self, filter=False):

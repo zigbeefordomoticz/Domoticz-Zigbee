@@ -233,7 +233,12 @@ def _check_range( self, value, datatype, _range):
     else:
         _range1 = decoding_attribute_data( datatype, _range[0])
         _range2 = decoding_attribute_data( datatype, _range[1])
-    
+
+    if isinstance(_range1, (int, float)) and not isinstance(value, (int, float)):
+        # The value did not decode to a number (empty payload, or a data type we do not decode
+        # into a number), so it cannot be within a numeric range
+        return False
+
     if _range1 < _range2:
         return _range1 <= value <= _range2
 
