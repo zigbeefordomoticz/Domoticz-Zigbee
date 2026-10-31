@@ -412,7 +412,7 @@ class WebServer(object):
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
-            _response["Data"] = json.dumps(get_plugin_parameters(self))
+            _response["Data"] = json.dumps(get_plugin_parameters(self, filter=True))
         return _response
 
     def rest_nwk_stat(self, verb, data, parameters):
