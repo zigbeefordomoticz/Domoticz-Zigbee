@@ -34,7 +34,7 @@ from Zigbee.encoder_tools import loggable_plugin_frame
 
 
 class ZigpyTransport(object):
-    def __init__(self, ControllerData, pluginParameters, pluginconf, F_out, zigpy_upd_device, zigpy_get_device, zigpy_get_all_devices, zigpy_backup_available, restart_plugin, log, statistics, hardwareid, radiomodule, serialPort, com_specifcs):
+    def __init__(self, ControllerData, pluginParameters, pluginconf, F_out, zigpy_upd_device, zigpy_get_device, zigpy_get_all_devices, zigpy_backup_available, restart_plugin, log, statistics, hardwareid, radiomodule, serialPort, com_specifcs, zigpy_get_all_gp_devices=None):
         self.zigbee_communication = "zigpy"
         self.pluginParameters = pluginParameters
         self.pluginconf = pluginconf
@@ -42,6 +42,7 @@ class ZigpyTransport(object):
         self.ZigpyUpdDevice = zigpy_upd_device
         self.ZigpyGetDevice = zigpy_get_device
         self.ZigpyGetAllDevices = zigpy_get_all_devices
+        self.ZigpyGetAllGpDevices = zigpy_get_all_gp_devices
         self.ZigpyBackupAvailable = zigpy_backup_available
         self.restart_plugin = restart_plugin
         self.log = log

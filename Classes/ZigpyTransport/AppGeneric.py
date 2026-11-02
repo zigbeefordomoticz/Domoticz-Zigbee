@@ -186,7 +186,8 @@ except ImportError:
     zgp_tunneling = None
 from zigpy.backups import NetworkBackup
 
-from Classes.ZigpyTransport.greenPower import register_green_power_listener
+from Classes.ZigpyTransport.greenPower import (
+    register_green_power_listener, restore_green_power_devices)
 from Classes.ZigpyTransport.instrumentation import write_capture_rx_frames
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8002_frame_content, build_plugin_8014_frame_content,
@@ -267,8 +268,12 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     8. Plugin only: register the Green Power listener (greenPower.py) when
        zigpy supports Green Power, so GPD events reach the plugin.
     9. Plugin only: _preload_devices_from_plugin_db().
-    10. _persist_coordinator_model_strings_in_db().
-    11. Start periodic topology scans if CONF_TOPO_SCAN_ENABLED.
+    10. Plugin only: restore_green_power_devices() (greenPower.py): the GPDs
+        of the plugin's Green Power device store are rebuilt as zigpy's
+        database load does (zigpy runs with an in-memory database), then
+        await self.green_power.startup() as upstream does.
+    11. _persist_coordinator_model_strings_in_db().
+    12. Start periodic topology scans if CONF_TOPO_SCAN_ENABLED.
 
     Steps of upstream initialize() that are NOT performed here:
 
@@ -285,11 +290,9 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     - self.ota.start_periodic_broadcasts() when OTA and OTA broadcast are
       enabled. Not needed: radioStart.py forces zigpy OTA off (the plugin
       runs its own OTA).
-    - await self.green_power.startup() (zigpy >= 2.4.0), which joins the
-      Green Power group when zigpy knows a commissioned GPD. Not yet: GPDs
-      are not restored into zigpy at startup.
 
-    Re-check this list against upstream on every zigpy version bump.
+    Re-check this list against upstream on every zigpy version bump, and
+    greenPower.gp_device_from_record() against zigpy's appdb _load_gp_devices().
 
     Args:
         auto_form:  If True, automatically form a new network when none is
@@ -396,6 +399,9 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
 
     # Preload devices from plugin DB before registering specific endpoints, so that the plugin device list is available during endpoint registration if needed (e.g. for deConz group membership restoration)
     _preload_devices_from_plugin_db(self)
+
+    # Plugin only: Green Power devices from the plugin store, then green_power.startup()
+    await restore_green_power_devices(self)
 
     self._persist_coordinator_model_strings_in_db()
 
