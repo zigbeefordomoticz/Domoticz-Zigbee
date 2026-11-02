@@ -44,6 +44,7 @@ The functions here override the following ControllerApplication methods:
     handle_join()               — adds NWK sync and invalid IEEE filtering
     handle_leave()              — adds plugin 0x8048 frame delivery
     handle_relays()             — adds debug logging
+    permit_gp()                 — keeps Green Power commissioning closed
     packet_received()           — full routing override for plugin frame delivery
 
 The following are plugin-only additions with no upstream equivalent:
@@ -214,8 +215,9 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     """
     Start the Zigbee network on the connected radio.
 
-    Overrides ControllerApplication.initialize() (reference: zigpy 2.3.0,
-    unchanged since 2.2.0). Sequence, with the deltas to upstream:
+    Overrides ControllerApplication.initialize() (reference: zigpy 2.4.1;
+    2.4.0 added green_power.startup(), see below). Sequence, with the deltas
+    to upstream:
 
     1. Feed the firmware watchdog and start the watchdog loop, if enabled
        in config (radioStart.py always enables it). The period is the radio
@@ -256,6 +258,9 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     - self.ota.start_periodic_broadcasts() when OTA and OTA broadcast are
       enabled. Not needed: radioStart.py forces zigpy OTA off (the plugin
       runs its own OTA).
+    - await self.green_power.startup() (zigpy >= 2.4.0), which joins the
+      Green Power group when zigpy knows a commissioned GPD. Not needed:
+      permit_gp() keeps commissioning closed, so zigpy never has one.
 
     Re-check this list against upstream on every zigpy version bump.
 
@@ -1134,6 +1139,23 @@ def handle_relays(self, nwk, relays) -> None:
     """
     self.log.logging("TransportZigpy", "Debug","handle_relays (0x%04x %s)" %(nwk, str(relays)))
     super(type(self),self).handle_relays(nwk, relays)
+
+
+async def permit_gp(self, time_s: int) -> None:
+    """
+    Open or close (time_s=0) the Green Power commissioning window.
+
+    Overrides ControllerApplication.permit_gp() (zigpy >= 2.4.0), which
+    upstream permit() calls on every permit join, network-wide even when
+    node= targets one router. The plugin does not hand Green Power devices
+    to zigpy yet, so the window stays closed: no proxy commissioning
+    broadcast is sent and zigpy's Green Power manager ignores commissioning
+    GPDFs. Green Power support through zigpy replaces this no-op.
+
+    Args:
+        time_s: Window duration in seconds, 0 to close it.
+    """
+    self.log.logging("TransportZigpy", "Debug", "permit_gp(%s) skipped, Green Power commissioning not handled by zigpy" % time_s)
 
 
 def measure_execution_time(func):
