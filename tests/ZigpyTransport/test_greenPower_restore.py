@@ -252,3 +252,27 @@ class TestWithoutGreenPower:
 
         app.callBackGetAllGpDevices.assert_not_called()
         assert app.devices == {}
+
+
+class TestRemoval:
+    """REMOVE-DEVICE → App_*.remove_ieee() → zigpy remove(): a GPD is unpaired, never sent a Leave."""
+
+    def test_zigpy_remove_unpairs_and_reports_9e02(self, app, gp_types, helpers, decoder):
+        app.records = [store_record(app, helpers, decoder, make_gpd(MagicMock(), gp_types))]
+        restore(app)
+        dev = next(iter(app.devices.values()))
+        unpaired = []
+
+        async def unpair(device):
+            unpaired.append(device)
+
+        app.green_power.unpair = unpair
+        app.listener_event = lambda name, *args: getattr(app.z4d_gp_listener, name)(*args)
+
+        asyncio.run(zigpy_application.ControllerApplication.remove(app, dev.ieee))
+
+        assert app.devices == {}
+        assert unpaired == [dev]
+        assert [frame[2:6] for frame in app.frames] == ["9e02"]
+        # No ZDO Leave / Mgmt_Leave: nothing is sent to a GPD itself
+        app.request.assert_not_called()

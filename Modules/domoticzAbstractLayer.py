@@ -323,6 +323,15 @@ def _get_available_units(self, Devices, DeviceId) -> set:
         return set(Devices[DeviceId].Units.keys())
     return set()
 
+def domo_other_units(self, Devices, DeviceId, Unit) -> set:
+    """
+    Units of DeviceId other than Unit. In onDeviceRemoved(), Domoticz still
+    lists the unit being removed (it drops it after the callback returns), so
+    an empty result means Unit is the device's last one.
+    """
+    return _get_available_units(self, Devices, DeviceId) - {Unit}
+
+
 def get_unit_counts(self, Devices, DeviceId) -> dict:
     """
     Return allocated and free unit counts for DeviceId.
