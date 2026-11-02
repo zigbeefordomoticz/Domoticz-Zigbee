@@ -228,8 +228,9 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     """
     Start the Zigbee network on the connected radio.
 
-    Overrides ControllerApplication.initialize() (reference: zigpy 2.3.0,
-    unchanged since 2.2.0). Sequence, with the deltas to upstream:
+    Overrides ControllerApplication.initialize() (reference: zigpy 2.4.1;
+    2.4.0 added green_power.startup(), see below). Sequence, with the deltas
+    to upstream:
 
     1. Feed the firmware watchdog and start the watchdog loop, if enabled
        in config (radioStart.py always enables it). The period is the radio
@@ -272,6 +273,9 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     - self.ota.start_periodic_broadcasts() when OTA and OTA broadcast are
       enabled. Not needed: radioStart.py forces zigpy OTA off (the plugin
       runs its own OTA).
+    - await self.green_power.startup() (zigpy >= 2.4.0), which joins the
+      Green Power group when zigpy knows a commissioned GPD. Not needed:
+      permit_gp() keeps commissioning closed, so zigpy never has one.
 
     Re-check this list against upstream on every zigpy version bump.
 
