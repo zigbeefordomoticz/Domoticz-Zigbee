@@ -187,7 +187,8 @@ except ImportError:
 from zigpy.backups import NetworkBackup
 
 from Classes.ZigpyTransport.greenPower import (
-    register_green_power_listener, restore_green_power_devices)
+    is_green_power_device, register_green_power_listener,
+    restore_green_power_devices)
 from Classes.ZigpyTransport.instrumentation import write_capture_rx_frames
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8002_frame_content, build_plugin_8014_frame_content,
@@ -752,10 +753,13 @@ def _dump_zigpy_devices(self):
     devices = list(self.devices.values())
     LOGGER.info("zigpy device table (%d entries):", len(devices))
     for dev in devices:
+        # A Green Power device has no node descriptor at all (restored ones are
+        # in the table when initialize() runs again on a startup retry)
+        node_desc = getattr(dev, "node_desc", None)
         LOGGER.info(
             "  ieee=%-20s  nwk=0x%04x  logical_type=%s",
             dev.ieee, dev.nwk,
-            "none" if dev.node_desc is None else dev.node_desc.logical_type.name,
+            "green_power" if is_green_power_device(dev) else "none" if node_desc is None else node_desc.logical_type.name,
         )
 
 

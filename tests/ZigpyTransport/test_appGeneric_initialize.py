@@ -164,10 +164,17 @@ HARNESS = textwrap.dedent(
     if sc.get("repair_dbm") is not None:
         FakeApp.TX_POWER_LEFT_AT_0DBM_REPAIR = sc["repair_dbm"]
 
-    if sc.get("green_power"):
+    if sc.get("green_power") and not sc.get("real_preload"):
         AG._preload_devices_from_plugin_db = lambda self: self.calls.append("preload")
 
     app = FakeApp()
+    if sc.get("real_preload"):
+        app.callBackGetAllDevices = lambda: []
+    if sc.get("gpd_in_table"):
+        # A GPD restored by an earlier initialize() of the same app (startup retry)
+        import zigpy.device, zigpy.zgp.types as gp
+        gpd = zigpy.device.GreenPowerDevice(app, application_id=gp.ApplicationID.SrcID, src_id=gp.SrcID(0x0155A3B2))
+        app.devices[gpd.ieee] = gpd
     result = {"error": None}
     if sc["mode"] == "increment":
         backup = backup_with_pan(0x1111, sc["age_hours"], sc.get("tx_counter", 0), sc.get("naive", False), now=NOW)
@@ -468,6 +475,13 @@ class TestGreenPowerListener:
         assert result["error"] is None
         calls = result["calls"]
         assert calls.index("preload") < calls.index("get_all_gp_devices") < calls.index("green_power.startup:0")
+        assert _errors(result) == []
+
+    def test_retry_with_a_restored_device_in_the_table(self):
+        # The device table dump of the pre-load must cope with a GreenPowerDevice (no node_desc)
+        result = _run(green_power=True, real_preload=True, gpd_in_table=True)
+        assert result["error"] is None
+        assert "green_power.startup:1" in result["calls"]
         assert _errors(result) == []
 
     def test_not_registered_without_green_power(self):
