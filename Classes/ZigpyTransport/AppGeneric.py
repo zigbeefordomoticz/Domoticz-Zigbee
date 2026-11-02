@@ -44,6 +44,7 @@ The functions here override the following ControllerApplication methods:
     handle_join()               — adds NWK sync and invalid IEEE filtering
     handle_leave()              — adds plugin 0x8048 frame delivery
     handle_relays()             — adds debug logging
+    permit_gp()                 — keeps Green Power commissioning closed
     packet_received()           — full routing override for plugin frame delivery
 
 The following are plugin-only additions with no upstream equivalent:
@@ -1134,6 +1135,23 @@ def handle_relays(self, nwk, relays) -> None:
     """
     self.log.logging("TransportZigpy", "Debug","handle_relays (0x%04x %s)" %(nwk, str(relays)))
     super(type(self),self).handle_relays(nwk, relays)
+
+
+async def permit_gp(self, time_s: int) -> None:
+    """
+    Open or close (time_s=0) the Green Power commissioning window.
+
+    Overrides ControllerApplication.permit_gp() (zigpy >= 2.4.0), which
+    upstream permit() calls on every permit join, network-wide even when
+    node= targets one router. The plugin does not hand Green Power devices
+    to zigpy yet, so the window stays closed: no proxy commissioning
+    broadcast is sent and zigpy's Green Power manager ignores commissioning
+    GPDFs. Green Power support through zigpy replaces this no-op.
+
+    Args:
+        time_s: Window duration in seconds, 0 to close it.
+    """
+    self.log.logging("TransportZigpy", "Debug", "permit_gp(%s) skipped, Green Power commissioning not handled by zigpy" % time_s)
 
 
 def measure_execution_time(func):
