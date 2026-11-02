@@ -71,6 +71,9 @@ class FakeStore:
     def delete(self, key):
         self.records.pop(key, None)
 
+    def snapshot(self):
+        return copy.deepcopy(self.records)
+
 
 @pytest.fixture
 def gp_types():
@@ -253,3 +256,19 @@ class TestRemoval:
         decode_last(helpers, decoder, plugin, transport)
 
         assert plugin.flush_list_of_devices is False
+
+
+class TestHandOverToZigpy:
+
+    def test_stored_records_handed_over_as_copies(self, decoder, helpers, plugin, transport, gp_types, gp_store_module):
+        GreenPowerListener(transport).device_initialized(make_gpd(transport, gp_types))
+        decode_last(helpers, decoder, plugin, transport)
+
+        records = gp_store_module.gp_devices_for_zigpy(plugin)
+
+        assert [r["ieee"] for r in records] == [IEEE_HEX]
+        records[0]["frame_counter"] = 0
+        assert plugin.store.records[IEEE_HEX]["frame_counter"] == 1234
+
+    def test_no_store_hands_over_nothing(self, gp_store_module):
+        assert gp_store_module.gp_devices_for_zigpy(SimpleNamespace()) == []
