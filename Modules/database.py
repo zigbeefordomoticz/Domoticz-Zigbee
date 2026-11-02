@@ -41,6 +41,7 @@ import Modules.tools
 from Classes.AdminWidgets import ADMIN_WIDGET_PREFIXES
 from Classes.PluginStore import PluginStore
 from Modules.domoticzAbstractLayer import getConfigItem, setConfigItem
+from Modules.greenPowerStore import GP_STORE_NAME, GP_STORE_VERSION
 from Modules.manufacturer_code import check_and_update_manufcode
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_CUSTOM_CONFIGURE_REPORTING,
@@ -55,7 +56,10 @@ PLUGIN_DATABASE_RECORD_VERSION = 4
 # Record stores persisted next to ListOfDevices (Classes/PluginStore.py), as
 # (name, version, upgrade): a feature whose records must not live in
 # ListOfDevices declares its store here.
-PLUGIN_STORES = ()
+# (name, record format version, upgrade callable or None)
+PLUGIN_STORES = (
+    (GP_STORE_NAME, GP_STORE_VERSION, None),
+)
 
 CIE_ATTRIBUTES = {
     "Version", 
