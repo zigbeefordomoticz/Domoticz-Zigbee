@@ -116,7 +116,12 @@ HARNESS = textwrap.dedent(
             self.callBackGetAllDevices = None
             if sc.get("green_power"):
                 # zigpy with Green Power support (> 2.3.0)
-                self.green_power = types.SimpleNamespace()
+                app = self
+                async def gp_startup():
+                    app.calls.append("green_power.startup:%d" % len(app.devices))
+                self.green_power = types.SimpleNamespace(startup=gp_startup)
+                self.devices = {}
+                self.callBackGetAllGpDevices = lambda: app.calls.append("get_all_gp_devices") or []
         def add_listener(self, listener):
             self.calls.append("add_listener:%s" % type(listener).__name__)
         async def load_network_info(self, *, load_devices=False):
@@ -143,6 +148,9 @@ HARNESS = textwrap.dedent(
 
     if sc.get("repair_dbm") is not None:
         FakeApp.TX_POWER_LEFT_AT_0DBM_REPAIR = sc["repair_dbm"]
+
+    if sc.get("green_power"):
+        AG._preload_devices_from_plugin_db = lambda self: self.calls.append("preload")
 
     app = FakeApp()
     result = {"error": None}
@@ -377,6 +385,13 @@ class TestGreenPowerListener:
         assert result["calls"].count("add_listener:GreenPowerListener") == 1
         # Registered once the network is started
         assert result["calls"].index("start_network") < result["calls"].index("add_listener:GreenPowerListener")
+
+    def test_devices_restored_after_preload_then_manager_started(self):
+        result = _run(green_power=True)
+        assert result["error"] is None
+        calls = result["calls"]
+        assert calls.index("preload") < calls.index("get_all_gp_devices") < calls.index("green_power.startup:0")
+        assert _errors(result) == []
 
     def test_not_registered_without_green_power(self):
         result = _run()

@@ -68,6 +68,14 @@ def gp_store(self):
     return getattr(self, "PluginStores", {}).get(GP_STORE_NAME)
 
 
+def gp_devices_for_zigpy(self):
+    """Copies of the stored GPD records, handed to the zigpy transport at startup."""
+    store = gp_store(self)
+    if store is None:
+        return []
+    return list(store.snapshot().values())
+
+
 def request_gp_store_flush(self):
     """
     Have the store written at the next heartbeat, with the device list.

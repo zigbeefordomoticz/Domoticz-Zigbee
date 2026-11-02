@@ -198,6 +198,7 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_set_certificate, zigate_set_mode)
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
+from Modules.greenPowerStore import gp_devices_for_zigpy
 from Modules.zigpy_preload import device_has_left_the_network
 from Zigbee.zdpCommands import (zdp_get_permit_joint_status,
                                 zdp_NWK_address_request)
@@ -866,6 +867,11 @@ class BasePlugin:
         reconcile_ieee_nwkid(self, nwkid, ieee)
 
 
+    def zigpy_get_all_gp_devices(self):
+        """Return the Green Power device store records, for restoring into zigpy at startup."""
+        return gp_devices_for_zigpy(self)
+
+
     def zigpy_get_all_devices(self):
         """Return all known devices for pre-loading into zigpy.
 
@@ -1317,7 +1323,8 @@ def _start_zigpy_backend(self, backend_key):
         self.HardwareID,
         radio_lib,
         SerialPort,
-        communication_specifics
+        communication_specifics,
+        zigpy_get_all_gp_devices=self.zigpy_get_all_gp_devices,
         )
 
     self.ControllerLink.open_cie_connection()
