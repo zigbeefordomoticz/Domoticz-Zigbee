@@ -198,6 +198,9 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_set_certificate, zigate_set_mode)
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
+from Modules.greenPower import (green_power_widget_command,
+                                green_power_widget_removed,
+                                is_green_power_device_id)
 from Modules.greenPowerStore import gp_devices_for_zigpy
 from Modules.zigpy_preload import device_has_left_the_network
 from Zigbee.zdpCommands import (zdp_get_permit_joint_status,
@@ -795,6 +798,9 @@ class BasePlugin:
 
             self.log.logging("Plugin", "Debug", f"ListOfDevices :After REMOVE {self.ListOfDevices}")
   
+        elif is_green_power_device_id(self, DeviceID):
+            green_power_widget_removed(self, Devices, DeviceID, Unit)
+
         elif self.groupmgt and DeviceID in self.groupmgt.ListOfGroups:
             self.log.logging("Plugin", "Status", f"Request device {DeviceID} to be removed from Group(s)")
             self.groupmgt.FullRemoveOfGroup(Unit, DeviceID)
@@ -966,6 +972,9 @@ class BasePlugin:
             # Command belongs to a Zigate group
             self.log.logging( "Command", "Log", "Command: %s/%s/%s to Group: %s" % (Command, Level, Color, DeviceID), )
             self.groupmgt.processCommand(Unit, DeviceID, Command, Level, Color)
+
+        elif is_green_power_device_id(self, DeviceID):
+            green_power_widget_command(self, DeviceID, Unit, Command)
 
         elif DeviceID.find("Zigate-01-") != -1:
             self.log.logging("Command", "Debug", "onCommand - Command adminWidget: %s " % Command)
