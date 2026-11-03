@@ -122,14 +122,47 @@ def test_upgrade_end_from_another_device_is_ignored(ota, radio, transferring, ad
 
 # ─── stalled transfer ─────────────────────────────────────────────────────────
 
-def test_stalled_transfer_times_out_after_300_seconds(ota, radio, transferring, request_of):
+def test_stalled_transfer_stays_listed_after_300_seconds(ota_module, ota, radio, transferring, request_of):
+    """A stalled transfer is not finished: the device usually resumes (production 2026-10-27, Philips motion sensor 11 times)."""
     request_of(DEVICE_NWKID)["LastBlockSent"] = time.time() - 301
+
+    ota.heartbeat()
+
+    request = request_of(DEVICE_NWKID)
+    assert request["State"] == ota_module.OTA_STALLED
+    assert request["QueuedTime"] >= time.time() - 1
+    assert ota.PluginHealth["Firmware Update"]["Requests"][0]["State"] == "Stalled"
+    assert "no block requested for 300 sec" in ota.adminWidgets.updateNotificationWidget.call_args.args[1]
+
+
+def test_stalled_transfer_resumes_at_its_next_block_request(ota_module, ota, radio, transferring, request_of):
+    request_of(DEVICE_NWKID)["LastBlockSent"] = time.time() - 301
+    ota.heartbeat()
+
+    ota.ota_image_block_request(block_request(offset=0x60))
+
+    request = request_of(DEVICE_NWKID)
+    assert (request["State"], request["intFileOffset"]) == (ota_module.OTA_TRANSFER, 0x60)
+
+
+def test_stalled_transfer_not_resumed_within_24_hours_is_finished(ota_module, ota, radio, transferring, request_of):
+    request_of(DEVICE_NWKID)["LastBlockSent"] = time.time() - 301
+    ota.heartbeat()
+    request_of(DEVICE_NWKID)["QueuedTime"] = time.time() - ota_module.OTA_QUEUE_WAIT - 1
 
     ota.heartbeat()
 
     assert _session_closed(ota)
     assert ota.PluginHealth["Firmware Update"]["Progress"] == "Timeout"
-    assert "no block requested for 300 sec" in ota.adminWidgets.updateNotificationWidget.call_args.args[1]
+    assert "did not resume bulb.ota within 24 hours" in ota.adminWidgets.updateNotificationWidget.call_args.args[1]
+
+
+def test_stalled_transfer_can_be_cancelled(ota_module, ota, radio, transferring, request_of):
+    request_of(DEVICE_NWKID)["LastBlockSent"] = time.time() - 301
+    ota.heartbeat()
+
+    assert ota.cancel_current_firmware_update(DEVICE_NWKID) == [DEVICE_NWKID]
+    assert _session_closed(ota)
 
 
 def test_transfer_in_progress_is_kept(ota, radio, transferring, request_of):
