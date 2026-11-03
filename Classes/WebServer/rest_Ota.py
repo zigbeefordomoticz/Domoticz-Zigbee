@@ -491,10 +491,10 @@ def rest_ota_firmware_update(self, verb, data, parameter):
 
     self.logging("Debug", "rest_ota_firmware_update - data: %s" % (data))
 
-    if self.OTA:
-        self.OTA.restapi_firmware_update(data)
+    # One {"NwkId", "Status", "Reason"} per device: the WebUI can tell which requests were rejected
+    results = self.OTA.restapi_firmware_update(data) if self.OTA else []
 
-    action = {"Name": "OTA requested.", "TimeStamp": int(time())}
+    action = {"Name": "OTA requested.", "TimeStamp": int(time()), "Results": results or []}
     _response["Data"] = json.dumps(action, sort_keys=True)
     return _response
 

@@ -574,16 +574,18 @@ class OTAManagement(object):
                 - "NwkId": str
                 - "Ep": int
                 - "ForceUpdate": bool
+        Returns:
+            list[dict]: one result per request, {"NwkId", "Status": "Started" | "Rejected", "Reason"}
         Note:
             Only one device update at a time is currently supported.
         """
         if not data:
             logging(self, "Warning", "No update data received.")
-            return
+            return []
 
         if len(data) > 1:
             logging(self, "Warning", "Only one device update at a time is supported!")
-            return
+            return [firmware_update_result(update_request.get("NwkId"), "Rejected", "Only one device update at a time is supported") for update_request in data]
 
         # Process the single device update
         update_request = data[0]
@@ -593,11 +595,17 @@ class OTAManagement(object):
         target_ep = update_request.get("Ep")
         force_update = update_request.get("ForceUpdate", False)
 
-        started = firmware_update(self, brand, file_name, target_nwkid, target_ep, force_update)
+        reason = firmware_update_rejection(self, brand, file_name, target_nwkid, target_ep)
+        if reason:
+            return [firmware_update_result(target_nwkid, "Rejected", reason)]
+
+        firmware_update(self, brand, file_name, target_nwkid, target_ep, force_update)
 
         # Allow downgrade if force update is requested, and only for an update that did start
-        if started and force_update:
+        if force_update:
             self.authorized_device_downgrade[target_nwkid] = True
+
+        return [firmware_update_result(target_nwkid, "Started")]
 
 
     def query_next_image_request(self, srcnwkid, srcep, Sqn, Data):
@@ -1187,7 +1195,13 @@ def delay_checking_version(self, NwkId):
             clusters.append(cluster)
 
 
-def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_update=False):
+def firmware_update_result(nwkid, status, reason=None):
+    """One entry of the REST answer to a firmware update request."""
+    return {"NwkId": nwkid, "Status": status, "Reason": reason}
+
+
+def firmware_update_rejection(self, brand, file_name, target_nwkid, target_ep):
+    """Why this firmware update cannot start (the reason is logged), or None if it can."""
 
     if self.ListInUpdate["NwkId"]:
         logging(
@@ -1196,22 +1210,30 @@ def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_updat
             "There is already an Image loaded %s for device: %s please come back later"
             % (self.ListInUpdate["FileName"], self.ListInUpdate["NwkId"]), target_nwkid
         )
-        return False
+        return "Another firmware update is in progress"
 
     if brand not in self.ListOfImages["Brands"]:
         logging(self, "Warning", "restapi_firmware_update Brands %s unknown" % brand, target_nwkid)
-        return False
+        return "Unknown brand"
 
     if file_name not in self.ListOfImages["Brands"][brand]:
         logging(self, "Warning", "restapi_firmware_update FileName %s unknown in this Brand %s" % (file_name, brand), target_nwkid)
-        return False
+        return "Unknown firmware file"
 
     if target_nwkid not in self.ListOfDevices:
         logging(self, "Warning", "restapi_firmware_update NwkId: %s unknown" % target_nwkid, target_nwkid)
-        return False
+        return "Unknown device"
 
     if target_ep not in self.ListOfDevices[target_nwkid]["Ep"]:
         logging(self, "Warning", "restapi_firmware_update NwkId: %s Ep: %s unknown" % (target_nwkid, target_ep), target_nwkid)
+        return "Unknown endpoint"
+
+    return None
+
+
+def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_update=False):
+
+    if firmware_update_rejection(self, brand, file_name, target_nwkid, target_ep):
         return False
 
     image_type = self.ListOfImages["Brands"][brand][file_name]["ImageType"]
