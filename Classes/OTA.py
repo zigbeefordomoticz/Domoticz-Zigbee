@@ -692,6 +692,23 @@ class OTAManagement(object):
                 brand[x].append(image)
         return [brand]
 
+    def restapi_excluded_files(self, nwkid, manuf_code):
+        """The loaded firmware files of this manufacturer code that are never offered to this
+        device because of its model (firmware_file_suits_device), for the WebUI firmware page.
+
+        manuf_code: hex string, as in the ota-firmware-device-list route. [] for most devices.
+        """
+        try:
+            manuf_code = int(manuf_code, 16)
+        except (TypeError, ValueError):
+            return []
+        return sorted(
+            file_name
+            for images in self.ListOfImages.get("Brands", {}).values()
+            for file_name, image in images.items()
+            if image["intManufCode"] == manuf_code and not firmware_file_suits_device(self, nwkid, file_name, image)
+        )
+
 
     def restapi_firmware_update(self, data):
         """
