@@ -377,26 +377,51 @@ def get_device_informations(self, Nwkid):
         swbuild_3 = self.ListOfDevices[Nwkid]["SWBUILD_3"]
     if "SWBUILD_1" in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]["SWBUILD_1"] != {}:
         swbuild_1 = self.ListOfDevices[Nwkid]["SWBUILD_1"]
-    if "OTA" in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]["OTA"] not in ( '', {} ):
-        prev_ts = 0
+    # Classes/OTA.py records each completed upgrade under "OTAUpgrade" ({timestamp: {Time, Version, Type}});
+    # "OTA" is only read as a fallback for older device entries.
+    upgrades = self.ListOfDevices[Nwkid].get("OTAUpgrade") or self.ListOfDevices[Nwkid].get("OTA")
+    if isinstance(upgrades, dict) and upgrades:
+        latest = upgrades[max(upgrades, key=int)]
+        time_update = latest.get("Time", "")
+        LastImageVersion = latest.get("Version", "")
+        LastImageType = latest.get("Type", "")
 
-        for ts in self.ListOfDevices[Nwkid]["OTA"]:
-            if int(ts) > int(prev_ts):
-                time_update = self.ListOfDevices[Nwkid]["OTA"][ts]["Time"]
-                LastImageVersion = self.ListOfDevices[Nwkid]["OTA"][ts]["Version"]
-                LastImageType = self.ListOfDevices[Nwkid]["OTA"][ts]["Type"]
-                prev_ts = int(ts)
+    # What the device reported in its last Query Next Image Request
+    ota_client = self.ListOfDevices[Nwkid].get("OTAClient", {})
+    image_type = _hex_field(ota_client.get("ImageType"), 4)
+    current_version = _hex_field(ota_client.get("CurrentImageVersion"), 8)
 
     return {
         "Nwkid": Nwkid,
         "Ep": ep,
         "DeviceName": device_name,
-        "SWBUILD_1": swbuild_3,
-        "SWBUILD_3": swbuild_1,
+        "SWBUILD_1": swbuild_1,
+        "SWBUILD_3": swbuild_3,
         "LastUpdate": time_update,
         "LastUpdateVersion": LastImageVersion,
         "LastImageType": LastImageType,
+        # Names read by the WebUI (Domoticz-Zigbee-UI src/app/shared/models/firmware.ts)
+        "OTALastTime": time_update,
+        "OTAVersion": LastImageVersion,
+        "OTAType": LastImageType,
+        "ImageType": image_type,
+        "CurrentFileVersion": current_version,
     }
+
+def _hex_field(value, width):
+    """An OTAClient field as upper-case hex, "" if missing or unreadable.
+
+    Classes/OTA.py stores integers; device entries written by the former ZiGate
+    code (Modules/inRawAps.py) still hold hex strings such as "2203".
+    """
+    if isinstance(value, str):
+        try:
+            value = int(value, 16)
+        except ValueError:
+            return ""
+    if not isinstance(value, int):
+        return ""
+    return "%0*X" % (width, value)
 
 
 def fake_rest_ota_devices_for_manufcode():
@@ -458,7 +483,9 @@ def rest_ota_firmware_update(self, verb, data, parameter):
     # Check
     for x in data:
         if "Brand" not in x or "FileName" not in x or "NwkId" not in x or "Ep" not in x or "ForceUpdate" not in x:
-            self.logging("Error", "rest_ota_firmware_update - Missing key parameters  %s " % (data))
+            _context = {"Error code": "OTA0401", "Request": x}
+            if self.log:
+                self.log.logging("WebServer", "Error", "rest_ota_firmware_update - Missing key parameters  %s " % (data), x.get("NwkId") if isinstance(x, dict) else None, _context)
             _response["Data"] = json.dumps({"Error": "Missing attributes"}, sort_keys=True)
             return _response
 

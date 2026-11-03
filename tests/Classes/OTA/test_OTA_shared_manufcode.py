@@ -46,6 +46,8 @@ _OTA_DEPS = {
     "Modules.tools": dict(get_device_nickname=MagicMock(name="get_device_nickname")),
     "Modules.zigateConsts": dict(ADDRESS_MODE={"short": 2, "ieee": 3, "group": 4}, ZIGATE_EP="01"),
     "Zigbee.zclRawCommands": dict(
+        zcl_raw_default_response=MagicMock(name="zcl_raw_default_response"),
+        zcl_raw_ota_image_block_response_abort=MagicMock(name="zcl_raw_ota_image_block_response_abort"),
         zcl_raw_ota_image_block_response_success=MagicMock(name="zcl_raw_ota_image_block_response_success"),
         zcl_raw_ota_image_notify=MagicMock(name="zcl_raw_ota_image_notify"),
         zcl_raw_ota_query_next_image_response=MagicMock(name="zcl_raw_ota_query_next_image_response"),
@@ -174,7 +176,7 @@ def test_two_vendors_sharing_a_code_both_load(ota_module, scanner):
     })
 
     brand = "Eurotronic-LiXee-Lumi"
-    assert images["ImageType"][0x0101] == brand
+    assert images["ImageType"][(0x1037, 0x0101)] == brand
     assert list(images["Brands"][brand]) == ["zlinky.ota"]
     assert images["Brands"][brand]["zlinky.ota"]["originalVersion"] == 0x00000009
 
@@ -189,7 +191,7 @@ def test_distinct_image_types_under_a_shared_code_all_load(ota_module, scanner):
 
     brand = "Eurotronic-LiXee-Lumi"
     assert set(images["Brands"][brand]) == {"euro.ota", "zlinky.ota", "lumi.ota"}
-    assert {0x0101, 0x0202, 0x0303} <= set(images["ImageType"])
+    assert {(0x1037, 0x0101), (0x1037, 0x0202), (0x1037, 0x0303)} <= set(images["ImageType"])
 
 
 def test_legacy_per_vendor_folders_are_still_scanned(ota_module, scanner):

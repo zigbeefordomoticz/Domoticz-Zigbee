@@ -9,7 +9,7 @@ top-level conftest stubs nor the other test modules are disturbed.
 Fixtures:
     ota_module  the imported Classes.OTA module
     radio       fresh mocks for every outbound call of Classes.OTA
-                (zcl_raw_ota_*, sendZigateCmd), patched per test
+                (zcl_raw_*, sendZigateCmd), patched per test
     ota         an OTAManagement built by its real __init__: no internet,
                 an empty firmware folder under tmp_path, zigpy (raw) mode,
                 and one OTA-capable device "1234" in ListOfDevices
@@ -40,6 +40,8 @@ _OTA_DEPS = {
     "Modules.tools": dict(get_device_nickname=MagicMock(name="get_device_nickname", return_value="Bulb")),
     "Modules.zigateConsts": dict(ADDRESS_MODE={"short": 2, "ieee": 3, "group": 4}, ZIGATE_EP="01"),
     "Zigbee.zclRawCommands": dict(
+        zcl_raw_default_response=MagicMock(name="zcl_raw_default_response"),
+        zcl_raw_ota_image_block_response_abort=MagicMock(name="zcl_raw_ota_image_block_response_abort"),
         zcl_raw_ota_image_block_response_success=MagicMock(name="zcl_raw_ota_image_block_response_success"),
         zcl_raw_ota_image_notify=MagicMock(name="zcl_raw_ota_image_notify"),
         zcl_raw_ota_query_next_image_response=MagicMock(name="zcl_raw_ota_query_next_image_response"),
@@ -48,6 +50,8 @@ _OTA_DEPS = {
 }
 
 _RADIO_CALLS = (
+    "zcl_raw_default_response",
+    "zcl_raw_ota_image_block_response_abort",
     "zcl_raw_ota_image_block_response_success",
     "zcl_raw_ota_image_notify",
     "zcl_raw_ota_query_next_image_response",
