@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+The mandatory rules are in `AGENTS.md`. It is imported here, so it loads with this
+file in every session; this file is the technical detail behind it.
+
+@AGENTS.md
+
 ## Project Overview
 
 **Zigbee for Domoticz** is a production-grade Python plugin that integrates Zigbee devices into the Domoticz home automation system using the `zigpy` library and multiple Zigbee radio backends (ZNP, EZSP/Bellows, deCONZ, BLZ).
@@ -61,35 +66,10 @@ plugin.py (entry point, ~2000 lines)
 
 ## Critical Architecture Constraints
 
-### From AGENTS.md (Must Follow)
-
-**Stability Requirements:**
-- No breaking changes to stable9 branch
-- Preserve long-term backward compatibility
-- No persistent data format changes without migration
-- Upgrades must remain safe
-
-**Zigbee/zigpy Safety:**
-- Never block the event loop (no `time.sleep()`, blocking I/O)
-- No independent event loops or uncontrolled threads
-- Respect async patterns; reuse existing schedulers
-- Radio backend differences must be handled generically
-
-**Device Handling:**
-- Device behavior comes from z4d-certified-devices JSON configs
-- Avoid hardcoding device-specific logic unless unavoidable
-- Never break existing certified device support
-
-**Architecture Rules:**
-- `plugin.py` remains orchestration-only (thin entry point)
-- Core logic lives in `Modules/` and `Zigbee/`
-- No UI code here (UI lives in separate Domoticz-Zigbee-UI repository)
-- No new independent threads without explicit approval
-
-**Environment:**
-- Python >= 3.11
-- Domoticz >= 2025.2 (2025.1 minimum)
-- Target stable9 branch for production changes
+The mandatory constraints (stability, zigpy safety, device handling, architecture,
+environment) are the "Agent Quick Checklist" in `AGENTS.md`, imported at the top of
+this file. One rule this file adds: no new independent threads without explicit
+approval.
 
 ## Development Workflow
 
@@ -351,7 +331,7 @@ boilerplate) → a per-backend risk/test-plan checklist → files changed / comm
 ## Guidelines
 
 **Before Proposing Changes:**
-- Read and follow AGENTS.md (mandatory)
+- Follow AGENTS.md, imported at the top of this file (mandatory)
 - Ensure changes are backward compatible (stable9 requirement)
 - No blocking calls in Zigpy thread
 - Test with `pytest . && flake8 .`
@@ -360,36 +340,15 @@ boilerplate) → a per-backend risk/test-plan checklist → files changed / comm
 - Avoid hardcoding device behavior; use certified configs
 - One PR = one change (see "Pull Request Scope" below)
 
-**Pull Request Scope — one PR, one feature:**
-
-A PR must carry **one** feature or **one** bug fix. Several commits are fine, as long
-as every commit serves that single change. A PR bundling unrelated changes is sent
-back to be split, before its code is reviewed — on `stable9` this is a safety control,
-not a style preference: a bundled PR cannot be reviewed attentively, cannot be
-reverted on its own when it misbehaves in the field, and collapses `git bisect` onto
-one merge point instead of the real culprit. See AGENTS.md →
-"Pull Request Discipline — One PR, One Change" for the full rule and the
-acceptable/must-split table.
-
-When reviewing or authoring a PR here:
+**Pull Request Scope:** the rule, its reasons, the acceptable/must-split table and the
+changes that always get their own PR are in AGENTS.md → "Pull Request Discipline —
+One PR, One Change". On top of it, when reviewing or authoring a PR here:
 - Scope first: if the diff has more than one reason to change, say so and propose the split before reviewing line by line.
-- One change = one reason to change. Parts that would be separate release-note items are separate PRs.
-- Always its own PR, however small the diff: a user-visible default in `Classes/PluginConf.py` (state the migration impact on existing installs — defaults are the base layer that stored values override, so flipping one silently changes behaviour for every user who never set it); a `constraints.txt`/`requirements.txt` bump; a `.github/` CI change; a persistent-data-format or device-DB schema change; plugin lifecycle or zigpy thread management.
-- Fill in the PR template. An empty template is an incomplete PR.
-- Never leave the old line commented out beside the new one — git history already holds it.
+- A user-visible default in `Classes/PluginConf.py`: defaults are the base layer that stored values override, so flipping one silently changes behaviour for every user who never set it. State that impact in the PR.
 - Check the change against the open PRs before writing it: a fix already addressed by an open PR should be closed as superseded, not merged twice (e.g. two PRs both fixing the same `Modules/database.py` deque serialization).
-- Do not merge a bundle "because most of it is fine", and do not cherry-pick the good hunks into an integration branch while leaving the PR open misrepresenting what was merged.
 
-**Release Notes — every release section opens with its PR list and contributors:**
-
-A release section in `ReleaseNotes.md` starts with `Pull requests in this release: #..., #...`
-(ascending, excluding the release PR itself) and `Contributors: @handle (N commits), ...`,
-before the `[Feature]`/`[Issue]`/`[Technical]` bullets. Build the PR list from the history —
-merge subjects, or `gh api repos/zigbeefordomoticz/Domoticz-Zigbee/commits/<sha>/pulls` —
-never from the bullets, which mix issue and PR numbers. Build contributors from
-`git shortlog -sne --no-merges <prev tag>..HEAD`, deduped by email, bots excluded, and add by
-hand anyone whose PR was superseded or re-authored: git holds no record of them. See
-AGENTS.md → "Release Notes — PR List and Contributors".
+**Release Notes:** every release section opens with its PR list and contributors. How
+to build both is in AGENTS.md → "Release Notes — PR List and Contributors".
 
 **Commit Message Style:**
 - Follow existing patterns (see recent commits)
