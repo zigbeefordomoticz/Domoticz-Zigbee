@@ -245,6 +245,21 @@ def test_hardware_version_inside_the_range_or_not_sent(ota, radio, install_image
     assert _response(radio) == (0x00, 0x117C, 0x2203, IMAGE_VERSION, image["intSize"])
 
 
+def test_hardware_version_refusal_is_logged_once(ota_module, ota, radio, install_image, monkeypatch):
+    """A device asks every few minutes (Schneider thermostat, production 2026-10-27: every 5 min)."""
+    install_image("Ikea", "bulb.ota", make_ota_image(version=IMAGE_VERSION, field_control=0x04, min_hw=0x0200, max_hw=0x0300))
+    ota.pluginconf.pluginConf["autoServeOTA"] = True
+    levels = []
+    monkeypatch.setattr(ota_module, "logging", lambda self, level, message, *args: levels.append(level) if "not offered" in message else None)
+
+    _query(ota, hw_version=0x0100)
+    _query(ota, hw_version=0x0100)
+    _query(ota, hw_version=0x0400)
+
+    assert levels == ["Log", "Debug", "Log"]
+    assert [call.args[5:] for call in radio.zcl_raw_ota_query_next_image_response.call_args_list] == [(NO_IMAGE_AVAILABLE,)] * 3
+
+
 def test_hardware_version_is_checked_on_a_forced_update_too(ota_module, ota, radio, install_image):
     install_image("Ikea", "bulb.ota", make_ota_image(version=IMAGE_VERSION, field_control=0x04, min_hw=0x0200, max_hw=0x0300))
     _queue(ota_module, ota, force=True)
