@@ -81,7 +81,16 @@ def gp_types():
 
 
 @pytest.fixture
-def decoder():
+def widget_updates(monkeypatch):
+    """Stands in for Modules.greenPowerWidgets (tested in tests/Modules/test_greenPower_widgets.py)."""
+    calls = []
+    monkeypatch.setitem(sys.modules, "Modules.greenPowerWidgets", SimpleNamespace(
+        update_gp_widgets=lambda self, Devices, ieee, command_id: calls.append((ieee, command_id))))
+    return calls
+
+
+@pytest.fixture
+def decoder(widget_updates):
     sys.modules.pop("Z4D_decoders.z4d_decoder_Green_Power", None)
     return importlib.import_module("Z4D_decoders.z4d_decoder_Green_Power")
 
@@ -272,3 +281,45 @@ class TestHandOverToZigpy:
 
     def test_no_store_hands_over_nothing(self, gp_store_module):
         assert gp_store_module.gp_devices_for_zigpy(SimpleNamespace()) == []
+
+
+class TestWidgets:
+
+    def test_commissioning_queues_widget_creation(self, decoder, helpers, plugin, transport, gp_types):
+        GreenPowerListener(transport).device_initialized(make_gpd(transport, gp_types))
+
+        decode_last(helpers, decoder, plugin, transport)
+
+        assert plugin.gp_widget_creation_requests == {IEEE_HEX}
+
+    def test_commissioned_again_keeps_its_widgets(self, decoder, helpers, plugin, transport, gp_types):
+        listener = GreenPowerListener(transport)
+        listener.device_initialized(make_gpd(transport, gp_types))
+        decode_last(helpers, decoder, plugin, transport)
+        plugin.store.records[IEEE_HEX].update({"Model": "GreenPower-OnOff", "Ep": {"01": {"ClusterType": {"7": "Switch"}}}})
+
+        listener.device_reinterviewed(make_gpd(transport, gp_types, key=NEW_KEY))
+        decode_last(helpers, decoder, plugin, transport)
+
+        record = plugin.store.records[IEEE_HEX]
+        assert record["Ep"] == {"01": {"ClusterType": {"7": "Switch"}}} and record["Model"] == "GreenPower-OnOff"
+        assert record["security_key"] == NEW_KEY.hex()
+
+    def test_command_updates_the_widgets(self, decoder, helpers, plugin, transport, gp_types, widget_updates):
+        dev = make_gpd(transport, gp_types)
+        GreenPowerListener(transport).device_initialized(dev)
+        decode_last(helpers, decoder, plugin, transport)
+
+        press(dev, 1235, command_id=0x21)
+        decode_last(helpers, decoder, plugin, transport)
+
+        assert widget_updates == [(IEEE_HEX, 0x21)]
+
+    def test_command_from_unknown_device_updates_nothing(self, decoder, helpers, plugin, transport, gp_types, widget_updates):
+        dev = make_gpd(transport, gp_types)
+        GreenPowerListener(transport).attach(dev)
+
+        press(dev, 7)
+        decode_last(helpers, decoder, plugin, transport)
+
+        assert widget_updates == []

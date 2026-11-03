@@ -76,6 +76,23 @@ def gp_devices_for_zigpy(self):
     return list(store.snapshot().values())
 
 
+GP_WIDGET_CREATION_REQUESTS = "gp_widget_creation_requests"
+
+
+def request_gp_widget_creation(self, ieee):
+    """
+    Queue the widget creation of a GPD. Decoders run on the forwarder thread;
+    the creation is carried out from the heartbeat by
+    Modules/greenPowerWidgets.process_gp_widget_creation_requests(), as
+    process_widget_creation_requests() does for Zigbee devices.
+    """
+    queued = getattr(self, GP_WIDGET_CREATION_REQUESTS, None)
+    if queued is None:
+        queued = set()
+        setattr(self, GP_WIDGET_CREATION_REQUESTS, queued)
+    queued.add(ieee)
+
+
 def request_gp_store_flush(self):
     """
     Have the store written at the next heartbeat, with the device list.
