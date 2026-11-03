@@ -1256,7 +1256,6 @@ class WebServer(object):
                 if "Device" in device_infos:
                     device_infos["DeviceConfInfo"] = device_conf_info(self.DeviceConf, device_infos["Device"].get("Model"))
 
-                _response["Data"] = json.dumps(device_infos, sort_keys=False)
                 _response["Data"] = json.dumps(device_infos, sort_keys=False, cls=ZigbeeJSONEncoder)
 
         return _response
