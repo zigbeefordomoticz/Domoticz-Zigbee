@@ -46,6 +46,9 @@ DEFAULT_DEVICE_SETUP = {
     "Stamp": {},
     "ZCL Version": "",
     "Health": "unknown",
+    # Frames received since the plugin start (Zigbee/decode8002.py), not loaded back from the database
+    "ReceivedZDO": 0,
+    "ReceivedZCL": 0,
 }
 
 
