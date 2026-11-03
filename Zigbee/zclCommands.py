@@ -332,6 +332,18 @@ def zcl_onoff_on(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE):
     return send_zigatecmd_zcl_ack(self, nwkid, "0092", data)
 
 
+def zcl_onoff_on_with_timed_off(self, nwkid, EPout, on_time, off_wait_time=0, ackIsDisabled=DEFAULT_ACK_MODE):
+    """Send On With Timed Off (0x0006 / 0x42). on_time and off_wait_time are sent as given:
+    1/10 s for ZCL compliant devices, seconds for a Tuya countdown. Raw (zigpy) mode only:
+    returns None without sending anything otherwise."""
+    self.log.logging("zclCommand", "Debug", "zcl_onoff_on_with_timed_off %s %s on_time: %s off_wait_time: %s" % (nwkid, EPout, on_time, off_wait_time), nwkid)
+    zcl_command_formated_logging( self, "OnWithTimedOff", nwkid, EPout, "0006", on_time, off_wait_time, ackIsDisabled)
+
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
+        return raw_zcl_zcl_onoff(self, nwkid, ZIGATE_EP, EPout, "OnWithTimedOff", groupaddrmode=False, ackIsDisabled=ackIsDisabled, on_time=on_time, off_wait_time=off_wait_time)
+    return None
+
+
 def zcl_onoff_off_noeffect(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "off_noeffect %s %s" % (nwkid, EPout), nwkid)
     zcl_command_formated_logging( self, "Off_noEffect", nwkid, EPout, "0006", ackIsDisabled)
