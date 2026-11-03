@@ -10,6 +10,7 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
+import ast
 import json
 from time import time
 
@@ -56,14 +57,17 @@ def rest_get_device_param( self, parameters):
 def rest_update_device_param(self, data):
 
     # curl -X PUT -d '{
-    #   "Param": {'Disabled': 0, 'resetMotiondelay': 0, 'ConfigurationReportChunk': 3, 'ReadAttributeChunk': 4},
+    #   "Param": {"Disabled": 0, "resetMotiondelay": 0, "ConfigurationReportChunk": 3, "ReadAttributeChunk": 4},
     #   "NWKID": "1234"
     # }' http://127.0.0.1:9441/rest-z4d/1/device-param
 
     _response = prepResponseMessage(self, setupHeadersResponse())
 
-    data = data.decode("utf8")
-    data = eval(data)  # nosec B307
+    body = data
+    data = _decode_body(body)
+    if data is None:
+        return _log_and_return_with_error(
+            self, "rest_update_device_param - expecting a JSON object, got: %s" % (body, ), _response)
     self.logging( "Log", "rest_update_device_param - Data: %s" % data)
 
     parameter = data.get("Param")
@@ -77,7 +81,7 @@ def rest_update_device_param(self, data):
     if ieee:
         nwkid = self.IEEE2NWK.get( ieee )
 
-    if parameter is None or nwkid is None:
+    if not isinstance(parameter, dict) or nwkid is None:
         return _log_and_return_with_error(
             self, "rest_update_device_param - unexpected parameter: %s" % (data, ), _response)
     if nwkid not in self.ListOfDevices:
@@ -91,6 +95,25 @@ def rest_update_device_param(self, data):
     sanity_check_of_param(self, nwkid)
 
     return _response
+
+
+def _decode_body(data):
+    """PUT body as a dict: JSON, or the Python literal the endpoint took before (parsed, never executed)."""
+
+    try:
+        data = data.decode("utf8")
+    except (AttributeError, UnicodeDecodeError):
+        return None
+
+    try:
+        value = json.loads(data)
+    except json.JSONDecodeError:
+        try:
+            value = ast.literal_eval(data)
+        except (ValueError, SyntaxError, TypeError, MemoryError, RecursionError):
+            return None
+
+    return value if isinstance(value, dict) else None
 
 
 def _log_and_return_with_error(self, message, _response):
