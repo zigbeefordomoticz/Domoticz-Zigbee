@@ -321,12 +321,28 @@ class OTAManagement(object):
         self.zigbee_ota_found_in_index = []
         self.local_image_available_logged = set()
         self.once = True
-        
+        # Signature of the firmware folders at the last scan, see ota_folder_signature()
+        self.firmware_folders_signature = None
+
         # Load Zigbee OTA index and scan the folder
         loading_zigbee_ota_index( self )
         logging(self, "Debug", "zigbee_ota_index: %s" %self.zigbee_ota_index)
         ota_scan_folder(self)
 
+
+    def rescan_firmware_folders(self):
+        """Reload the firmware files if the folders changed since the last scan.
+
+        Called when the WebUI asks for the firmware list: a file dropped into OTAFirmware/
+        shows up without restarting the plugin. Returns True when the folders were rescanned.
+        A transfer in progress keeps serving the image bytes it started with.
+        """
+        if ota_folder_signature(self) == self.firmware_folders_signature:
+            return False
+
+        logging(self, "Status", "The OTA firmware folders changed: firmware images reloaded")
+        ota_scan_folder(self)
+        return True
 
     def cancel_current_firmware_update(self, nwkid=None):
         """Drop the OTA request of a device, or every request."""
@@ -1529,18 +1545,22 @@ def retrieve_image_in_a_brand(self, image_type, brand, manuf_code=None):
     )
 
 
-def retrieve_image(self, image_type, manuf_code=None, exact=False):
+def retrieve_image(self, image_type, manuf_code=None, exact=False, images=None):
     """(brand, file name) of the loaded image for this image type, or None.
+
+    images: the image list to look in, self.ListOfImages by default (the folder scan
+    passes the list it is building).
 
     Image types are manufacturer specific (ZCL rev 8 11.4.2.6): the image whose
     manufacturer code matches manuf_code wins. Without such a match, the only image of
     that type is still returned (as before, e.g. the Legrand 0x00C8 requests patched in
     initialize_block_request), unless several manufacturers use the type or exact is set.
     """
+    images = self.ListOfImages if images is None else images
     candidates = [
         (brand, image, info)
-        for brand, images in self.ListOfImages.get("Brands", {}).items()
-        for image, info in images.items()
+        for brand, brand_images in images.get("Brands", {}).items()
+        for image, info in brand_images.items()
         if info.get("ImageType") == image_type
     ]
     if manuf_code is not None:
@@ -1557,13 +1577,19 @@ def ota_scan_folder(self):  # OK 13/10
     # have been read , decoded and key informations stored in ListOfImages
     # ListOfImages have 2 entries either from brand or from Image Type
 
-    self.ListOfImages["Brands"] = {}
-    self.ListOfImages["ImageType"] = {}   # (manufacturer code, image type) -> brand
+    # The list is built aside and swapped in at the end: a rescan from the WebUI runs in the
+    # web server thread, and a device asking for its image meanwhile must see the old list or
+    # the new one, never a partial one.
+    signature = ota_folder_signature(self)
+    images = {
+        "Brands": {},
+        "ImageType": {},   # (manufacturer code, image type) -> brand
+    }
     for brand in OTA_CODES:
         if not OTA_CODES[brand]["Enabled"]:
             continue
         
-        self.ListOfImages["Brands"][brand] = {}
+        images["Brands"][brand] = {}
         for subfolder in ota_brand_folders(OTA_CODES[brand]):
             ota_dir = self.pluginconf.pluginConf["pluginOTAFirmware"] + "/" + subfolder
             # Check the folder exist
@@ -1587,19 +1613,19 @@ def ota_scan_folder(self):  # OK 13/10
                 image_key = (headers["manufacturer_code"], image_type)
 
                 # Check if this Image is the latest version.
-                if image_key in self.ListOfImages["ImageType"] and not check_image_valid_version(
-                    self, brand, image_type, ota_image_file, headers
+                if image_key in images["ImageType"] and not check_image_valid_version(
+                    self, images, brand, image_type, ota_image_file, headers
                 ):
                     # Most likely we have a more higher version already loaded!
                     continue
 
                 # Check if the same manufacturer code and image type are not used by another brand
-                if image_key in self.ListOfImages["ImageType"] and self.ListOfImages["ImageType"][image_key] != brand:
+                if image_key in images["ImageType"] and images["ImageType"][image_key] != brand:
                     logging(self, "Warning", "ota_scan_folder Firmware %s not loaded, another firmware with the same ImageType and another brand is already loaded" %ota_image_file)
                     continue
 
-                self.ListOfImages["ImageType"][image_key] = brand
-                self.ListOfImages["Brands"][brand][ota_image_file] = {
+                images["ImageType"][image_key] = brand
+                images["Brands"][brand][ota_image_file] = {
                     "Directory": ota_dir,
                     "Process": False,
                     "ImageType": image_type,
@@ -1610,6 +1636,9 @@ def ota_scan_folder(self):  # OK 13/10
                     "intImageVersion": headers["image_version"],
                     "intSize": headers["image_size"],
                 }
+    self.ListOfImages = images
+    self.firmware_folders_signature = signature
+
     # Check if there are any firmware images loaded
     if self.ListOfImages:
         logging(self, "Status", "Z4D loads the firmware images")
@@ -1620,11 +1649,39 @@ def ota_scan_folder(self):  # OK 13/10
                 logging(self, "Status", " --> Brand: %s Image File: %s" % (brand, ota_image_file))
 
 
-def check_image_valid_version(self, brand, image_type, ota_image_file, headers):  # OK 13/10
+def ota_folder_signature(self):
+    """(path, size, modification time) of every file in the firmware folders, sorted.
+
+    It changes when a firmware file is added, removed or replaced: the WebUI rescans the
+    folders only then (rescan_firmware_folders), so opening the firmware page does not
+    reread every image nor log them all again.
+    """
+    files = set()
+    for brand in OTA_CODES:
+        if not OTA_CODES[brand]["Enabled"]:
+            continue
+        for subfolder in ota_brand_folders(OTA_CODES[brand]):
+            ota_dir = self.pluginconf.pluginConf["pluginOTAFirmware"] + "/" + subfolder
+            if not exists(ota_dir):
+                continue
+            for name in listdir(ota_dir):
+                path = join(ota_dir, name)
+                if not isfile(path):
+                    continue
+                try:
+                    stat = os.stat(path)
+                    files.add((path, stat.st_size, stat.st_mtime_ns))
+                except OSError:
+                    files.add((path, None, None))
+    return tuple(sorted(files, key=lambda entry: entry[0]))
+
+
+def check_image_valid_version(self, images, brand, image_type, ota_image_file, headers):  # OK 13/10
     # Purpose is to check if the already imported image has a higher version or not.
     # If the version number is the same we will take the existing one
+    # images: the image list the folder scan is building
 
-    existing_image = retrieve_image(self, image_type, headers["manufacturer_code"], exact=True)
+    existing_image = retrieve_image(self, image_type, headers["manufacturer_code"], exact=True, images=images)
     if existing_image is None:
         # Strange
         return False
@@ -1633,7 +1690,7 @@ def check_image_valid_version(self, brand, image_type, ota_image_file, headers):
     if brand != brand_image:
         return True
 
-    existing_image = self.ListOfImages["Brands"][brand][ota_image_file]
+    existing_image = images["Brands"][brand][ota_image_file]
     if existing_image["originalVersion"] >= headers["image_version"]:
         # The up coming Image is older than the one already scaned
         # drop it
@@ -1641,7 +1698,7 @@ def check_image_valid_version(self, brand, image_type, ota_image_file, headers):
     # Existing Image is an older version comparing to what we load.
     # Overwrite with the new one.
     # Remove the old ota_image_file and replace by the new one
-    del self.ListOfImages["Brands"][brand][ota_image_file]
+    del images["Brands"][brand][ota_image_file]
     return True
 
 
