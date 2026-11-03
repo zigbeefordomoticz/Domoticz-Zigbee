@@ -268,6 +268,84 @@ def ota_brand_folders(ota_code_entry):
     return [folder] if isinstance(folder, str) else list(folder)
 
 
+# Schneider Electric Wiser Heat legacy devices (Model "EH-ZB-*"). Schneider's firmware package
+# (OTADEF.xml of package WU.EH.R.04.05.08) names the firmware file of each model. The files share
+# manufacturer code 0x105E with the current Wiser range, and the image type does not tell one
+# model from another, so a legacy device is offered only the files listed for its model, and those
+# files (and any other "EH_*" file) are offered to no other device. Files are listed in the
+# package's batch order: the Zigbee stack image (SNP) before the application image.
+# EH-ZB-NANO (the hub, USB .tar image) is not an OTA client.
+WISER_LEGACY_MANUF_CODE = 0x105E
+WISER_LEGACY_MODEL_PREFIX = "EH-ZB-"
+WISER_LEGACY_FILE_PREFIX = "EH_"
+WISER_LEGACY_OTA_FILES = {
+    "EH-ZB-RTS": ("EH_ZB_SNP_R_04_01_14_RTS.zigbee", "EH_RTS_R_04_01_00.zigbee"),
+    "EH-ZB-HACT": ("EH_ZB_SNP_R_04_01_14_HACT.zigbee", "EH_HAC_R_04_01_02.zigbee"),
+    "EH-ZB-LMACT": ("EH_ZB_SNP_R_04_01_14_LACT.zigbee", "EH_LAC_R_04_01_02.zigbee"),
+    "EH-ZB-SPD-V2": ("EH_PZA_R_03_02_64.zigbee", "EH_PMA_R_03_00_26.zigbee"),
+    "EH-ZB-SPD": ("EH_ZB_SNP_R_04_01_14_SPD.zigbee", "EH_SPD_R_04_01_02.zigbee"),
+    "EH-ZB-UIO": ("EH_UIO_R_04_01_18.zigbee",),
+    "EH-ZB-ECOBUTTON": ("EH_ZB_SNP_R_04_01_14_ECO.zigbee", "EH_ECO_R_03_03_12.zigbee"),
+    "EH-ZB-BMS": ("EH_ZB_SNP_R_04_01_14_BMS.zigbee", "CTC.R.03.00.10.zigbee"),
+    "EH-ZB-VACT": ("EH_ZB_SNP_R_04_01_14_VACT.zigbee", "EH_VAC_R_04_00_02.zigbee"),
+}
+_WISER_LEGACY_FILE_NAMES = {file_name.casefold() for files in WISER_LEGACY_OTA_FILES.values() for file_name in files}
+
+
+def is_wiser_legacy_file(file_name):
+    """True for a firmware file of the Wiser Heat legacy devices (listed in OTADEF.xml, or named EH_*)."""
+    name = file_name.casefold()
+    return name.startswith(WISER_LEGACY_FILE_PREFIX.casefold()) or name in _WISER_LEGACY_FILE_NAMES
+
+
+def wiser_legacy_files_of_model(model):
+    """The firmware files of a Wiser Heat legacy model, in install order; () for an EH-ZB-* model
+    without firmware file; None when the model is not a Wiser Heat legacy one."""
+    if not isinstance(model, str) or not model.startswith(WISER_LEGACY_MODEL_PREFIX):
+        return None
+    return WISER_LEGACY_OTA_FILES.get(model, ())
+
+
+def firmware_file_suits_device(self, nwkid, file_name, image):
+    """False when this firmware file must never go to this device because of its model:
+    a Wiser Heat legacy device (EH-ZB-*) takes only the files of its model, the legacy files go
+    to no other device, and a device whose model is not known yet takes no Schneider file."""
+    model = self.ListOfDevices.get(nwkid, {}).get("Model")
+    if not isinstance(model, str) or model in ("", "Unknown"):
+        return image["intManufCode"] != WISER_LEGACY_MANUF_CODE and not is_wiser_legacy_file(file_name)
+
+    legacy_files = wiser_legacy_files_of_model(model)
+    if legacy_files is None:
+        return not is_wiser_legacy_file(file_name)
+    return file_name.casefold() in {name.casefold() for name in legacy_files}
+
+
+def images_in_offer_order(self, nwkid):
+    """(brand, file name) of the loaded images this device may be offered, in the order they are
+    tried: the files of its model in install order for a Wiser Heat legacy device, every image
+    but the legacy files otherwise."""
+    brands = self.ListOfImages.get("Brands", {})
+    legacy_files = wiser_legacy_files_of_model(self.ListOfDevices.get(nwkid, {}).get("Model"))
+    if legacy_files is not None:
+        loaded = {(file_name.casefold()): (brand, file_name) for brand, images in brands.items() for file_name in images}
+        return [loaded[name.casefold()] for name in legacy_files if name.casefold() in loaded]
+
+    return [
+        (brand, file_name)
+        for brand, images in brands.items()
+        for file_name, image in images.items()
+        if firmware_file_suits_device(self, nwkid, file_name, image)
+    ]
+
+
+def brand_and_file_of_image(self, image):
+    """(brand, file name) of a loaded image, or None."""
+    return next(
+        ((brand, file_name) for brand, images in self.ListOfImages.get("Brands", {}).items() for file_name, info in images.items() if info is image),
+        None,
+    )
+
+
 class OTAManagement(object):
 
 
@@ -701,7 +779,8 @@ class OTAManagement(object):
 
             elif request is None and self.pluginconf.pluginConf.get("autoServeOTA", False) and "IEEE" in self.ListOfDevices[srcnwkid]:
                 # autoServeOTA: the device that asks is queued, and served now if a slot is free
-                brand, file_name = retrieve_image(self, imagetype, manufcode, exact=True)
+                # The file selected for this device, not the first one of this image type
+                brand, file_name = brand_and_file_of_image(self, image_found)
                 request = new_ota_request(self, srcnwkid, srcep, brand, file_name, auto_serve=True)
                 self.ota_requests[request["IEEE"]] = request
                 logging(self, "Debug", f"OTA Query Next Image request - autoServeOTA queues {srcnwkid} for {file_name}", srcnwkid)
@@ -760,7 +839,8 @@ def log_local_image_available(self, nwkid, manufcode, imagetype, current_version
         return
     self.local_image_available_logged.add(key)
 
-    entry = retrieve_image(self, imagetype, manufcode, exact=True)
+    # The file selected for this device, not the first one of this image type
+    entry = brand_and_file_of_image(self, image)
     file_name = entry[1] if entry else f"0x{manufcode:04X}/0x{imagetype:04X}"
     logging(self, "Status", "Firmware %s (version 0x%08X) is available for %s [%s], which runs version 0x%08X: start the update from the WebUI" % (
         file_name, image["originalVersion"], ota_device_name(self, nwkid), nwkid, current_version), nwkid)
@@ -906,7 +986,7 @@ def notify_ota_request(self, request):
     request.update({"NwkId": nwkid, "State": OTA_NOTIFYING, "Retry": 0, "NotifiedTimeStamp": time.time(), "Progress": "Notified"})
     logging(self, "Status", "Firmware update started for %s with %s: the device is notified (%s)" % (
         nwkid, request["FileName"], ota_queue_summary(self)), nwkid)
-    ota_load_image_to_zigate(self, request["intImageType"], request["ImageVersion"] if request["ForceUpdate"] else None, manuf_code=request["intManufCode"])
+    ota_load_image_to_zigate(self, request["intImageType"], request["ImageVersion"] if request["ForceUpdate"] else None, manuf_code=request["intManufCode"], entry=(request["Brand"], request["FileName"]))
     ota_image_advertize(self, nwkid, request["Ep"], image_version=request["ImageVersion"], image_type=request["intImageType"], manufacturer_code=request["intManufCode"])
     update_firmware_health(self)
 
@@ -918,7 +998,7 @@ def start_transfer(self, request):
         # Queued or Waiting (not notified now): the device asked on its own and takes a slot
         takes_a_slot = request["State"] not in OTA_ACTIVE_STATES
         if takes_a_slot:
-            ota_load_image_to_zigate(self, request["intImageType"], request["ImageVersion"] if request["ForceUpdate"] else None, manuf_code=request["intManufCode"])
+            ota_load_image_to_zigate(self, request["intImageType"], request["ImageVersion"] if request["ForceUpdate"] else None, manuf_code=request["intManufCode"], entry=(request["Brand"], request["FileName"]))
 
         request.update({"State": OTA_TRANSFER, "Process": None, "Progress": "0%"})
         if takes_a_slot:
@@ -1037,10 +1117,12 @@ def end_ota_request(self, request, final_status=None):
     update_firmware_health(self, ended=request)
 
 
-def ota_load_image_to_zigate(self, image_type, force_version=None, manuf_code=None):
+def ota_load_image_to_zigate(self, image_type, force_version=None, manuf_code=None, entry=None):
     # Load the image headers into Zigate
+    # entry: (brand, file name) of the request's image; without it, the first image of this type
 
-    entry = retrieve_image(self, image_type, manuf_code)
+    if entry is None or entry[1] not in self.ListOfImages.get("Brands", {}).get(entry[0], {}):
+        entry = retrieve_image(self, image_type, manuf_code)
     if entry is None:
         _log_debug_unknown_image_type(self, image_type)
         return
@@ -1536,6 +1618,11 @@ def firmware_update_rejection(self, brand, file_name, target_nwkid, target_ep, f
         logging(self, "Warning", "restapi_firmware_update NwkId: %s has no IEEE" % target_nwkid, target_nwkid)
         return "Unknown device"
 
+    if not firmware_file_suits_device(self, target_nwkid, file_name, self.ListOfImages["Brands"][brand][file_name]):
+        logging(self, "Warning", "restapi_firmware_update NwkId: %s (model %s) refused: firmware %s is not for this device model" % (
+            target_nwkid, self.ListOfDevices[target_nwkid].get("Model"), file_name), target_nwkid)
+        return "This firmware is not for this device model"
+
     if ieee in self.ota_requests:
         logging(self, "Warning", "restapi_firmware_update NwkId: %s already has a firmware update %s for %s" % (
             target_nwkid, self.ota_requests[ieee]["State"], self.ota_requests[ieee]["FileName"]), target_nwkid)
@@ -1594,37 +1681,36 @@ def is_image_for_query_next_image_request( self, nwkid, manuf_code, image_type, 
     logging(self, "Debug", "is_image_for_query_next_image_request - Manuf: 0x%04X Type: 0x%04X Version: 0x%08X Downgrade: %s" % (
         manuf_code, image_type, file_version, authorized_device_downgrade), nwkid)
 
-    for brand_name in self.ListOfImages["Brands"]:
-        logging(self, "Debug", "is_image_for_query_next_image_request - checking %s" %brand_name, nwkid)
-        for file_name in self.ListOfImages["Brands"][brand_name]:
-            logging(self, "Debug", "    - filename %s Manuf: 0x%04X Image: 0x%04X Version: 0x%08X" %(
-                file_name,
-                self.ListOfImages["Brands"][brand_name][file_name]["intManufCode"],
-                self.ListOfImages["Brands"][brand_name][file_name]["ImageType"],
-                self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]
-                ),
-                nwkid
-            )
-            # Compliance with Brand
-            if manuf_code != self.ListOfImages["Brands"][brand_name][file_name]["intManufCode"]:
-                continue
+    # Only the files this device may get, Wiser Heat legacy files in install order
+    for brand_name, file_name in images_in_offer_order(self, nwkid):
+        logging(self, "Debug", "    - filename %s Manuf: 0x%04X Image: 0x%04X Version: 0x%08X" %(
+            file_name,
+            self.ListOfImages["Brands"][brand_name][file_name]["intManufCode"],
+            self.ListOfImages["Brands"][brand_name][file_name]["ImageType"],
+            self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]
+            ),
+            nwkid
+        )
+        # Compliance with Brand
+        if manuf_code != self.ListOfImages["Brands"][brand_name][file_name]["intManufCode"]:
+            continue
 
-            logging(self, "Debug", "is_image_for_query_next_image_request - potential brand name found:%s ..." % brand_name, nwkid)
+        logging(self, "Debug", "is_image_for_query_next_image_request - potential brand name found:%s ..." % brand_name, nwkid)
 
-            # Compliance with Image Type
-            if image_type != self.ListOfImages["Brands"][brand_name][file_name]["ImageType"]:
-                continue
+        # Compliance with Image Type
+        if image_type != self.ListOfImages["Brands"][brand_name][file_name]["ImageType"]:
+            continue
 
-            if authorized_device_downgrade:
-                return self.ListOfImages["Brands"][brand_name][file_name]
+        if authorized_device_downgrade:
+            return self.ListOfImages["Brands"][brand_name][file_name]
 
-            logging(self, "Debug", "is_image_for_query_next_image_request - potential image type found:%s with version 0x%08X..." % (
-                brand_name, self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]), nwkid)
+        logging(self, "Debug", "is_image_for_query_next_image_request - potential image type found:%s with version 0x%08X..." % (
+            brand_name, self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]), nwkid)
 
-            # Compliance with Image Type
-            if file_version < self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]:
-                logging(self, "Debug", "is_image_for_query_next_image_request - We have newest firmware available for this device", nwkid)
-                return self.ListOfImages["Brands"][brand_name][file_name]
+        # Compliance with Image Type
+        if file_version < self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]:
+            logging(self, "Debug", "is_image_for_query_next_image_request - We have newest firmware available for this device", nwkid)
+            return self.ListOfImages["Brands"][brand_name][file_name]
 
     return None
 
@@ -1663,11 +1749,12 @@ def retrieve_image_in_a_brand(self, image_type, brand, manuf_code=None):
     )
 
 
-def retrieve_image(self, image_type, manuf_code=None, exact=False, images=None):
+def retrieve_image(self, image_type, manuf_code=None, exact=False, images=None, skip_legacy=False):
     """(brand, file name) of the loaded image for this image type, or None.
 
     images: the image list to look in, self.ListOfImages by default (the folder scan
     passes the list it is building).
+    skip_legacy: leave the Wiser Heat legacy files out (they are kept one per file, see ota_scan_folder).
 
     Image types are manufacturer specific (ZCL rev 8 11.4.2.6): the image whose
     manufacturer code matches manuf_code wins. Without such a match, the only image of
@@ -1679,7 +1766,7 @@ def retrieve_image(self, image_type, manuf_code=None, exact=False, images=None):
         (brand, image, info)
         for brand, brand_images in images.get("Brands", {}).items()
         for image, info in brand_images.items()
-        if info.get("ImageType") == image_type
+        if info.get("ImageType") == image_type and not (skip_legacy and is_wiser_legacy_file(image))
     ]
     if manuf_code is not None:
         matching = [candidate for candidate in candidates if candidate[2].get("intManufCode") == manuf_code]
@@ -1729,6 +1816,12 @@ def ota_scan_folder(self):  # OK 13/10
 
                 # An image is identified by manufacturer code AND image type (ZCL rev 8 11.13.6.4)
                 image_key = (headers["manufacturer_code"], image_type)
+                if is_wiser_legacy_file(ota_image_file):
+                    # Wiser Heat legacy files share the image type across models: each is kept,
+                    # and offered only to the model(s) OTADEF.xml lists it for
+                    image_key = (headers["manufacturer_code"], image_type, ota_image_file)
+                    if ota_image_file.casefold() not in _WISER_LEGACY_FILE_NAMES:
+                        logging(self, "Log", "ota_scan_folder Firmware %s looks like a Wiser Heat legacy (EH-ZB-*) file but is not listed for any model: it is offered to no device" % ota_image_file)
 
                 # Check if this Image is the latest version.
                 if image_key in images["ImageType"] and not check_image_valid_version(
@@ -1799,7 +1892,7 @@ def check_image_valid_version(self, images, brand, image_type, ota_image_file, h
     # If the version number is the same we will take the existing one
     # images: the image list the folder scan is building
 
-    existing_image = retrieve_image(self, image_type, headers["manufacturer_code"], exact=True, images=images)
+    existing_image = retrieve_image(self, image_type, headers["manufacturer_code"], exact=True, images=images, skip_legacy=True)
     if existing_image is None:
         # Strange
         return False
