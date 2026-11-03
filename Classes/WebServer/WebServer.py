@@ -1030,19 +1030,24 @@ class WebServer(object):
                             self.logging( "Debug", "Updating ZDeviceName to %s for IEEE: %s NWKID: %s" % (
                                 self.ListOfDevices[dev]["ZDeviceName"], self.ListOfDevices[dev]["IEEE"], dev), )
                         
-                        if "Param" in self.ListOfDevices[dev] and self.ListOfDevices[dev]["Param"] == x["Param"]:
+                        if "Param" not in x:
                             continue
-                        
+
                         self.logging( "Debug", "--> Initial Param: %s (%s)" %( x["Param"], type(x["Param"])))
                         _new_param = decode_device_param(self, dev, x["Param"])
                         self.logging( "Debug", "--> Converted Param: %s (%s)" %( _new_param, type(_new_param)))
-                        
-                        if "Disabled" in _new_param:
-                            if _new_param["Disabled"]:
-                                self.ListOfDevices[dev]["Health"] = "Disabled"
-                            else:
-                                self.ListOfDevices[dev]["Health"] = "unknown"
-                                
+
+                        # The page sends every device back, Param as the str(dict) it was given: compare the decoded
+                        # value, or each save re-applies every device's parameters (CheckParam) and resets its Health
+                        if _new_param == self.ListOfDevices[dev].get("Param", {}):
+                            continue
+
+                        # Health only follows a change of the Disabled flag
+                        if _new_param.get("Disabled"):
+                            self.ListOfDevices[dev]["Health"] = "Disabled"
+                        elif self.ListOfDevices[dev].get("Health") == "Disabled":
+                            self.ListOfDevices[dev]["Health"] = "unknown"
+
                         self.ListOfDevices[dev]["Param"] = _new_param
                         
                         self.logging( "Debug", "Updating Param to %s for IEEE: %s NWKID: %s" % (
