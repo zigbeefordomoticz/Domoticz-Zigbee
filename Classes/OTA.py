@@ -2078,6 +2078,7 @@ def prepare_and_send_block(
         request["Process"] = "Started"
     else:
         request["Process"] = "OnGoing"
+        restart_transfer_measure_on_jump(request, int(MsgFileOffset, 16), MsgMaxDataSize)
 
     request.update({
         "Status": "Block requested",
@@ -2327,6 +2328,19 @@ def ota_request_status(self, request):
         "StartOffset": request.get("StartOffset", 0),
         "StartTime": int(request.get("StartTime", 0)),
     }
+
+
+def restart_transfer_measure_on_jump(request, offset, max_data_size):
+    """Measure the WebUI speed from where the device really downloads.
+
+    A device that resumes reads the header first (offset 0) and then jumps to its own
+    checkpoint: StartOffset / StartTime move to the block that does not follow the previous one.
+    """
+    previous = request.get("intFileOffset", 0)
+    if previous <= offset <= previous + max_data_size:
+        return
+    request["StartOffset"] = offset
+    request["StartTime"] = time.time()
 
 
 def start_upgrade_infos(self, request, MsgSrcAddr, MsgFileOffset, MsgMaxDataSize):
