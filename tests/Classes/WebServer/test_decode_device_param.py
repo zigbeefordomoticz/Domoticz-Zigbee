@@ -87,7 +87,8 @@ def test_decode_device_param(results, name):
     got = results[name]
 
     if expected is None:
-        assert got["value"] == {}
+        # None, not {}: the caller keeps the stored Param instead of wiping it
+        assert got["value"] is None
         assert len(got["errors"]) == 1 and "wrong Parameter syntax" in got["errors"][0]
     else:
         assert got["value"] == expected
