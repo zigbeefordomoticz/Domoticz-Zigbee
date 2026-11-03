@@ -25,6 +25,7 @@ from Modules.domoticzAbstractLayer import (
     domo_read_nValue_sValue, domo_read_Options, domo_read_TimedOut,
     domo_update_api, domoticz_log_api, retrieve_widgetid_from_deviceId_unit,
     timeout_widget_api, update_battery_api)
+from Modules.greenPowerStore import gp_store
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import (is_domoticz_touch,
                            is_domoticz_update_SuppressTriggers, lookupForIEEE)
@@ -91,6 +92,9 @@ def retrieve_widget_type_list(self, Devices, device_id_ieee, NwkId, DeviceUnit=N
 def RetreiveSignalLvlBattery(self, NwkID):
 
     # Takes the opportunity to update LQI and Battery
+    if NwkID is None:
+        # Green Power device (Modules/greenPowerWidgets.py): signal unknown, no battery reported
+        return (12, 255)
     if NwkID not in self.ListOfDevices:
         return ("", "")
 
@@ -253,7 +257,12 @@ def reset_switch_selector_PushButton(self, Devices, NwkId, WidgetType, DeviceId_
 
 def update_domoticz_widget(self, Devices, DeviceId, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_="", ForceUpdate_=False):
 
-    if DeviceId not in self.IEEE2NWK:
+    if DeviceId in self.IEEE2NWK:
+        nwkid = self.IEEE2NWK[DeviceId]
+    elif DeviceId in (gp_store(self) or ()):
+        # Green Power device: keyed by its synthetic IEEE in the Green Power device store, no NwkId
+        nwkid = None
+    else:
         return
     _current_battery_level = domo_read_BatteryLevel( self, Devices, DeviceId, Unit, )
     _current_TimedOut = domo_read_TimedOut( self, Devices, DeviceId, )
@@ -271,7 +280,7 @@ def update_domoticz_widget(self, Devices, DeviceId, Unit, nValue, sValue, Batter
     )
 
     self.log.logging( "WidgetUpdate", "Debug", "update_domoticz_widget %s:%s:%s  %3s:%3s:%5s (%15s) - update needed: %s" % (
-        nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, widget_name, update_needed), self.IEEE2NWK[ DeviceId ])
+        nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, widget_name, update_needed), nwkid)
 
     if not update_needed:
         return
