@@ -77,6 +77,37 @@ def test_first_block_starts_the_transfer(ota_module, ota, radio, notified, reque
     ota.adminWidgets.updateNotificationWidget.assert_called_once()
 
 
+def _debug_lines(ota_module, monkeypatch):
+    lines = []
+    monkeypatch.setattr(ota_module, "logging", lambda self, level, message, *args: lines.append(message) if level == "Debug" else None)
+    return lines
+
+
+def test_one_debug_line_per_block(ota_module, ota, radio, notified, monkeypatch):
+    """Was 4 lines per block, 3 of them the same request (production 2026-10-27)."""
+    lines = _debug_lines(ota_module, monkeypatch)
+
+    ota.ota_image_block_request(block_request(offset=0x30, max_size=0x40, sqn=0x2E, field_control=0x02))
+
+    block_lines = [line for line in lines if "Offset" in line]
+    assert block_lines == [
+        f"OTA block {DEVICE_NWKID}/{DEVICE_EP} [2e] Offset: 48 Size: 64/64 Delay: 0.25 s/0 ms - "
+        "Manuf: 0x117C Type: 0x2203 Version: 0x01020304 Control: 0x02"
+    ]
+
+
+def test_page_request_logs_one_line_per_block_without_aps_ack(ota_module, ota, radio, notified, monkeypatch):
+    lines = _debug_lines(ota_module, monkeypatch)
+
+    ota.ota_image_page_request(page_request(offset=0, max_size=0x40, page_size=0x80))
+
+    assert [line.split(" - ")[0] for line in lines if line.startswith("OTA block")] == [
+        f"OTA block {DEVICE_NWKID}/{DEVICE_EP} [10] Offset: 0 Size: 64/64 Delay: 0.25 s/0 ms",
+        f"OTA block {DEVICE_NWKID}/{DEVICE_EP} [11] Offset: 64 Size: 64/64 Delay: 0.25 s/0 ms",
+    ]
+    assert all(line.endswith(" no APS ack") for line in lines if line.startswith("OTA block"))
+
+
 def test_following_blocks_serve_the_requested_offset(ota, radio, notified, request_of):
     ota.ota_image_block_request(block_request(offset=0, max_size=0x30))
     ota.ota_image_block_request(block_request(offset=0x30, max_size=0x30, sqn=0x11))
