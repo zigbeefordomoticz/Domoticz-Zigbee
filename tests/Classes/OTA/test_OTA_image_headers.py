@@ -146,10 +146,17 @@ def test_extract_headers_trims_the_wrapper(ota_module, ota, tmp_path):
     assert len(ota_image) == headers["image_size"]
 
 
-def test_extract_headers_of_a_file_without_magic(ota_module, ota, tmp_path):
+def test_extract_headers_of_a_file_without_magic(ota_module, ota, tmp_path, monkeypatch):
+    """The Error names the file: production 2026-10-26 had one bad file among 50 in a folder."""
     folder = _write(tmp_path, ota, "garbage.bin", b"\x00" * 200)
+    errors = []
+    monkeypatch.setattr(ota_module, "logging", lambda self, level, message, *args: errors.append((message, args)) if level == "Error" else None)
 
     assert ota_module.ota_extract_image_headers(ota, folder, "garbage.bin") is None
+    assert errors == [(
+        "Zigbee OTA magic not found in firmware image garbage.bin",
+        (None, {"Error code": "OTA0003", "Folder": str(folder), "File": "garbage.bin", "Size": 200}),
+    )]
 
 
 def test_extract_headers_of_a_truncated_header(ota_module, ota, tmp_path):
