@@ -16,7 +16,9 @@ Rules under test:
     - with autoServeOTA, a device asking while the slots are taken is queued;
     - requests are kept by IEEE: a device that rejoined with another short
       address keeps its place;
-    - a ZiGate (native mode) holds one image: one transfer at a time.
+    - a ZiGate (native mode) holds one image: one transfer at a time;
+    - with several transfers, the delay between two blocks of a device is
+      multiplied by their number, up to OTA_MAX_SCALED_BLOCK_DELAY.
 
 Run with:
     python -m pytest tests/Classes/OTA/test_OTA_queue.py -v
@@ -336,3 +338,65 @@ def test_zigate_serves_one_device_at_a_time(ota, radio, ikea_image, devices):
     # One Image Notify (0505), after its image was loaded into the ZiGate (0500)
     assert [call.args[0] for call in ota.ControllerLink.sendData.call_args_list] == ["0500", "0505"]
     assert _query(ota, radio, BATTERY_4) == NO_IMAGE_AVAILABLE
+
+
+# ─── block delay scaled by the transfers in progress ─────────────────────────
+
+def _delay_of_next_block(ota, radio, nwkid, delay_ms=0):
+    """min_block_delay (s) of the block answering one block request of this device."""
+    radio.zcl_raw_ota_image_block_response_success.reset_mock()
+    ota.ota_image_block_request(block_request(nwkid=nwkid, delay=delay_ms))
+    return radio.zcl_raw_ota_image_block_response_success.call_args.kwargs["min_block_delay"]
+
+
+def _transfers(ota, radio, *nwkids):
+    _pick(ota, *nwkids)
+    for nwkid in nwkids:
+        assert _query(ota, radio, nwkid) == 0x00
+
+
+def test_a_single_transfer_keeps_the_vendor_delay(ota, radio, ikea_image, devices):
+    _transfers(ota, radio, DEVICE_NWKID)
+
+    assert _delay_of_next_block(ota, radio, DEVICE_NWKID) == 0.25   # IKEA vendor profile
+
+
+def test_two_transfers_double_the_delay(ota, radio, ikea_image, devices):
+    _transfers(ota, radio, DEVICE_NWKID, MAINS_2)
+
+    assert _delay_of_next_block(ota, radio, DEVICE_NWKID) == 0.5
+    assert _delay_of_next_block(ota, radio, MAINS_2) == 0.5
+
+
+def test_three_transfers_triple_the_delay(ota, radio, ikea_image, devices):
+    _transfers(ota, radio, DEVICE_NWKID, MAINS_2, BATTERY_4)
+
+    assert _delay_of_next_block(ota, radio, BATTERY_4) == 0.75
+
+
+def test_a_device_only_notified_does_not_count(ota, radio, ikea_image, devices):
+    _transfers(ota, radio, DEVICE_NWKID)
+    _pick(ota, MAINS_2)   # notified, not asking yet
+
+    assert _delay_of_next_block(ota, radio, DEVICE_NWKID) == 0.25
+
+
+def test_the_scaled_delay_is_capped(ota_module, ota, radio, ikea_image, devices):
+    _transfers(ota, radio, DEVICE_NWKID, MAINS_2, BATTERY_4)
+
+    # the client asks for 400 ms: 3 x 0.4 s would be 1.2 s
+    assert _delay_of_next_block(ota, radio, DEVICE_NWKID, delay_ms=400) == ota_module.OTA_MAX_SCALED_BLOCK_DELAY
+
+
+def test_a_client_asking_for_a_longer_delay_keeps_it(ota, radio, ikea_image, devices):
+    _transfers(ota, radio, DEVICE_NWKID, MAINS_2)
+
+    assert _delay_of_next_block(ota, radio, DEVICE_NWKID, delay_ms=1500) == 1.5
+
+
+def test_the_delay_comes_back_when_a_transfer_ends(ota, radio, ikea_image, devices):
+    _transfers(ota, radio, DEVICE_NWKID, MAINS_2)
+    ota.ota_image_block_request(block_request(nwkid=MAINS_2))
+    ota.ota_upgrade_end_request(upgrade_end(nwkid=MAINS_2, status="00"))
+
+    assert _delay_of_next_block(ota, radio, DEVICE_NWKID) == 0.25
