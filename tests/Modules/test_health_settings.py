@@ -15,6 +15,9 @@ The module under test is imported directly: it has no plugin dependency, so no
 stubbing is needed and nothing leaks into sys.modules for the other test files.
 """
 
+import ast
+from pathlib import Path
+
 import pytest
 
 from Modules.health_settings import (HEALTH_DEVICE_PARAMETERS,
@@ -23,7 +26,7 @@ from Modules.health_settings import (HEALTH_DEVICE_PARAMETERS,
                                      device_health_timeout,
                                      is_health_timed_out)
 
-PLUGIN_DEFAULT = 21200
+PLUGIN_DEFAULT = 21600
 
 
 def _device(health="Live", last_seen=1000, param=None):
@@ -155,3 +158,23 @@ class TestHealthUndetermined:
         """Kept so a device entry built before the "unknown" rename, or by a path
         not covered here, is still probed rather than silently ignored."""
         assert "" in HEALTH_UNDETERMINED
+
+
+class TestPluginWideDefault:
+    """The plugin wide HealthTimeOut default is 6 hours.
+
+    It was 21200 s (5 h 53 min), carried over from the former hardcoded value, while
+    the WebUI and the wiki told users 6 hours or 24 hours. Read from the SETTINGS
+    literal so the test does not need the Domoticz runtime to import PluginConf.
+    """
+
+    def test_default_is_six_hours(self):
+        source = (Path(__file__).resolve().parents[2] / "Classes" / "PluginConf.py").read_text(encoding="utf-8")
+        settings = next(
+            ast.literal_eval(node.value)
+            for node in ast.walk(ast.parse(source))
+            if isinstance(node, ast.Assign) and any(getattr(target, "id", None) == "SETTINGS" for target in node.targets)
+        )
+        defaults = [theme["param"]["HealthTimeOut"]["default"] for theme in settings.values() if "HealthTimeOut" in theme["param"]]
+        assert defaults == [6 * 3600]
+        assert defaults[0] == PLUGIN_DEFAULT
