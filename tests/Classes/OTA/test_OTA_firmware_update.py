@@ -6,8 +6,8 @@ firmware_update and ota_image_advertize, and what the heartbeat does with
 the device afterwards.
 
 Reference: Zigbee Cluster Library rev 8 (07-5123-08)
-    11.13.3  Image Notify: payload type 0x03 carries query jitter,
-             manufacturer code, image type and file version
+    11.13.3  Image Notify: a unicast notify uses payload type 0x00 and a
+             query jitter of 100, the client always answers it
     11.8.2   sleepy devices cannot be reliably notified; they query the
              server on their own schedule
 
@@ -45,15 +45,17 @@ def test_firmware_update_queues_and_notifies_the_device(ota_module, ota, radio, 
     assert (request["IEEE"], request["NwkId"], request["Ep"]) == (DEVICE_IEEE, DEVICE_NWKID, DEVICE_EP)
     assert request["State"] == ota_module.OTA_NOTIFYING
     assert request["NotifiedTimeStamp"] > 0
-    # Image Notify, payload type 3, jitter 100 (ZCL8 11.13.3)
-    radio.zcl_raw_ota_image_notify.assert_called_once_with(ota, DEVICE_NWKID, "01", DEVICE_EP, "03", "64", "117c", "2203", "01020304")
+    # Unicast Image Notify, payload type 0, jitter 100 (ZCL8 11.13.3.3): the other fields are wildcards
+    radio.zcl_raw_ota_image_notify.assert_called_once_with(ota, DEVICE_NWKID, "01", DEVICE_EP, "00", "64", "ffff", "ffff", "FFFFFFFF")
     assert ota.ImageLoaded["image_type"] == 0x2203
 
 
-def test_forced_update_advertises_a_bumped_version(ota_module, ota, radio, ikea_image, request_of):
+def test_forced_update_notifies_without_a_version(ota_module, ota, radio, ikea_image, request_of):
+    """The bumped version is offered in the Query Next Image Response
+    (test_OTA_query_next_image.py::test_forced_update_offers_a_bumped_version), not in the notify."""
     ota_module.firmware_update(ota, "Ikea", "bulb.ota", DEVICE_NWKID, DEVICE_EP, force_update=True)
 
-    radio.zcl_raw_ota_image_notify.assert_called_once_with(ota, DEVICE_NWKID, "01", DEVICE_EP, "03", "64", "117c", "2203", "%08X" % FORCED_VERSION)
+    radio.zcl_raw_ota_image_notify.assert_called_once_with(ota, DEVICE_NWKID, "01", DEVICE_EP, "00", "64", "ffff", "ffff", "FFFFFFFF")
     assert request_of(DEVICE_NWKID)["ImageVersion"] == FORCED_VERSION
 
 

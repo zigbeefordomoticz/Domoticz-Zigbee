@@ -580,8 +580,12 @@ def zcl_raw_ota_image_notify(self, nwkid, EPIn, EPout, PayloadType, QueryJitter,
     Imagetype = "%04x" % (struct.unpack(">H", struct.pack("H", int(Imagetype, 16)))[0])
     FileVersion = "%08x" % struct.unpack(">I", struct.pack("I", int(FileVersion, 16)))[0]
     
+    # The payload type tells which optional fields follow the query jitter (ZCL rev 8 11.13.3.1):
+    # 0x01 manufacturer code, 0x02 + image type, 0x03 + file version.
+    optional_fields = (ManufCode, Imagetype, FileVersion)[:int(PayloadType, 16)]
+
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
-    payload = "%02x" % cluster_frame + sqn + Command + PayloadType + QueryJitter + ManufCode + Imagetype + FileVersion
+    payload = "%02x" % cluster_frame + sqn + Command + PayloadType + QueryJitter + "".join(optional_fields)
     raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
     return sqn
 
