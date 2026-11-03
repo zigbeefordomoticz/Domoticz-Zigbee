@@ -392,6 +392,11 @@ def get_device_informations(self, Nwkid):
     ota_client = self.ListOfDevices[Nwkid].get("OTAClient", {})
     image_type = _hex_field(ota_client.get("ImageType"), 4)
     current_version = _hex_field(ota_client.get("CurrentImageVersion"), 8)
+    # One entry per image the device asked for: a device may hold several (Classes/OTA.py query_next_image_request)
+    images = [
+        {"ImageType": image_type_key.upper(), "ManufCode": _hex_field(queried.get("ManufacturerCode"), 4), "CurrentFileVersion": _hex_field(queried.get("CurrentImageVersion"), 8)}
+        for image_type_key, queried in sorted(ota_client.get("Images", {}).items())
+    ]
 
     return {
         "Nwkid": Nwkid,
@@ -408,6 +413,7 @@ def get_device_informations(self, Nwkid):
         "OTAType": LastImageType,
         "ImageType": image_type,
         "CurrentFileVersion": current_version,
+        "Images": images,
     }
 
 def _hex_field(value, width):

@@ -62,6 +62,7 @@ def test_request_is_decoded_little_endian_and_stored(ota, radio):
         "ManufacturerCode": 0x117C,
         "ImageType": 0x2203,
         "CurrentImageVersion": 0x01000000,
+        "Images": {"2203": {"ManufacturerCode": 0x117C, "CurrentImageVersion": 0x01000000}},
     }
 
 

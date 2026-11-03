@@ -118,6 +118,32 @@ def test_device_information_ignores_an_unreadable_query(rest_ota, webserver):
     assert (info["ImageType"], info["CurrentFileVersion"]) == ("", "")
 
 
+def test_device_information_lists_every_image_the_device_queried(rest_ota, webserver):
+    """NodOn SIN-4-FP-21: one image for the radio (0x0006), one for the power board (0x0106)."""
+    webserver.ListOfDevices["1234"]["OTAClient"] = {
+        "ManufacturerCode": 0x128B, "ImageType": 0x0106, "CurrentImageVersion": 0x00030103,
+        "Images": {
+            "0106": {"ManufacturerCode": 0x128B, "CurrentImageVersion": 0x00030103},
+            "0006": {"ManufacturerCode": 0x128B, "CurrentImageVersion": 0x0000030C},
+        },
+    }
+
+    info = rest_ota.get_device_informations(webserver, "1234")
+
+    assert (info["ImageType"], info["CurrentFileVersion"]) == ("0106", "00030103")
+    assert info["Images"] == [
+        {"ImageType": "0006", "ManufCode": "128B", "CurrentFileVersion": "0000030C"},
+        {"ImageType": "0106", "ManufCode": "128B", "CurrentFileVersion": "00030103"},
+    ]
+
+
+def test_device_information_of_an_entry_without_images(rest_ota, webserver):
+    """Device entry written before OTAClient had Images."""
+    webserver.ListOfDevices["1234"]["OTAClient"] = {"ManufacturerCode": 0x117C, "ImageType": 0x2203, "CurrentImageVersion": 0x01000000}
+
+    assert rest_ota.get_device_informations(webserver, "1234")["Images"] == []
+
+
 def test_device_information_of_a_device_never_upgraded(rest_ota, webserver):
     for key in ("OTAUpgrade", "SWBUILD_1", "SWBUILD_3"):
         del webserver.ListOfDevices["1234"][key]
