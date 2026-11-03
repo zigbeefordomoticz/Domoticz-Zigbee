@@ -297,12 +297,11 @@ def ezsp_configuration_setup(self, bellows_conf, serialPort, serial_specifics):
                          "Coordinater will support to 0")
         config[bellows_conf.CONF_EZSP_CONFIG]["CONFIG_MAX_END_DEVICE_CHILDREN"] = 0
 
+    # As bellows does: the TX power in dBm only (setRadioPower), CONFIG_TX_POWER_MODE left at the
+    # firmware default. Its alternate output (0x2, 0x3) is for an external amplifier on RF_TX_ALT.
     tx_power = _configured_tx_power(self)
     if tx_power is not None:
         self.log.logging("TransportZigpy", "Status", f"++ Setting TX Power to {tx_power} dBm")
-        config[bellows_conf.CONF_EZSP_CONFIG]["CONFIG_TX_POWER_MODE"] = 0x3
-        self.log.logging("TransportZigpy", "Status",
-                         "++ Setting mode of transmission power adjustment 'TX_POWER_MODE_BOOST' dBm")
         config[zigpy.config.CONF_NWK][zigpy.config.CONF_NWK_TX_POWER] = tx_power
 
     return config

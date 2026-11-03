@@ -169,17 +169,10 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
 
     async def set_zigpy_tx_power(self, power):
-        # EmberConfigTxPowerMode - EZSP_CONFIG_TX_POWER_MODE in EzspConfigId
-        # 0x00: Normal mode
-        # 0x01: Enable boost power mode
-        # 0x02: Enable the alternate transmitter output.
-        # 0x03: Both 0x01 & 0x02
-        if power > 0:
-            await self._ezsp.setConfigurationValue(0x17,0x03)    
-            self.log.logging("TransportZigpy", "Debug", "set_tx_power: boost power mode")
-        else:
-            await self._ezsp.setConfigurationValue(0x17,0)
-            self.log.logging("TransportZigpy", "Debug", "set_tx_power: normal mode")
+        # bellows' _set_tx_power(): setRadioPower in dBm, persisted to NVRAM. EZSP configuration
+        # values such as CONFIG_TX_POWER_MODE only apply before the network is up.
+        self.log.logging("TransportZigpy", "Debug", "set_tx_power %s" %power)
+        await self.set_tx_power(power)
 
 
     async def set_led(self, mode):

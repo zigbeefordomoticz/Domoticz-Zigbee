@@ -210,6 +210,15 @@ class TestEzspConfigurationSetup(unittest.TestCase):
         config = ezsp_configuration_setup(t, _make_radio_conf(), "/dev/ttyUSB0", {})
         self.assertEqual(config[_zc().CONF_NWK][_zc().CONF_NWK_TX_POWER], -5)
 
+    def test_tx_power_mode_is_never_forced(self):
+        # As bellows: a configured TX power leaves CONFIG_TX_POWER_MODE at the firmware default
+        from Classes.ZigpyTransport.radioStart import ezsp_configuration_setup
+        for value in ("10", "-5"):
+            t = make_transport()
+            t.pluginconf.pluginConf["TXpower_set"] = value
+            config = ezsp_configuration_setup(t, _make_radio_conf(), "/dev/ttyUSB0", {})
+            self.assertNotIn("CONFIG_TX_POWER_MODE", config["ezsp_config"], value)
+
 
 # ===========================================================================
 # znp_configuration_setup
