@@ -368,21 +368,26 @@ class WebServer(object):
                 _response["Data"] = json.dumps(fake_zigate, sort_keys=True)
                 return _response
             
+            # While the radio starts, the firmware and network details are not known yet: they are
+            # returned as null instead of failing the request.
             coordinator_infos = {
-                "Firmware Version": self.ControllerData["Firmware Version"],
-                "IEEE": self.ControllerData["IEEE"],
-                "Short Address": self.ControllerData["Short Address"],
-                "Channel": self.ControllerData["Channel"],
-                "PANID": self.ControllerData["PANID"],
-                "Extended PANID": self.ControllerData["Extended PANID"],
-                "Branch Version": self.ControllerData["Branch Version"],
-                "Major Version": self.ControllerData["Major Version"],
-                "Minor Version": self.ControllerData["Minor Version"],
+                "Firmware Version": self.ControllerData.get("Firmware Version"),
+                "IEEE": self.ControllerData.get("IEEE"),
+                "Short Address": self.ControllerData.get("Short Address"),
+                "Channel": self.ControllerData.get("Channel"),
+                "PANID": self.ControllerData.get("PANID"),
+                "Extended PANID": self.ControllerData.get("Extended PANID"),
+                "Branch Version": self.ControllerData.get("Branch Version"),
+                "Major Version": self.ControllerData.get("Major Version"),
+                "Minor Version": self.ControllerData.get("Minor Version"),
             }
             if "Network key" in self.ControllerData:
-                coordinator_infos[ "Network Key"] = self.ControllerData["Network key"] 
+                coordinator_infos[ "Network Key"] = self.ControllerData["Network key"]
 
-            if 0 <= int(self.ControllerData["Branch Version"]) < 20:   
+            if self.ControllerData.get("Branch Version") is None:
+                pass
+
+            elif 0 <= int(self.ControllerData["Branch Version"]) < 20:
                 coordinator_infos["Display Firmware Version"] = "Zig - %s" % self.ControllerData["Minor Version"]
 
             elif 20 <= int(self.ControllerData["Branch Version"]) < 30:
