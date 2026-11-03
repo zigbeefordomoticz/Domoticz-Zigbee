@@ -30,10 +30,11 @@ from Classes.ZigpyTransport.instrumentation import (
     instrument_log_command_open, instrument_sendData, open_capture_rx_frames)
 from Classes.ZigpyTransport.zigpyThread import (
     cleanup_unused_concurrency_state, start_zigpy_thread, stop_zigpy_thread)
+from Zigbee.encoder_tools import loggable_plugin_frame
 
 
 class ZigpyTransport(object):
-    def __init__(self, ControllerData, pluginParameters, pluginconf, F_out, zigpy_upd_device, zigpy_get_device, zigpy_get_all_devices, zigpy_backup_available, restart_plugin, log, statistics, hardwareid, radiomodule, serialPort, com_specifcs):
+    def __init__(self, ControllerData, pluginParameters, pluginconf, F_out, zigpy_upd_device, zigpy_get_device, zigpy_get_all_devices, zigpy_backup_available, restart_plugin, log, statistics, hardwareid, radiomodule, serialPort, com_specifcs, zigpy_get_all_gp_devices=None):
         self.zigbee_communication = "zigpy"
         self.pluginParameters = pluginParameters
         self.pluginconf = pluginconf
@@ -41,6 +42,7 @@ class ZigpyTransport(object):
         self.ZigpyUpdDevice = zigpy_upd_device
         self.ZigpyGetDevice = zigpy_get_device
         self.ZigpyGetAllDevices = zigpy_get_all_devices
+        self.ZigpyGetAllGpDevices = zigpy_get_all_gp_devices
         self.ZigpyBackupAvailable = zigpy_backup_available
         self.restart_plugin = restart_plugin
         self.log = log
@@ -248,7 +250,7 @@ class ZigpyTransport(object):
         
 
     def receiveData(self, message):
-        self.log.logging("Transport", "Debug", "===> receiveData for Forwarded - Message %s" % (message))
+        self.log.logging("Transport", "Debug", "===> receiveData for Forwarded - Message %s" % (loggable_plugin_frame(message)))
         if self.forwarder_queue is None:
             return
         self.forwarder_queue.put(message)

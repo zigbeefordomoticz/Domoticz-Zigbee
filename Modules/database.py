@@ -41,6 +41,7 @@ import Modules.tools
 from Classes.AdminWidgets import ADMIN_WIDGET_PREFIXES
 from Classes.PluginStore import PluginStore
 from Modules.domoticzAbstractLayer import getConfigItem, setConfigItem
+from Modules.greenPowerStore import GP_STORE_NAME, GP_STORE_VERSION, gp_store
 from Modules.manufacturer_code import check_and_update_manufcode
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_CUSTOM_CONFIGURE_REPORTING,
@@ -55,7 +56,10 @@ PLUGIN_DATABASE_RECORD_VERSION = 4
 # Record stores persisted next to ListOfDevices (Classes/PluginStore.py), as
 # (name, version, upgrade): a feature whose records must not live in
 # ListOfDevices declares its store here.
-PLUGIN_STORES = ()
+# (name, record format version, upgrade callable or None)
+PLUGIN_STORES = (
+    (GP_STORE_NAME, GP_STORE_VERSION, None),
+)
 
 CIE_ATTRIBUTES = {
     "Version", 
@@ -781,6 +785,11 @@ def checkListOfDevice2Devices(self, Devices):
         self.log.logging("Database", "Debug", f"checkListOfDevice2Devices - {widget_idx} {device_id} {widget_name}")
 
         if len(device_id) == 4 or any(device_id.startswith(p) for p in ADMIN_WIDGET_PREFIXES):
+            continue
+
+        gp_devices = gp_store(self)
+        if gp_devices is not None and device_id in gp_devices:
+            # Green Power device widget: the GPD is in the Green Power device store, not in ListOfDevices
             continue
 
         if device_id not in self.IEEE2NWK:

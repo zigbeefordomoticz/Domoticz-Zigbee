@@ -114,6 +114,16 @@ HARNESS = textwrap.dedent(
             network_info = zigpy.state.NetworkInfo(tx_power=sc["radio_tx_power"]) if "radio_tx_power" in sc else None
             self.state = types.SimpleNamespace(network_info=network_info, node_info=None)
             self.callBackGetAllDevices = None
+            if sc.get("green_power"):
+                # zigpy with Green Power support (> 2.3.0)
+                app = self
+                async def gp_startup():
+                    app.calls.append("green_power.startup:%d" % len(app.devices))
+                self.green_power = types.SimpleNamespace(startup=gp_startup)
+                self.devices = {}
+                self.callBackGetAllGpDevices = lambda: app.calls.append("get_all_gp_devices") or []
+        def add_listener(self, listener):
+            self.calls.append("add_listener:%s" % type(listener).__name__)
         async def load_network_info(self, *, load_devices=False):
             self.calls.append("load_network_info")
             if not self.network_formed:
@@ -139,7 +149,17 @@ HARNESS = textwrap.dedent(
     if sc.get("repair_dbm") is not None:
         FakeApp.TX_POWER_LEFT_AT_0DBM_REPAIR = sc["repair_dbm"]
 
+    if sc.get("green_power") and not sc.get("real_preload"):
+        AG._preload_devices_from_plugin_db = lambda self: self.calls.append("preload")
+
     app = FakeApp()
+    if sc.get("real_preload"):
+        app.callBackGetAllDevices = lambda: []
+    if sc.get("gpd_in_table"):
+        # A GPD restored by an earlier initialize() of the same app (startup retry)
+        import zigpy.device, zigpy.zgp.types as gp
+        gpd = zigpy.device.GreenPowerDevice(app, application_id=gp.ApplicationID.SrcID, src_id=gp.SrcID(0x0155A3B2))
+        app.devices[gpd.ieee] = gpd
     result = {"error": None}
     if sc["mode"] == "retrieve":
         backup = AG._retrieve_previous_backup(app)
@@ -360,3 +380,33 @@ class TestRepairTxPowerLeftAt0dBm:
         result = _run(radio_tx_power=3, effective_tx_power=5, tx_power_unsupported=True)
         assert _tx_power_calls(result) == ["set_tx_power:5"]
         assert result["network_tx_power"] == 3
+
+
+# ─── Green Power listener ────────────────────────────────────────────────────
+
+class TestGreenPowerListener:
+
+    def test_registered_when_zigpy_supports_green_power(self):
+        result = _run(green_power=True)
+        assert result["error"] is None
+        assert result["calls"].count("add_listener:GreenPowerListener") == 1
+        # Registered once the network is started
+        assert result["calls"].index("start_network") < result["calls"].index("add_listener:GreenPowerListener")
+
+    def test_devices_restored_after_preload_then_manager_started(self):
+        result = _run(green_power=True)
+        assert result["error"] is None
+        calls = result["calls"]
+        assert calls.index("preload") < calls.index("get_all_gp_devices") < calls.index("green_power.startup:0")
+        assert _errors(result) == []
+
+    def test_retry_with_a_restored_device_in_the_table(self):
+        # The device table dump of the pre-load must cope with a GreenPowerDevice (no node_desc)
+        result = _run(green_power=True, real_preload=True, gpd_in_table=True)
+        assert result["error"] is None
+        assert "green_power.startup:1" in result["calls"]
+        assert _errors(result) == []
+
+    def test_not_registered_without_green_power(self):
+        result = _run()
+        assert not any(c.startswith("add_listener") for c in result["calls"])

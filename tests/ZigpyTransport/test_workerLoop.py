@@ -47,6 +47,7 @@ def make_transport():
     t.app.set_zigpy_tx_power   = AsyncMock()
     t.app.permit_ncp           = AsyncMock()
     t.app.permit               = AsyncMock()
+    t.app.permit_gp            = AsyncMock()
     t.app.remove_ieee          = AsyncMock()
     t.app.disconnect           = AsyncMock()
     t.app.connect              = AsyncMock()
@@ -232,6 +233,8 @@ class TestDispatchCommand(unittest.TestCase):
         }
         self._dispatch(t, data)
         t.app.permit.assert_called_once()
+        # permit() opens Green Power commissioning itself
+        t.app.permit_gp.assert_not_called()
 
     def test_permit_to_join_deconz_uses_permit_ncp(self):
         t = make_transport()
@@ -245,6 +248,20 @@ class TestDispatchCommand(unittest.TestCase):
         self._dispatch(t, data)
         t.app.permit_ncp.assert_called_once_with(time_s=60)
         t.app.permit.assert_not_called()
+
+    def test_permit_to_join_deconz_opens_green_power(self):
+        t = make_transport()
+        t._radiomodule = "deCONZ"
+        data = {
+            "cmd": "PERMIT-TO-JOIN",
+            "datas": {"Duration": 0, "targetRouter": "FFFC"},
+            "ACKIsDisable": False,
+            "Sqn": 0,
+        }
+        self._dispatch(t, data)
+        # Closing too: AppGeneric.permit_gp() decides whether to pass it on
+        t.app.permit_gp.assert_awaited_once_with(time_s=0)
+        t.app.permit_ncp.assert_awaited_once_with(time_s=0)
 
 
 # ===========================================================================
