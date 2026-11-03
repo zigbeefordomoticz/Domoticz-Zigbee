@@ -2095,13 +2095,15 @@ def display_percentage_progress(self, request, MsgSrcAddr, MsgEP, MsgFileOffset)
     offset = int(MsgFileOffset, 16) if isinstance(MsgFileOffset, str) else MsgFileOffset
     total_size = request.get("intSize") or 1  # Avoid division by zero
 
-    completion_pct = round((offset / total_size) * 100, 1)
+    # Log progress once per 5% step: the last 5% mark the offset has reached. Several blocks of
+    # one page can land on the same mark, and a block can step over the mark itself.
+    progress_step = int(offset * 100 // total_size) // 5 * 5
+    if request["Progress"] == f"{progress_step}%":
+        return
 
-    # Log progress every 5%
-    if completion_pct % 5 == 0:
-        logging(self, "Status", f"Firmware transfer for {MsgSrcAddr}/{MsgEP} - Progress: {completion_pct:4.1f}%", MsgSrcAddr)
-        request["Progress"] = f"{round(completion_pct)}%"
-        update_firmware_health(self)
+    logging(self, "Status", f"Firmware transfer for {MsgSrcAddr}/{MsgEP} - Progress: {progress_step:4.1f}%", MsgSrcAddr)
+    request["Progress"] = f"{progress_step}%"
+    update_firmware_health(self)
 
 
 def update_firmware_health(self, ended=None):
