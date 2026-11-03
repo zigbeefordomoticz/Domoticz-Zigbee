@@ -18,6 +18,38 @@ Release Numbering
 - Odd numbers --> Stable/9.1 (stable branch)
 - Even numbers  --> Beta/9.2 (dev branch)
 
+## November 2026 - stable9 9.1.009 (2026.15)
+
+Pull requests in this release: #2163, #2166, #2168, #2170, #2171, #2172, #2173, #2174, #2175, #2176, #2177, #2178, #2179, #2180, #2181, #2182, #2183, #2184, #2185, #2186, #2187, #2188, #2189, #2190, #2191, #2192, #2193, #2195, #2196, #2197, #2199, #2200, #2201, #2202, #2203, #2204, #2205, #2206, #2207, #2208, #2209, #2210, #2211, #2214, #2215, #2216, #2217
+
+Contributors: @pipiche38 (98 commits), @badzz (1 commit, #2195)
+
+- [Feature] - WebUI: the shipped WebUI is refreshed up to Domoticz-Zigbee-UI #350 (#2188): Admin → Firmware in four columns (brands, firmware, matching devices, transfers) with live progress, speed and time left, per-device result, cancel and stalled state; Dashboard key figures and "Needs attention" with JSON export; Device Management as a table with filters, search and sort, a parameter editor and a details window (configuration notes, Blakadder line, Rolling LQI / RSSI charts, messages received); Network as one page with key figures and an interference heatmap; Management with Devices and Groups tabs; Admin, Settings and Tools reworked
+- [Feature] - OTA: firmware updates are queued. Every device picked in the WebUI is queued, three devices are upgraded at a time plus one battery device asking on its own, and a queued device stays authorized for 24 h (#2174); each transfer slows down while several run (#2175)
+- [Feature] - OTA: `PUT /ota-firmware-update` reports per device whether the update started or was rejected, and why (#2173); a device known to run the file's version already, or a newer one, is rejected at once unless Force Update is set (#2182)
+- [Feature] - OTA: cancel a firmware update from the WebUI, `DELETE /ota-firmware-update/<NwkId>` (#2187); a transfer whose device stops asking for 300 s becomes Stalled, gives its slot back, resumes when the device asks again, and times out only after 24 h (#2192)
+- [Feature] - OTA: `/plugin-health` gives the bytes, start and outcome of each request, and keeps the last ten finished ones, for the WebUI progress (#2185); the speed of a resumed download is measured from where it really starts (#2189)
+- [Feature] - OTA: a firmware file copied into `OTAFirmware/<brand>/` shows up in Admin → Firmware without a restart (#2186)
+- [Feature] - OTA: a device with two images (e.g. NodOn SIN-4-FP-21) keeps the version of each image (#2210), and its messages about the other image leave the running transfer alone (#2209)
+- [Feature] - OTA: Schneider Wiser Heat legacy devices (`EH-ZB-*`) get only the firmware files Schneider's `OTADEF.xml` lists for their model, and those files go to no other device (#2216); `ota-firmware-device-list` reports them per device as `ExcludedFiles` (#2217)
+- [Feature] - On/Off: device-side auto-off. With the device Param `OnOffOnTimeDelay` set, every On is sent as On With Timed Off (0x0006 / 0x42), so the relay switches itself off even if Domoticz or the plugin is down; `OnOffOffWaitTime` is the guard time after an Off. Devices whose configuration sets `TuyaOnOffCountdown` get the Tuya countdown (On, then 0x42 in seconds, max 12 h). zigpy coordinators only (#2195)
+- [Feature] - Device Management details: `/zdevice-raw/<nwkid>` carries the model's configuration notes (`_comment`, `_description`, `_blakadder`, …) (#2206), and the ZDO / ZCL frames received from each device since the plugin start are counted, `ReceivedZDO` / `ReceivedZCL` (#2208)
+- [Feature] - Statistics: each `/plugin-stat` trend point carries the messages received / sent since the previous point and its time (#2197)
+- [Issue] - OTA: fix the defects found by an OTA review against ZCL rev 8 and zigpy: header parsing, hardware version check, page and block transfer, image identification, authorization bookkeeping, "firmware available" cleanup, online index and firmware page device list; every OTA Error now carries an error code and context, with unit tests for the OTA server and its REST endpoints (#2171, #2172)
+- [Issue] - OTA: read the optional fields of an Image Block Request by their Field Control bits, so a client sending its IEEE no longer loses its Minimum Block Period (#2176); send the unicast Image Notify as payload type 0, jitter 100 (#2177); look up the image of an Image Page Request by manufacturer code too (#2180)
+- [Issue] - OTA logging: no warning at every Image Page Request (#2178); progress once per 5% step (#2179); a suitable local firmware is reported once at Status level (#2181); Status lines say which device is active and which is queued (#2183); a hardware version refusal is logged once per device and image (#2190); OTA0003 names the firmware file (#2191); one Debug line per block instead of four (#2193)
+- [Issue] - EZSP: TX power is applied in dBm as bellows does; a configured TX power no longer forces `CONFIG_TX_POWER_MODE = 0x3`, and a change from the WebUI reaches the radio without a restart (#2166)
+- [Issue] - Coordinator restore: the NWK frame counter margin grows with the backup's age, `10 000 + 10 × age in seconds`, instead of zigpy's fixed `+10 000` (#2163)
+- [Issue] - Health: the `HealthTimeOut` default is now 6 hours (21600 s) instead of 21200 s; an explicit value and the per-device Param are kept (#2196)
+- [Issue] - zigpy (EZSP, deCONZ): `RollingRSSI` records the RSSI of the packet being decoded, no longer that of an older packet (#2211)
+- [Issue] - Device Management save: only devices whose `Param` changed are touched, and the others keep their Health (#2202); a mistyped `Param` keeps the stored one (#2205); `GET /zdevice-name` sends `"{}"` for a device without `Param` (#2204)
+- [Issue] - REST: `PUT /device-param` no longer `eval()`s its body (#2203); `GET /plugin` no longer returns `Mode5`, `Username` and `Password` (#2215, issue #2212); `PUT /dev-command` takes a JSON number `Value` as decimal, level 60 was applied as 96 (#2214, issue #2213)
+- [Issue] - REST: `GET /coordinator` answers while the radio starts instead of logging a `KeyError` (#2199); `GET /zdevice-raw/<nwkid>` no longer fails on a device's `RollingLQI` (#2207)
+- [Issue] - Decoding: a non-numeric ZCL value no longer crashes the range check, it is dropped (#2200); a decoder exception is logged with the nwkid and an `INPT0001` context (#2201)
+- [Technical] - Remove the old ZiGate / PiZiGate tools: `Tools/JennicModuleProgrammer`, `Tools/Fedora`, `PiZigate.service`, `pi-zigate.sh`, `VERSION-7.1.md` (#2170)
+- [Technical] - `OTAFirmware/LEGRAND/README.md` says where the official Legrand firmware is published (#2184)
+- [Technical] - Release notes 9.1.008: link the TX power wiki page (#2168)
+
 ## October 2026 - stable9 9.1.008 (2026.14)
 
 Pull requests in this release: #2081, #2082, #2083, #2084, #2090, #2091, #2094, #2095, #2097, #2098, #2099, #2100, #2101, #2103, #2104, #2107, #2108, #2109, #2112, #2114, #2115, #2118, #2120, #2121, #2122, #2123, #2124, #2125, #2126, #2127, #2128, #2129, #2130, #2131, #2132, #2134, #2135, #2136, #2141, #2142, #2143, #2144, #2145, #2146, #2147, #2148, #2149, #2150, #2152, #2153, #2157, #2158, #2159, #2160, #2161, #2162, #2164, #2165
@@ -31,7 +63,7 @@ Contributors: @pipiche38 (110 commits)
 - [Feature] - Health: the silence after which a device is flagged as not seen is now configurable, plugin wide with the new setting `HealthTimeOut` (default 21200 s, the former hardcoded value) and per device with the device Param `HealthTimeOut` (#2084)
 - [Feature] - New `Button_4` switch selector (Off / Click / Double Click / Triple Click / Long Click) for remotes reporting four press types on one attribute, first used by the Sonoff SNZB-01M (#2130)
 - [Feature] - Report the running git revision next to the plugin version, in the `plugin` REST payload and the startup log lines, and stamp each error-history session with it (#2098, #2100)
-- [Issue] - zigpy: the default TX power (0) now means "keep the radio's own TX power" instead of forcing 0 dBm at every start, plus EZSP boost mode; exactly 0 dBm is no longer selectable, use ±1 (#2135). On EZSP, a coordinator an older version left at 0 dBm is set once to bellows' default of 8 dBm: its range increases, and end devices may pick other parents (#2165)
+- [Issue] - zigpy: the default TX power (0) now means "keep the radio's own TX power" instead of forcing 0 dBm at every start, plus EZSP boost mode; exactly 0 dBm is no longer selectable, use ±1 (#2135). On EZSP, a coordinator an older version left at 0 dBm is set once to bellows' default of 8 dBm: its range increases, and end devices may pick other parents (#2165). See [Change the coordinator transmit power](https://zigbeefordomoticz.github.io/wiki/en-eng/HowTo_Change-TX-Power.html)
 - [Issue] - Topology (zigpy): a scan no longer skips almost every router, zigpy now gets the node descriptor the plugin already has (#2110, #2112), and devices recorded as gone are no longer pre-loaded and interrogated (#2115). A scan therefore takes minutes, not seconds
 - [Issue] - Topology (zigpy): rebuild the neighbours table on every scan instead of keeping the first scan's readings (#2109); report a node that was asked and never answered as `timeout` instead of dropping it (#2111, #2114); read a route's many-to-one flag from its own field (#2108)
 - [Issue] - Topology (TopologyV2): collect the coordinator's associated devices too (#2122)

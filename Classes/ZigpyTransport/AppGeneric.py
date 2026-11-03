@@ -76,6 +76,8 @@ the upstream zigpy stack. The routing logic separates:
     - ZCL frames from devices (profile 0x0104) → plugin frame 0x8002,
                                                   upstream skipped so the
                                                   plugin owns ZCL responses
+                                                  (the packet's RSSI is still
+                                                  copied onto zigpy's Device)
     - All other frames                          → plugin frame 0x8002
                                                   + upstream zigpy
 
@@ -100,7 +102,9 @@ config, the most recent backup is retrieved (the plugin backup first,
 the zigpy persistent database as fallback) and passed to
 self.backups.restore_backup() instead of forming a new network, allowing
 the coordinator's PAN ID, extended PAN ID, network key and device list to
-survive a coordinator replacement.
+survive a coordinator replacement. The NWK frame counter is raised by a
+margin that grows with the backup's age (_restore_counter_increment()), so
+the restored coordinator is not ignored by its neighbours as a replay.
 
 The 'OverWriteCoordinatorIEEEOnlyOnce' config key injects the EZSP-specific
 one-time EUI64 overwrite flag into the backup metadata when restoring to a
@@ -193,6 +197,15 @@ CLUSTER_MGMT_LEAVE_RSP       = 0x8034
 PROFILE_ZHA                  = 0x0104
 COORDINATOR_NWK              = "0000"
 
+# ---------------------------------------------------------------------------
+# NWK frame counter margin when restoring a backup
+# Neighbours drop any coordinator frame whose counter is not above the last one
+# they saw, so the restored counter must cover every frame sent since the backup.
+# ---------------------------------------------------------------------------
+RESTORE_COUNTER_BASE = 10000  # zigpy's own restore_backup() default
+RESTORE_COUNTER_RATE = 10  # frames per second of backup age, well above a busy network
+RESTORE_COUNTER_CEILING = 0xF0000000  # keep the restored counter clear of the 32-bit wrap
+
 
 async def _load_db(self) -> None:
     """
@@ -227,6 +240,8 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
        fallback, and nothing is retrieved unless 'autoRestore' is set.
     3. Plugin only: if force_form, form a new network (no backup) or
        restore the backup. A failure is logged and startup continues.
+       Delta (here and in 4): the backup is restored with a NWK frame
+       counter margin sized on its age, not zigpy's fixed 10 000.
     4. load_network_info(). On NetworkNotFormed and auto_form, form a new
        network (no backup) or restore the backup, never both.
        Delta: then load_network_info(load_devices=True) again.
@@ -290,7 +305,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
                 await super(type(self),self).form_network()
             else:
                 self.log.logging("Zigpy", "Status", "++ Force Form: Restoring the most recent network backup")
-                await self.backups.restore_backup(  _retrieved_backup )
+                await _restore_backup(self, _retrieved_backup)
         except Exception as e:
             # Non-fatal: startup goes on with whatever network the radio currently holds
             action = "form a new network" if _retrieved_backup is None else "restore the most recent network backup"
@@ -316,7 +331,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         else:
             # Otherwise, restore the most recent backup
             self.log.logging("Zigpy", "Status", "++ Restoring the most recent network backup")
-            await self.backups.restore_backup( _retrieved_backup )
+            await _restore_backup(self, _retrieved_backup)
 
         await self.load_network_info(load_devices=True)
 
@@ -663,6 +678,43 @@ def _retrieve_previous_backup(self):
 
     self.log.logging("TransportZigpy", "Debug", "Last backup retreived: %s" % _retrieved_backup )
     return _retrieved_backup
+
+
+def _restore_counter_increment(backup, now=None):
+    """
+    Return the NWK frame counter increment to apply when restoring 'backup'.
+
+    zigpy's restore_backup() adds a fixed 10 000, which covers only the frames
+    sent in the first minutes after the backup. Each neighbour of the coordinator
+    keeps the last counter it received from it and drops anything not above it,
+    so a restored counter that is too low leaves the coordinator unheard until
+    the counter catches up.
+
+    The increment grows with the backup's age at RESTORE_COUNTER_RATE frames per
+    second, on top of RESTORE_COUNTER_BASE. A backup time in the future (clock
+    skew) counts as age 0. A naive backup time is taken as UTC. The restored
+    counter never goes above RESTORE_COUNTER_CEILING.
+    """
+    now = now or datetime.now(UTC)
+    backup_time = backup.backup_time
+    if backup_time.tzinfo is None:
+        backup_time = backup_time.replace(tzinfo=UTC)
+
+    age = max(0.0, (now - backup_time).total_seconds())
+    increment = RESTORE_COUNTER_BASE + int(age * RESTORE_COUNTER_RATE)
+    headroom = RESTORE_COUNTER_CEILING - backup.network_info.network_key.tx_counter
+    return max(0, min(increment, headroom))
+
+
+async def _restore_backup(self, backup):
+    """Restore 'backup' with a NWK frame counter margin sized on its age."""
+    increment = _restore_counter_increment(backup)
+    tx_counter = backup.network_info.network_key.tx_counter
+    self.log.logging(
+        "Zigpy", "Status",
+        "++ Backup taken %s: NWK frame counter %d raised by %d to %d" % (
+            backup.backup_time.isoformat(), tx_counter, increment, tx_counter + increment))
+    await self.backups.restore_backup(backup, counter_increment=increment)
 
 
 def _dump_zigpy_devices(self):
@@ -1209,6 +1261,29 @@ def _handle_zdo_cluster(self, cluster, sender, hex_message, packet):
     return True
 
 
+# ---------------------------------------------------------------------------
+# Helper: keep zigpy's Device.rssi in step with the packet handed to the plugin
+# ---------------------------------------------------------------------------
+def _refresh_device_rssi(self, packet):
+    """
+    Copy the packet's RSSI onto zigpy's Device record.
+
+    zigpy refreshes Device.rssi in its own packet_received(), which a ZCL
+    packet from a device never reaches (the plugin owns the response, see
+    step 5a), or reaches only after the plugin frame is queued (step 5b).
+    decode8002 reads Device.rssi through get_device_rssi() for every ZCL
+    frame, so without this RollingRSSI repeats the RSSI of an older packet.
+    """
+    if packet.rssi is None or packet.src.addr_mode != zigpy_t.AddrMode.NWK:
+        return
+
+    try:
+        dev = super(type(self), self).get_device(None, packet.src.address)
+    except KeyError:
+        return
+    dev.rssi = packet.rssi
+
+
 @measure_execution_time
 def packet_received(self, packet: zigpy_t.ZigbeePacket) -> None:
     """
@@ -1290,6 +1365,9 @@ def packet_received(self, packet: zigpy_t.ZigbeePacket) -> None:
 
     if effective_profile and f["cluster"]:
         self.log.logging( "TransportZigpy", "Debug", f"packet_received device: {_pkt_summary(f, hex_msg)}  lqi={packet.lqi}" )
+
+    # Before the frame is queued: decode8002 reads the RSSI from zigpy's Device
+    _refresh_device_rssi(self, packet)
 
     plugin_frame = build_plugin_8002_frame_content(
         self, f["sender"],

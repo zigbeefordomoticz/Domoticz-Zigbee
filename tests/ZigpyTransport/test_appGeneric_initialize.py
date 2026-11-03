@@ -50,15 +50,26 @@ HARNESS = textwrap.dedent(
     import zigpy.exceptions
     import zigpy.state
     import zigpy.types as t
+    from datetime import datetime, timedelta, timezone
     from zigpy.backups import NetworkBackup
 
     import Classes.ZigpyTransport.AppGeneric as AG
 
     sc = json.loads(sys.argv[1])
 
-    def backup_with_pan(pan):
+    NOW = datetime(2026, 10, 23, 12, 0, 0, tzinfo=timezone.utc)
+
+    def backup_with_pan(pan, age_hours=0, tx_counter=0, naive=False, now=None):
         b = NetworkBackup()
-        return b.replace(network_info=b.network_info.replace(pan_id=t.PanId(pan)))
+        backup_time = (now or datetime.now(timezone.utc)) - timedelta(hours=age_hours)
+        network_info = b.network_info.replace(
+            pan_id=t.PanId(pan),
+            network_key=b.network_info.network_key.replace(tx_counter=tx_counter),
+        )
+        return b.replace(
+            network_info=network_info,
+            backup_time=backup_time.replace(tzinfo=None) if naive else backup_time,
+        )
 
     class Log:
         def __init__(self):
@@ -78,8 +89,9 @@ HARNESS = textwrap.dedent(
             return self.backups[-1] if self.backups else None
         def from_network_state(self):
             return self.state
-        async def restore_backup(self, backup):
+        async def restore_backup(self, backup, *, counter_increment=10000):
             self.app.calls.append("restore_backup:%04x" % backup.network_info.pan_id)
+            self.app.increments.append(counter_increment)
             if self.restore_fails:
                 raise RuntimeError("restore failed")
             self.app.network_formed = True
@@ -96,6 +108,7 @@ HARNESS = textwrap.dedent(
     class FakeApp(RadioControllerApplication):
         def __init__(self):
             self.calls = []
+            self.increments = []
             self.log = Log()
             self.network_formed = sc.get("network_formed", True)
             self.form_fails = sc.get("form_fails", False)
@@ -134,14 +147,19 @@ HARNESS = textwrap.dedent(
             pass
 
     plugin_pan = sc.get("plugin_pan")
-    AG.do_retrieve_backup = lambda self: backup_with_pan(plugin_pan).as_dict() if plugin_pan is not None else None
+    plugin_age_hours = sc.get("plugin_age_hours", 0)
+    AG.do_retrieve_backup = lambda self: (
+        backup_with_pan(plugin_pan, plugin_age_hours).as_dict() if plugin_pan is not None else None)
 
     if sc.get("repair_dbm") is not None:
         FakeApp.TX_POWER_LEFT_AT_0DBM_REPAIR = sc["repair_dbm"]
 
     app = FakeApp()
     result = {"error": None}
-    if sc["mode"] == "retrieve":
+    if sc["mode"] == "increment":
+        backup = backup_with_pan(0x1111, sc["age_hours"], sc.get("tx_counter", 0), sc.get("naive", False), now=NOW)
+        result["increment"] = AG._restore_counter_increment(backup, now=NOW)
+    elif sc["mode"] == "retrieve":
         backup = AG._retrieve_previous_backup(app)
         result["backup_pan"] = None if backup is None else int(backup.network_info.pan_id)
         result["overwrite_flag"] = None if backup is None else backup.network_info.stack_specific.get(
@@ -154,6 +172,7 @@ HARNESS = textwrap.dedent(
             result["error"] = type(e).__name__
     result["calls"] = app.calls
     result["network_tx_power"] = app.state.network_info.tx_power if app.state.network_info is not None else None
+    result["increments"] = app.increments
     result["logs"] = app.log.records
     print("RESULT=" + json.dumps(result))
     """
@@ -360,3 +379,61 @@ class TestRepairTxPowerLeftAt0dBm:
         result = _run(radio_tx_power=3, effective_tx_power=5, tx_power_unsupported=True)
         assert _tx_power_calls(result) == ["set_tx_power:5"]
         assert result["network_tx_power"] == 3
+
+
+# ─── #6: NWK frame counter margin on restore, sized on the backup's age ──────
+
+def _increment(**scenario):
+    return _run(mode="increment", **scenario)["increment"]
+
+
+class TestRestoreCounterIncrement:
+
+    def test_fresh_backup_gets_the_upstream_margin(self):
+        assert _increment(age_hours=0) == 10000
+
+    def test_one_day_old_backup(self):
+        # 10 000 + 86 400 s x 10 frames/s
+        assert _increment(age_hours=24) == 874000
+
+    def test_one_week_old_backup(self):
+        assert _increment(age_hours=24 * 7) == 6058000
+
+    def test_backup_from_the_future_counts_as_fresh(self):
+        assert _increment(age_hours=-5) == 10000
+
+    def test_naive_backup_time_is_taken_as_utc(self):
+        assert _increment(age_hours=24, naive=True) == 874000
+
+    def test_restored_counter_stays_below_the_ceiling(self):
+        assert _increment(age_hours=24, tx_counter=0xF0000000 - 5000) == 5000
+
+    def test_counter_already_above_the_ceiling_gets_no_margin(self):
+        assert _increment(age_hours=24, tx_counter=0xF8000000) == 0
+
+
+class TestRestoreUsesAgeMargin:
+
+    @staticmethod
+    def _single_increment(result):
+        assert len(result["increments"]) == 1
+        return result["increments"][0]
+
+    def test_empty_radio_restore_passes_the_margin(self):
+        result = _run(network_formed=False, plugin_pan=PLUGIN_BACKUP_PAN, state_pan=PLUGIN_BACKUP_PAN, plugin_age_hours=24)
+        assert result["error"] is None
+        # A few seconds pass between building the backup and restoring it
+        assert 874000 <= self._single_increment(result) <= 874000 + 600
+
+    def test_force_form_restore_passes_the_margin(self):
+        result = _run(force_form=True, plugin_pan=PLUGIN_BACKUP_PAN, state_pan=PLUGIN_BACKUP_PAN, plugin_age_hours=24)
+        assert result["error"] is None
+        assert 874000 <= self._single_increment(result) <= 874000 + 600
+
+    def test_margin_is_logged(self):
+        result = _run(network_formed=False, plugin_pan=PLUGIN_BACKUP_PAN, state_pan=PLUGIN_BACKUP_PAN, plugin_age_hours=24)
+        increment = self._single_increment(result)
+        assert any(
+            level == "Status" and "NWK frame counter 0 raised by %d to %d" % (increment, increment) in msg
+            for level, msg in result["logs"]
+        )

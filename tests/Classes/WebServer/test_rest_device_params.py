@@ -15,6 +15,10 @@ error was never reported as such.
 Every error path now goes through _log_and_return_with_error(self, message,
 _response) and comes back as {"BE_Error": message}, which encodes to JSON.
 
+The PUT body was parsed with eval(), so any expression sent to the endpoint ran
+inside the plugin. It is now read as JSON, or as the Python literal callers sent
+before (ast.literal_eval: parsed, never executed); anything else is an error.
+
 Classes.WebServer.rest_device_params imports the real Modules.* package, which
 conflicts with the stubs tests/conftest.py installs for the session, so the
 calls run in a subprocess.
@@ -79,6 +83,12 @@ SNIPPET = textwrap.dedent(
         "put_unknown_nwkid":    ("PUT", json.dumps({"Param": PARAM, "NWKID": "abcd"}).encode("utf8"), []),
         "put_by_nwkid":         ("PUT", json.dumps({"Param": {"Disabled": 1}, "NWKID": NWKID}).encode("utf8"), []),
         "put_by_ieee":          ("PUT", json.dumps({"Param": {"Disabled": 1}, "IEEE": IEEE}).encode("utf8"), []),
+        "put_python_literal":   ("PUT", ("{'Param': {'Disabled': 1, 'Fade': True}, 'NWKID': '%s'}" % NWKID).encode("utf8"), []),
+        "put_expression":       ("PUT", b"__import__('builtins').setattr(__import__('builtins'), 'PWNED', 1) or {}", []),
+        "put_expression_value": ("PUT", ("{'Param': __import__('os').getcwd(), 'NWKID': '%s'}" % NWKID).encode("utf8"), []),
+        "put_not_an_object":    ("PUT", b"[1, 2]", []),
+        "put_not_utf8":         ("PUT", b"\\xff\\xfe", []),
+        "put_param_not_object": ("PUT", json.dumps({"Param": "{'Disabled': 1}", "NWKID": NWKID}).encode("utf8"), []),
     }
 
     out = {}
@@ -96,6 +106,7 @@ SNIPPET = textwrap.dedent(
             "body": encode_body_to_bytes(response).decode("utf8"),
             "errors": plugin.errors,
             "stored_param": plugin.ListOfDevices[NWKID].get("Param"),
+            "executed": hasattr(__import__("builtins"), "PWNED"),
         }
     print(json.dumps(out))
     """
@@ -109,8 +120,13 @@ ERROR_CASES = {
     "put_no_nwkid_no_ieee": "missing IEEE or NWKID",
     "put_no_param": "unexpected parameter",
     "put_unknown_nwkid": "unknown device",
+    "put_expression": "expecting a JSON object",
+    "put_expression_value": "expecting a JSON object",
+    "put_not_an_object": "expecting a JSON object",
+    "put_not_utf8": "expecting a JSON object",
+    "put_param_not_object": "unexpected parameter",
 }
-OK_CASES = ["get_by_nwkid", "get_by_ieee", "put_by_nwkid", "put_by_ieee"]
+OK_CASES = ["get_by_nwkid", "get_by_ieee", "put_by_nwkid", "put_by_ieee", "put_python_literal"]
 
 
 @pytest.fixture(scope="module")
@@ -158,3 +174,13 @@ def test_get_returns_the_stored_param(results):
 @pytest.mark.parametrize("name", ["put_by_nwkid", "put_by_ieee"])
 def test_put_stores_the_param(results, name):
     assert results[name]["stored_param"] == {"Disabled": 1}
+
+
+def test_put_accepts_the_python_literal_it_took_before(results):
+    assert results["put_python_literal"]["stored_param"] == {"Disabled": 1, "Fade": True}
+
+
+@pytest.mark.parametrize("name", ["put_expression", "put_expression_value", "put_not_an_object", "put_not_utf8", "put_param_not_object"])
+def test_rejected_put_runs_nothing_and_keeps_the_param(results, name):
+    assert results[name]["executed"] is False
+    assert results[name]["stored_param"] == PARAM
