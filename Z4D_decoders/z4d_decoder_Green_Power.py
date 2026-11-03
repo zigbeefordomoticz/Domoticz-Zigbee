@@ -9,14 +9,15 @@ from zigpy Green Power events (Classes/ZigpyTransport/greenPower.py).
     9e02  GPD removed        ieee(16) nwk(4)
 
 The GPDs are kept in the Green Power device store (Modules/greenPowerStore.py),
-not in ListOfDevices. No Domoticz widget yet.
+not in ListOfDevices. Their widgets: Modules/greenPowerWidgets.py.
 """
 
 import json
 import time
 
 from Modules.greenPowerStore import (gp_command_fields, gp_device_record,
-                                     gp_store, request_gp_store_flush)
+                                     gp_store, request_gp_store_flush,
+                                     request_gp_widget_creation)
 
 GP_FRAME_VERSION = 1
 
@@ -56,9 +57,18 @@ def Decode9E00(self, Devices, MsgData, MsgLQI):
         return
 
     ieee = record["ieee"]
-    store.set(ieee, gp_device_record(record, int(time.time()), lqi, previous=store.get(ieee)))
+    previous = store.get(ieee)
+    stored = gp_device_record(record, int(time.time()), lqi, previous=previous)
+    if previous:
+        # Commissioned again: the GPD keeps its widgets
+        for key in ("Model", "Ep"):
+            if key in previous:
+                stored[key] = previous[key]
+    store.set(ieee, stored)
     # Written at the next heartbeat, not at the periodic flush
     request_gp_store_flush(self)
+    # Created from the heartbeat (Domoticz thread)
+    request_gp_widget_creation(self, ieee)
 
 
 def Decode9E01(self, Devices, MsgData, MsgLQI):
@@ -70,6 +80,11 @@ def Decode9E01(self, Devices, MsgData, MsgLQI):
     # Frame counter written at the periodic flush
     if store is None or not store.update(command["ieee"], gp_command_fields(command["frame_counter"], int(time.time()), lqi)):
         self.log.logging("GreenPower", "Log", "Decode9E01 - command from Green Power device %s, not in the Green Power device store" % command["ieee"], command["nwk"])
+        return
+
+    # Imported here: the widget layer pulls in most of Modules/
+    from Modules.greenPowerWidgets import update_gp_widgets
+    update_gp_widgets(self, Devices, command["ieee"], int(command["command_id"], 16))
 
 
 def Decode9E02(self, Devices, MsgData, MsgLQI):
