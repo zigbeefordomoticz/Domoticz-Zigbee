@@ -43,7 +43,8 @@ def _make_stub(name, **attrs):
 
 _OTA_DEPS = {
     "Modules.sendZigateCommand": dict(sendZigateCmd=MagicMock(name="sendZigateCmd")),
-    "Modules.tools": dict(get_device_nickname=MagicMock(name="get_device_nickname")),
+    "Modules.tools": dict(get_device_nickname=MagicMock(name="get_device_nickname"),
+                           mainPoweredDevice=MagicMock(name="mainPoweredDevice", side_effect=lambda self, nwkid: self.ListOfDevices.get(nwkid, {}).get("MacCapa") in ("8e", "84"))),
     "Modules.zigateConsts": dict(ADDRESS_MODE={"short": 2, "ieee": 3, "group": 4}, ZIGATE_EP="01"),
     "Zigbee.zclRawCommands": dict(
         zcl_raw_default_response=MagicMock(name="zcl_raw_default_response"),

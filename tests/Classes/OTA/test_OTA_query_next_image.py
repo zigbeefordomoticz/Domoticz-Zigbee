@@ -44,6 +44,11 @@ def _response(radio):
     return args[5:]
 
 
+def _queue(ota_module, ota, force=False):
+    """The device is picked in the WebUI for bulb.ota."""
+    assert ota_module.firmware_update(ota, "Ikea", "bulb.ota", DEVICE_NWKID, DEVICE_EP, force_update=force)["Status"] == "Queued"
+
+
 def _query(ota, version=0x01000000, image_type=0x2203, manuf_code=0x117C, nwkid=DEVICE_NWKID, hw_version=None):
     ota.query_next_image_request(nwkid, DEVICE_EP, "2a", query_next_image(manuf_code, image_type, version, hw_version))
 
@@ -91,33 +96,33 @@ def test_newer_image_but_device_not_authorized(ota, radio, ikea_image):
     assert _response(radio) == (NO_IMAGE_AVAILABLE,)
 
 
-def test_another_device_is_being_upgraded(ota, radio, ikea_image):
-    ota.ListInUpdate["NwkId"] = "abcd"
+def test_device_not_picked_while_another_is_being_upgraded(ota_module, ota, radio, ikea_image, add_device):
+    add_device("abcd", "00158d00000000ab")
+    ota_module.firmware_update(ota, "Ikea", "bulb.ota", "abcd", DEVICE_EP)
 
     _query(ota)
 
     assert _response(radio) == (NO_IMAGE_AVAILABLE,)
-    # Answered before the request is even decoded
-    assert "OTAClient" not in ota.ListOfDevices[DEVICE_NWKID]
 
 
 # ─── image offered ────────────────────────────────────────────────────────────
 
-def test_authorized_device_gets_the_image(ota, radio, ikea_image):
-    ota.ListInUpdate["AuthorizedForUpdate"].append(DEVICE_NWKID)
+def test_authorized_device_gets_the_image(ota_module, ota, radio, ikea_image):
+    _queue(ota_module, ota)
 
     _query(ota)
 
     assert _response(radio) == (0x00, 0x117C, 0x2203, IMAGE_VERSION, ikea_image["intSize"])
 
 
-def test_auto_serve_offers_the_image_and_authorizes_the_device(ota, radio, ikea_image):
+def test_auto_serve_offers_the_image_and_authorizes_the_device(ota_module, ota, radio, ikea_image, request_of):
     ota.pluginconf.pluginConf["autoServeOTA"] = True
 
     _query(ota)
 
     assert _response(radio) == (0x00, 0x117C, 0x2203, IMAGE_VERSION, ikea_image["intSize"])
-    assert DEVICE_NWKID in ota.ListInUpdate["AuthorizedForUpdate"]
+    request = request_of(DEVICE_NWKID)
+    assert (request["State"], request["FileName"], request["AutoServe"]) == (ota_module.OTA_TRANSFER, "bulb.ota", True)
 
 
 def test_auto_serve_authorizes_a_device_once(ota, radio, ikea_image):
@@ -126,13 +131,12 @@ def test_auto_serve_authorizes_a_device_once(ota, radio, ikea_image):
     for _ in range(3):
         _query(ota)
 
-    assert ota.ListInUpdate["AuthorizedForUpdate"].count(DEVICE_NWKID) == 1
+    assert len(ota.ota_requests) == 1
 
 
-def test_forced_update_offers_a_bumped_version(ota, radio, ikea_image):
+def test_forced_update_offers_a_bumped_version(ota_module, ota, radio, ikea_image):
     """ForceUpdate serves the image even to a newer device, as version + 0x10100000."""
-    ota.ListInUpdate["AuthorizedForUpdate"].append(DEVICE_NWKID)
-    ota.authorized_device_downgrade[DEVICE_NWKID] = True
+    _queue(ota_module, ota, force=True)
 
     _query(ota, version=0x05000000)
 
@@ -188,14 +192,26 @@ def test_hardware_version_inside_the_range_or_not_sent(ota, radio, install_image
     assert _response(radio) == (0x00, 0x117C, 0x2203, IMAGE_VERSION, image["intSize"])
 
 
-def test_hardware_version_is_checked_on_a_forced_update_too(ota, radio, install_image):
+def test_hardware_version_is_checked_on_a_forced_update_too(ota_module, ota, radio, install_image):
     install_image("Ikea", "bulb.ota", make_ota_image(version=IMAGE_VERSION, field_control=0x04, min_hw=0x0200, max_hw=0x0300))
-    ota.ListInUpdate["AuthorizedForUpdate"].append(DEVICE_NWKID)
-    ota.authorized_device_downgrade[DEVICE_NWKID] = True
+    _queue(ota_module, ota, force=True)
 
     _query(ota, hw_version=0x0400)
 
     assert _response(radio) == (NO_IMAGE_AVAILABLE,)
+    # Nothing will ever be offered to it: its request is dropped, and the user told why
+    assert ota.ota_requests == {}
+    assert "hardware version 0x0400" in ota.adminWidgets.updateNotificationWidget.call_args.args[1]
+
+
+def test_picked_device_asking_for_another_image_type_keeps_its_request(ota_module, ota, radio, ikea_image, install_image, request_of):
+    install_image("Ikea", "remote.ota", make_ota_image(manuf_code=0x117C, image_type=0x4204, version=IMAGE_VERSION))
+    _queue(ota_module, ota)
+
+    _query(ota, image_type=0x4204)
+
+    assert _response(radio) == (NO_IMAGE_AVAILABLE,)
+    assert request_of(DEVICE_NWKID)["FileName"] == "bulb.ota"
 
 
 def test_image_without_a_hardware_range_accepts_any_hardware(ota, radio, ikea_image):
