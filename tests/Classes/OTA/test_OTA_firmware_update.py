@@ -92,6 +92,48 @@ def test_firmware_update_rejects_a_device_already_queued(ota_module, ota, radio,
     radio.zcl_raw_ota_image_notify.assert_called_once()
 
 
+
+# ─── device already up to date ────────────────────────────────────────────────
+
+def _device_asked(ota, version, manuf_code=0x117C, image_type=0x2203):
+    """The device sent a Query Next Image Request: its version is now known (OTAClient)."""
+    ota.query_next_image_request(DEVICE_NWKID, DEVICE_EP, "2a", query_next_image(manuf_code, image_type, version))
+
+
+@pytest.mark.parametrize("device_version", [IMAGE_VERSION, IMAGE_VERSION + 1])
+def test_firmware_update_rejects_a_device_known_to_be_up_to_date(ota_module, ota, radio, ikea_image, device_version):
+    """Field test 2026-10-26: a Legrand NLM on the file's version was queued, waited for a slot, then was dropped when it asked."""
+    _device_asked(ota, device_version)
+
+    result = ota_module.firmware_update(ota, "Ikea", "bulb.ota", DEVICE_NWKID, DEVICE_EP)
+
+    assert result == {"NwkId": DEVICE_NWKID, "Status": "Rejected", "Reason": "The device already runs this firmware version or a newer one"}
+    assert "it already runs version 0x%08X" % device_version in ota.log.logging.call_args.args[2]
+    assert ota.ota_requests == {}
+    radio.zcl_raw_ota_image_notify.assert_not_called()
+
+
+def test_firmware_update_queues_a_device_known_to_run_an_older_version(ota_module, ota, radio, ikea_image):
+    _device_asked(ota, IMAGE_VERSION - 1)
+
+    assert ota_module.firmware_update(ota, "Ikea", "bulb.ota", DEVICE_NWKID, DEVICE_EP)["Status"] == "Queued"
+
+
+def test_forced_update_queues_a_device_known_to_be_up_to_date(ota, radio, ikea_image, request_of):
+    _device_asked(ota, IMAGE_VERSION)
+
+    assert ota.restapi_firmware_update([_request(force=True)])[0]["Status"] == "Queued"
+    assert request_of(DEVICE_NWKID)["ForceUpdate"] is True
+
+
+@pytest.mark.parametrize("manuf_code, image_type", [(0x117C, 0x4204), (0x100B, 0x2203)])
+def test_a_version_reported_for_another_image_does_not_reject(ota_module, ota, radio, ikea_image, manuf_code, image_type):
+    """The known version is the one of the image the device last asked for; it says nothing about this file."""
+    _device_asked(ota, IMAGE_VERSION, manuf_code=manuf_code, image_type=image_type)
+
+    assert ota_module.firmware_update(ota, "Ikea", "bulb.ota", DEVICE_NWKID, DEVICE_EP)["Status"] == "Queued"
+
+
 # ─── restapi_firmware_update ──────────────────────────────────────────────────
 
 def test_restapi_single_device(ota, radio, ikea_image, request_of):
