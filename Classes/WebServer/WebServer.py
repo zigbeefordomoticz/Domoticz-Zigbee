@@ -1442,13 +1442,7 @@ class WebServer(object):
                     return _response
                 if data["Command"] == "":
                     return _response
-                if data["Value"] == "" or data["Value"] is None:
-                    Level = 0
-                else:
-                    if is_hex(str(data["Value"])):
-                        Level = int(str(data["Value"]), 16)
-                    else:
-                        Level = int(str(data["Value"]))
+                Level = dev_command_level(data["Value"])
                 ColorMode = ColorValue = ""
                 color = ""
                 if data["Color"] == "" or data["Color"] is None:
@@ -1737,6 +1731,26 @@ def remove_last_comma(json_string):
     elif json_string.endswith(',}'):
         return json_string[:-2] + "}"
     return json_string
+
+
+def dev_command_level(value):
+    """Level for a /dev-command request from its "Value" field.
+
+    A JSON number is taken as is: 60 means 60, 20.5 means 20.
+    A string made of hex digits only is read as hexadecimal, as the Web UI
+    sends it: "3c" means 60, and "60" means 96. Any other string is read as
+    decimal ("-5"). An empty string or null means 0.
+
+    Before this, every value was converted with str() first, so a JSON number
+    made of digits was read as hexadecimal too (issue #2213).
+    """
+    if value in ("", None):
+        return 0
+    if isinstance(value, (int, float)):
+        return int(value)
+    if is_hex(value):
+        return int(value, 16)
+    return int(value)
 
 
 def get_plugin_parameters(self, filter=False):
