@@ -220,6 +220,17 @@ class TestCapture:
         assert member["snapshot"] == {"onOff": 1, "level": 0x78}
         assert STRIP not in [c.args[1] for c in mod.zcl_raw_add_scene.call_args_list]
 
+    def test_native_member_keeps_the_state_seen_at_the_capture(self, plugin, scenes, store):
+        plugin.ListOfDevices[CEILING]["Ep"]["0b"].update({"0006": {"0000": "01"}, "0008": {"0000": "7f"}})
+        view = scenes.create_scene(GROUP, "Reading")
+        assert stored(store)["members"][CEILING_IEEE + "-0b"]["snapshot"] == {"onOff": 1, "level": 0x7f}
+        shown = next(member for member in view["members"] if member["nwkId"] == CEILING)
+        assert shown["snapshot"] == {"onOff": 1, "level": 0x7f}
+
+    def test_native_member_with_no_known_state(self, scenes, store):
+        scenes.create_scene(GROUP, "Reading")
+        assert stored(store)["members"][SOFA_IEEE + "-01"]["snapshot"] == {"onOff": None, "level": None}
+
     @pytest.mark.parametrize("response", [
         ("Store", CEILING, "0b", "00", GROUP, "01"),    # not the expected step
         ("Add", CEILING, "0b", "00", "2002", "01"),     # another group
@@ -397,6 +408,16 @@ class TestRetry:
         assert (member["status"], member["error"]) == ("pending", None)
         complete_capture(mod, scenes, CEILING, "0b")
         assert stored(store)["members"][CEILING_IEEE + "-0b"]["status"] == "synced"
+
+    def test_a_retried_member_keeps_the_state_it_stores_now(self, mod, plugin, scenes, store):
+        scenes.create_scene(GROUP, "Reading")
+        complete_capture(mod, scenes, CEILING, "0b", status="89")
+        complete_capture(mod, scenes, SOFA, "01")
+        plugin.ListOfDevices[CEILING]["Ep"]["0b"]["0006"] = {"0000": "00"}
+        plugin.ListOfDevices[SOFA]["Ep"]["01"]["0006"] = {"0000": "00"}
+        scenes.retry_scene(GROUP, "01")
+        assert stored(store)["members"][CEILING_IEEE + "-0b"]["snapshot"]["onOff"] == 0
+        assert stored(store)["members"][SOFA_IEEE + "-01"]["snapshot"]["onOff"] is None
 
 
 class TestRename:
