@@ -184,3 +184,27 @@ def test_a_scene_already_on_the_lamp_is_found_through_real_frames():
         assert (scene["sceneId"], scene["name"], scene["discovered"], scene["synced"]) == ("07", "Scene 07", True, 1)
         """
     )
+
+
+def test_a_chosen_id_through_rest_and_real_frames():
+    _run(
+        """
+        import json
+
+        server = types.SimpleNamespace(logging=MagicMock(), log=plugin.log, pluginconf=plugin.pluginconf, scenemgt=plugin.scenemgt)
+        lamp = Lamp()
+        lamp.table[(0x1001, 0x07)] = 5
+        with patch.object(raw, "raw_APS_request", lamp.receive), patch.object(raw, "get_and_inc_ZCL_SQN", return_value="3c"):
+            taken = json.loads(rest_scenes(server, "PUT", b'{"name": "Remote", "sceneId": "07"}', [GROUP])["Data"])
+            assert lamp.seen == ["get_scene_membership"], lamp.seen
+            assert taken["scan"]["capture"]["error"] == "SCENE_ID_IN_USE", taken
+            assert lamp.table == {(0x1001, 0x07): 5}, lamp.table
+
+            free = json.loads(rest_scenes(server, "PUT", b'{"name": "Remote", "transitionTime": 2, "sceneId": "2A"}', [GROUP])["Data"])
+        assert free["scan"]["capture"]["state"] == "started", free
+        assert lamp.seen == ["get_scene_membership", "get_scene_membership", "add", "store"], lamp.seen
+        assert lamp.table[(0x1001, 0x2a)] == 2, lamp.table
+        scene = next(s for s in free["scenes"] if s["sceneId"] == "2a")
+        assert (scene["name"], scene["synced"], scene["discovered"]) == ("Remote", 1, False), scene
+        """
+    )
