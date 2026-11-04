@@ -672,7 +672,7 @@ def buildframe_scene_response(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, 
         expected_length = 6 if Command == "03" else 8
 
     if len(Data) < expected_length:
-        self.log.logging("zclDecoder", "Log", f"buildframe_scene_response - Truncated response {Command}: {Data}", SrcNwkId)
+        self.log.logging(["zclDecoder", "Scene"], "Log", f"buildframe_scene_response - Truncated response {Command}: {Data}", SrcNwkId)
         return None
 
     if Command == "06":
