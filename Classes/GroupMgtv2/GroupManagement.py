@@ -165,5 +165,10 @@ class GroupsManagement(object):
             for GroupId in self.ListOfGroups:
                 self.update_domoticz_group_device(GroupId)
 
-    def logging(self, logType, message):
-        self.log.logging("Groups", logType, message)
+    def logging(self, logType, message, nwkid=None, context=None):
+        """
+        nwkid is the group id, or the device address when the line is about no group
+        in particular: MatchingNwkId takes either. An Error passes a context with its
+        code, see GrpErrorCodes. An empty id would be dropped by the debug filter.
+        """
+        self.log.logging("Groups", logType, message, nwkid or None, context)

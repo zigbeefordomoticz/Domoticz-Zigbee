@@ -30,7 +30,7 @@ def add_group_member_ship(self, NwkId, DeviceEp, GrpId):
     """
     Add Group Membership GrpId to NwkId
     """
-    self.logging("Debug", "add_group_member_ship GrpId: %s, NwkId: %s, Ep: %s" % (GrpId, NwkId, DeviceEp))
+    self.logging("Debug", "add_group_member_ship GrpId: %s, NwkId: %s, Ep: %s" % (GrpId, NwkId, DeviceEp), GrpId)
     zcl_add_group_membership( self, NwkId , ZIGATE_EP , DeviceEp , GrpId, ackIsDisabled=GRP_CMD_WITHOUT_ACK)
 
 
@@ -38,7 +38,7 @@ def check_group_member_ship(self, NwkId, DeviceEp, goup_addr):
     """
     Check group Membership
     """
-    self.logging("Debug", "check_group_member_ship - addr: %s ep: %s group: %s" % (NwkId, DeviceEp, goup_addr))
+    self.logging("Debug", "check_group_member_ship - addr: %s ep: %s group: %s" % (NwkId, DeviceEp, goup_addr), goup_addr)
     zcl_check_group_member_ship(self, NwkId, ZIGATE_EP, DeviceEp, goup_addr, GRP_CMD_WITHOUT_ACK)
 
 
@@ -61,17 +61,17 @@ def look_for_group_member_ship(self, NwkId, DeviceEp, group_list=None):
         group_list_ = "%04x" % (group_list)
         lenGrpLst = 1
     zcl_look_for_group_member_ship(self, NwkId, ZIGATE_EP, DeviceEp, "%02.x" % (lenGrpLst), group_list_, GRP_CMD_WITHOUT_ACK)
-    self.logging("Debug", "look_for_group_member_ship - %s/%s from %s" % (NwkId, DeviceEp, group_list))
+    self.logging("Debug", "look_for_group_member_ship - %s/%s from %s" % (NwkId, DeviceEp, group_list), NwkId)
 
 
 def remove_group_member_ship(self, NwkId, DeviceEp, GrpId):
 
-    self.logging("Debug", "remove_group_member_ship GrpId: %s NwkId: %s Ep: %s" % (GrpId, NwkId, DeviceEp))
+    self.logging("Debug", "remove_group_member_ship GrpId: %s NwkId: %s Ep: %s" % (GrpId, NwkId, DeviceEp), GrpId)
     zcl_remove_group_member_ship(self, NwkId, ZIGATE_EP, DeviceEp, GrpId, GRP_CMD_WITHOUT_ACK)
 
 
 def remove_all_groups( self, NwkId, DeviceEp):
-    self.logging("Debug", "remove_all_groups  NwkId: %s Ep: %s" % ( NwkId, DeviceEp))
+    self.logging("Debug", "remove_all_groups  NwkId: %s Ep: %s" % ( NwkId, DeviceEp), NwkId)
     zcl_remove_all_groups( self, NwkId, ZIGATE_EP, DeviceEp, GRP_CMD_WITHOUT_ACK)
 
 
@@ -100,7 +100,7 @@ def send_group_member_ship_identify_effect(self, GrpId, Ep="01", effect="Okay"):
         "StopEffect": 0xFF,
     }
 
-    self.logging("Debug", "Identify effect for Group: %s" % GrpId)
+    self.logging("Debug", "Identify effect for Group: %s" % GrpId, GrpId)
     identify = False
     if effect not in effect_command:
         effect = "Okay"
@@ -133,6 +133,6 @@ def set_hue_saturation(self, mode, addr, EPin, EPout, r, g, b, transit=None):
     hue = int(hue * 254 / 360)   # Convert hue to 0-254 range
     sat = int(sat * 254 / 100)   # Convert saturation to 0-254 range
 
-    self.logging("Log", f"---------- Set Hue X: {hue} Saturation: {sat}")
+    self.logging("Log", f"---------- Set Hue X: {hue} Saturation: {sat}", addr)
     zcl_group_move_hue_and_saturation(self, addr, ZIGATE_EP, EPout, Hex_Format(2, hue), Hex_Format(2, sat), transit)
     return lumi

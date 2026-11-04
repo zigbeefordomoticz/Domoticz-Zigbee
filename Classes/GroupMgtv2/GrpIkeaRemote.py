@@ -13,7 +13,6 @@
 from Classes.GroupMgtv2.GrpCommands import set_kelvin_color, set_rgb_color
 from Classes.GroupMgtv2.GrpDomoticz import update_domoticz_group_device_widget
 from Modules.domoticzAbstractLayer import (domoticz_error_api,
-                                           domoticz_log_api,
                                            domoticz_status_api)
 from Modules.zigateConsts import ADDRESS_MODE
 
@@ -22,7 +21,7 @@ def checkIfIkeaRound5BToBeAdded(self, NwkId, ep, ieee, GrpId):
     self.logging(
         "Debug",
         "checkIfIkeaRound5BToBeAdded - Checking if Ikea Round 5B NwkId: %s, Ep: %s, Ieee: %s, GrpIp: %s"
-        % (NwkId, ep, ieee, GrpId),
+        % (NwkId, ep, ieee, GrpId), GrpId,
     )
     if (
         "Ep" in self.ListOfDevices[NwkId]
@@ -33,7 +32,7 @@ def checkIfIkeaRound5BToBeAdded(self, NwkId, ep, ieee, GrpId):
             if self.ListOfDevices[NwkId]["Ep"]["01"]["ClusterType"][DomoDeviceUnit] == "Ikea_Round_5b":
                 self.logging(
                     "Debug",
-                    "checkIfIkeaRound5BToBeAdded - Found Ikea Remote in ClusterType . Unit: %s" % DomoDeviceUnit,
+                    "checkIfIkeaRound5BToBeAdded - Found Ikea Remote in ClusterType . Unit: %s" % DomoDeviceUnit, GrpId,
                 )
                 self.ListOfGroups[GrpId]["Tradfri Remote"] = {}
                 self.ListOfGroups[GrpId]["Tradfri Remote"]["Device Addr"] = NwkId
@@ -41,7 +40,7 @@ def checkIfIkeaRound5BToBeAdded(self, NwkId, ep, ieee, GrpId):
                 self.ListOfGroups[GrpId]["Tradfri Remote"]["Device Id"] = DomoDeviceUnit
                 self.ListOfGroups[GrpId]["Tradfri Remote"]["IEEE"] = ieee
                 self.ListOfGroups[GrpId]["Tradfri Remote"]["Color Mode"] = None
-                domoticz_log_api("--> %s" % (self.ListOfGroups[GrpId]))
+                self.logging("Debug", "checkIfIkeaRound5BToBeAdded - Group entry: %s" % self.ListOfGroups[GrpId], GrpId)
                 #
                 update_domoticz_group_device_widget(self, GrpId)
                 return True
@@ -53,20 +52,20 @@ def checkIfIkeaRound5BToBeRemoved(self, NwkId, ep, ieee, GrpId):
     self.logging(
         "Debug",
         "checkIfIkeaRound5BToBeRemoved - Checking if Ikea Round 5B NwkId: %s, Ep: %s, Ieee: %s, GrpIp: %s"
-        % (NwkId, ep, ieee, GrpId),
+        % (NwkId, ep, ieee, GrpId), GrpId,
     )
     if "Tradfri Remote" in self.ListOfGroups[GrpId] and ieee == self.ListOfGroups[GrpId]["Tradfri Remote"]["IEEE"]:
-        self.logging("Debug", "checkIfIkeaRound5BToBeRemoved - Found Ikea Remote %s" % ieee)
+        self.logging("Debug", "checkIfIkeaRound5BToBeRemoved - Found Ikea Remote %s" % ieee, GrpId)
         del self.ListOfGroups[GrpId]["Tradfri Remote"]
         if NwkId != self.IEEE2NWK[ieee]:
             NwkId = self.IEEE2NWK[ieee]
         device = [NwkId, ep, ieee]
         self.logging(
-            "Debug", "---------> Removing %s from %s" % (str(device), str(self.ListOfGroups[GrpId]["Devices"]))
+            "Debug", "---------> Removing %s from %s" % (str(device), str(self.ListOfGroups[GrpId]["Devices"])), GrpId
         )
 
         if device in self.ListOfGroups[GrpId]["Devices"]:
-            self.logging("Debug", "checkIfIkeaRound5BToBeRemoved - Removing it from Group Device %s" % ieee)
+            self.logging("Debug", "checkIfIkeaRound5BToBeRemoved - Removing it from Group Device %s" % ieee, GrpId)
             self.ListOfGroups[GrpId]["Devices"].remove(device)
 
         update_domoticz_group_device_widget(self, GrpId)
@@ -102,26 +101,26 @@ def manageIkeaTradfriRemoteLeftRight(self, RemoteNwkId, type_dir):
             self.logging(
                 "Error",
                 "manageIkeaTradfriRemoteLeftRight - Group %s refer to a Remote %s/%s which do not exist anymore"
-                % (x, self.ListOfGroups[x]["Tradfri Remote"]["Device Addr"], Ieee),
+                % (x, self.ListOfGroups[x]["Tradfri Remote"]["Device Addr"], Ieee), x, {"Error code": "GRP0301", "GroupId": x, "NwkId": self.ListOfGroups[x]["Tradfri Remote"]["Device Addr"], "Ieee": Ieee, "Remote": RemoteNwkId},
             )
             break
 
         RemoteFromGroupNwkId = self.IEEE2NWK[Ieee]
 
         if RemoteNwkId == RemoteFromGroupNwkId:
-            self.logging("Debug", "manageIkeaTradfriRemoteLeftRight - Found GrpId : %s" % x)
+            self.logging("Debug", "manageIkeaTradfriRemoteLeftRight - Found GrpId : %s" % x, x)
             Ikea5ButtonGroupId = x
             break
 
     if Ikea5ButtonGroupId is None:
-        self.logging("Error", "manageIkeaTradfriRemoteLeftRight - Remote %s not associated to any group" % RemoteNwkId)
+        self.logging("Error", "manageIkeaTradfriRemoteLeftRight - Remote %s not associated to any group" % RemoteNwkId, RemoteNwkId, {"Error code": "GRP0302", "NwkId": RemoteNwkId, "Direction": type_dir})
         return
 
     if "Tradfri Remote" not in self.ListOfGroups[Ikea5ButtonGroupId]:
         self.logging(
             "Error",
             "manageIkeaTradfriRemoteLeftRight - Remote %s badly associated in GroupId: %s with %s"
-            % (RemoteNwkId, Ikea5ButtonGroupId, self.ListOfGroups[Ikea5ButtonGroupId]),
+            % (RemoteNwkId, Ikea5ButtonGroupId, self.ListOfGroups[Ikea5ButtonGroupId]), Ikea5ButtonGroupId, {"Error code": "GRP0303", "GroupId": Ikea5ButtonGroupId, "NwkId": RemoteNwkId, "Group": self.ListOfGroups[Ikea5ButtonGroupId]},
         )
         return
 
@@ -129,16 +128,16 @@ def manageIkeaTradfriRemoteLeftRight(self, RemoteNwkId, type_dir):
         self.logging(
             "Error",
             "manageIkeaTradfriRemoteLeftRight - Remote %s badly associated in GroupId: %s with %s"
-            % (RemoteNwkId, Ikea5ButtonGroupId, self.ListOfGroups[Ikea5ButtonGroupId]),
+            % (RemoteNwkId, Ikea5ButtonGroupId, self.ListOfGroups[Ikea5ButtonGroupId]), Ikea5ButtonGroupId, {"Error code": "GRP0304", "GroupId": Ikea5ButtonGroupId, "NwkId": RemoteNwkId, "Group": self.ListOfGroups[Ikea5ButtonGroupId]},
         )
         return
     DomoWidgetColorType = self.ListOfGroups[Ikea5ButtonGroupId]["Tradfri Remote"]["Color Mode"]
 
     if DomoWidgetColorType is None:
-        self.logging("Error", "manageIkeaTradfriRemoteLeftRight - undefined Color Mode for %s" % DomoWidgetColorType)
+        self.logging("Error", "manageIkeaTradfriRemoteLeftRight - undefined Color Mode for Remote %s in Group %s" % (RemoteNwkId, Ikea5ButtonGroupId), Ikea5ButtonGroupId, {"Error code": "GRP0305", "GroupId": Ikea5ButtonGroupId, "NwkId": RemoteNwkId, "Direction": type_dir})
         return
 
-    self.logging("Debug", "manageIkeaTradfriRemoteLeftRight - Color model : %s" % DomoWidgetColorType)
+    self.logging("Debug", "manageIkeaTradfriRemoteLeftRight - Color model : %s" % DomoWidgetColorType, Ikea5ButtonGroupId)
 
     if DomoWidgetColorType in ("ColorControlWW"):  # Will work in Kelvin
         if "Actual T" not in self.ListOfGroups[Ikea5ButtonGroupId]["Tradfri Remote"]:
@@ -155,7 +154,7 @@ def manageIkeaTradfriRemoteLeftRight(self, RemoteNwkId, type_dir):
             if t > 255:
                 t = 0
 
-        self.logging("Debug", "manageIkeaTradfriRemoteLeftRight - Kelvin T %s" % t)
+        self.logging("Debug", "manageIkeaTradfriRemoteLeftRight - Kelvin T %s" % t, Ikea5ButtonGroupId)
         set_kelvin_color(self, ADDRESS_MODE["group"], Ikea5ButtonGroupId, "01", "01", t)
         self.ListOfGroups[Ikea5ButtonGroupId]["Tradfri Remote"]["Actual T"] = t
 
@@ -195,6 +194,6 @@ def manageIkeaTradfriRemoteLeftRight(self, RemoteNwkId, type_dir):
         if seq_idx < 0:
             seq_idx = len(PRESET_COLOR) - 1
 
-        self.logging("Debug", "manageIkeaTradfriRemoteLeftRight - R %s G %s B %s" % (r, g, b))
+        self.logging("Debug", "manageIkeaTradfriRemoteLeftRight - R %s G %s B %s" % (r, g, b), Ikea5ButtonGroupId)
         set_rgb_color(self, ADDRESS_MODE["group"], Ikea5ButtonGroupId, "01", "01", r, g, b)
         self.ListOfGroups[Ikea5ButtonGroupId]["Tradfri Remote"]["RGB"] = seq_idx
