@@ -23,8 +23,12 @@ GroupId and SceneId are hex strings, as in ListOfGroups ("1001", "03"). A member
 is keyed by IEEE, which survives a re-pairing, and by endpoint, as two endpoints
 of a device can be in the same group. It is one of:
 
-    native:   {"endpoint", "capability", "status", "lastCheck", "error"}
+    native:   {"endpoint", "capability", "status", "lastCheck", "error", "snapshot"}
     fallback: {"endpoint", "capability", "status": "n/a", "snapshot"}
+
+The snapshot is the on/off and level the plugin last saw at the capture. A fallback
+member is sent it at a recall. On a native member it is only shown: the scene is what
+the device stored, and a member a scan found has none.
 
 A scan asks each member which scenes of the group it holds, with Get Scene
 Membership. A scene the plugin does not know, set by a remote or another
@@ -167,7 +171,7 @@ class SceneManagement:
         return members
 
     def _snapshot(self, nwkid, ep):
-        """On/off and level as the plugin last saw them, to replay on a fallback member."""
+        """On/off and level as the plugin last saw them."""
         ep_data = self.plugin.ListOfDevices.get(nwkid, {}).get("Ep", {}).get(ep, {})
         on_off = _cached_value(ep_data.get(ONOFF_CLUSTER, {}).get("0000"))
         return {
@@ -276,7 +280,9 @@ class SceneManagement:
             failed = [key for key, member in scene["members"].items() if member["status"] == STATUS_FAILED and key in members]
             self.logging("Debug", "retry_scene - group %s scene %s, failed members %s" % (GroupId, SceneId, failed))
             for key in failed:
-                scene["members"][key].update({"status": STATUS_PENDING, "error": None})
+                scene["members"][key].update({
+                    "status": STATUS_PENDING, "error": None, "snapshot": self._snapshot(members[key]["nwkid"], members[key]["ep"]),
+                })
             self.store.set(GroupId, record)
             for key in failed:
                 self._send_add(GroupId, SceneId, key, members[key], scene["transitionTime"])
@@ -388,6 +394,7 @@ class SceneManagement:
                 scene["members"][key] = {
                     "endpoint": member["ep"], "capability": CAPABILITY_NATIVE,
                     "status": STATUS_PENDING, "lastCheck": None, "error": None,
+                    "snapshot": self._snapshot(member["nwkid"], member["ep"]),
                 }
             else:
                 scene["members"][key] = {
