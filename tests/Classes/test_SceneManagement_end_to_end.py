@@ -85,13 +85,24 @@ SCRIPT = textwrap.dedent(
                 self.answer("add_scene_response", foundation.Status.SUCCESS, request)
             elif definition.name == "store":
                 self.answer("store_scene_response", self.store_status, request)
+            elif definition.name == "get_scene_membership":
+                self.membership(request)
+
+        def membership(self, request):
+            scenes = [scene for group, scene in self.table if group == request.group_id]
+            response = Scenes.ClientCommandDefs.get_scene_membership_response
+            data = response.schema(status=foundation.Status.SUCCESS, capacity=10, group_id=request.group_id, scenes=scenes).serialize().hex()
+            self.deliver(response, data)
+
+        def deliver(self, response, data):
+            with patch.object(decoders, "zcl_raw_default_response"):
+                frame = decoders.zcl_decoders(plugin, NWKID, EP, "01", "0005", "1942" + "%02x" % response.id + data, FRAME)
+            Modules.input.DECODERS[frame[2:6]](plugin, {}, frame[12:12 + int(frame[6:10], 16)], "c0")
 
         def answer(self, name, status, request):
             response = getattr(Scenes.ClientCommandDefs, name)
             data = response.schema(status=status, group_id=request.group_id, scene_id=request.scene_id).serialize().hex()
-            with patch.object(decoders, "zcl_raw_default_response"):
-                frame = decoders.zcl_decoders(plugin, NWKID, EP, "01", "0005", "1942" + "%02x" % response.id + data, FRAME)
-            Modules.input.DECODERS[frame[2:6]](plugin, {}, frame[12:12 + int(frame[6:10], 16)], "c0")
+            self.deliver(response, data)
 
     def capture(lamp):
         with patch.object(raw, "raw_APS_request", lamp.receive), patch.object(raw, "get_and_inc_ZCL_SQN", return_value="3c"):
@@ -133,5 +144,20 @@ def test_a_lamp_with_a_full_table_is_failed():
         capture(lamp)
         view = plugin.scenemgt.group_view(GROUP)["scenes"][0]
         assert (view["synced"], view["members"][0]["status"], view["members"][0]["error"]) == (0, "failed", "89"), view
+        """
+    )
+
+
+def test_a_scene_already_on_the_lamp_is_found_through_real_frames():
+    _run(
+        """
+        lamp = Lamp()
+        lamp.table[(0x1001, 0x07)] = 5
+        with patch.object(raw, "raw_APS_request", lamp.receive), patch.object(raw, "get_and_inc_ZCL_SQN", return_value="3c"):
+            view = plugin.scenemgt.scan_group(GROUP)
+        assert lamp.seen == ["get_scene_membership"]
+        assert view["scan"]["running"] is False and view["scan"]["found"] == 1
+        scene = view["scenes"][0]
+        assert (scene["sceneId"], scene["name"], scene["discovered"], scene["synced"]) == ("07", "Scene 07", True, 1)
         """
     )
