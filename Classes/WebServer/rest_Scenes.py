@@ -35,6 +35,8 @@ from Classes.SceneManagement import SceneError
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
 
+SCENE_LOG = ["WebServer", "Scene"]
+
 ERROR_STATUS = {
     "BAD_REQUEST": "400 BAD REQUEST",
     "NAME_REQUIRED": "400 BAD REQUEST",
@@ -102,7 +104,8 @@ def rest_scenes(self, verb, data, parameters):
         _response["Data"] = json.dumps(_serve(self.scenemgt, verb, data, parameters))
 
     except SceneError as e:
-        self.logging("Debug", f"rest_scenes {verb} {parameters}: {e.code}")
+        if self.log:
+            self.log.logging(SCENE_LOG, "Debug", f"rest_scenes {verb} {parameters}: {e.code}")
         _response["Status"] = ERROR_STATUS[e.code]
         _response["Data"] = json.dumps({"error": e.code})
 

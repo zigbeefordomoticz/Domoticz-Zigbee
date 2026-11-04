@@ -42,6 +42,7 @@ def rest():
 def server():
     s = types.SimpleNamespace()
     s.logging = MagicMock()
+    s.log = MagicMock()
     s.pluginconf = types.SimpleNamespace(pluginConf={})
     s.scenemgt = MagicMock()
     for name in ("groups_view", "group_view", "create_scene", "rename_scene", "capture_scene", "recall_scene", "retry_scene"):
@@ -112,6 +113,13 @@ def test_scenes_not_enabled(rest, server):
     response = rest.rest_scenes(server, "GET", None, [])
     assert response["Status"] == "409 CONFLICT"
     assert json.loads(response["Data"]) == {"error": "SCENES_DISABLED"}
+
+
+def test_a_refusal_logs_under_webserver_and_scene(rest, server):
+    server.scenemgt.recall_scene.side_effect = SceneError("SCENE_NOT_FOUND")
+    rest.rest_scenes(server, "PUT", None, ["1001", "03", "recall"])
+    assert server.log.logging.call_args.args[:2] == (["WebServer", "Scene"], "Debug")
+    assert "SCENE_NOT_FOUND" in server.log.logging.call_args.args[2]
 
 
 def test_an_unexpected_exception_is_not_swallowed(rest, server):
