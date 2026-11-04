@@ -552,3 +552,50 @@ class TestStoreSurvivesTheGroups:
         view = scenes.group_view(GROUP)["scenes"][0]
         assert SOFA_IEEE not in [m["ieee"] for m in view["members"]]
         assert SOFA_IEEE + "-01" in stored(store)["members"]
+
+
+# ─── Logging ─────────────────────────────────────────────────────────────────
+
+def logged(plugin, level):
+    """(module, message) of what went to the plugin log at this level."""
+    return [(c.args[0], c.args[2]) for c in plugin.log.logging.call_args_list if c.args[1] == level]
+
+
+class TestLogging:
+
+    def test_scene_actions_log_under_scene(self, scenes, plugin):
+        scenes.create_scene(GROUP, "Reading")
+        scenes.rename_scene(GROUP, "01", "Evening")
+        scenes.recall_scene(GROUP, "01")
+        scenes.delete_scene(GROUP, "01")
+        debug = logged(plugin, "Debug")
+        assert {module for module, _ in debug} == {"Scene"}
+        for action in ("create_scene", "_capture", "rename_scene", "recall_scene", "delete_scene"):
+            assert any(message.startswith(action) for _, message in debug), action
+
+    def test_the_outcome_of_a_capture_is_followed(self, mod, scenes, plugin):
+        scenes.create_scene(GROUP, "Reading")
+        complete_capture(mod, scenes, CEILING, "0b")
+        messages = [message for _, message in logged(plugin, "Debug")]
+        assert any("sending Store" in message for message in messages)
+        assert any(message.endswith("synced") for message in messages)
+
+    def test_a_response_nobody_waits_for_is_traced(self, scenes, plugin):
+        scenes.scene_response("Add", CEILING, "0b", "00", GROUP, "07")
+        assert any("not waited for" in message for _, message in logged(plugin, "Debug"))
+
+    def test_a_refused_rename_does_not_log_as_done(self, scenes, plugin):
+        scenes.create_scene(GROUP, "Reading")
+        error_code(scenes.rename_scene, GROUP, "01", "a|b")
+        assert not any(message.startswith("rename_scene") for _, message in logged(plugin, "Debug"))
+
+    def test_a_member_leaving_logs_under_groups_and_scene(self, scenes, plugin):
+        scenes.create_scene(GROUP, "Reading")
+        plugin.log.logging.reset_mock()
+        scenes.member_removed(GROUP, CEILING, "0b", CEILING_IEEE)
+        assert [module for module, _ in logged(plugin, "Debug")] == [["Groups", "Scene"]]
+
+    def test_a_failed_store_still_reaches_the_log_without_debug(self, mod, scenes, plugin):
+        scenes.create_scene(GROUP, "Reading")
+        complete_capture(mod, scenes, CEILING, "0b", status="89")
+        assert [module for module, _ in logged(plugin, "Log")] == ["Scene"]
