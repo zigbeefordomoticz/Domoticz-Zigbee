@@ -143,7 +143,7 @@ def test_from_rest_to_the_lamp_and_back():
         """
         import json
 
-        server = types.SimpleNamespace(logging=MagicMock(), pluginconf=plugin.pluginconf, scenemgt=plugin.scenemgt)
+        server = types.SimpleNamespace(logging=MagicMock(), log=plugin.log, pluginconf=plugin.pluginconf, scenemgt=plugin.scenemgt)
         lamp = Lamp()
         with patch.object(raw, "raw_APS_request", lamp.receive), patch.object(raw, "get_and_inc_ZCL_SQN", return_value="3c"):
             created = rest_scenes(server, "PUT", b'{"name": "Reading", "transitionTime": 2}', [GROUP])
