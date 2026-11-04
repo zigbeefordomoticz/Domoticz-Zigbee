@@ -13,12 +13,19 @@
 import json
 from time import time
 
+from Classes.GroupMgtv2.GrpErrorCodes import GroupRequestError
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
 from Modules.domoticzAbstractLayer import (
     domo_browse_widgets, domo_read_Device_Idx, domo_read_Name,
     domoticz_error_api, retrieve_widgetid_from_deviceId_unit)
 from Modules.tools import mainPoweredDevice
+
+GROUP_ERROR_STATUS = {
+    "GROUP_ID_INVALID": "400 BAD REQUEST",
+    "GROUP_ID_RESERVED": "400 BAD REQUEST",
+    "GROUP_ID_IN_USE": "409 CONFLICT",
+}
 
 LIST_CLUSTERTYPE_FOR_GROUPS = ( 
     "LvlControl", "Switch", "Plug",
@@ -263,7 +270,12 @@ def _zgroup_put( self, data, parameters):
 
     if len(parameters) == 0:
         data = data.decode("utf8")
-        self.groupmgt.process_web_request(json.loads(data))
+        try:
+            self.groupmgt.process_web_request(json.loads(data))
+        except GroupRequestError as e:
+            self.logging("Log", f"zgroup_put refused: {e.code}")
+            _response["Status"] = GROUP_ERROR_STATUS[e.code]
+            _response["Data"] = json.dumps({"error": e.code})
 
     return _response
 

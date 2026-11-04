@@ -47,3 +47,11 @@ GRP_ERROR_CODES = {
     # 05 - WebUI / REST API
     "GRP0501": "Group not created: no group id available",
 }
+
+
+class GroupRequestError(Exception):
+    """A request refused before anything changes. code is what REST returns, not one of the codes above."""
+
+    def __init__(self, code):
+        super().__init__(code)
+        self.code = code
