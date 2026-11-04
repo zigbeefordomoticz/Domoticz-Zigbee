@@ -1689,6 +1689,8 @@ def start_SceneManagement(self):
     self.log.logging("Plugin", "Status", "Z4D starts native Zigbee scenes")
     self.scenemgt = SceneManagement(self, self.PluginStores[SCENES_STORE])
     self.groupmgt.scenemgt = self.scenemgt
+    if self.webserver:
+        self.webserver.update_sceneManagement(self.scenemgt)
 
 
 def start_GrpManagement(self, homefolder):

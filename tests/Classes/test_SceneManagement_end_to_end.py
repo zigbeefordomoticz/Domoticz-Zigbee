@@ -42,6 +42,7 @@ SCRIPT = textwrap.dedent(
     import Zigbee.zclRawCommands as raw
     from Classes.PluginStore import PluginStore
     from Classes.SceneManagement import SceneManagement
+    from Classes.WebServer.rest_Scenes import rest_scenes
     from zigpy.zcl import foundation
     from zigpy.zcl.clusters.general import Scenes
 
@@ -144,6 +145,28 @@ def test_a_lamp_with_a_full_table_is_failed():
         capture(lamp)
         view = plugin.scenemgt.group_view(GROUP)["scenes"][0]
         assert (view["synced"], view["members"][0]["status"], view["members"][0]["error"]) == (0, "failed", "89"), view
+        """
+    )
+
+
+def test_from_rest_to_the_lamp_and_back():
+    _run(
+        """
+        import json
+
+        server = types.SimpleNamespace(logging=MagicMock(), pluginconf=plugin.pluginconf, scenemgt=plugin.scenemgt)
+        lamp = Lamp()
+        with patch.object(raw, "raw_APS_request", lamp.receive), patch.object(raw, "get_and_inc_ZCL_SQN", return_value="3c"):
+            created = rest_scenes(server, "PUT", b'{"name": "Reading", "transitionTime": 2}', [GROUP])
+            assert created["Status"] == "200 OK", created
+            assert lamp.table == {(0x1001, 1): 2}, lamp.table
+
+            duplicate = rest_scenes(server, "PUT", b'{"name": "reading"}', [GROUP])
+            assert duplicate["Status"] == "400 BAD REQUEST", duplicate
+
+        listed = json.loads(rest_scenes(server, "GET", None, [])["Data"])
+        assert [s["name"] for s in listed[0]["scenes"]] == ["Reading"], listed
+        assert listed[0]["scenes"][0]["synced"] == 1, listed
         """
     )
 
