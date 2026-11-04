@@ -1,0 +1,210 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+A capture through the real commands and decoders, with only the radio replaced:
+a fake lamp answers each frame the plugin sends the way a device would, and its
+answer goes back through zcl_decoders and the decoder the plugin registers.
+
+The other scene tests stop at a mock on one side or the other, so this is what
+shows that the two halves agree on group, scene and endpoint formats.
+
+The real Modules.* package conflicts with the stubs tests/conftest.py installs for
+the session, so this runs in a subprocess.
+"""
+
+import subprocess  # nosec B404
+import sys
+import textwrap
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+SCRIPT = textwrap.dedent(
+    """
+    import sys, types
+    from unittest.mock import MagicMock, patch
+
+    domoticz = types.ModuleType("DomoticzEx")
+    for _name in ("Unit", "Connection", "Log", "Debug", "Error", "Status"):
+        setattr(domoticz, _name, MagicMock(name=_name))
+    domoticz.Configuration = MagicMock(name="Configuration", return_value={})
+    sys.modules["DomoticzEx"] = domoticz
+
+    import Modules.tools  # noqa: F401  (import order as in the plugin, avoids a circular import)
+
+    # Modules.input cannot be imported on its own, see test_zcl_scene_responses.py
+    domo_maj = types.ModuleType("Modules.domoMaj")
+    domo_maj.__getattr__ = lambda name: MagicMock(name=name)
+    sys.modules["Modules.domoMaj"] = domo_maj
+
+    import Modules.input
+    import Zigbee.zclDecoders as decoders
+    import Zigbee.zclRawCommands as raw
+    from Classes.PluginStore import PluginStore
+    from Classes.SceneManagement import SceneManagement
+    from Classes.WebServer.rest_Scenes import rest_scenes
+    from zigpy.zcl import foundation
+    from zigpy.zcl.clusters.general import Scenes
+
+    GROUP, NWKID, EP, IEEE = "1001", "c577", "0b", "a1b2c3d4e5f60708"
+    FRAME = "018002003cff0001040300010102c57702000018c00a" + "2803"
+
+    plugin = types.SimpleNamespace()
+    plugin.log = MagicMock()
+    plugin.pluginconf = types.SimpleNamespace(pluginConf={"trackZclClustersOut": False})
+    plugin.zigbee_communication = "zigpy"
+    plugin.DeviceConf = {}
+    plugin.ListOfDevices = {NWKID: {
+        "IEEE": IEEE, "ZDeviceName": "Ceiling", "Model": "TRADFRI bulb",
+        "Ep": {EP: {}}, "Epv2": {EP: {"ClusterIn": {"0005": {}, "0006": {}, "0008": {}}}},
+    }}
+    plugin.IEEE2NWK = {IEEE: NWKID}
+    plugin.ControllerLink = MagicMock()
+    plugin.ControllerLink.loadTransmit.return_value = 0
+    plugin.groupmgt = types.SimpleNamespace(ListOfGroups={GROUP: {"Name": "Living room", "Devices": [[NWKID, EP, IEEE]]}})
+
+    store = PluginStore("Z4D_Scenes", 1)
+    plugin.scenemgt = SceneManagement(plugin, store)
+
+    class Lamp:
+        \"\"\"Parses what zigpy would receive, keeps its table, answers as a device.\"\"\"
+        def __init__(self, store_status=foundation.Status.SUCCESS):
+            self.table = {}
+            self.store_status = store_status
+            self.seen = []
+
+        def receive(self, _plugin, nwkid, ep, cluster, profile, payload, **kwargs):
+            assert (nwkid, ep, cluster, profile) == (NWKID, EP, "0005", "0104")
+            frame = bytes.fromhex(payload)
+            assert frame[0] == 0x11, payload
+            command = Scenes.ServerCommandDefs
+            definition = next(d for d in vars(command).values() if getattr(d, "id", None) == frame[2])
+            request, rest = definition.schema.deserialize(frame[3:])
+            self.seen.append(definition.name)
+            if definition.name == "add":
+                self.table[(request.group_id, request.scene_id)] = request.transition_time
+                self.answer("add_scene_response", foundation.Status.SUCCESS, request)
+            elif definition.name == "store":
+                self.answer("store_scene_response", self.store_status, request)
+            elif definition.name == "get_scene_membership":
+                self.membership(request)
+
+        def membership(self, request):
+            scenes = [scene for group, scene in self.table if group == request.group_id]
+            response = Scenes.ClientCommandDefs.get_scene_membership_response
+            data = response.schema(status=foundation.Status.SUCCESS, capacity=10, group_id=request.group_id, scenes=scenes).serialize().hex()
+            self.deliver(response, data)
+
+        def deliver(self, response, data):
+            with patch.object(decoders, "zcl_raw_default_response"):
+                frame = decoders.zcl_decoders(plugin, NWKID, EP, "01", "0005", "1942" + "%02x" % response.id + data, FRAME)
+            Modules.input.DECODERS[frame[2:6]](plugin, {}, frame[12:12 + int(frame[6:10], 16)], "c0")
+
+        def answer(self, name, status, request):
+            response = getattr(Scenes.ClientCommandDefs, name)
+            data = response.schema(status=status, group_id=request.group_id, scene_id=request.scene_id).serialize().hex()
+            self.deliver(response, data)
+
+    def capture(lamp):
+        with patch.object(raw, "raw_APS_request", lamp.receive), patch.object(raw, "get_and_inc_ZCL_SQN", return_value="3c"):
+            return plugin.scenemgt.create_scene(GROUP, "Reading", 4)
+    """
+)
+
+
+def _run(snippet):
+    result = subprocess.run(  # nosec B603
+        [sys.executable, "-c", SCRIPT + textwrap.dedent(snippet)],
+        cwd=str(REPO_ROOT),
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+    return result.stdout.strip()
+
+
+def test_a_lamp_that_stores_the_scene_is_synced():
+    _run(
+        """
+        lamp = Lamp()
+        capture(lamp)
+        assert lamp.seen == ["add", "store"], lamp.seen
+        assert lamp.table == {(0x1001, 1): 4}, lamp.table
+        view = plugin.scenemgt.group_view(GROUP)["scenes"][0]
+        assert (view["synced"], view["native"]) == (1, 1), view
+        assert view["members"][0]["status"] == "synced", view
+        assert view["members"][0]["name"] == "Ceiling", view
+        """
+    )
+
+
+def test_a_lamp_with_a_full_table_is_failed():
+    _run(
+        """
+        lamp = Lamp(store_status=foundation.Status.INSUFFICIENT_SPACE)
+        capture(lamp)
+        view = plugin.scenemgt.group_view(GROUP)["scenes"][0]
+        assert (view["synced"], view["members"][0]["status"], view["members"][0]["error"]) == (0, "failed", "89"), view
+        """
+    )
+
+
+def test_from_rest_to_the_lamp_and_back():
+    _run(
+        """
+        import json
+
+        server = types.SimpleNamespace(logging=MagicMock(), log=plugin.log, pluginconf=plugin.pluginconf, scenemgt=plugin.scenemgt)
+        lamp = Lamp()
+        with patch.object(raw, "raw_APS_request", lamp.receive), patch.object(raw, "get_and_inc_ZCL_SQN", return_value="3c"):
+            created = rest_scenes(server, "PUT", b'{"name": "Reading", "transitionTime": 2}', [GROUP])
+            assert created["Status"] == "200 OK", created
+            assert lamp.table == {(0x1001, 1): 2}, lamp.table
+
+            duplicate = rest_scenes(server, "PUT", b'{"name": "reading"}', [GROUP])
+            assert duplicate["Status"] == "400 BAD REQUEST", duplicate
+
+        listed = json.loads(rest_scenes(server, "GET", None, [])["Data"])
+        assert [s["name"] for s in listed[0]["scenes"]] == ["Reading"], listed
+        assert listed[0]["scenes"][0]["synced"] == 1, listed
+        """
+    )
+
+
+def test_a_scene_already_on_the_lamp_is_found_through_real_frames():
+    _run(
+        """
+        lamp = Lamp()
+        lamp.table[(0x1001, 0x07)] = 5
+        with patch.object(raw, "raw_APS_request", lamp.receive), patch.object(raw, "get_and_inc_ZCL_SQN", return_value="3c"):
+            view = plugin.scenemgt.scan_group(GROUP)
+        assert lamp.seen == ["get_scene_membership"]
+        assert view["scan"]["running"] is False and view["scan"]["found"] == 1
+        scene = view["scenes"][0]
+        assert (scene["sceneId"], scene["name"], scene["discovered"], scene["synced"]) == ("07", "Scene 07", True, 1)
+        """
+    )
+
+
+def test_a_chosen_id_through_rest_and_real_frames():
+    _run(
+        """
+        import json
+
+        server = types.SimpleNamespace(logging=MagicMock(), log=plugin.log, pluginconf=plugin.pluginconf, scenemgt=plugin.scenemgt)
+        lamp = Lamp()
+        lamp.table[(0x1001, 0x07)] = 5
+        with patch.object(raw, "raw_APS_request", lamp.receive), patch.object(raw, "get_and_inc_ZCL_SQN", return_value="3c"):
+            taken = json.loads(rest_scenes(server, "PUT", b'{"name": "Remote", "sceneId": "07"}', [GROUP])["Data"])
+            assert lamp.seen == ["get_scene_membership"], lamp.seen
+            assert taken["scan"]["capture"]["error"] == "SCENE_ID_IN_USE", taken
+            assert lamp.table == {(0x1001, 0x07): 5}, lamp.table
+
+            free = json.loads(rest_scenes(server, "PUT", b'{"name": "Remote", "transitionTime": 2, "sceneId": "2A"}', [GROUP])["Data"])
+        assert free["scan"]["capture"]["state"] == "started", free
+        assert lamp.seen == ["get_scene_membership", "get_scene_membership", "add", "store"], lamp.seen
+        assert lamp.table[(0x1001, 0x2a)] == 2, lamp.table
+        scene = next(s for s in free["scenes"] if s["sceneId"] == "2a")
+        assert (scene["name"], scene["synced"], scene["discovered"]) == ("Remote", 1, False), scene
+        """
+    )
