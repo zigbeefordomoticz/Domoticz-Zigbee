@@ -88,6 +88,10 @@ ERROR_INTERRUPTED = "interrupted"
 
 SUCCESS = "00"
 
+SCENE_LOG = "Scene"
+# Where a scene follows a group change
+GROUP_SCENE_LOG = ["Groups", "Scene"]
+
 
 class SceneError(Exception):
     """A request that cannot be served. code is what REST returns (issue 2194, section 8)."""
@@ -116,8 +120,8 @@ class SceneManagement:
         self._waiting = {}
         self._fail_interrupted_captures()
 
-    def logging(self, logType, message, nwkid=None):
-        self.plugin.log.logging("Groups", logType, message, nwkid)
+    def logging(self, logType, message, nwkid=None, module=SCENE_LOG):
+        self.plugin.log.logging(module, logType, message, nwkid)
 
     @property
     def _groups(self):
@@ -219,6 +223,7 @@ class SceneManagement:
             self._check_load()
 
             SceneId = self._allocate_scene_id(record)
+            self.logging("Debug", "create_scene - group %s scene %s %s, transition %ss" % (GroupId, SceneId, name, transition_time))
             now = int(time())
             record["scenes"][SceneId] = {
                 "name": name,
@@ -241,6 +246,7 @@ class SceneManagement:
             if transition_time is not None:
                 scene["transitionTime"] = self._check_transition(transition_time)
             scene["updatedAt"] = int(time())
+            self.logging("Debug", "capture_scene - group %s scene %s %s, transition %ss" % (GroupId, SceneId, scene["name"], scene["transitionTime"]))
             self._capture(GroupId, SceneId, record, members)
             return self._scene_view(GroupId, SceneId, scene)
 
@@ -252,6 +258,7 @@ class SceneManagement:
             scene = record["scenes"][SceneId]
             members = self._group_members(GroupId)
             failed = [key for key, member in scene["members"].items() if member["status"] == STATUS_FAILED and key in members]
+            self.logging("Debug", "retry_scene - group %s scene %s, failed members %s" % (GroupId, SceneId, failed))
             for key in failed:
                 scene["members"][key].update({"status": STATUS_PENDING, "error": None})
             self.store.set(GroupId, record)
@@ -264,7 +271,9 @@ class SceneManagement:
         with self._lock:
             record = self._scene_record(GroupId, SceneId)
             scene = record["scenes"][SceneId]
-            scene["name"] = self._check_name(record, name, SceneId)
+            new_name = self._check_name(record, name, SceneId)
+            self.logging("Debug", "rename_scene - group %s scene %s from %s to %s" % (GroupId, SceneId, scene["name"], new_name))
+            scene["name"] = new_name
             scene["updatedAt"] = int(time())
             self.store.set(GroupId, record)
             return self._scene_view(GroupId, SceneId, scene)
@@ -276,6 +285,8 @@ class SceneManagement:
             scene = record["scenes"][SceneId]
             members = self._group_members(GroupId)
             held = {key: scene["members"][key] for key in scene["members"] if key in members}
+            self.logging("Debug", "recall_scene - group %s scene %s %s, members %s" % (
+                GroupId, SceneId, scene["name"], {key: member["capability"] for key, member in held.items()}))
 
             if any(member["capability"] == CAPABILITY_NATIVE for member in held.values()):
                 zcl_raw_recall_scene(self.plugin, GroupId, ZIGATE_EP, GROUP_CAST_EP, GroupId, SceneId, groupaddrmode=True)
@@ -293,6 +304,7 @@ class SceneManagement:
         with self._lock:
             record = self._scene_record(GroupId, SceneId)
             scene = record["scenes"].pop(SceneId)
+            self.logging("Debug", "delete_scene - group %s scene %s %s" % (GroupId, SceneId, scene["name"]))
             members = self._group_members(GroupId)
             for key, member in scene["members"].items():
                 self._waiting.pop((GroupId, SceneId, key), None)
@@ -314,6 +326,7 @@ class SceneManagement:
             held = [SceneId for SceneId, scene in record["scenes"].items() if key in scene["members"]]
             if not held:
                 return
+            self.logging("Debug", "member_removed - group %s %s/%s leaves scenes %s" % (GroupId, NwkId, Ep, held), NwkId, GROUP_SCENE_LOG)
             if any(record["scenes"][SceneId]["members"][key]["capability"] == CAPABILITY_NATIVE for SceneId in held):
                 zcl_raw_remove_all_scenes(self.plugin, NwkId, ZIGATE_EP, Ep, GroupId, ackIsDisabled=is_ack_tobe_disabled(self.plugin, NwkId))
             for SceneId in held:
@@ -328,6 +341,8 @@ class SceneManagement:
     def _capture(self, GroupId, SceneId, record, members):
         """Rebuild the members of a scene and start the capture of the native ones."""
         scene = record["scenes"][SceneId]
+        self.logging("Debug", "_capture - group %s scene %s, members %s" % (
+            GroupId, SceneId, {key: member["capability"] for key, member in members.items()}))
         scene["members"] = {}
         for key, member in members.items():
             if member["capability"] == CAPABILITY_NATIVE:
@@ -362,15 +377,18 @@ class SceneManagement:
             key = "%s-%s" % (ieee, ep)
             waiting = self._waiting.get((GroupId, SceneId, key))
             if waiting is None or waiting["step"] != step:
+                self.logging("Debug", "scene_response - %s from %s/%s, group %s scene %s: not waited for, ignored" % (step, nwkid, ep, GroupId, SceneId), nwkid)
                 return
 
             if step == STEP_ADD:
+                self.logging("Debug", "scene_response - Add from %s/%s status %s, group %s scene %s: sending Store" % (nwkid, ep, status, GroupId, SceneId), nwkid)
                 self._wait(GroupId, SceneId, key, STEP_STORE, nwkid)
                 zcl_raw_store_scene(self.plugin, nwkid, ZIGATE_EP, ep, GroupId, SceneId, ackIsDisabled=is_ack_tobe_disabled(self.plugin, nwkid))
                 return
 
             del self._waiting[(GroupId, SceneId, key)]
             if status == SUCCESS:
+                self.logging("Debug", "scene_response - Store from %s/%s, group %s scene %s: synced" % (nwkid, ep, GroupId, SceneId), nwkid)
                 self._set_member_status(GroupId, SceneId, key, STATUS_SYNCED)
             else:
                 self.logging("Log", "Scene %s of group %s not stored on %s/%s: status %s" % (SceneId, GroupId, nwkid, ep, status), nwkid)
@@ -387,6 +405,7 @@ class SceneManagement:
     def _replay_snapshot(self, member, snapshot, transition_time):
         nwkid, ep = member["nwkid"], member["ep"]
         ack_disabled = is_ack_tobe_disabled(self.plugin, nwkid)
+        self.logging("Debug", "_replay_snapshot - %s/%s %s, transition %ss" % (nwkid, ep, snapshot, transition_time), nwkid)
         if snapshot["onOff"] == 0:
             zcl_onoff_off_noeffect(self.plugin, nwkid, ep, ackIsDisabled=ack_disabled)
         elif snapshot["level"] is not None:
@@ -417,6 +436,7 @@ class SceneManagement:
                         member.update({"status": STATUS_FAILED, "error": ERROR_INTERRUPTED})
                         changed = True
             if changed:
+                self.logging("Debug", "_fail_interrupted_captures - group %s" % GroupId)
                 self.store.set(GroupId, record)
 
     def _save(self, GroupId, record):
