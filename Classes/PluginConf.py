@@ -57,6 +57,7 @@ SETTINGS = {
             "zigatePartOfGroup0000": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "ezsp" },
             "TradfriKelvinStep": { "type": "int", "default": 51, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
             "pingViaGroup": { "type": "hex", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
+            "enableNativeScenes": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, },
         },
     },
     "Zigpy": {

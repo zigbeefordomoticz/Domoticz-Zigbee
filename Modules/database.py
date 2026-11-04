@@ -56,9 +56,11 @@ PLUGIN_DATABASE_RECORD_VERSION = 4
 # Record stores persisted next to ListOfDevices (Classes/PluginStore.py), as
 # (name, version, upgrade): a feature whose records must not live in
 # ListOfDevices declares its store here.
+SCENES_STORE = "Z4D_Scenes"
 # (name, record format version, upgrade callable or None)
 PLUGIN_STORES = (
     (GP_STORE_NAME, GP_STORE_VERSION, None),
+    (SCENES_STORE, 1, None),
 )
 
 CIE_ATTRIBUTES = {

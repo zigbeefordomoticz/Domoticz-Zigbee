@@ -66,6 +66,23 @@ class TestSceneResponseStatus:
         assert call.args[3] == ADDR
 
 
+class TestSceneResponseReachesTheSceneManager:
+
+    def test_store_response(self, mod, plugin):
+        plugin.scenemgt = MagicMock()
+        mod.Decode80A4(plugin, {}, "01" + "0b" + "0005" + "89" + "1001" + "03" + ADDR, LQI)
+        plugin.scenemgt.scene_response.assert_called_once_with("Store", ADDR, "0b", "89", "1001", "03")
+
+    def test_add_response(self, mod, plugin):
+        plugin.scenemgt = MagicMock()
+        mod.Decode80A1(plugin, {}, "01" + "0b" + "0005" + "00" + "1001" + "03" + ADDR, LQI)
+        plugin.scenemgt.scene_response.assert_called_once_with("Add", ADDR, "0b", "00", "1001", "03")
+
+    def test_scenes_not_enabled(self, mod, plugin):
+        plugin.scenemgt = None
+        mod.Decode80A4(plugin, {}, "01" + "0b" + "0005" + "00" + "1001" + "03" + ADDR, LQI)
+
+
 # ─── Decode80A5 – recall scene ────────────────────────────────────────────────
 
 class TestDecode80A5:
