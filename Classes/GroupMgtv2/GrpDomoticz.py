@@ -185,23 +185,23 @@ class GroupAccumulator:
 def create_domoticz_group_device(self, GroupName, GroupId):
     """ Create Device for just created group in Domoticz. """
     
-    self.logging("Debug", f"createDomoticzGroupDevice - {GroupName}, {GroupId}")
+    self.logging("Debug", f"createDomoticzGroupDevice - {GroupName}, {GroupId}", GroupId)
 
     if GroupName == "" or GroupId == "":
-        self.logging( "Error", "createDomoticzGroupDevice - Invalid Group Name: %s or GroupdID: %s" % (GroupName, GroupId) )
+        self.logging( "Error", "createDomoticzGroupDevice - Invalid Group Name: %s or GroupdID: %s" % (GroupName, GroupId), GroupId, {"Error code": "GRP0001", "GroupId": GroupId, "GroupName": GroupName} )
         return
 
     if find_first_unit_widget_from_deviceID(self, self.Devices, GroupId):
-        self.logging( "Log", f"createDomoticzGroupDevice - {GroupId} exists already in Domoticz"  )
+        self.logging( "Log", f"createDomoticzGroupDevice - {GroupId} exists already in Domoticz", GroupId  )
         return
 
     Type_, Subtype_, SwitchType_ = best_group_widget(self, GroupId)
     self.ListOfGroups[GroupId]['TypeName'] = get_typename(self, Type_, Subtype_, SwitchType_)
 
     idx = domo_create_api(self, self.Devices, GroupId, DEFAULT_GROUP_UNIT, GroupName, Type_=Type_, Subtype_=Subtype_, Switchtype_=SwitchType_, widgetOptions=None, Image=None)
-    self.logging("Debug", "createDomoticzGroupDevice - Unit: %s" % DEFAULT_GROUP_UNIT)
+    self.logging("Debug", "createDomoticzGroupDevice - Unit: %s" % DEFAULT_GROUP_UNIT, GroupId)
     if idx == -1:
-        self.logging("Error", f"createDomoticzGroupDevice - failed to create Group device. {GroupName} with unit {DEFAULT_GROUP_UNIT}")
+        self.logging("Error", f"createDomoticzGroupDevice - failed to create Group device. {GroupName} with unit {DEFAULT_GROUP_UNIT}", GroupId, {"Error code": "GRP0002", "GroupId": GroupId, "GroupName": GroupName, "Unit": DEFAULT_GROUP_UNIT, "Type": Type_, "Subtype": Subtype_, "SwitchType": SwitchType_})
         return None
 
     self.ListOfGroups[GroupId]["WidgetType"] = idx
@@ -209,7 +209,7 @@ def create_domoticz_group_device(self, GroupName, GroupId):
 
 
 def LookForGroupAndCreateIfNeeded(self, GroupId):
-    self.logging( "Debug", f"LookForGroupAndCreateIfNeeded - '{GroupId}'")
+    self.logging( "Debug", f"LookForGroupAndCreateIfNeeded - '{GroupId}'", GroupId)
     if GroupId not in self.ListOfGroups:
         return
 
@@ -228,15 +228,15 @@ def LookForGroupAndCreateIfNeeded(self, GroupId):
 
 def update_domoticz_group_device_widget_name(self, GroupName, GroupId):
 
-    self.logging( "Debug", f"update_domoticz_group_device_widget_name - '{GroupName}' '{GroupId}'")
+    self.logging( "Debug", f"update_domoticz_group_device_widget_name - '{GroupName}' '{GroupId}'", GroupId)
 
     if GroupName == "" or GroupId == "":
-        self.logging( "Error", "update_domoticz_group_device_widget_name - Invalid Group Name: %s or GroupdID: %s" % (GroupName, GroupId), )
+        self.logging( "Error", "update_domoticz_group_device_widget_name - Invalid Group Name: %s or GroupdID: %s" % (GroupName, GroupId), GroupId, {"Error code": "GRP0003", "GroupId": GroupId, "GroupName": GroupName}, )
         return
 
     unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
     if unit is None:
-        self.logging( "Debug", f"update_domoticz_group_device_widget_name - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}" )
+        self.logging( "Debug", f"update_domoticz_group_device_widget_name - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}", GroupId )
         LookForGroupAndCreateIfNeeded(self, GroupId)
         return
 
@@ -247,13 +247,13 @@ def update_domoticz_group_device_widget_name(self, GroupName, GroupId):
 
 def update_domoticz_group_device_widget(self, GroupId):
 
-    self.logging("Debug", "update_domoticz_group_device_widget GroupId: %s" % GroupId)
+    self.logging("Debug", "update_domoticz_group_device_widget GroupId: %s" % GroupId, GroupId)
     if GroupId == "":
-        self.logging("Error", "update_domoticz_group_device_widget - Invalid GroupdID: %s" % (GroupId))
+        self.logging("Error", "update_domoticz_group_device_widget - Invalid GroupdID: %s" % (GroupId), GroupId, {"Error code": "GRP0004", "GroupId": GroupId})
 
     unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
     if unit is None:
-        self.logging( "Debug", f"update_domoticz_group_device_widget - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}" )
+        self.logging( "Debug", f"update_domoticz_group_device_widget - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}", GroupId )
         return
 
     Type_, Subtype_, SwitchType_ = best_group_widget(self, GroupId)
@@ -266,7 +266,7 @@ def update_domoticz_group_device_widget(self, GroupId):
 
         new_typename = get_typename(self, Type_, Subtype_, SwitchType_)
 
-        self.logging("Debug", f"      Looking to update Unit: {unit} from {current_typename} to {new_typename}")
+        self.logging("Debug", f"      Looking to update Unit: {unit} from {current_typename} to {new_typename}", GroupId)
         if current_typename != new_typename:
             self.ListOfGroups[GroupId]['TypeName'] = new_typename
             domo_update_SwitchType_SubType_Type(self, self.Devices, GroupId, unit, Type_, Subtype_, SwitchType_, Typename_=new_typename)
@@ -278,7 +278,7 @@ def update_domoticz_group_device_widget(self, GroupId):
     current_switchType, current_Subtype, current_Type = domo_read_SwitchType_SubType_Type(self, self.Devices, GroupId, unit)
     new_typename = get_typename(self, Type_, Subtype_, SwitchType_)
     current_typename = get_typename(self, current_switchType, current_Subtype, current_Type)
-    self.logging("Debug", f"      Looking to update Unit: {unit} from {current_Type} {current_Subtype} {current_switchType} ({current_typename}) to {Type_} {Subtype_} {SwitchType_} ({new_typename})")
+    self.logging("Debug", f"      Looking to update Unit: {unit} from {current_Type} {current_Subtype} {current_switchType} ({current_typename}) to {Type_} {Subtype_} {SwitchType_} ({new_typename})", GroupId)
 
     if new_typename is not None and current_typename != new_typename:
         self.ListOfGroups[GroupId]['TypeName'] = new_typename
@@ -378,7 +378,7 @@ def negotiate_endpoint_widget(self, NwkId, device_info, device_ep_info, GroupWid
     every member device supports.
     """
     for DomoDeviceUnit, device_widget_type in device_ep_info["ClusterType"].items():
-        self.logging("Debug", f"negotiate_endpoint_widget {NwkId} unit={DomoDeviceUnit} widget={device_widget_type} candidate={group_widget_type_candidate}")
+        self.logging("Debug", f"negotiate_endpoint_widget {NwkId} unit={DomoDeviceUnit} widget={device_widget_type} candidate={group_widget_type_candidate}", NwkId)
 
         if device_widget_type is None:
             continue
@@ -389,11 +389,11 @@ def negotiate_endpoint_widget(self, NwkId, device_info, device_ep_info, GroupWid
             type_parts = device_type.split("/")
             for blind_key, result in _BLIND_TYPE_MAP.items():
                 if blind_key in type_parts:
-                    self.logging("Debug", f"negotiate_endpoint_widget {NwkId} - found blind type '{blind_key}'")
+                    self.logging("Debug", f"negotiate_endpoint_widget {NwkId} - found blind type '{blind_key}'", NwkId)
                     return result
 
         if device_widget_type in _COVERING_WIDGETS:
-            self.logging("Debug", f"negotiate_endpoint_widget {NwkId} - found covering widget '{device_widget_type}'")
+            self.logging("Debug", f"negotiate_endpoint_widget {NwkId} - found covering widget '{device_widget_type}'", NwkId)
             return _COVERING_GROUP_STYLE
 
         # --- Normal capability negotiation ---
@@ -401,7 +401,7 @@ def negotiate_endpoint_widget(self, NwkId, device_info, device_ep_info, GroupWid
             continue
 
         group_widget_type_candidate = my_best_widget_offer(device_widget_type, group_widget_type_candidate)
-        self.logging("Debug", f"negotiate_endpoint_widget {NwkId} - best offer -> {group_widget_type_candidate}")
+        self.logging("Debug", f"negotiate_endpoint_widget {NwkId} - best offer -> {group_widget_type_candidate}", NwkId)
 
     return GroupWidgetStyle, group_widget_type_candidate
 
@@ -471,16 +471,16 @@ def best_group_widget(self, GroupId):
     group_widget_type_candidate = None
     GroupWidgetStyle = None
 
-    self.logging("Debug", f"best_group_widget Group={GroupId} devices={self.ListOfGroups[GroupId]['Devices']}")
+    self.logging("Debug", f"best_group_widget Group={GroupId} devices={self.ListOfGroups[GroupId]['Devices']}", GroupId)
 
     for NwkId, devEp, iterIEEE in self.ListOfGroups[GroupId]["Devices"]:
-        self.logging("Debug", f"best_group_widget processing NwkId={NwkId} ep={devEp} ieee={iterIEEE}")
+        self.logging("Debug", f"best_group_widget processing NwkId={NwkId} ep={devEp} ieee={iterIEEE}", GroupId)
 
         if NwkId == "0000":
             continue
 
         if NwkId not in self.ListOfDevices:
-            self.logging("Warning", f"best_group_widget Group={GroupId} NwkId={NwkId} not in ListOfDevices — skipping (inconsistency)")
+            self.logging("Warning", f"best_group_widget Group={GroupId} NwkId={NwkId} not in ListOfDevices — skipping (inconsistency)", GroupId)
             continue
 
         device_info    = self.ListOfDevices[NwkId]
@@ -490,7 +490,7 @@ def best_group_widget(self, GroupId):
             # A remote sends group commands, it never receives them, so its own widget
             # must neither become the group widget nor cap it: a remote offering On/Off
             # and dimming would otherwise hold a colour bulb down to a dimmer.
-            self.logging("Debug", f"best_group_widget Group={GroupId} NwkId={NwkId} is a remote, not contributing a widget type")
+            self.logging("Debug", f"best_group_widget Group={GroupId} NwkId={NwkId} is a remote, not contributing a widget type", GroupId)
             continue
 
         if "ClusterType" not in device_ep_info:
@@ -499,7 +499,7 @@ def best_group_widget(self, GroupId):
         GroupWidgetStyle, group_widget_type_candidate = negotiate_endpoint_widget(
             self, NwkId, device_info, device_ep_info, GroupWidgetStyle, group_widget_type_candidate
         )
-        self.logging("Debug", f"best_group_widget {NwkId} ep={devEp} -> style={GroupWidgetStyle} candidate={group_widget_type_candidate}")
+        self.logging("Debug", f"best_group_widget {NwkId} ep={devEp} -> style={GroupWidgetStyle} candidate={group_widget_type_candidate}", GroupId)
 
         if GroupWidgetStyle in _COVERING_GROUP_STYLES:
             break
@@ -512,7 +512,7 @@ def best_group_widget(self, GroupId):
     self.ListOfGroups[GroupId].get("Tradfri Remote", {}).setdefault("Color Mode", group_widget_type_candidate)
     self.ListOfGroups[GroupId]["Cluster"] = CLUSTER_MAPPING.get(group_widget_type_candidate, "")
 
-    self.logging("Debug", f"best_group_widget Group={GroupId} WidgetType={group_widget_type_candidate} Widget={WIDGET_STYLE.get(group_widget_type_candidate, WIDGET_STYLE[_DEFAULT_WIDGET_TYPE])}")
+    self.logging("Debug", f"best_group_widget Group={GroupId} WidgetType={group_widget_type_candidate} Widget={WIDGET_STYLE.get(group_widget_type_candidate, WIDGET_STYLE[_DEFAULT_WIDGET_TYPE])}", GroupId)
 
     if GroupWidgetStyle is None:
         GroupWidgetStyle = group_widget_type_candidate
@@ -534,21 +534,21 @@ def update_domoticz_group_device(self, GroupId):
     """
     
     if int(GroupId,16) == self.pluginconf.pluginConf["pingViaGroup"]:
-        self.logging("Debug", "update_domoticz_group_device - Skip PingViaGroup: %s" % GroupId)
+        self.logging("Debug", "update_domoticz_group_device - Skip PingViaGroup: %s" % GroupId, GroupId)
         return
 
     if GroupId not in self.ListOfGroups:
-        self.logging("Error", "update_domoticz_group_device - unknown group: %s" % GroupId)
+        self.logging("Error", "update_domoticz_group_device - unknown group: %s" % GroupId, GroupId, {"Error code": "GRP0101", "GroupId": GroupId})
         return
 
     group_devices = self.ListOfGroups[GroupId].get("Devices")
     if group_devices is None or len(group_devices) == 0:
-        self.logging( "Debug", "update_domoticz_group_device - no Devices for that group: %s" % self.ListOfGroups[GroupId])
+        self.logging( "Debug", "update_domoticz_group_device - no Devices for that group: %s" % self.ListOfGroups[GroupId], GroupId)
         return
 
     unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
     if unit is None:
-        self.logging( "Debug", f"update_domoticz_group_device - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}" )
+        self.logging( "Debug", f"update_domoticz_group_device - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}", GroupId )
         LookForGroupAndCreateIfNeeded(self, GroupId)
         return
 
@@ -561,16 +561,16 @@ def update_domoticz_group_device(self, GroupId):
         # Check each device in the group and count On/Off/Stop and average level for dimmers and covering
         if NwkId not in self.ListOfDevices:
             self.logging( "Debug", "update_domoticz_group_device - Nwkid: %s/%s not found for GroupId: %s" %(
-                NwkId, IEEE, GroupId))
+                NwkId, IEEE, GroupId), GroupId)
             if check_and_fix_missing_device(self, GroupId, NwkId, IEEE) is None:
                 self.logging( "Error", "update_domoticz_group_device - Nwkid: %s/%s not found for GroupId: %s" %(
-                    NwkId, IEEE, GroupId))
+                    NwkId, IEEE, GroupId), GroupId, {"Error code": "GRP0102", "GroupId": GroupId, "NwkId": NwkId, "Ep": Ep, "Ieee": IEEE})
             # If we have updated the NwkId, then let's skip this and count on the next cycle to have the Group correctly updated.
             continue
 
         if Ep not in self.ListOfDevices[NwkId]["Ep"]:
             self.logging( "Debug", "update_domoticz_group_device - Nwkid: %s Ep: %s not found for GroupId: %s" %(
-                NwkId, Ep, GroupId))
+                NwkId, Ep, GroupId), GroupId)
             continue
 
         model = self.ListOfDevices[NwkId].get("Model")
@@ -580,12 +580,12 @@ def update_domoticz_group_device(self, GroupId):
         _collect_device_state(self, NwkId, Ep, group_cluster, acc, switchType, GroupId)
 
         self.logging("Debug", "update_domoticz_group_device - Processing: Group: %s with device: %s/%s On: %s, Off: %s Stop: %s, level: %s covering: %s" % (
-            GroupId, NwkId, Ep, acc.count_on, acc.count_off, acc.count_stop, acc.level, acc.covering_sum/acc.covering_count if acc.covering_count > 0 else 0))
+            GroupId, NwkId, Ep, acc.count_on, acc.count_off, acc.count_stop, acc.level, acc.covering_sum/acc.covering_count if acc.covering_count > 0 else 0), GroupId)
 
     current_nValue, current_sValue = domo_read_nValue_sValue(self, self.Devices, GroupId, unit)
 
     if acc.is_empty:   # count_on+off+stop == 0 and level_count == 0 and covering_count == 0
-        self.logging("Debug", f"update_domoticz_group_device - no usable device state for {GroupId}, skipping")
+        self.logging("Debug", f"update_domoticz_group_device - no usable device state for {GroupId}, skipping", GroupId)
         return
 
     elif acc.has_covering:
@@ -603,7 +603,7 @@ def update_domoticz_group_device(self, GroupId):
             
     group_name = domo_read_Name( self, self.Devices, GroupId, unit )
     self.logging( "Debug", "update_domoticz_group_device - Processing: Group: %s ==  > from %s:%s to %s:%s" % (
-        GroupId, current_nValue, current_sValue, nValue, sValue), )
+        GroupId, current_nValue, current_sValue, nValue, sValue), GroupId, )
 
     if nValue != current_nValue or sValue != current_sValue:
         self.ListOfGroups[GroupId]["nValue"] = nValue
@@ -612,7 +612,7 @@ def update_domoticz_group_device(self, GroupId):
         self.ListOfGroups[GroupId]["prev_sValue"] = current_sValue
         self.ListOfGroups[GroupId]["Switchtype"] = switchType
         self.ListOfGroups[GroupId]["Subtype"] = Subtype
-        self.logging("Log", f"UpdateGroup  - ({group_name:>15}) {nValue}:{sValue}")
+        self.logging("Log", f"UpdateGroup  - ({group_name:>15}) {nValue}:{sValue}", GroupId)
         domo_update_api(self, self.Devices, GroupId, unit, nValue, sValue)
 
 
@@ -680,7 +680,7 @@ def _compute_nvalue_svalue(self, level, switchType, count_on, count_off, count_s
         nValue = 0
 
     self.logging( "Debug", "update_domoticz_group_device - Processing: Group: %s ==  > nValue: %s, level: %s" % (
-        group_id, nValue, level), )
+        group_id, nValue, level), group_id, )
 
     # At that stage
     # nValue == 0 if Off
@@ -760,7 +760,7 @@ def remove_domoticz_group_device(self, GroupId):
 
     unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
     if unit is None and GroupId in self.ListOfGroups:
-        self.logging( "Debug", f"remove_domoticz_group_device - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}" )
+        self.logging( "Debug", f"remove_domoticz_group_device - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}", GroupId )
         return
     domo_delete_widget( self, self.Devices, GroupId, unit)
 
@@ -781,7 +781,7 @@ def update_device_list_attribute(self, GroupId, cluster, value):
                 iterIEEE = self.ListOfDevices[iterDev]["IEEE"]
 
             else:
-                self.logging("Error", "Unknown device %s, it is recommended to do a full rescan of Groups" % iterDev)
+                self.logging("Error", "Unknown device %s, it is recommended to do a full rescan of Groups" % iterDev, GroupId, {"Error code": "GRP0103", "GroupId": GroupId, "NwkId": iterDev, "Ep": iterEp})
                 continue
         else:
             continue
@@ -790,20 +790,21 @@ def update_device_list_attribute(self, GroupId, cluster, value):
             continue
 
         if iterDev not in self.ListOfDevices:
-            iterDev = check_and_fix_missing_device(self, GroupId, iterDev, iterIEEE)
-            if iterDev is None:
+            newNwkId = check_and_fix_missing_device(self, GroupId, iterDev, iterIEEE)
+            if newNwkId is None:
                 self.logging(
                     "Error",
                     "update_device_list_attribute - Device: %s of Group: %s not in the list anymore"
-                    % (iterDev, GroupId),
+                    % (iterDev, GroupId), GroupId, {"Error code": "GRP0104", "GroupId": GroupId, "NwkId": iterDev, "Ep": iterEp, "Ieee": iterIEEE},
                 )
                 continue
+            iterDev = newNwkId
 
         if iterEp not in self.ListOfDevices[iterDev]["Ep"]:
             self.logging(
                 "Error",
                 "update_device_list_attribute - Not existing Ep: %s for Device: %s in Group: %s"
-                % (iterEp, iterDev, GroupId),
+                % (iterEp, iterDev, GroupId), GroupId, {"Error code": "GRP0105", "GroupId": GroupId, "NwkId": iterDev, "Ep": iterEp, "Ieee": iterIEEE},
             )
             continue
 
@@ -814,7 +815,7 @@ def update_device_list_attribute(self, GroupId, cluster, value):
             self.logging(
                 "Error",
                 "update_device_list_attribute - No Widget attached to Device: %s/%s in Group: %s"
-                % (iterDev, iterEp, GroupId),
+                % (iterDev, iterEp, GroupId), GroupId, {"Error code": "GRP0106", "GroupId": GroupId, "NwkId": iterDev, "Ep": iterEp, "Ieee": iterIEEE},
             )
             continue
 
@@ -822,7 +823,7 @@ def update_device_list_attribute(self, GroupId, cluster, value):
             self.logging(
                 "Debug",
                 "update_device_list_attribute - Cluster: %s doesn't exist for Device: %s/%s in Group: %s"
-                % (cluster, iterDev, iterEp, GroupId),
+                % (cluster, iterDev, iterEp, GroupId), GroupId,
             )
             continue
 
@@ -843,7 +844,7 @@ def update_device_list_attribute(self, GroupId, cluster, value):
         self.logging(
             "Debug",
             "update_device_list_attribute - Updating Device: %s/%s of Group: %s Cluster: %s to value: %s"
-            % (iterDev, iterEp, GroupId, cluster, value),
+            % (iterDev, iterEp, GroupId, cluster, value), GroupId,
         )
 
     return
@@ -865,7 +866,7 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
     self.logging(
         "Debug",
         "processGroupCommand - unit: %s, NwkId: %s, cmd: %s, level: %s, color: %s"
-        % (unit, GrpId, Command, Level, Color_),
+        % (unit, GrpId, Command, Level, Color_), GrpId,
     )
 
     if GrpId not in self.ListOfGroups:
@@ -903,7 +904,7 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
                 Level = 0 if Level > 100 else 100 - Level
             Level = min(max(Level, 1), 99)
             update_device_list_attribute(self, GrpId, "0102", Level)
-            self.logging( "Debug", "processGroupCommand - requesting level: %s for Group: %s" % (Level, GrpId), )
+            self.logging( "Debug", "processGroupCommand - requesting level: %s for Group: %s" % (Level, GrpId), GrpId, )
             zcl_group_window_covering_level(self, GrpId, ZIGATE_EP, EPout, level="%02x" %Level)
             domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
 
@@ -995,7 +996,7 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
 
         if Hue_List["m"] == 1:
             ww = int(Hue_List["ww"])  # Can be used as level for monochrome white
-            self.logging("Debug", "Not implemented device color 1")
+            self.logging("Debug", "Not implemented device color 1", GrpId)
 
         # ColorModeTemp = 2   // White with color temperature. Valid fields: t
         if Hue_List["m"] == 2:
@@ -1007,7 +1008,7 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         elif Hue_List["m"] == 4:
             # Gledopto GL_008
             # Color: {"b":43,"cw":27,"g":255,"m":4,"r":44,"t":227,"ww":215}
-            self.logging("Log", "Not fully implemented device color 4")
+            self.logging("Log", "Not fully implemented device color 4", GrpId)
 
             # Process White color
             cw = int(Hue_List["cw"])  # 0 < cw < 255 Cold White
@@ -1022,7 +1023,7 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
 
             value = int(level * 254 // 100)
             OnOff = "01"
-            self.logging("Debug", "---------- Set Level: %s instead of Level: %s" % (value, Level))
+            self.logging("Debug", "---------- Set Level: %s instead of Level: %s" % (value, Level), GrpId)
             zcl_group_move_to_level_with_onoff(self, GrpId, EPout, OnOff, Hex_Format(2, value), transition=transitionMoveLevel)
 
         # Update Device
@@ -1040,13 +1041,13 @@ def resetDevicesHeartBeat(self, GrpId):
         return
 
     for NwkId, Ep, Ieee in self.ListOfGroups[GrpId]["Devices"]:
-        self.logging("Debug", "processGroupCommand - reset heartbeat for device : %s" % NwkId)
+        self.logging("Debug", "processGroupCommand - reset heartbeat for device : %s" % NwkId, GrpId)
         if NwkId not in self.ListOfDevices:
             if Ieee in self.IEEE2NWK:
                 NwkId = self.IEEE2NWK[Ieee]
             else:
                 self.logging(
-                    "Error", "resetDevicesHeartBeat - Hum Hum something wrong NwkId: %s Ieee %s" % (NwkId, Ieee)
+                    "Error", "resetDevicesHeartBeat - Hum Hum something wrong NwkId: %s Ieee %s" % (NwkId, Ieee), GrpId, {"Error code": "GRP0107", "GroupId": GrpId, "NwkId": NwkId, "Ep": Ep, "Ieee": Ieee}
                 )
 
         if NwkId in self.ListOfDevices:
@@ -1071,10 +1072,10 @@ def is_device_inverted(self, GroupId):
         model_name = self.ListOfDevices.get(NwkId, {}).get("Model")
         if model_name is None:
             continue
-        self.logging( "Debug", "is_device_inverted - Looking for WindowsCoverringLevelInverted in  NwkId: %s Ieee %s Model: %s" % (NwkId, Ieee, model_name) )
+        self.logging( "Debug", "is_device_inverted - Looking for WindowsCoverringLevelInverted in  NwkId: %s Ieee %s Model: %s" % (NwkId, Ieee, model_name), GroupId )
         
         if get_deviceconf_parameter_value(self, model_name, "WindowsCoverringLevelInverted"):
-            self.logging( "Debug", "is_device_inverted - Found WindowsCoverringLevelInverted for NwkId: %s Ieee %s" % (NwkId, Ieee) )
+            self.logging( "Debug", "is_device_inverted - Found WindowsCoverringLevelInverted for NwkId: %s Ieee %s" % (NwkId, Ieee), GroupId )
             return True
 
     return False
