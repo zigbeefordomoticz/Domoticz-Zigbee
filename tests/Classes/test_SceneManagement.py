@@ -13,6 +13,7 @@ The frames themselves are in tests/Zigbee/test_zcl_raw_scene_commands.py.
 import importlib
 import json
 import sys
+import time
 import types
 from unittest.mock import MagicMock, patch
 
@@ -27,8 +28,8 @@ STRIP, STRIP_IEEE = "a77f", "0102030405060708"
 REMOTE, REMOTE_IEEE = "b001", "2122232425262728"
 
 COMMANDS = (
-    "zcl_raw_add_scene", "zcl_raw_recall_scene", "zcl_raw_remove_all_scenes",
-    "zcl_raw_remove_scene", "zcl_raw_store_scene",
+    "zcl_raw_add_scene", "zcl_raw_get_scene_membership", "zcl_raw_recall_scene",
+    "zcl_raw_remove_all_scenes", "zcl_raw_remove_scene", "zcl_raw_store_scene",
 )
 
 
@@ -552,6 +553,159 @@ class TestStoreSurvivesTheGroups:
         view = scenes.group_view(GROUP)["scenes"][0]
         assert SOFA_IEEE not in [m["ieee"] for m in view["members"]]
         assert SOFA_IEEE + "-01" in stored(store)["members"]
+
+
+# ─── Scan ────────────────────────────────────────────────────────────────────
+
+def scan_both(scenes, ceiling, sofa):
+    scenes.scan_group(GROUP)
+    scenes.membership_response(CEILING, "0b", "00", GROUP, ceiling)
+    scenes.membership_response(SOFA, "01", "00", GROUP, sofa)
+
+
+class TestScan:
+
+    def test_asks_each_native_member_and_no_other(self, mod, scenes):
+        view = scenes.scan_group(GROUP)
+        assert [c.args[1] for c in mod.zcl_raw_get_scene_membership.call_args_list] == [CEILING, SOFA]
+        assert view["scan"]["running"] is True
+        assert view["scan"]["members"] == 2
+
+    def test_a_scene_set_by_something_else_appears(self, scenes, store):
+        scenes.scan_group(GROUP)
+        scenes.membership_response(CEILING, "0b", "00", GROUP, ["03"])
+        found = stored(store, "03")
+        assert found["name"] == "Scene 03"
+        assert found["discovered"] is True
+        assert found["transitionTime"] is None
+        assert found["members"][CEILING_IEEE + "-0b"]["status"] == "synced"
+
+    def test_the_two_members_end_up_in_one_scene(self, scenes):
+        scenes.scan_group(GROUP)
+        scenes.membership_response(CEILING, "0b", "00", GROUP, ["03"])
+        scenes.membership_response(SOFA, "01", "00", GROUP, ["03"])
+        view = scenes.group_view(GROUP)
+        assert [(s["sceneId"], s["discovered"], s["synced"], s["native"]) for s in view["scenes"]] == [("03", True, 2, 2)]
+        assert view["scan"] == {"running": False, "at": view["scan"]["at"], "members": 2, "found": 1, "noAnswer": []}
+
+    def test_a_member_without_the_scene_is_offered_a_capture(self, scenes):
+        scenes.scan_group(GROUP)
+        scenes.membership_response(CEILING, "0b", "00", GROUP, ["03"])
+        scenes.membership_response(SOFA, "01", "00", GROUP, [])
+        scene = scenes.group_view(GROUP)["scenes"][0]
+        assert (scene["synced"], scene["native"]) == (1, 1)
+        assert SOFA_IEEE in [member["ieee"] for member in scene["missing"]]
+
+    def test_a_capture_after_a_scan_skips_the_id_found(self, mod, scenes):
+        scenes.scan_group(GROUP)
+        scenes.membership_response(CEILING, "0b", "00", GROUP, ["01", "02"])
+        assert scenes.create_scene(GROUP, "Reading")["sceneId"] == "03"
+
+    def test_a_scene_name_already_taken_is_not_reused(self, mod, scenes, store):
+        scenes.create_scene(GROUP, "Scene 03")
+        scenes.scan_group(GROUP)
+        scenes.membership_response(CEILING, "0b", "00", GROUP, ["03"])
+        assert stored(store, "03")["name"] == "Scene 03 (2)"
+
+    def test_a_scene_the_plugin_knows_is_not_touched(self, mod, scenes, store):
+        scenes.create_scene(GROUP, "Reading", 4)
+        complete_capture(mod, scenes, CEILING, "0b")
+        scenes.scan_group(GROUP)
+        scenes.membership_response(CEILING, "0b", "00", GROUP, ["01"])
+        scene = stored(store)
+        assert (scene["name"], scene["transitionTime"], "discovered" in scene) == ("Reading", 4, False)
+
+    def test_a_scene_lost_by_a_member_shows_as_failed_and_comes_back(self, mod, scenes, store):
+        scenes.create_scene(GROUP, "Reading")
+        complete_capture(mod, scenes, CEILING, "0b")
+        scan_both(scenes, [], [])
+        member = stored(store)["members"][CEILING_IEEE + "-0b"]
+        assert (member["status"], member["error"]) == ("failed", "absent")
+
+        scan_both(scenes, ["01"], [])
+        member = stored(store)["members"][CEILING_IEEE + "-0b"]
+        assert (member["status"], member["error"]) == ("synced", None)
+
+    def test_a_capture_in_progress_is_left_to_finish(self, scenes, store):
+        scenes.create_scene(GROUP, "Reading")
+        scenes.scan_group(GROUP)
+        scenes.membership_response(CEILING, "0b", "00", GROUP, [])
+        assert stored(store)["members"][CEILING_IEEE + "-0b"]["status"] == "pending"
+
+    def test_a_failed_store_stays_failed_when_the_id_is_there(self, mod, scenes, store):
+        scenes.create_scene(GROUP, "Reading")
+        complete_capture(mod, scenes, CEILING, "0b", status="89")
+        scenes.scan_group(GROUP)
+        scenes.membership_response(CEILING, "0b", "00", GROUP, ["01"])
+        assert stored(store)["members"][CEILING_IEEE + "-0b"]["status"] == "failed"
+
+    def test_a_refused_scan_learns_nothing(self, scenes, store, plugin):
+        plugin.ListOfDevices[CEILING]["ZDeviceName"] = "Ceiling"
+        scenes.scan_group(GROUP)
+        scenes.membership_response(CEILING, "0b", "85", GROUP, [])
+        assert store.get(GROUP) is None
+        assert scenes.group_view(GROUP)["scan"]["noAnswer"] == ["Ceiling"]
+
+    def test_a_silent_member_ends_the_scan_by_timeout(self, mod, scenes, plugin):
+        plugin.ListOfDevices[SOFA]["ZDeviceName"] = "Sofa"
+        scenes.scan_group(GROUP)
+        scenes.membership_response(CEILING, "0b", "00", GROUP, [])
+        with patch.object(mod, "time", return_value=time.time() + mod.SCENE_RESPONSE_TIMEOUT + 1):
+            scenes.heartbeat()
+        scan = scenes.group_view(GROUP)["scan"]
+        assert (scan["running"], scan["noAnswer"]) == (False, ["Sofa"])
+
+    def test_a_second_scan_waits_for_the_first(self, mod, scenes):
+        scenes.scan_group(GROUP)
+        scenes.scan_group(GROUP)
+        assert mod.zcl_raw_get_scene_membership.call_count == 2
+
+    def test_a_response_out_of_a_scan_is_ignored(self, scenes, store):
+        scenes.membership_response(CEILING, "0b", "00", GROUP, ["03"])
+        assert store.get(GROUP) is None
+
+    def test_refused_like_a_capture(self, scenes, plugin):
+        assert error_code(scenes.scan_group, "0000") == "GROUP_NOT_ALLOWED"
+        assert error_code(scenes.scan_group, "2002") == "NO_CAPABLE_MEMBER"
+        assert error_code(scenes.scan_group, "9999") == "GROUP_NOT_FOUND"
+        plugin.ControllerLink.loadTransmit.return_value = 99
+        assert error_code(scenes.scan_group, GROUP) == "COORDINATOR_BUSY"
+
+
+class TestDiscoveredScene:
+
+    @pytest.fixture
+    def found(self, scenes):
+        scan_both(scenes, ["03"], [])
+        return scenes
+
+    def test_can_be_recalled(self, mod, found):
+        found.recall_scene(GROUP, "03")
+        assert mod.zcl_raw_recall_scene.call_args.args[4:6] == (GROUP, "03")
+
+    def test_can_be_renamed(self, found, store):
+        found.rename_scene(GROUP, "03", "Movie")
+        assert stored(store, "03")["name"] == "Movie"
+
+    def test_a_capture_makes_it_a_scene_of_the_plugin(self, mod, found, store):
+        found.capture_scene(GROUP, "03", 2)
+        assert stored(store, "03")["transitionTime"] == 2
+        assert "discovered" not in stored(store, "03")
+
+    def test_a_capture_without_a_transition_time_gets_the_default(self, mod, found, store):
+        found.capture_scene(GROUP, "03")
+        assert stored(store, "03")["transitionTime"] == 1
+        assert mod.zcl_raw_add_scene.call_args.args[6] == 1
+
+    def test_a_retry_sends_a_valid_transition_time(self, mod, found):
+        scan_both(found, [], [])
+        found.retry_scene(GROUP, "03")
+        assert mod.zcl_raw_add_scene.call_args.args[6] == 1
+
+    def test_deleting_it_removes_it_from_the_devices(self, mod, found, store):
+        found.delete_scene(GROUP, "03")
+        assert mod.zcl_raw_remove_scene.call_args.args[1] == CEILING
+        assert store.get(GROUP) is None
 
 
 # ─── Logging ─────────────────────────────────────────────────────────────────

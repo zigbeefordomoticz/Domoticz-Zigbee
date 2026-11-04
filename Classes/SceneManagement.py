@@ -26,6 +26,13 @@ of a device can be in the same group. It is one of:
     native:   {"endpoint", "capability", "status", "lastCheck", "error"}
     fallback: {"endpoint", "capability", "status": "n/a", "snapshot"}
 
+A scan asks each member which scenes of the group it holds, with Get Scene
+Membership. A scene the plugin does not know, set by a remote or another
+controller, becomes a record with "discovered": True and a null transition time,
+which only a capture gives it, so that a capture never reuses its ID. A scan cannot
+say what a scene contains: a member reporting a scene ID is synced as far as
+that ID goes, and a synced member that no longer holds it is failed as "absent".
+
 Capture is sent to each member, not to the group: a scene command answers only
 when it is unicast, and Get Scene Membership would report a Re-capture missed by
 a device as synced, the scene ID being already there. Add Scene comes first, as
@@ -51,7 +58,9 @@ from Modules.tools import is_ack_tobe_disabled, is_hex
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP
 from Zigbee.zclCommands import (zcl_move_to_level_with_onoff,
                                 zcl_onoff_off_noeffect, zcl_onoff_on)
-from Zigbee.zclRawCommands import (zcl_raw_add_scene, zcl_raw_recall_scene,
+from Zigbee.zclRawCommands import (zcl_raw_add_scene,
+                                   zcl_raw_get_scene_membership,
+                                   zcl_raw_recall_scene,
                                    zcl_raw_remove_all_scenes,
                                    zcl_raw_remove_scene, zcl_raw_store_scene)
 
@@ -68,6 +77,7 @@ MAX_SCENE_ID = 0xff
 MAX_NAME_LENGTH = 32
 # 0xffff means "no transition time" in the ZCL
 MAX_TRANSITION_TIME = 0xfffe
+DEFAULT_TRANSITION_TIME = 1
 
 # Each response has this long to come back, in seconds
 SCENE_RESPONSE_TIMEOUT = 30
@@ -85,6 +95,7 @@ CAPABILITY_FALLBACK = "fallback"
 
 ERROR_TIMEOUT = "timeout"
 ERROR_INTERRUPTED = "interrupted"
+ERROR_ABSENT = "absent"
 
 SUCCESS = "00"
 
@@ -118,6 +129,8 @@ class SceneManagement:
         self._lock = threading.RLock()
         # (GroupId, SceneId, member key) -> {"step", "nwkid", "deadline"}
         self._waiting = {}
+        # GroupId -> the last scan of this group, kept for the views until the next one
+        self._scans = {}
         self._fail_interrupted_captures()
 
     def logging(self, logType, message, nwkid=None, module=SCENE_LOG):
@@ -213,7 +226,7 @@ class SceneManagement:
 
     # ── Requests ────────────────────────────────────────────────────────────
 
-    def create_scene(self, GroupId, name, transition_time=1):
+    def create_scene(self, GroupId, name, transition_time=DEFAULT_TRANSITION_TIME):
         """Capture the current state of a group as a new scene."""
         with self._lock:
             members = self._check_group_for_capture(GroupId)
@@ -245,6 +258,9 @@ class SceneManagement:
             scene = record["scenes"][SceneId]
             if transition_time is not None:
                 scene["transitionTime"] = self._check_transition(transition_time)
+            elif scene["transitionTime"] is None:
+                scene["transitionTime"] = DEFAULT_TRANSITION_TIME
+            scene.pop("discovered", None)
             scene["updatedAt"] = int(time())
             self.logging("Debug", "capture_scene - group %s scene %s %s, transition %ss" % (GroupId, SceneId, scene["name"], scene["transitionTime"]))
             self._capture(GroupId, SceneId, record, members)
@@ -313,6 +329,29 @@ class SceneManagement:
                     zcl_raw_remove_scene(self.plugin, nwkid, ZIGATE_EP, ep, GroupId, SceneId, ackIsDisabled=is_ack_tobe_disabled(self.plugin, nwkid))
             self._save(GroupId, record)
 
+    def scan_group(self, GroupId):
+        """Ask each member which scenes of the group it holds. The answers come through the views."""
+        with self._lock:
+            members = self._check_group_for_capture(GroupId)
+            if self._scan_running(GroupId):
+                return self.group_view(GroupId)
+            self._check_load()
+
+            native = {key: member for key, member in members.items() if member["capability"] == CAPABILITY_NATIVE}
+            self.logging("Debug", "scan_group - group %s, members %s" % (GroupId, list(native)))
+            self._scans[GroupId] = {
+                "at": int(time()),
+                "deadline": time() + SCENE_RESPONSE_TIMEOUT,
+                "members": len(native),
+                "waiting": {key: member["nwkid"] for key, member in native.items()},
+                "noAnswer": [],
+                "found": [],
+            }
+            for member in native.values():
+                nwkid, ep = member["nwkid"], member["ep"]
+                zcl_raw_get_scene_membership(self.plugin, nwkid, ZIGATE_EP, ep, GroupId, ackIsDisabled=is_ack_tobe_disabled(self.plugin, nwkid))
+            return self.group_view(GroupId)
+
     def member_removed(self, GroupId, NwkId, Ep, ieee):
         """
         To call before Remove Group is sent: a device drops the scenes of a group
@@ -365,6 +404,8 @@ class SceneManagement:
     def _send_add(self, GroupId, SceneId, key, member, transition_time):
         nwkid, ep = member["nwkid"], member["ep"]
         self._wait(GroupId, SceneId, key, STEP_ADD, nwkid)
+        # A retry on a scene found by a scan: its transition time is not known
+        transition_time = DEFAULT_TRANSITION_TIME if transition_time is None else transition_time
         zcl_raw_add_scene(self.plugin, nwkid, ZIGATE_EP, ep, GroupId, SceneId, transition_time, ackIsDisabled=is_ack_tobe_disabled(self.plugin, nwkid))
 
     def _wait(self, GroupId, SceneId, key, step, nwkid):
@@ -393,6 +434,60 @@ class SceneManagement:
             else:
                 self.logging("Log", "Scene %s of group %s not stored on %s/%s: status %s" % (SceneId, GroupId, nwkid, ep, status), nwkid)
                 self._set_member_status(GroupId, SceneId, key, STATUS_FAILED, status)
+
+    def membership_response(self, nwkid, ep, status, GroupId, scenes):
+        """A Get Scene Membership response, from the decoders. scenes is a list of SceneId."""
+        with self._lock:
+            key = "%s-%s" % (self.plugin.ListOfDevices.get(nwkid, {}).get("IEEE"), ep)
+            scan = self._scans.get(GroupId)
+            if scan is None or key not in scan["waiting"]:
+                self.logging("Debug", "membership_response - %s/%s, group %s: not waited for, ignored" % (nwkid, ep, GroupId), nwkid)
+                return
+
+            del scan["waiting"][key]
+            if status != SUCCESS:
+                scan["noAnswer"].append(nwkid)
+                return
+            self.logging("Debug", "membership_response - %s/%s, group %s holds %s" % (nwkid, ep, GroupId, scenes), nwkid)
+            self._apply_membership(GroupId, key, ep, scenes, scan)
+
+    def _apply_membership(self, GroupId, key, ep, scenes, scan):
+        record = self.store.get(GroupId, {"scenes": {}})
+        now = int(time())
+        for SceneId in scenes:
+            if SceneId not in record["scenes"]:
+                record["scenes"][SceneId] = self._discovered_scene(record, SceneId, now)
+                scan["found"].append(SceneId)
+            members = record["scenes"][SceneId]["members"]
+            held = members.setdefault(key, {
+                "endpoint": ep, "capability": CAPABILITY_NATIVE, "status": STATUS_SYNCED, "lastCheck": now, "error": None,
+            })
+            if held["capability"] != CAPABILITY_NATIVE:
+                continue
+            if held["status"] == STATUS_SYNCED or held["error"] == ERROR_ABSENT:
+                held.update({"status": STATUS_SYNCED, "lastCheck": now, "error": None})
+
+        for SceneId, scene in record["scenes"].items():
+            held = scene["members"].get(key)
+            if SceneId not in scenes and held and held["status"] == STATUS_SYNCED:
+                held.update({"status": STATUS_FAILED, "error": ERROR_ABSENT, "lastCheck": now})
+        self._save(GroupId, record)
+
+    def _discovered_scene(self, record, SceneId, now):
+        """Named so that it can be told apart, recalled and renamed like any scene."""
+        base = name = "Scene %s" % SceneId
+        taken = {scene["name"].casefold() for scene in record["scenes"].values()}
+        suffix = 2
+        while name.casefold() in taken:
+            name = "%s (%s)" % (base, suffix)
+            suffix += 1
+        return {
+            "name": name, "transitionTime": None, "discovered": True,
+            "createdAt": now, "updatedAt": now, "lastRecalled": None, "members": {},
+        }
+
+    def _scan_running(self, GroupId):
+        return bool(self._scans.get(GroupId, {}).get("waiting"))
 
     def _set_member_status(self, GroupId, SceneId, key, status, error=None):
         record = self.store.get(GroupId)
@@ -423,6 +518,11 @@ class SceneManagement:
                     del self._waiting[(GroupId, SceneId, key)]
                     self.logging("Log", "Scene %s of group %s: no %s Scene response from %s" % (SceneId, GroupId, waiting["step"], waiting["nwkid"]), waiting["nwkid"])
                     self._set_member_status(GroupId, SceneId, key, STATUS_FAILED, ERROR_TIMEOUT)
+            for GroupId, scan in self._scans.items():
+                if scan["waiting"] and now >= scan["deadline"]:
+                    self.logging("Log", "Scan of the scenes of group %s: no response from %s" % (GroupId, list(scan["waiting"].values())))
+                    scan["noAnswer"].extend(scan["waiting"].values())
+                    scan["waiting"] = {}
         self.store.flush(self.plugin)
 
     def _fail_interrupted_captures(self):
@@ -466,6 +566,7 @@ class SceneManagement:
             "sceneId": SceneId,
             "name": scene["name"],
             "transitionTime": scene["transitionTime"],
+            "discovered": scene.get("discovered", False),
             "createdAt": scene["createdAt"],
             "updatedAt": scene["updatedAt"],
             "lastRecalled": scene["lastRecalled"],
@@ -477,6 +578,18 @@ class SceneManagement:
             ],
             "synced": sum(member["status"] == STATUS_SYNCED for member in native),
             "native": len(native),
+        }
+
+    def _scan_view(self, GroupId):
+        scan = self._scans.get(GroupId)
+        if scan is None:
+            return None
+        return {
+            "running": bool(scan["waiting"]),
+            "at": scan["at"],
+            "members": scan["members"],
+            "found": len(scan["found"]),
+            "noAnswer": [self._device_name(nwkid) or nwkid for nwkid in scan["noAnswer"]],
         }
 
     def group_view(self, GroupId):
@@ -494,6 +607,7 @@ class SceneManagement:
                     for member in members.values()
                 ],
                 "scenes": [self._scene_view(GroupId, SceneId, scene) for SceneId, scene in sorted(record["scenes"].items())],
+                "scan": self._scan_view(GroupId),
             }
 
     def groups_view(self):
