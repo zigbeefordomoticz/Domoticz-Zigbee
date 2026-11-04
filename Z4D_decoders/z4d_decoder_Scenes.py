@@ -28,6 +28,10 @@ def _scene_response(self, name, MsgData, has_scene=True):
             name, MsgSrcAddr, MsgEP, DisplayStatusCode(MsgDataStatus), MsgGroupID, MsgSceneID),
         MsgSrcAddr)
 
+    scenemgt = getattr(self, 'scenemgt', None)
+    if scenemgt:
+        scenemgt.scene_response(name, MsgSrcAddr, MsgEP, MsgDataStatus, MsgGroupID, MsgSceneID)
+
 
 def Decode80A1(self, Devices, MsgData, MsgLQI):
     _scene_response(self, 'Add', MsgData)
