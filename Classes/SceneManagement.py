@@ -37,6 +37,12 @@ which only a capture gives it, so that a capture never reuses its ID. A scan can
 say what a scene contains: a member reporting a scene ID is synced as far as
 that ID goes, and a synced member that no longer holds it is failed as "absent".
 
+A scene ID can be asked for. Add Scene replaces what a device holds under that ID,
+and the store only knows the scenes of the plugin, so such a capture waits for a scan
+and only starts once it is finished, if nothing holds the ID. It is kept in memory
+with its scan: a restart costs that capture and nothing else. A member that did not
+answer cannot be asked, and it is captured like any other.
+
 Capture is sent to each member, not to the group: a scene command answers only
 when it is unicast, and Get Scene Membership would report a Re-capture missed by
 a device as synced, the scene ID being already there. Add Scene comes first, as
@@ -55,6 +61,7 @@ The decoders (forwarder thread) and the REST calls (Domoticz thread) both change
 the records, hence the lock around each read-modify-write of a record.
 """
 
+import re
 import threading
 from time import time
 
@@ -78,6 +85,7 @@ GROUP_NOT_FOR_SCENES = "0000"
 GROUP_CAST_EP = "01"
 
 MAX_SCENE_ID = 0xff
+SCENE_ID_FORMAT = re.compile("[0-9a-fA-F]{2}")
 MAX_NAME_LENGTH = 32
 # 0xffff means "no transition time" in the ZCL
 MAX_TRANSITION_TIME = 0xfffe
@@ -100,6 +108,10 @@ CAPABILITY_FALLBACK = "fallback"
 ERROR_TIMEOUT = "timeout"
 ERROR_INTERRUPTED = "interrupted"
 ERROR_ABSENT = "absent"
+
+CAPTURE_WAITING = "waiting"
+CAPTURE_STARTED = "started"
+CAPTURE_REFUSED = "refused"
 
 SUCCESS = "00"
 
@@ -228,30 +240,64 @@ class SceneManagement:
                 return "%02x" % scene_id
         raise SceneError("SCENE_ID_EXHAUSTED")
 
+    def _check_scene_id(self, record, SceneId):
+        if not isinstance(SceneId, str) or not SCENE_ID_FORMAT.fullmatch(SceneId):
+            raise SceneError("SCENE_ID_INVALID")
+        SceneId = SceneId.lower()
+        if SceneId in record["scenes"]:
+            raise SceneError("SCENE_ID_IN_USE")
+        return SceneId
+
+    def _capture_waiting(self, GroupId):
+        capture = self._scans.get(GroupId, {}).get("capture")
+        return capture is not None and capture["state"] == CAPTURE_WAITING
+
     # ── Requests ────────────────────────────────────────────────────────────
 
-    def create_scene(self, GroupId, name, transition_time=DEFAULT_TRANSITION_TIME):
-        """Capture the current state of a group as a new scene."""
+    def create_scene(self, GroupId, name, transition_time=DEFAULT_TRANSITION_TIME, SceneId=None):
+        """
+        Capture the current state of a group as a new scene. With a SceneId, the capture
+        only starts after a scan: the answer is then the view of the group, not a scene.
+        """
         with self._lock:
             members = self._check_group_for_capture(GroupId)
             record = self.store.get(GroupId, {"scenes": {}})
             name = self._check_name(record, name)
             self._check_transition(transition_time)
+            if SceneId is not None:
+                SceneId = self._check_scene_id(record, SceneId)
+            if self._capture_waiting(GroupId):
+                raise SceneError("SCENE_ID_CHECK_RUNNING")
             self._check_load()
 
+            if SceneId is not None:
+                return self._capture_after_scan(GroupId, SceneId, name, transition_time, members)
+
             SceneId = self._allocate_scene_id(record)
-            self.logging("Debug", "create_scene - group %s scene %s %s, transition %ss" % (GroupId, SceneId, name, transition_time))
-            now = int(time())
-            record["scenes"][SceneId] = {
-                "name": name,
-                "transitionTime": transition_time,
-                "createdAt": now,
-                "updatedAt": now,
-                "lastRecalled": None,
-                "members": {},
-            }
-            self._capture(GroupId, SceneId, record, members)
+            self._add_scene(GroupId, record, SceneId, name, transition_time, members)
             return self._scene_view(GroupId, SceneId, record["scenes"][SceneId])
+
+    def _add_scene(self, GroupId, record, SceneId, name, transition_time, members):
+        self.logging("Debug", "create_scene - group %s scene %s %s, transition %ss" % (GroupId, SceneId, name, transition_time))
+        now = int(time())
+        record["scenes"][SceneId] = {
+            "name": name,
+            "transitionTime": transition_time,
+            "createdAt": now,
+            "updatedAt": now,
+            "lastRecalled": None,
+            "members": {},
+        }
+        self._capture(GroupId, SceneId, record, members)
+
+    def _capture_after_scan(self, GroupId, SceneId, name, transition_time, members):
+        self.logging("Debug", "create_scene - group %s scene %s %s: scan first" % (GroupId, SceneId, name))
+        capture = {"sceneId": SceneId, "name": name, "transitionTime": transition_time, "state": CAPTURE_WAITING, "error": None}
+        if self._scan_running(GroupId):
+            self._scans[GroupId]["capture"] = capture
+        else:
+            self._start_scan(GroupId, members, capture)
+        return self.group_view(GroupId)
 
     def capture_scene(self, GroupId, SceneId, transition_time=None):
         """Overwrite a scene with the current state of the group, members added since included."""
@@ -342,21 +388,25 @@ class SceneManagement:
             if self._scan_running(GroupId):
                 return self.group_view(GroupId)
             self._check_load()
-
-            native = {key: member for key, member in members.items() if member["capability"] == CAPABILITY_NATIVE}
-            self.logging("Debug", "scan_group - group %s, members %s" % (GroupId, list(native)))
-            self._scans[GroupId] = {
-                "at": int(time()),
-                "deadline": time() + SCENE_RESPONSE_TIMEOUT,
-                "members": len(native),
-                "waiting": {key: member["nwkid"] for key, member in native.items()},
-                "noAnswer": [],
-                "found": [],
-            }
-            for member in native.values():
-                nwkid, ep = member["nwkid"], member["ep"]
-                zcl_raw_get_scene_membership(self.plugin, nwkid, ZIGATE_EP, ep, GroupId, ackIsDisabled=is_ack_tobe_disabled(self.plugin, nwkid))
+            self._start_scan(GroupId, members)
             return self.group_view(GroupId)
+
+    def _start_scan(self, GroupId, members, capture=None):
+        native = {key: member for key, member in members.items() if member["capability"] == CAPABILITY_NATIVE}
+        self.logging("Debug", "scan_group - group %s, members %s" % (GroupId, list(native)))
+        self._scans[GroupId] = {
+            "at": int(time()),
+            "deadline": time() + SCENE_RESPONSE_TIMEOUT,
+            "members": len(native),
+            "waiting": {key: member["nwkid"] for key, member in native.items()},
+            "noAnswer": [],
+            "found": [],
+            # Before the first frame: the last answer is what starts it
+            "capture": capture,
+        }
+        for member in native.values():
+            nwkid, ep = member["nwkid"], member["ep"]
+            zcl_raw_get_scene_membership(self.plugin, nwkid, ZIGATE_EP, ep, GroupId, ackIsDisabled=is_ack_tobe_disabled(self.plugin, nwkid))
 
     def member_removed(self, GroupId, NwkId, Ep, ieee):
         """
@@ -452,11 +502,13 @@ class SceneManagement:
                 return
 
             del scan["waiting"][key]
-            if status != SUCCESS:
+            if status == SUCCESS:
+                self.logging("Debug", "membership_response - %s/%s, group %s holds %s" % (nwkid, ep, GroupId, scenes), nwkid)
+                self._apply_membership(GroupId, key, ep, scenes, scan)
+            else:
                 scan["noAnswer"].append(nwkid)
-                return
-            self.logging("Debug", "membership_response - %s/%s, group %s holds %s" % (nwkid, ep, GroupId, scenes), nwkid)
-            self._apply_membership(GroupId, key, ep, scenes, scan)
+            if not scan["waiting"]:
+                self._scan_finished(GroupId, scan)
 
     def _apply_membership(self, GroupId, key, ep, scenes, scan):
         record = self.store.get(GroupId, {"scenes": {}})
@@ -479,6 +531,24 @@ class SceneManagement:
             if SceneId not in scenes and held and held["status"] == STATUS_SYNCED:
                 held.update({"status": STATUS_FAILED, "error": ERROR_ABSENT, "lastCheck": now})
         self._save(GroupId, record)
+
+    def _scan_finished(self, GroupId, scan):
+        """The capture a scan was holding: the checks are made again, things may have moved."""
+        capture = scan["capture"]
+        if capture is None or capture["state"] != CAPTURE_WAITING:
+            return
+        try:
+            members = self._check_group_for_capture(GroupId)
+            record = self.store.get(GroupId, {"scenes": {}})
+            self._check_name(record, capture["name"])
+            self._check_scene_id(record, capture["sceneId"])
+            self._check_load()
+        except SceneError as e:
+            self.logging("Log", "Scene %s not captured on group %s as ID %s: %s" % (capture["name"], GroupId, capture["sceneId"], e.code))
+            capture.update({"state": CAPTURE_REFUSED, "error": e.code})
+            return
+        capture["state"] = CAPTURE_STARTED
+        self._add_scene(GroupId, record, capture["sceneId"], capture["name"], capture["transitionTime"], members)
 
     def _discovered_scene(self, record, SceneId, now):
         """Named so that it can be told apart, recalled and renamed like any scene."""
@@ -530,6 +600,7 @@ class SceneManagement:
                     self.logging("Log", "Scan of the scenes of group %s: no response from %s" % (GroupId, list(scan["waiting"].values())))
                     scan["noAnswer"].extend(scan["waiting"].values())
                     scan["waiting"] = {}
+                    self._scan_finished(GroupId, scan)
         self.store.flush(self.plugin)
 
     def _fail_interrupted_captures(self):
@@ -591,7 +662,9 @@ class SceneManagement:
         scan = self._scans.get(GroupId)
         if scan is None:
             return None
+        capture = scan["capture"]
         return {
+            "capture": capture and {key: capture[key] for key in ("sceneId", "name", "state", "error")},
             "running": bool(scan["waiting"]),
             "at": scan["at"],
             "members": scan["members"],
