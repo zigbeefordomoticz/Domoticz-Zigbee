@@ -534,13 +534,6 @@ def write_attributeNoResponse(self, key, EPin, EPout, clusterID, manuf_id, manuf
     return zcl_write_attributeNoResponse(self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data)
 
 
-# Scene
-def scene_membership_request(self, nwkid, ep, groupid="0000"):
-
-    datas = ZIGATE_EP + ep + groupid
-    return send_zigatecmd_zcl_noack(self, nwkid, "00A6", datas)
-
-
 def identifyEffect(self, nwkid, ep, effect="Blink"):
 
     """
