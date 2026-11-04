@@ -120,25 +120,25 @@ def recover_legrand_groups_from_devices(self):
             if GrpId not in self.ListOfGroups or not legrand_remote_in_group(self, GrpId, NwkId):
                 self.logging(
                     "Status",
-                    "Recovering Legrand group %s of remote %s/%s from the device record" % (GrpId, NwkId, Ep),
+                    "Recovering Legrand group %s of remote %s/%s from the device record" % (GrpId, NwkId, Ep), GrpId,
                 )
                 checkToCreateOrUpdateGroup(self, NwkId, Ep, GrpId)
 
             elif find_first_unit_widget_from_deviceID(self, self.Devices, GrpId) is None:
-                self.logging("Status", "Recovering the Domoticz widget of Legrand group %s" % GrpId)
+                self.logging("Status", "Recovering the Domoticz widget of Legrand group %s" % GrpId, GrpId)
                 LookForGroupAndCreateIfNeeded(self, GrpId)
 
 
 def RemoveNwkIdFromAllGroups(self, Nwkid):
     " call my plugin when removing one device"
-    self.logging("Debug", "RemoveNwkIdFromAllGroups - Remove Nwk from all groups: %s" % Nwkid)
+    self.logging("Debug", "RemoveNwkIdFromAllGroups - Remove Nwk from all groups: %s" % Nwkid, Nwkid)
     remove_nwkid_from_all_groups(self, Nwkid)
 
     # Check if any groups are empty. If so remove the Domoticz Widget
-    self.logging("Debug", "RemoveNwkIdFromAllGroups - ListOfGroups: %s" % str(self.ListOfGroups.keys()))
+    self.logging("Debug", "RemoveNwkIdFromAllGroups - ListOfGroups: %s" % str(self.ListOfGroups.keys()), Nwkid)
     for GrpId in list(self.ListOfGroups):
         if check_if_group_empty(self, GrpId):
-            self.logging("Debug", "RemoveNwkIdFromAllGroups - Empty Group: %s" % GrpId)
+            self.logging("Debug", "RemoveNwkIdFromAllGroups - Empty Group: %s" % GrpId, GrpId)
             remove_group(self, GrpId)
             remove_domoticz_group_device(self, GrpId)
     self.write_groups_list()
@@ -154,7 +154,7 @@ def scenes_member_removed(self, GroupId, NwkId, Ep, IEEE):
 def FullRemoveOfGroup(self, unit, GroupId):
     # Call by onRemove call from Domoticz
     # The widget has been removed by Domoticz, we have to cleanup
-    self.logging("Debug", "process_remove_group Unit: %s GroupId: %s" % (unit, GroupId))
+    self.logging("Debug", "process_remove_group Unit: %s GroupId: %s" % (unit, GroupId), GroupId)
     if GroupId not in self.ListOfGroups:
         return
     for NwkId, Ep, IEEE in self.ListOfGroups[GroupId]["Devices"]:
@@ -171,7 +171,7 @@ def provision_Manufacturer_Group(self, GrpId, NwkId, Ep, Ieee):
 
 def scan_device_for_grp_membership(self, NwkId, Ep):
     # Ask this device for list of Group membership
-    self.logging("Debug", " --  --  --  --  --  > scan_device_for_grp_membership ")
+    self.logging("Debug", " --  --  --  --  --  > scan_device_for_grp_membership ", NwkId)
     if NwkId not in self.ListOfDevices:
         return
 
@@ -241,7 +241,7 @@ def get_available_grp_id(self, start_range, stop_range):
 
 
 def create_new_group_and_attach_devices(self, GrpId, GrpName, DevicesList):
-    self.logging("Debug", " --  --  --  --  --  > CreateNewGroupAndAttachDevices ")
+    self.logging("Debug", " --  --  --  --  --  > CreateNewGroupAndAttachDevices ", GrpId)
     create_group(self, GrpId, GrpName)
     create_domoticz_group_device(self, GrpName, GrpId)
     for NwkId, ep, ieee in DevicesList:
@@ -250,7 +250,7 @@ def create_new_group_and_attach_devices(self, GrpId, GrpName, DevicesList):
 
 
 def update_group_and_add_devices(self, GrpId, ToBeAddedDevices):
-    self.logging("Debug", f" --  --  --  --  --  > UpdateGroupAndAddDevices {GrpId} {ToBeAddedDevices}")
+    self.logging("Debug", f" --  --  --  --  --  > UpdateGroupAndAddDevices {GrpId} {ToBeAddedDevices}", GrpId)
     for NwkId, ep, ieee in ToBeAddedDevices:
         NwkId = checkNwkIdAndUpdateIfAny(self, NwkId, ieee)
         # Ikea Tradfri Round5B will be added if required by checkIfIkeaRound5B
@@ -260,14 +260,14 @@ def update_group_and_add_devices(self, GrpId, ToBeAddedDevices):
 
 
 def update_group_and_remove_devices(self, GrpId, ToBeRemoveDevices):
-    self.logging("Debug", f" --  --  --  --  --  > UpdateGroupAndRemoveDevices {GrpId} {ToBeRemoveDevices}")
+    self.logging("Debug", f" --  --  --  --  --  > UpdateGroupAndRemoveDevices {GrpId} {ToBeRemoveDevices}", GrpId)
     for NwkId, ep, ieee in ToBeRemoveDevices:
-        self.logging("Debug", "-- --  --  --  --  --  > Removing [%s %s %s]" % (NwkId, ep, ieee))
+        self.logging("Debug", "-- --  --  --  --  --  > Removing [%s %s %s]" % (NwkId, ep, ieee), GrpId)
         NwkId = checkNwkIdAndUpdateIfAny(self, NwkId, ieee)
         # Ikea Tradfri Round5B will be removed if required by checkIfIkeaRound5B
         if NwkId and not checkIfIkeaRound5BToBeRemoved(self, NwkId, ep, ieee, GrpId):
             self.logging(
-                "Debug", "-- --  --  --  --  --  -- > Calling Remove_group_membership [%s %s %s]" % (NwkId, ep, ieee)
+                "Debug", "-- --  --  --  --  --  -- > Calling Remove_group_membership [%s %s %s]" % (NwkId, ep, ieee), GrpId
             )
             scenes_member_removed(self, GrpId, NwkId, ep, ieee)
             remove_group_member_ship(self, NwkId, ep, GrpId)
