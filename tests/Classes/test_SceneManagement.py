@@ -607,7 +607,7 @@ class TestScan:
         scenes.membership_response(SOFA, "01", "00", GROUP, ["03"])
         view = scenes.group_view(GROUP)
         assert [(s["sceneId"], s["discovered"], s["synced"], s["native"]) for s in view["scenes"]] == [("03", True, 2, 2)]
-        assert view["scan"] == {"running": False, "at": view["scan"]["at"], "members": 2, "found": 1, "noAnswer": []}
+        assert view["scan"] == {"capture": None, "running": False, "at": view["scan"]["at"], "members": 2, "found": 1, "noAnswer": []}
 
     def test_a_member_without_the_scene_is_offered_a_capture(self, scenes):
         scenes.scan_group(GROUP)
@@ -691,6 +691,131 @@ class TestScan:
         assert error_code(scenes.scan_group, "9999") == "GROUP_NOT_FOUND"
         plugin.ControllerLink.loadTransmit.return_value = 99
         assert error_code(scenes.scan_group, GROUP) == "COORDINATOR_BUSY"
+
+
+def asked_ids(mod):
+    return [c.args[5] for c in mod.zcl_raw_add_scene.call_args_list]
+
+
+class TestChosenSceneId:
+
+    def test_nothing_goes_to_the_lamps_before_the_scan_ends(self, mod, scenes, store):
+        view = scenes.create_scene(GROUP, "Remote", 2, "2A")
+        mod.zcl_raw_add_scene.assert_not_called()
+        assert [c.args[1] for c in mod.zcl_raw_get_scene_membership.call_args_list] == [CEILING, SOFA]
+        assert view["scan"]["capture"] == {"sceneId": "2a", "name": "Remote", "state": "waiting", "error": None}
+        assert store.get(GROUP) is None
+
+    def test_a_free_id_is_captured_once_all_have_answered(self, mod, scenes, store):
+        scenes.create_scene(GROUP, "Remote", 2, "2a")
+        scenes.membership_response(CEILING, "0b", "00", GROUP, [])
+        mod.zcl_raw_add_scene.assert_not_called()
+        scenes.membership_response(SOFA, "01", "00", GROUP, [])
+        assert asked_ids(mod) == ["2a", "2a"]
+        assert mod.zcl_raw_add_scene.call_args.args[6] == 2
+        scene = stored(store, "2a")
+        assert (scene["name"], scene["transitionTime"]) == ("Remote", 2)
+        assert scenes.group_view(GROUP)["scan"]["capture"]["state"] == "started"
+
+    def test_an_id_held_by_a_lamp_is_not_overwritten(self, mod, scenes, store):
+        scenes.create_scene(GROUP, "Remote", 2, "07")
+        scenes.membership_response(CEILING, "0b", "00", GROUP, ["07"])
+        scenes.membership_response(SOFA, "01", "00", GROUP, [])
+        mod.zcl_raw_add_scene.assert_not_called()
+        capture = scenes.group_view(GROUP)["scan"]["capture"]
+        assert (capture["state"], capture["error"]) == ("refused", "SCENE_ID_IN_USE")
+        # What is on the lamp is now known, ready to be re-captured
+        assert stored(store, "07")["name"] == "Scene 07"
+        assert stored(store, "07")["discovered"] is True
+
+    def test_a_lamp_that_never_answers_ends_the_wait(self, mod, scenes):
+        scenes.create_scene(GROUP, "Remote", 2, "2a")
+        scenes.membership_response(CEILING, "0b", "00", GROUP, [])
+        scenes._scans[GROUP]["deadline"] = 0
+        scenes.heartbeat()
+        assert asked_ids(mod) == ["2a", "2a"]
+        assert scenes.group_view(GROUP)["scan"]["running"] is False
+
+    def test_a_refusal_counts_as_an_answer(self, mod, scenes):
+        scenes.create_scene(GROUP, "Remote", 2, "2a")
+        scenes.membership_response(CEILING, "0b", "85", GROUP, [])
+        scenes.membership_response(SOFA, "01", "00", GROUP, [])
+        assert asked_ids(mod) == ["2a", "2a"]
+
+    def test_a_scan_already_running_is_used(self, mod, scenes):
+        scenes.scan_group(GROUP)
+        scenes.create_scene(GROUP, "Remote", 2, "2a")
+        assert mod.zcl_raw_get_scene_membership.call_count == 2
+        scenes.membership_response(CEILING, "0b", "00", GROUP, [])
+        scenes.membership_response(SOFA, "01", "00", GROUP, [])
+        assert asked_ids(mod) == ["2a", "2a"]
+
+    def test_answers_as_soon_as_asked_still_start_the_capture(self, mod, scenes):
+        def answer(_plugin, nwkid, _src, ep, group, **_):
+            scenes.membership_response(nwkid, ep, "00", group, [])
+        mod.zcl_raw_get_scene_membership.side_effect = answer
+        try:
+            scenes.create_scene(GROUP, "Remote", 2, "2a")
+        finally:
+            mod.zcl_raw_get_scene_membership.side_effect = None
+        assert asked_ids(mod) == ["2a", "2a"]
+        assert scenes.group_view(GROUP)["scan"]["capture"]["state"] == "started"
+
+    def test_the_capture_runs_once(self, mod, scenes):
+        scenes.create_scene(GROUP, "Remote", 2, "2a")
+        scenes.membership_response(CEILING, "0b", "00", GROUP, [])
+        scenes.membership_response(SOFA, "01", "00", GROUP, [])
+        scenes._scans[GROUP]["deadline"] = 0
+        scenes.heartbeat()
+        assert mod.zcl_raw_add_scene.call_count == 2
+
+    @pytest.mark.parametrize("scene_id", ["7", "007", "zz", 7, "", " 7", "+7", "0x"])
+    def test_a_bad_id_is_refused(self, mod, scenes, scene_id):
+        assert error_code(scenes.create_scene, GROUP, "Remote", 2, scene_id) == "SCENE_ID_INVALID"
+        mod.zcl_raw_get_scene_membership.assert_not_called()
+
+    def test_an_id_of_the_store_is_refused_at_once(self, mod, scenes):
+        scenes.create_scene(GROUP, "Reading")
+        mod.zcl_raw_get_scene_membership.reset_mock()
+        assert error_code(scenes.create_scene, GROUP, "Remote", 2, "01") == "SCENE_ID_IN_USE"
+        mod.zcl_raw_get_scene_membership.assert_not_called()
+
+    def test_id_00_can_be_asked_for(self, mod, scenes):
+        scenes.create_scene(GROUP, "Remote", 2, "00")
+        scenes.membership_response(CEILING, "0b", "00", GROUP, [])
+        scenes.membership_response(SOFA, "01", "00", GROUP, [])
+        assert asked_ids(mod) == ["00", "00"]
+
+    def test_no_other_creation_while_one_waits(self, scenes):
+        scenes.create_scene(GROUP, "Remote", 2, "2a")
+        assert error_code(scenes.create_scene, GROUP, "Other") == "SCENE_ID_CHECK_RUNNING"
+        assert error_code(scenes.create_scene, GROUP, "Other", 2, "2b") == "SCENE_ID_CHECK_RUNNING"
+
+    def test_a_name_taken_meanwhile_stops_the_capture(self, mod, plugin, scenes):
+        scenes.create_scene(GROUP, "Remote", 2, "2a")
+        scenes.membership_response(CEILING, "0b", "00", GROUP, ["03"])
+        scenes.rename_scene(GROUP, "03", "Remote")
+        scenes.membership_response(SOFA, "01", "00", GROUP, [])
+        mod.zcl_raw_add_scene.assert_not_called()
+        assert scenes.group_view(GROUP)["scan"]["capture"]["error"] == "NAME_DUPLICATE"
+
+    def test_a_group_gone_meanwhile_stops_the_capture(self, mod, plugin, scenes):
+        scenes.create_scene(GROUP, "Remote", 2, "2a")
+        del plugin.groupmgt.ListOfGroups[GROUP]
+        scenes.membership_response(CEILING, "0b", "00", GROUP, [])
+        scenes.membership_response(SOFA, "01", "00", GROUP, [])
+        mod.zcl_raw_add_scene.assert_not_called()
+
+    def test_a_busy_coordinator_stops_the_capture(self, mod, plugin, scenes):
+        scenes.create_scene(GROUP, "Remote", 2, "2a")
+        plugin.ControllerLink.loadTransmit.return_value = 999
+        scenes.membership_response(CEILING, "0b", "00", GROUP, [])
+        scenes.membership_response(SOFA, "01", "00", GROUP, [])
+        mod.zcl_raw_add_scene.assert_not_called()
+        assert scenes.group_view(GROUP)["scan"]["capture"]["error"] == "COORDINATOR_BUSY"
+
+    def test_a_scan_alone_shows_no_capture(self, scenes):
+        assert scenes.scan_group(GROUP)["scan"]["capture"] is None
 
 
 class TestDiscoveredScene:
