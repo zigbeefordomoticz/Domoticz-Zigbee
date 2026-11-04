@@ -112,3 +112,8 @@ def test_scenes_not_enabled(grp, groupmgt):
     groupmgt.scenemgt = None
     grp.update_group_and_remove_devices(groupmgt, GROUP, [[NWKID, EP, IEEE]])
     grp.remove_group_member_ship.assert_called_once()
+
+
+def test_the_hook_logs_under_groups_and_scene(grp, groupmgt):
+    grp.scenes_member_removed(groupmgt, GROUP, NWKID, EP, IEEE)
+    assert groupmgt.log.logging.call_args.args[:2] == (["Groups", "Scene"], "Debug")

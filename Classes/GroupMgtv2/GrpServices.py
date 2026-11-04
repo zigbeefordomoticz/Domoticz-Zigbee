@@ -147,6 +147,7 @@ def RemoveNwkIdFromAllGroups(self, Nwkid):
 def scenes_member_removed(self, GroupId, NwkId, Ep, IEEE):
     # Before Remove Group: a device refuses scene commands for a group it has left
     if self.scenemgt:
+        self.log.logging(["Groups", "Scene"], "Debug", "scenes_member_removed %s/%s from group %s" % (NwkId, Ep, GroupId), NwkId)
         self.scenemgt.member_removed(GroupId, NwkId, Ep, IEEE)
 
 
