@@ -53,8 +53,9 @@ def server():
 @pytest.mark.parametrize("verb, parameters, body, method, expected", [
     ("GET", [], None, "groups_view", ()),
     ("GET", ["1001"], None, "group_view", ("1001",)),
-    ("PUT", ["1001"], b'{"name": "Reading", "transitionTime": 3}', "create_scene", ("1001", "Reading", 3)),
-    ("PUT", ["1001"], b'{"name": "Reading"}', "create_scene", ("1001", "Reading", 1)),
+    ("PUT", ["1001"], b'{"name": "Reading", "transitionTime": 3}', "create_scene", ("1001", "Reading", 3, None)),
+    ("PUT", ["1001"], b'{"name": "Reading", "transitionTime": 3, "sceneId": "2a"}', "create_scene", ("1001", "Reading", 3, "2a")),
+    ("PUT", ["1001"], b'{"name": "Reading"}', "create_scene", ("1001", "Reading", 1, None)),
     ("PUT", ["1001", "03"], b'{"name": "Evening"}', "rename_scene", ("1001", "03", "Evening")),
     ("PUT", ["1001", "03", "capture"], None, "capture_scene", ("1001", "03", None)),
     ("PUT", ["1001", "03", "capture"], b'{"transitionTime": 5}', "capture_scene", ("1001", "03", 5)),
@@ -76,7 +77,7 @@ def test_delete(rest, server):
 
 def test_a_create_without_a_name_is_left_to_the_scene_manager(rest, server):
     rest.rest_scenes(server, "PUT", None, ["1001"])
-    server.scenemgt.create_scene.assert_called_once_with("1001", None, 1)
+    server.scenemgt.create_scene.assert_called_once_with("1001", None, 1, None)
 
 
 @pytest.mark.parametrize("verb, parameters, body", [
@@ -97,6 +98,9 @@ def test_bad_requests(rest, server, verb, parameters, body):
 
 @pytest.mark.parametrize("code, status", [
     ("NAME_DUPLICATE", "400 BAD REQUEST"),
+    ("SCENE_ID_INVALID", "400 BAD REQUEST"),
+    ("SCENE_ID_IN_USE", "409 CONFLICT"),
+    ("SCENE_ID_CHECK_RUNNING", "409 CONFLICT"),
     ("SCENE_NOT_FOUND", "404 NOT FOUND"),
     ("NO_CAPABLE_MEMBER", "409 CONFLICT"),
     ("COORDINATOR_BUSY", "503 SERVICE UNAVAILABLE"),
