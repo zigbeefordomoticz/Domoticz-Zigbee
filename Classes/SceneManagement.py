@@ -1,0 +1,480 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Implementation of Zigbee for Domoticz plugin.
+#
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+"""
+Native Zigbee scenes: a named state stored on the devices of a group, through
+the ZCL Scenes cluster (0x0005), and recalled with one group-cast frame.
+
+A scene belongs to a group, and is identified on a device by (GroupId, SceneId).
+A store record is one group, keyed by its GroupId:
+
+    {"scenes": {SceneId: {"name", "transitionTime", "createdAt", "updatedAt",
+                          "lastRecalled", "members": {"<ieee>-<ep>": member}}}}
+
+GroupId and SceneId are hex strings, as in ListOfGroups ("1001", "03"). A member
+is keyed by IEEE, which survives a re-pairing, and by endpoint, as two endpoints
+of a device can be in the same group. It is one of:
+
+    native:   {"endpoint", "capability", "status", "lastCheck", "error"}
+    fallback: {"endpoint", "capability", "status": "n/a", "snapshot"}
+
+Capture is sent to each member, not to the group: a scene command answers only
+when it is unicast, and Get Scene Membership would report a Re-capture missed by
+a device as synced, the scene ID being already there. Add Scene comes first, as
+Store Scene cannot set the transition time, and Store Scene follows its response,
+whatever the status: Add Scene is not the verdict, Store Scene is.
+
+Add Scene replaces the entry and its state, so the transition time only changes
+with a capture. It is in whole seconds, the unit a device stores.
+
+Members in the store and in the group can differ. A member that left the group
+through the plugin is dropped, after Remove All Scenes. Otherwise the store is
+left alone: the views and Recall only use the members still in the group, so a
+group list that could not be read costs no scene.
+
+The decoders (forwarder thread) and the REST calls (Domoticz thread) both change
+the records, hence the lock around each read-modify-write of a record.
+"""
+
+import threading
+from time import time
+
+from Modules.tools import is_ack_tobe_disabled, is_hex
+from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP
+from Zigbee.zclCommands import (zcl_move_to_level_with_onoff,
+                                zcl_onoff_off_noeffect, zcl_onoff_on)
+from Zigbee.zclRawCommands import (zcl_raw_add_scene, zcl_raw_recall_scene,
+                                   zcl_raw_remove_all_scenes,
+                                   zcl_raw_remove_scene, zcl_raw_store_scene)
+
+SCENE_CLUSTER = "0005"
+ONOFF_CLUSTER = "0006"
+LEVEL_CLUSTER = "0008"
+
+COORDINATOR_NWKID = "0000"
+GROUP_NOT_FOR_SCENES = "0000"
+# The endpoint of a group-cast is not used: the group is the address
+GROUP_CAST_EP = "01"
+
+MAX_SCENE_ID = 0xff
+MAX_NAME_LENGTH = 32
+# 0xffff means "no transition time" in the ZCL
+MAX_TRANSITION_TIME = 0xfffe
+
+# Each response has this long to come back, in seconds
+SCENE_RESPONSE_TIMEOUT = 30
+
+STEP_ADD = "Add"
+STEP_STORE = "Store"
+
+STATUS_PENDING = "pending"
+STATUS_SYNCED = "synced"
+STATUS_FAILED = "failed"
+STATUS_NOT_APPLICABLE = "n/a"
+
+CAPABILITY_NATIVE = "native"
+CAPABILITY_FALLBACK = "fallback"
+
+ERROR_TIMEOUT = "timeout"
+ERROR_INTERRUPTED = "interrupted"
+
+SUCCESS = "00"
+
+
+class SceneError(Exception):
+    """A request that cannot be served. code is what REST returns (issue 2194, section 8)."""
+
+    def __init__(self, code, message=""):
+        super().__init__(message or code)
+        self.code = code
+
+
+def _cached_value(raw):
+    """A cached attribute is an int or a hex string, or nothing yet."""
+    if raw is None or raw == "" or raw == {}:
+        return None
+    if isinstance(raw, int):
+        return raw
+    return int(str(raw), 16) if is_hex(str(raw)) else None
+
+
+class SceneManagement:
+
+    def __init__(self, plugin, store):
+        self.plugin = plugin
+        self.store = store
+        self._lock = threading.RLock()
+        # (GroupId, SceneId, member key) -> {"step", "nwkid", "deadline"}
+        self._waiting = {}
+        self._fail_interrupted_captures()
+
+    def logging(self, logType, message, nwkid=None):
+        self.plugin.log.logging("Groups", logType, message, nwkid)
+
+    @property
+    def _groups(self):
+        return self.plugin.groupmgt.ListOfGroups
+
+    # ── Group members ───────────────────────────────────────────────────────
+
+    def _capability(self, nwkid, ep):
+        """
+        How a scene reaches this endpoint, None when it cannot.
+
+        Epv2 and not Ep: Ep mixes input and output clusters, and a remote has the
+        Scenes cluster as output.
+        """
+        cluster_in = self.plugin.ListOfDevices.get(nwkid, {}).get("Epv2", {}).get(ep, {}).get("ClusterIn", {})
+        if SCENE_CLUSTER in cluster_in:
+            return CAPABILITY_NATIVE
+        if ONOFF_CLUSTER in cluster_in or LEVEL_CLUSTER in cluster_in:
+            return CAPABILITY_FALLBACK
+        return None
+
+    def _group_members(self, GroupId):
+        """The members a scene can reach, keyed as in the store."""
+        members = {}
+        for nwkid, ep, ieee in self._groups[GroupId].get("Devices", []):
+            nwkid = self.plugin.IEEE2NWK.get(ieee, nwkid)
+            capability = None if nwkid == COORDINATOR_NWKID else self._capability(nwkid, ep)
+            if capability:
+                members["%s-%s" % (ieee, ep)] = {"nwkid": nwkid, "ep": ep, "ieee": ieee, "capability": capability}
+        return members
+
+    def _snapshot(self, nwkid, ep):
+        """On/off and level as the plugin last saw them, to replay on a fallback member."""
+        ep_data = self.plugin.ListOfDevices.get(nwkid, {}).get("Ep", {}).get(ep, {})
+        on_off = _cached_value(ep_data.get(ONOFF_CLUSTER, {}).get("0000"))
+        return {
+            "onOff": None if on_off is None else int(on_off != 0),
+            "level": _cached_value(ep_data.get(LEVEL_CLUSTER, {}).get("0000")),
+        }
+
+    # ── Checks ──────────────────────────────────────────────────────────────
+
+    def _check_group(self, GroupId):
+        if GroupId not in self._groups:
+            raise SceneError("GROUP_NOT_FOUND")
+
+    def _check_group_for_capture(self, GroupId):
+        self._check_group(GroupId)
+        if GroupId == GROUP_NOT_FOR_SCENES:
+            raise SceneError("GROUP_NOT_ALLOWED")
+        members = self._group_members(GroupId)
+        if not any(member["capability"] == CAPABILITY_NATIVE for member in members.values()):
+            raise SceneError("NO_CAPABLE_MEMBER")
+        return members
+
+    def _check_load(self):
+        if self.plugin.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
+            raise SceneError("COORDINATOR_BUSY")
+
+    def _check_name(self, record, name, SceneId=None):
+        if not isinstance(name, str) or not name.strip():
+            raise SceneError("NAME_REQUIRED")
+        name = name.strip()
+        # "|" separates the levels of a Selector
+        if "|" in name or len(name) > MAX_NAME_LENGTH:
+            raise SceneError("NAME_INVALID")
+        for other_id, other in record["scenes"].items():
+            if other_id != SceneId and other["name"].casefold() == name.casefold():
+                raise SceneError("NAME_DUPLICATE")
+        return name
+
+    def _check_transition(self, transition_time):
+        if isinstance(transition_time, bool) or not isinstance(transition_time, int) or not 0 <= transition_time <= MAX_TRANSITION_TIME:
+            raise SceneError("TRANSITION_INVALID")
+        return transition_time
+
+    def _scene_record(self, GroupId, SceneId):
+        self._check_group(GroupId)
+        record = self.store.get(GroupId)
+        if record is None or SceneId not in record["scenes"]:
+            raise SceneError("SCENE_NOT_FOUND")
+        return record
+
+    def _allocate_scene_id(self, record):
+        for scene_id in range(1, MAX_SCENE_ID + 1):
+            if "%02x" % scene_id not in record["scenes"]:
+                return "%02x" % scene_id
+        raise SceneError("SCENE_ID_EXHAUSTED")
+
+    # ── Requests ────────────────────────────────────────────────────────────
+
+    def create_scene(self, GroupId, name, transition_time=1):
+        """Capture the current state of a group as a new scene."""
+        with self._lock:
+            members = self._check_group_for_capture(GroupId)
+            record = self.store.get(GroupId, {"scenes": {}})
+            name = self._check_name(record, name)
+            self._check_transition(transition_time)
+            self._check_load()
+
+            SceneId = self._allocate_scene_id(record)
+            now = int(time())
+            record["scenes"][SceneId] = {
+                "name": name,
+                "transitionTime": transition_time,
+                "createdAt": now,
+                "updatedAt": now,
+                "lastRecalled": None,
+                "members": {},
+            }
+            self._capture(GroupId, SceneId, record, members)
+            return self._scene_view(GroupId, SceneId, record["scenes"][SceneId])
+
+    def capture_scene(self, GroupId, SceneId, transition_time=None):
+        """Overwrite a scene with the current state of the group, members added since included."""
+        with self._lock:
+            record = self._scene_record(GroupId, SceneId)
+            members = self._check_group_for_capture(GroupId)
+            self._check_load()
+            scene = record["scenes"][SceneId]
+            if transition_time is not None:
+                scene["transitionTime"] = self._check_transition(transition_time)
+            scene["updatedAt"] = int(time())
+            self._capture(GroupId, SceneId, record, members)
+            return self._scene_view(GroupId, SceneId, scene)
+
+    def retry_scene(self, GroupId, SceneId):
+        """Capture again on the failed members. Each stores the state it is in now."""
+        with self._lock:
+            record = self._scene_record(GroupId, SceneId)
+            self._check_load()
+            scene = record["scenes"][SceneId]
+            members = self._group_members(GroupId)
+            failed = [key for key, member in scene["members"].items() if member["status"] == STATUS_FAILED and key in members]
+            for key in failed:
+                scene["members"][key].update({"status": STATUS_PENDING, "error": None})
+            self.store.set(GroupId, record)
+            for key in failed:
+                self._send_add(GroupId, SceneId, key, members[key], scene["transitionTime"])
+            return self._scene_view(GroupId, SceneId, scene)
+
+    def rename_scene(self, GroupId, SceneId, name):
+        """Nothing goes to the devices: the name is only known to the plugin."""
+        with self._lock:
+            record = self._scene_record(GroupId, SceneId)
+            scene = record["scenes"][SceneId]
+            scene["name"] = self._check_name(record, name, SceneId)
+            scene["updatedAt"] = int(time())
+            self.store.set(GroupId, record)
+            return self._scene_view(GroupId, SceneId, scene)
+
+    def recall_scene(self, GroupId, SceneId):
+        """One group-cast Recall Scene, and direct commands to the fallback members."""
+        with self._lock:
+            record = self._scene_record(GroupId, SceneId)
+            scene = record["scenes"][SceneId]
+            members = self._group_members(GroupId)
+            held = {key: scene["members"][key] for key in scene["members"] if key in members}
+
+            if any(member["capability"] == CAPABILITY_NATIVE for member in held.values()):
+                zcl_raw_recall_scene(self.plugin, GroupId, ZIGATE_EP, GROUP_CAST_EP, GroupId, SceneId, groupaddrmode=True)
+
+            for key, member in held.items():
+                if member["capability"] == CAPABILITY_FALLBACK:
+                    self._replay_snapshot(members[key], member["snapshot"], scene["transitionTime"])
+
+            scene["lastRecalled"] = int(time())
+            self.store.set(GroupId, record)
+            self.logging("Log", "Scene %s recalled on group %s" % (scene["name"], GroupId))
+            return self._scene_view(GroupId, SceneId, scene)
+
+    def delete_scene(self, GroupId, SceneId):
+        with self._lock:
+            record = self._scene_record(GroupId, SceneId)
+            scene = record["scenes"].pop(SceneId)
+            members = self._group_members(GroupId)
+            for key, member in scene["members"].items():
+                self._waiting.pop((GroupId, SceneId, key), None)
+                if key in members and member["capability"] == CAPABILITY_NATIVE:
+                    nwkid, ep = members[key]["nwkid"], members[key]["ep"]
+                    zcl_raw_remove_scene(self.plugin, nwkid, ZIGATE_EP, ep, GroupId, SceneId, ackIsDisabled=is_ack_tobe_disabled(self.plugin, nwkid))
+            self._save(GroupId, record)
+
+    def member_removed(self, GroupId, NwkId, Ep, ieee):
+        """
+        To call before Remove Group is sent: a device drops the scenes of a group
+        it leaves, or should, and a scene command is refused for a group it has left.
+        """
+        with self._lock:
+            record = self.store.get(GroupId)
+            if record is None:
+                return
+            key = "%s-%s" % (ieee, Ep)
+            held = [SceneId for SceneId, scene in record["scenes"].items() if key in scene["members"]]
+            if not held:
+                return
+            if any(record["scenes"][SceneId]["members"][key]["capability"] == CAPABILITY_NATIVE for SceneId in held):
+                zcl_raw_remove_all_scenes(self.plugin, NwkId, ZIGATE_EP, Ep, GroupId, ackIsDisabled=is_ack_tobe_disabled(self.plugin, NwkId))
+            for SceneId in held:
+                self._waiting.pop((GroupId, SceneId, key), None)
+                del record["scenes"][SceneId]["members"][key]
+                if not record["scenes"][SceneId]["members"]:
+                    del record["scenes"][SceneId]
+            self._save(GroupId, record)
+
+    # ── Device exchanges ────────────────────────────────────────────────────
+
+    def _capture(self, GroupId, SceneId, record, members):
+        """Rebuild the members of a scene and start the capture of the native ones."""
+        scene = record["scenes"][SceneId]
+        scene["members"] = {}
+        for key, member in members.items():
+            if member["capability"] == CAPABILITY_NATIVE:
+                scene["members"][key] = {
+                    "endpoint": member["ep"], "capability": CAPABILITY_NATIVE,
+                    "status": STATUS_PENDING, "lastCheck": None, "error": None,
+                }
+            else:
+                scene["members"][key] = {
+                    "endpoint": member["ep"], "capability": CAPABILITY_FALLBACK,
+                    "status": STATUS_NOT_APPLICABLE, "snapshot": self._snapshot(member["nwkid"], member["ep"]),
+                }
+
+        # Saved before sending, for a response to find its member
+        self.store.set(GroupId, record)
+        for key, member in members.items():
+            if member["capability"] == CAPABILITY_NATIVE:
+                self._send_add(GroupId, SceneId, key, member, scene["transitionTime"])
+
+    def _send_add(self, GroupId, SceneId, key, member, transition_time):
+        nwkid, ep = member["nwkid"], member["ep"]
+        self._wait(GroupId, SceneId, key, STEP_ADD, nwkid)
+        zcl_raw_add_scene(self.plugin, nwkid, ZIGATE_EP, ep, GroupId, SceneId, transition_time, ackIsDisabled=is_ack_tobe_disabled(self.plugin, nwkid))
+
+    def _wait(self, GroupId, SceneId, key, step, nwkid):
+        self._waiting[(GroupId, SceneId, key)] = {"step": step, "nwkid": nwkid, "deadline": time() + SCENE_RESPONSE_TIMEOUT}
+
+    def scene_response(self, step, nwkid, ep, status, GroupId, SceneId):
+        """An Add Scene or Store Scene response, from the decoders."""
+        with self._lock:
+            ieee = self.plugin.ListOfDevices.get(nwkid, {}).get("IEEE")
+            key = "%s-%s" % (ieee, ep)
+            waiting = self._waiting.get((GroupId, SceneId, key))
+            if waiting is None or waiting["step"] != step:
+                return
+
+            if step == STEP_ADD:
+                self._wait(GroupId, SceneId, key, STEP_STORE, nwkid)
+                zcl_raw_store_scene(self.plugin, nwkid, ZIGATE_EP, ep, GroupId, SceneId, ackIsDisabled=is_ack_tobe_disabled(self.plugin, nwkid))
+                return
+
+            del self._waiting[(GroupId, SceneId, key)]
+            if status == SUCCESS:
+                self._set_member_status(GroupId, SceneId, key, STATUS_SYNCED)
+            else:
+                self.logging("Log", "Scene %s of group %s not stored on %s/%s: status %s" % (SceneId, GroupId, nwkid, ep, status), nwkid)
+                self._set_member_status(GroupId, SceneId, key, STATUS_FAILED, status)
+
+    def _set_member_status(self, GroupId, SceneId, key, status, error=None):
+        record = self.store.get(GroupId)
+        member = record["scenes"].get(SceneId, {}).get("members", {}).get(key) if record else None
+        if member is None:
+            return
+        member.update({"status": status, "error": error, "lastCheck": int(time())})
+        self.store.set(GroupId, record)
+
+    def _replay_snapshot(self, member, snapshot, transition_time):
+        nwkid, ep = member["nwkid"], member["ep"]
+        ack_disabled = is_ack_tobe_disabled(self.plugin, nwkid)
+        if snapshot["onOff"] == 0:
+            zcl_onoff_off_noeffect(self.plugin, nwkid, ep, ackIsDisabled=ack_disabled)
+        elif snapshot["level"] is not None:
+            # Scene transitions are in seconds, a level transition in 1/10 s
+            transition = "%04x" % min(transition_time * 10, MAX_TRANSITION_TIME)
+            zcl_move_to_level_with_onoff(self.plugin, nwkid, ep, "01", "%02x" % snapshot["level"], transition=transition, ackIsDisabled=ack_disabled)
+        elif snapshot["onOff"] == 1:
+            zcl_onoff_on(self.plugin, nwkid, ep, ackIsDisabled=ack_disabled)
+
+    def heartbeat(self):
+        with self._lock:
+            now = time()
+            for (GroupId, SceneId, key), waiting in list(self._waiting.items()):
+                if now >= waiting["deadline"]:
+                    del self._waiting[(GroupId, SceneId, key)]
+                    self.logging("Log", "Scene %s of group %s: no %s Scene response from %s" % (SceneId, GroupId, waiting["step"], waiting["nwkid"]), waiting["nwkid"])
+                    self._set_member_status(GroupId, SceneId, key, STATUS_FAILED, ERROR_TIMEOUT)
+        self.store.flush(self.plugin)
+
+    def _fail_interrupted_captures(self):
+        """A capture does not survive a restart: nothing is waiting for its responses."""
+        for GroupId in self.store.keys():
+            record = self.store.get(GroupId)
+            changed = False
+            for scene in record["scenes"].values():
+                for member in scene["members"].values():
+                    if member["status"] == STATUS_PENDING:
+                        member.update({"status": STATUS_FAILED, "error": ERROR_INTERRUPTED})
+                        changed = True
+            if changed:
+                self.store.set(GroupId, record)
+
+    def _save(self, GroupId, record):
+        """A group without a scene has no record."""
+        if record["scenes"]:
+            self.store.set(GroupId, record)
+        else:
+            self.store.delete(GroupId)
+
+    # ── Views, for REST ─────────────────────────────────────────────────────
+
+    def _device_name(self, nwkid):
+        return self.plugin.ListOfDevices.get(nwkid, {}).get("ZDeviceName", "")
+
+    def _scene_view(self, GroupId, SceneId, scene):
+        members = self._group_members(GroupId)
+        held = {key: member for key, member in scene["members"].items() if key in members}
+        views = []
+        for key, member in held.items():
+            view = {"ieee": members[key]["ieee"], "nwkId": members[key]["nwkid"], "name": self._device_name(members[key]["nwkid"])}
+            view.update(member)
+            views.append(view)
+
+        native = [member for member in held.values() if member["capability"] == CAPABILITY_NATIVE]
+        return {
+            "groupId": GroupId,
+            "sceneId": SceneId,
+            "name": scene["name"],
+            "transitionTime": scene["transitionTime"],
+            "createdAt": scene["createdAt"],
+            "updatedAt": scene["updatedAt"],
+            "lastRecalled": scene["lastRecalled"],
+            "members": views,
+            # In the group but not in the scene: a capture brings them in
+            "missing": [
+                {"ieee": member["ieee"], "endpoint": member["ep"], "name": self._device_name(member["nwkid"]), "capability": member["capability"]}
+                for key, member in members.items() if key not in held
+            ],
+            "synced": sum(member["status"] == STATUS_SYNCED for member in native),
+            "native": len(native),
+        }
+
+    def group_view(self, GroupId):
+        with self._lock:
+            self._check_group(GroupId)
+            record = self.store.get(GroupId, {"scenes": {}})
+            members = self._group_members(GroupId)
+            return {
+                "groupId": GroupId,
+                "groupName": self._groups[GroupId].get("Name", ""),
+                "capable": GroupId != GROUP_NOT_FOR_SCENES and any(member["capability"] == CAPABILITY_NATIVE for member in members.values()),
+                "members": [
+                    {"ieee": member["ieee"], "nwkId": member["nwkid"], "endpoint": member["ep"],
+                     "name": self._device_name(member["nwkid"]), "capability": member["capability"]}
+                    for member in members.values()
+                ],
+                "scenes": [self._scene_view(GroupId, SceneId, scene) for SceneId, scene in sorted(record["scenes"].items())],
+            }
+
+    def groups_view(self):
+        return [self.group_view(GroupId) for GroupId in list(self._groups)]

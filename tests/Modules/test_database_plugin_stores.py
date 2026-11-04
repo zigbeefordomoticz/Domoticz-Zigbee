@@ -106,7 +106,7 @@ def test_declared_store_is_loaded_flushed_with_the_device_list_and_reloaded():
 def test_no_store_declared_leaves_the_flush_unchanged():
     _run(
         """
-        assert database.PLUGIN_STORES == ()
+        database.PLUGIN_STORES = ()
         with tempfile.TemporaryDirectory() as tmp:
             p = make_plugin(tmp)
             database.load_plugin_stores(p)
