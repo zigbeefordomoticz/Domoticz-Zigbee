@@ -40,8 +40,8 @@ through the plugin is dropped, after Remove All Scenes. Otherwise the store is
 left alone: the views and Recall only use the members still in the group, so a
 group list that could not be read costs no scene.
 
-The decoders (forwarder thread) and the REST calls (Domoticz thread) both change
-the records, hence the lock around each read-modify-write of a record.
+The decoders (forwarder thread), the REST calls (a thread per client) and the
+heartbeat all change the records, hence the lock around each read-modify-write.
 """
 
 import threading
