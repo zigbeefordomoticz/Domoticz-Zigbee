@@ -216,3 +216,52 @@ def test_recall_scene_from_a_remote_is_unchanged():
         assert fields(frame)[0] == "80a5", frame
         """
     )
+
+
+def test_scene_debug_category_exists_for_tools_debug():
+    """In Tools > Debug with the other modules: an unknown module raises a Domoticz error."""
+    _run(
+        """
+        from Classes.PluginConf import SETTINGS
+        scene = SETTINGS["VerboseLogging"]["param"]["Scene"]
+        assert scene["type"] == "bool" and scene["default"] == 0
+        assert scene["restart"] == 0 and not scene["hidden"]
+        """
+    )
+
+
+def test_scene_response_debug_follows_the_scene_category():
+    _run(
+        """
+        import Classes.LoggingManagement as lm
+
+        command, data = response("store_scene_response", status=foundation.Status.SUCCESS, group_id=GROUP, scene_id=3)
+        module = deliver(decode(command, data))[0].args[0]
+        assert module == ["Input", "Scene"], module
+
+        def enqueued(**enabled):
+            logger = MagicMock()
+            logger.pluginconf.pluginConf = {"Input": 0, "Scene": 0, **enabled}
+            with patch.object(lm, "enqueue_logging") as enqueue:
+                lm.LoggingManagement.logging(logger, module, "Debug", "message")
+            return enqueue.call_count
+
+        assert enqueued() == 0
+        assert enqueued(Scene=1) == 1
+        assert enqueued(Input=1) == 1
+        assert enqueued(Input=1, Scene=1) == 1
+        """
+    )
+
+
+def test_raw_scene_command_debug_follows_the_scene_category():
+    _run(
+        """
+        import Zigbee.zclRawCommands as raw
+
+        p = plugin()
+        with patch.object(raw, "raw_APS_request"), patch.object(raw, "get_and_inc_ZCL_SQN", return_value="01"), patch.object(raw, "zcl_command_formated_logging"):
+            raw.zcl_raw_get_scene_membership(p, NWKID, "01", EP, "1001")
+        assert p.log.logging.call_args_list[0].args[0] == ["zclCommand", "Scene"]
+        """
+    )
