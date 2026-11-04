@@ -27,6 +27,15 @@ from Zigbee.zclRawCommands import zcl_raw_default_response
 
 MALFORMED_COMMAND = "80"
 
+# Cluster 0x0005, Server to Client: response command -> plugin frame MsgType
+SCENE_RESPONSE_MSGTYPES = {
+    "00": "80a1",  # Add Scene
+    "02": "80a2",  # Remove Scene
+    "03": "80a3",  # Remove All Scenes
+    "04": "80a4",  # Store Scene
+    "06": "80a6",  # Get Scene Membership
+}
+
 def is_duplicate_zcl_frame(self, nwkid, cluster_id, sqn, default_response_disable=False):
     """
     Checks if a given Zigbee ZCL frame is a duplicate based on its sequence number.
@@ -144,6 +153,10 @@ def zcl_decoders(self, src_nwk_id, src_endpoint, target_ep, cluster_id, payload,
     if cluster_id == "0004":
         send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
         return buildframe_for_cluster_0004(self, command, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, data )
+
+    if cluster_id == "0005" and is_direction_to_client(fcf) and manufacturer_code is None and command in SCENE_RESPONSE_MSGTYPES:
+        send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
+        return buildframe_scene_response(self, command, frame, sqn, src_nwk_id, src_endpoint, data)
 
     if cluster_id == "0005" and command == "05":  # Only Recall Scene supported
         send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
@@ -635,7 +648,42 @@ def buildframe_for_cluster_0005(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint
         return encapsulate_plugin_frame("80a5", buildPayload, frame[len(frame) - 4 : len(frame) - 2])   
     
     return frame
-             
+
+
+def buildframe_scene_response(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, Data):
+    """
+    Scene responses (Server to Client), decoded in Z4D_decoders/z4d_decoder_Scenes.py:
+
+    Add, Remove, Store:   Sqn | Ep | Cluster | Status | GroupId | SceneId | SrcNwkId
+    Remove All:           Sqn | Ep | Cluster | Status | GroupId | SrcNwkId
+    Get Membership:       Sqn | Ep | Cluster | Status | Capacity | GroupId | SceneCount | SceneList | SrcNwkId
+
+    A Get Membership response has no count or list unless Status is success: the
+    frame then carries a count of 0, so the layout does not depend on the status.
+    """
+    status = Data[:2]
+    if Command == "06":
+        expected_length = 8
+        if status == "00":
+            expected_length = 10
+            if len(Data) >= expected_length:
+                expected_length += 2 * int(Data[8:10], 16)
+    else:
+        expected_length = 6 if Command == "03" else 8
+
+    if len(Data) < expected_length:
+        self.log.logging(["zclDecoder", "Scene"], "Log", f"buildframe_scene_response - Truncated response {Command}: {Data}", SrcNwkId)
+        return None
+
+    if Command == "06":
+        scenes = Data[8:expected_length] if status == "00" else "00"
+        body = Data[2:4] + decode_endian_data(Data[4:8], "09") + scenes
+    else:
+        body = decode_endian_data(Data[2:6], "09") + Data[6:expected_length]
+
+    buildPayload = Sqn + SrcEndPoint + "0005" + status + body + SrcNwkId
+    return encapsulate_plugin_frame(SCENE_RESPONSE_MSGTYPES[Command], buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+
 
 # Cluster 0x0006
 

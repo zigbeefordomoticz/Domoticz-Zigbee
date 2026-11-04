@@ -102,7 +102,9 @@ def stub_external_modules():
         ("Z4D_decoders.z4d_decoder_Rte_Discovery_Performed",
             {"Decode8701": MagicMock()}),
         ("Z4D_decoders.z4d_decoder_Scenes",
-            {"Decode80A5": MagicMock(), "Decode80A6": MagicMock()}),
+            {"Decode80A1": MagicMock(), "Decode80A2": MagicMock(),
+             "Decode80A3": MagicMock(), "Decode80A4": MagicMock(),
+             "Decode80A5": MagicMock(), "Decode80A6": MagicMock()}),
         ("Z4D_decoders.z4d_decoder_Simple_Descriptor_Rsp",
             {"Decode8043": MagicMock()}),
         ("Z4D_decoders.z4d_decoder_User_Desc_Notify",
@@ -407,6 +409,10 @@ def test_decoder_exception_type_without_address_offset(input_module, plugin):
     ("8085", "1a" + "01" + "0008" + "00" + "cbc4"),
     ("8095", "1a" + "01" + "0006" + "00" + "cbc4"),
     ("80a5", "1a" + "01" + "0005" + "00" + "cbc4"),
+    ("80a1", "1a" + "01" + "0005" + "00" + "1001" + "03" + "cbc4"),
+    ("80a2", "1a" + "01" + "0005" + "00" + "1001" + "03" + "cbc4"),
+    ("80a3", "1a" + "01" + "0005" + "00" + "1001" + "cbc4"),
+    ("80a4", "1a" + "01" + "0005" + "00" + "1001" + "03" + "cbc4"),
 ])
 def test_source_nwkid_offsets(input_module, plugin, msg_type, msg_data):
     plugin.ListOfDevices = {"cbc4": {}}
