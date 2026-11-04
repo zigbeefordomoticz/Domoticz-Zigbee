@@ -15,6 +15,7 @@ REST API of the native Zigbee scenes, on /rest-z4d/1/scenes:
     GET     /scenes                         every group, with its scenes
     GET     /scenes/<group>                 one group
     PUT     /scenes/<group>                 create    {"name", "transitionTime"}
+    PUT     /scenes/<group>/scan            ask the members which scenes they hold
     PUT     /scenes/<group>/<scene>         rename    {"name"}
     DELETE  /scenes/<group>/<scene>         remove from the devices and the store
     PUT     /scenes/<group>/<scene>/capture {"transitionTime"}, optional
@@ -75,6 +76,10 @@ def _serve(scenemgt, verb, data, parameters):
     if verb == "PUT" and len(parameters) == 1:
         body = _body(data)
         return scenemgt.create_scene(parameters[0], body.get("name"), body.get("transitionTime", 1))
+
+    # Not a scene ID, which is two hex digits
+    if verb == "PUT" and len(parameters) == 2 and parameters[1] == "scan":
+        return scenemgt.scan_group(parameters[0])
 
     if verb == "PUT" and len(parameters) == 2:
         return scenemgt.rename_scene(parameters[0], parameters[1], _body(data).get("name"))

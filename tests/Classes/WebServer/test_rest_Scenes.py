@@ -115,6 +115,14 @@ def test_scenes_not_enabled(rest, server):
     assert json.loads(response["Data"]) == {"error": "SCENES_DISABLED"}
 
 
+def test_scan_is_not_a_rename(rest, server):
+    server.scenemgt.scan_group.return_value = {"groupId": "1001", "scan": {"running": True}}
+    response = rest.rest_scenes(server, "PUT", None, ["1001", "scan"])
+    server.scenemgt.scan_group.assert_called_once_with("1001")
+    server.scenemgt.rename_scene.assert_not_called()
+    assert json.loads(response["Data"])["scan"] == {"running": True}
+
+
 def test_a_refusal_logs_under_webserver_and_scene(rest, server):
     server.scenemgt.recall_scene.side_effect = SceneError("SCENE_NOT_FOUND")
     rest.rest_scenes(server, "PUT", None, ["1001", "03", "recall"])
