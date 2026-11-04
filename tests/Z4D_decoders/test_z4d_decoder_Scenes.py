@@ -2,7 +2,8 @@
 Tests for Z4D_decoders/z4d_decoder_Scenes.py
 
 Covers Decode80A0–80A4 (log-only scene responses) and Decode80A5/80A6
-which have lightweight conditional logic.
+which have lightweight conditional logic. The frames as the plugin builds them
+are in tests/Zigbee/test_zcl_scene_responses.py.
 """
 
 import sys
@@ -27,10 +28,10 @@ ADDR = "1234"
 
 @pytest.mark.parametrize("fn_name,msg", [
     ("Decode80A0", "01" + "01" + "0005" + "00" + "0001"),             # 14 chars
-    ("Decode80A1", "01" + "01" + "0005" + "00" + "0001" + "01"),      # 16 chars
-    ("Decode80A2", "01" + "01" + "0005" + "00" + "0001" + "01"),
-    ("Decode80A3", "01" + "01" + "0005" + "00" + "0001"),
-    ("Decode80A4", "01" + "01" + "0005" + "00" + "0001" + "01"),
+    ("Decode80A1", "01" + "01" + "0005" + "00" + "0001" + "01" + ADDR),  # 20 chars
+    ("Decode80A2", "01" + "01" + "0005" + "00" + "0001" + "01" + ADDR),
+    ("Decode80A3", "01" + "01" + "0005" + "00" + "0001" + ADDR),
+    ("Decode80A4", "01" + "01" + "0005" + "00" + "0001" + "01" + ADDR),
 ])
 class TestSceneLogOnlyDecoders:
 
@@ -44,6 +45,25 @@ class TestSceneLogOnlyDecoders:
         fn = getattr(mod, fn_name)
         fn(plugin, {}, msg, LQI)
         assert plugin.ListOfDevices == {}
+
+
+@pytest.mark.parametrize("fn_name,scene", [
+    ("Decode80A1", "01"), ("Decode80A2", "01"), ("Decode80A3", ""), ("Decode80A4", "01"),
+])
+class TestSceneResponseStatus:
+
+    def _call(self, mod, plugin, fn_name, scene, status):
+        msg = "01" + "01" + "0005" + status + "0001" + scene + ADDR
+        getattr(mod, fn_name)(plugin, {}, msg, LQI)
+        return plugin.log.logging.call_args
+
+    def test_success_stays_in_debug(self, mod, plugin, fn_name, scene):
+        assert self._call(mod, plugin, fn_name, scene, "00").args[1] == "Debug"
+
+    def test_failure_is_logged_for_the_device(self, mod, plugin, fn_name, scene):
+        call = self._call(mod, plugin, fn_name, scene, "89")
+        assert call.args[1] == "Log"
+        assert call.args[3] == ADDR
 
 
 # ─── Decode80A5 – recall scene ────────────────────────────────────────────────
@@ -87,11 +107,13 @@ class TestDecode80A6:
         mod.Decode80A6(plugin, {}, self._make_msg(status="82"), LQI)
         assert any(c.args[1] == "Log" for c in plugin.log.logging.call_args_list)
 
-    def test_scene_count_over_capacity_logs_and_returns(self, mod, plugin):
-        mod.Decode80A6(plugin, {}, self._make_msg(capacity="01", scene_count="05"), LQI)
-        assert any("MsgSceneCount" in str(c) or ">" in str(c)
-                   for c in plugin.log.logging.call_args_list)
+    def test_scene_count_over_capacity_is_valid(self, mod, plugin):
+        # Capacity is what remains free, it does not bound the scenes already stored
+        mod.Decode80A6(plugin, {}, self._make_msg(capacity="01", scene_count="03", scene_list="010307"), LQI)
+        assert "['01', '03', '07']" in plugin.log.logging.call_args.args[2]
 
     def test_valid_empty_scene_list_logs(self, mod, plugin):
         mod.Decode80A6(plugin, {}, self._make_msg(), LQI)
-        assert any(c.args[1] == "Log" for c in plugin.log.logging.call_args_list)
+        call = plugin.log.logging.call_args
+        assert call.args[1] == "Debug"
+        assert "[]" in call.args[2]
