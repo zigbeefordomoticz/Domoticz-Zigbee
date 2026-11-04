@@ -22,6 +22,7 @@ DEFAULT_ACK_MODE = False
 
 # Logged once, under the first enabled category
 DEFAULT_RESPONSE_LOG = ["zclDefaultResponse", "zclCommand", "zclDecoder"]
+SCENE_LOG = ["zclCommand", "Scene"]
 
 # General Command Frame
 
@@ -508,7 +509,7 @@ def zcl_raw_add_scene(self, nwkid, epin, epout, GroupId, SceneId, transition_tim
     Args:
         transition_time: In seconds, unlike Recall Scene.
     """
-    self.log.logging("zclCommand", "Debug", "zcl_raw_add_scene %s %s %s %s %s %s" % (nwkid, epin, epout, GroupId, SceneId, transition_time), nwkid)
+    self.log.logging(SCENE_LOG, "Debug", "zcl_raw_add_scene %s %s %s %s %s %s" % (nwkid, epin, epout, GroupId, SceneId, transition_time), nwkid)
     zcl_command_formated_logging( self, "Add_Scene (Raw)", nwkid, epout, "0005", GroupId, SceneId, transition_time, ackIsDisabled)
 
     data = _scene_group_field(GroupId) + SceneId + struct.pack("<H", transition_time).hex() + "00"
@@ -516,7 +517,7 @@ def zcl_raw_add_scene(self, nwkid, epin, epout, GroupId, SceneId, transition_tim
 
 
 def zcl_raw_remove_scene(self, nwkid, epin, epout, GroupId, SceneId, ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging("zclCommand", "Debug", "zcl_raw_remove_scene %s %s %s %s %s" % (nwkid, epin, epout, GroupId, SceneId), nwkid)
+    self.log.logging(SCENE_LOG, "Debug", "zcl_raw_remove_scene %s %s %s %s %s" % (nwkid, epin, epout, GroupId, SceneId), nwkid)
     zcl_command_formated_logging( self, "Remove_Scene (Raw)", nwkid, epout, "0005", GroupId, SceneId, ackIsDisabled)
 
     data = _scene_group_field(GroupId) + SceneId
@@ -524,14 +525,14 @@ def zcl_raw_remove_scene(self, nwkid, epin, epout, GroupId, SceneId, ackIsDisabl
 
 
 def zcl_raw_remove_all_scenes(self, nwkid, epin, epout, GroupId, ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging("zclCommand", "Debug", "zcl_raw_remove_all_scenes %s %s %s %s" % (nwkid, epin, epout, GroupId), nwkid)
+    self.log.logging(SCENE_LOG, "Debug", "zcl_raw_remove_all_scenes %s %s %s %s" % (nwkid, epin, epout, GroupId), nwkid)
     zcl_command_formated_logging( self, "Remove_All_Scenes (Raw)", nwkid, epout, "0005", GroupId, ackIsDisabled)
 
     return _zcl_raw_scene_command(self, nwkid, epin, epout, "03", _scene_group_field(GroupId), ackIsDisabled=ackIsDisabled)
 
 
 def zcl_raw_store_scene(self, nwkid, epin, epout, GroupId, SceneId, ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging("zclCommand", "Debug", "zcl_raw_store_scene %s %s %s %s %s" % (nwkid, epin, epout, GroupId, SceneId), nwkid)
+    self.log.logging(SCENE_LOG, "Debug", "zcl_raw_store_scene %s %s %s %s %s" % (nwkid, epin, epout, GroupId, SceneId), nwkid)
     zcl_command_formated_logging( self, "Store_Scene (Raw)", nwkid, epout, "0005", GroupId, SceneId, ackIsDisabled)
 
     data = _scene_group_field(GroupId) + SceneId
@@ -546,7 +547,7 @@ def zcl_raw_recall_scene(self, nwkid, epin, epout, GroupId, SceneId, transition_
         transition_time: In 1/10 s, unlike Add Scene. None leaves the optional field
                          out, and the device uses the transition time it holds.
     """
-    self.log.logging("zclCommand", "Debug", "zcl_raw_recall_scene %s %s %s %s %s %s %s" % (nwkid, epin, epout, GroupId, SceneId, transition_time, groupaddrmode), nwkid)
+    self.log.logging(SCENE_LOG, "Debug", "zcl_raw_recall_scene %s %s %s %s %s %s %s" % (nwkid, epin, epout, GroupId, SceneId, transition_time, groupaddrmode), nwkid)
     zcl_command_formated_logging( self, "Recall_Scene (Raw)", nwkid, epout, "0005", GroupId, SceneId, transition_time, groupaddrmode, ackIsDisabled)
 
     data = _scene_group_field(GroupId) + SceneId
@@ -556,7 +557,7 @@ def zcl_raw_recall_scene(self, nwkid, epin, epout, GroupId, SceneId, transition_
 
 
 def zcl_raw_get_scene_membership(self, nwkid, epin, epout, GroupId, ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging("zclCommand", "Debug", "zcl_raw_get_scene_membership %s %s %s %s" % (nwkid, epin, epout, GroupId), nwkid)
+    self.log.logging(SCENE_LOG, "Debug", "zcl_raw_get_scene_membership %s %s %s %s" % (nwkid, epin, epout, GroupId), nwkid)
     zcl_command_formated_logging( self, "Get_Scene_Membership (Raw)", nwkid, epout, "0005", GroupId, ackIsDisabled)
 
     return _zcl_raw_scene_command(self, nwkid, epin, epout, "06", _scene_group_field(GroupId), ackIsDisabled=ackIsDisabled)
