@@ -14,7 +14,7 @@ REST API of the native Zigbee scenes, on /rest-z4d/1/scenes:
 
     GET     /scenes                         every group, with its scenes
     GET     /scenes/<group>                 one group
-    PUT     /scenes/<group>                 create    {"name", "transitionTime"}
+    PUT     /scenes/<group>                 create    {"name", "transitionTime", "sceneId"}
     PUT     /scenes/<group>/scan            ask the members which scenes they hold
     PUT     /scenes/<group>/<scene>         rename    {"name"}
     DELETE  /scenes/<group>/<scene>         remove from the devices and the store
@@ -26,6 +26,10 @@ Every change is a PUT, as on the rest of this server, and not a POST. Nothing he
 checks where a request comes from: what stops another web page from sending one
 is the preflight of a PUT, as no CORS header is ever sent. A POST with a text/plain
 body has no preflight.
+
+"sceneId" is optional, two hex digits. With it the capture only starts after a scan of
+the group: the answer is the view of the group, and its "scan" gives the outcome in
+"capture", {"sceneId", "name", "state": "waiting" | "started" | "refused", "error"}.
 
 A refused request answers with {"error": <code>}, the code of the SceneError.
 """
@@ -44,11 +48,14 @@ ERROR_STATUS = {
     "NAME_INVALID": "400 BAD REQUEST",
     "NAME_DUPLICATE": "400 BAD REQUEST",
     "TRANSITION_INVALID": "400 BAD REQUEST",
+    "SCENE_ID_INVALID": "400 BAD REQUEST",
     "GROUP_NOT_FOUND": "404 NOT FOUND",
     "SCENE_NOT_FOUND": "404 NOT FOUND",
     "GROUP_NOT_ALLOWED": "409 CONFLICT",
     "NO_CAPABLE_MEMBER": "409 CONFLICT",
     "SCENE_ID_EXHAUSTED": "409 CONFLICT",
+    "SCENE_ID_IN_USE": "409 CONFLICT",
+    "SCENE_ID_CHECK_RUNNING": "409 CONFLICT",
     "SCENES_DISABLED": "409 CONFLICT",
     "COORDINATOR_BUSY": "503 SERVICE UNAVAILABLE",
 }
@@ -75,7 +82,7 @@ def _serve(scenemgt, verb, data, parameters):
 
     if verb == "PUT" and len(parameters) == 1:
         body = _body(data)
-        return scenemgt.create_scene(parameters[0], body.get("name"), body.get("transitionTime", 1))
+        return scenemgt.create_scene(parameters[0], body.get("name"), body.get("transitionTime", 1), body.get("sceneId"))
 
     # Not a scene ID, which is two hex digits
     if verb == "PUT" and len(parameters) == 2 and parameters[1] == "scan":
