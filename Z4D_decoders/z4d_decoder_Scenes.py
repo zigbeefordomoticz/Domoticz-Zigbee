@@ -83,11 +83,16 @@ def Decode80A6(self, Devices, MsgData, MsgLQI):
     MsgCapacity = int(MsgData[10:12], 16)
     MsgGroupID = MsgData[12:16]
     MsgSceneCount = int(MsgData[16:18], 16)
+    scenemgt = getattr(self, 'scenemgt', None)
     if MsgDataStatus != '00':
         self.log.logging(SCENE_LOG, 'Log', 'Decode80A6 - Scene Membership response - %s/%s Group ID: %s Status: %s' % (
             MsgSrcAddr, MsgEP, MsgGroupID, DisplayStatusCode(MsgDataStatus)), MsgSrcAddr)
+        if scenemgt:
+            scenemgt.membership_response(MsgSrcAddr, MsgEP, MsgDataStatus, MsgGroupID, [])
         return
     MsgSceneList = MsgData[18:18 + MsgSceneCount * 2]
     MsgScene = [MsgSceneList[idx:idx + 2] for idx in range(0, MsgSceneCount * 2, 2)]
     self.log.logging(SCENE_LOG, 'Debug', 'Decode80A6 - Scene Membership response - %s/%s Group ID: %s Capacity: %s Scene List: %s' % (
         MsgSrcAddr, MsgEP, MsgGroupID, MsgCapacity, MsgScene), MsgSrcAddr)
+    if scenemgt:
+        scenemgt.membership_response(MsgSrcAddr, MsgEP, MsgDataStatus, MsgGroupID, MsgScene)

@@ -129,6 +129,20 @@ class TestDecode80A6:
         mod.Decode80A6(plugin, {}, self._make_msg(capacity="01", scene_count="03", scene_list="010307"), LQI)
         assert "['01', '03', '07']" in plugin.log.logging.call_args.args[2]
 
+    def test_the_scenes_reach_the_scene_manager(self, mod, plugin):
+        plugin.scenemgt = MagicMock()
+        mod.Decode80A6(plugin, {}, self._make_msg(scene_count="02", scene_list="0307"), LQI)
+        plugin.scenemgt.membership_response.assert_called_once_with(ADDR, "01", "00", "0001", ["03", "07"])
+
+    def test_a_refusal_reaches_the_scene_manager(self, mod, plugin):
+        plugin.scenemgt = MagicMock()
+        mod.Decode80A6(plugin, {}, self._make_msg(status="85"), LQI)
+        plugin.scenemgt.membership_response.assert_called_once_with(ADDR, "01", "85", "0001", [])
+
+    def test_without_a_scene_manager(self, mod, plugin):
+        plugin.scenemgt = None
+        mod.Decode80A6(plugin, {}, self._make_msg(), LQI)
+
     def test_valid_empty_scene_list_logs(self, mod, plugin):
         mod.Decode80A6(plugin, {}, self._make_msg(), LQI)
         call = plugin.log.logging.call_args
