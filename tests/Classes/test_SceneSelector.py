@@ -164,7 +164,7 @@ def plugin(domoticz):
         ListOfGroups={GROUP: {"Name": "Living room", "Devices": [[LAMP, "0b", LAMP_IEEE]]}},
         Devices={}, processCommand=MagicMock(name="processCommand"),
         FullRemoveOfGroup=MagicMock(name="FullRemoveOfGroup"),
-        create_scene_selector=domoticz.create_selector,
+        create_scene_selector=domoticz.create_selector, request_widgets_restore=MagicMock(name="request_widgets_restore"),
         group_widget_unit=domoticz.group_unit, scene_selector_unit=domoticz.selector_unit,
     )
     return p
@@ -472,15 +472,25 @@ class TestRemoval:
         scenes.selector_removed(GROUP)
         assert len(scenes.group_view(GROUP)["scenes"]) == 1
         assert GROUP in plugin.groupmgt.ListOfGroups
-        assert store.get(GROUP)["selectorRemoved"] is True
+        assert "selectorRemoved" not in store.get(GROUP)
 
-    def test_it_stays_deleted_across_a_restart(self, loaded, scenes, domoticz, plugin, store):
+    def test_it_comes_back_at_a_restart(self, loaded, scenes, domoticz, plugin, store):
         add(scenes, "Movie")
         domoticz.user_deletes_selector()
         scenes.selector_removed(GROUP)
         restarted = loaded.management.SceneManagement(plugin, store, loaded.selector.SceneSelector(plugin))
         restarted.heartbeat()
+        assert domoticz.names() == ["Off", "Movie"]
+
+    def test_it_comes_back_with_a_scan(self, scenes, domoticz):
+        add(scenes, "Movie")
+        domoticz.user_deletes_selector()
+        scenes.selector_removed(GROUP)
+        scenes.heartbeat()
         assert not domoticz.has_selector()
+        scenes.restore_selectors()
+        scenes.heartbeat()
+        assert domoticz.names() == ["Off", "Movie"]
 
     def test_it_stays_deleted_after_a_rename(self, scenes, domoticz):
         add(scenes, "Movie")

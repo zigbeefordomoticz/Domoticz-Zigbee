@@ -14,8 +14,9 @@ from Classes.GroupMgtv2.GrpDatabase import (add_device_to_group, create_group,
                                             remove_device_from_group,
                                             write_groups_list)
 from Classes.GroupMgtv2.GrpDomoticz import (
-    create_domoticz_group_device, remove_domoticz_group_device,
-    update_domoticz_group_device, update_domoticz_group_device_widget)
+    LookForGroupAndCreateIfNeeded, create_domoticz_group_device,
+    remove_domoticz_group_device, update_domoticz_group_device,
+    update_domoticz_group_device_widget)
 
 
 def checkToCreateOrUpdateGroup(self, NwkId, Ep, GroupId):
@@ -39,7 +40,8 @@ def checkToCreateOrUpdateGroup(self, NwkId, Ep, GroupId):
 
     self.logging("Debug", "-------> Adding Device %s to Group GrouId: %s" % (NwkId, GroupId), GroupId)
     add_device_to_group(self, [NwkId, Ep, Ieee], GroupId)
-    update_domoticz_group_device_widget(self, GroupId)
+    # A group already known can have lost its widget: a scan is what brings it back
+    LookForGroupAndCreateIfNeeded(self, GroupId)
     self.write_groups_list()
 
 
