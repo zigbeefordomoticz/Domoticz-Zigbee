@@ -110,11 +110,11 @@ SCRIPT = textwrap.dedent(
     assert unit.stored_options["LevelNames"] == "Off|Movie|Reading", unit.stored_options
 
     # A third scene: the names reach the database, with the options of the user
-    unit.Options["SelectorStyle"] = "0"
+    unit.Options["SelectorStyle"] = "1"
     plugin.scenemgt.create_scene(GROUP, "Dinner")
     plugin.scenemgt.heartbeat()
     assert unit.stored_options["LevelNames"] == "Off|Movie|Reading|Dinner", unit.stored_options
-    assert unit.stored_options["SelectorStyle"] == "0"
+    assert unit.stored_options["SelectorStyle"] == "1"
     assert unit.updates[-1] == {"SuppressTriggers": True, "UpdateOptions": True}, unit.updates
 
     # A command on the widget goes to the scene, never to the group

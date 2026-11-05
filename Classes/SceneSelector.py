@@ -40,7 +40,9 @@ LEVEL_STEP = 10
 OFF_NAME = "Off"
 # What a free slot shows: choosing it does nothing
 FREE_LEVEL_NAME = "-"
-DEFAULT_OPTIONS = {"LevelOffHidden": "false", "SelectorStyle": "1"}
+# Buttons: a click always sends the command. A scene can be recalled again, once lamps
+# have moved, and the dropdown (1) of the dashboard only sends one when the level changes
+DEFAULT_OPTIONS = {"LevelOffHidden": "false", "SelectorStyle": "0"}
 
 
 def _level_names(levels):
