@@ -812,12 +812,9 @@ class BasePlugin:
         elif is_green_power_device_id(self, DeviceID):
             green_power_widget_removed(self, Devices, DeviceID, Unit)
 
-        elif self.groupmgt and DeviceID in self.groupmgt.ListOfGroups:
+        elif self.groupmgt and self.groupmgt.is_group_widget(DeviceID, Unit):
             self.log.logging("Plugin", "Status", f"Request device {DeviceID} to be removed from Group(s)")
             self.groupmgt.FullRemoveOfGroup(Unit, DeviceID)
-
-        elif self.scenemgt and self.scenemgt.is_selector(DeviceID):
-            self.scenemgt.selector_removed(DeviceID)
 
         load_list_of_domoticz_widget(self, Devices)
 
@@ -982,6 +979,12 @@ class BasePlugin:
             # Command belongs to a end node
             domoticz_command(self, Devices, DeviceID, Unit, self.IEEE2NWK[ DeviceID], Command, Level, Color)
 
+        elif self.groupmgt and self.groupmgt.is_scene_selector(DeviceID, Unit):
+            # On the DeviceID of a group, and never a command for the group: left in Domoticz, it does nothing
+            self.log.logging("Command", "Log", "Command: %s/%s to Scene Selector: %s" % (Command, Level, DeviceID))
+            if self.scenemgt:
+                self.scenemgt.selector_command(DeviceID, Command, Level)
+
         elif self.groupmgt and DeviceID in self.groupmgt.ListOfGroups:
             # Command belongs to a Zigate group
             self.log.logging( "Command", "Log", "Command: %s/%s/%s to Group: %s" % (Command, Level, Color, DeviceID), )
@@ -989,10 +992,6 @@ class BasePlugin:
 
         elif is_green_power_device_id(self, DeviceID):
             green_power_widget_command(self, DeviceID, Unit, Command)
-
-        elif self.scenemgt and self.scenemgt.is_selector(DeviceID):
-            self.log.logging("Command", "Log", "Command: %s/%s to Scene Selector: %s" % (Command, Level, DeviceID))
-            self.scenemgt.selector_command(DeviceID, Command, Level)
 
         elif DeviceID.find("Zigate-01-") != -1:
             self.log.logging("Command", "Debug", "onCommand - Command adminWidget: %s " % Command)

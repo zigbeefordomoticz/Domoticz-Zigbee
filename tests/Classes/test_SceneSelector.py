@@ -22,7 +22,7 @@ from Classes.PluginStore import PluginStore
 
 GROUP = "1001"
 LAMP, LAMP_IEEE = "5c3e", "a1b2c3d4e5f60708"
-SELECTOR = "Z4D-Scenes-1001"
+SELECTOR_UNIT = 2
 FULL_OPTIONS = {"LevelNames", "LevelActions", "LevelOffHidden", "SelectorStyle"}
 
 RAW_COMMANDS = (
@@ -32,7 +32,7 @@ RAW_COMMANDS = (
 
 
 class FakeDomoticz:
-    """The abstract layer, keeping {DeviceID: {Unit: widget}}."""
+    """The abstract layer and what GrpDomoticz does with it, keeping {DeviceID: {Unit: widget}}."""
 
     def __init__(self):
         self.widgets = {}
@@ -41,12 +41,11 @@ class FakeDomoticz:
         self.updates = []
         self.refuse_creation = False
 
-    def create(self, plugin, Devices, DeviceID_, Unit_, Name_, Type_=None, Subtype_=None, Switchtype_=None, widgetOptions=None):
+    def create_selector(self, DeviceID_, Name_, widgetOptions):
         if self.refuse_creation:
             return -1
-        self.widgets.setdefault(DeviceID_, {})[Unit_] = {
-            "Name": Name_, "Type": Type_, "Subtype": Subtype_, "Switchtype": Switchtype_,
-            "Options": dict(widgetOptions), "nValue": 0, "sValue": "",
+        self.widgets.setdefault(DeviceID_, {})[SELECTOR_UNIT] = {
+            "Name": Name_, "Options": dict(widgetOptions), "nValue": 0, "sValue": "",
         }
         self.created.append(DeviceID_)
         return 1234
@@ -71,11 +70,22 @@ class FakeDomoticz:
             widget["Options"] = dict(Options)
         self.updates.append({"nValue": nValue, "sValue": sValue, "Options": Options, "SuppressTriggers": SuppressTriggers})
 
-    def first_unit(self, plugin, Devices, DeviceID):
-        return next(iter(self.widgets.get(DeviceID, {})), None)
+    def selector_unit(self, DeviceID):
+        return SELECTOR_UNIT if self.has_selector(DeviceID) else None
 
-    def selector(self, device_id=SELECTOR):
-        return self.widgets[device_id][1]
+    def group_unit(self, DeviceID):
+        return next((unit for unit in self.widgets.get(DeviceID, {}) if unit != SELECTOR_UNIT), None)
+
+    def has_selector(self, DeviceID=GROUP):
+        return SELECTOR_UNIT in self.widgets.get(DeviceID, {})
+
+    def user_deletes_selector(self):
+        del self.widgets[GROUP][SELECTOR_UNIT]
+        if not self.widgets[GROUP]:
+            del self.widgets[GROUP]
+
+    def selector(self):
+        return self.widgets[GROUP][SELECTOR_UNIT]
 
     def names(self):
         return self.selector()["Options"]["LevelNames"].split("|")
@@ -107,17 +117,14 @@ def loaded():
     raw_commands = types.ModuleType("Zigbee.zclRawCommands")
     for name in RAW_COMMANDS:
         setattr(raw_commands, name, MagicMock(name=name))
-    admin = types.ModuleType("Classes.AdminWidgets")
-    admin.Z4D_DEVICEID_SCENE_SELECTOR = "Z4D-Scenes-"
     abstract = types.ModuleType("Modules.domoticzAbstractLayer")
-    for name in ("domo_create_api", "domo_delete_widget", "domo_read_nValue_sValue", "domo_read_Options",
-                 "domo_update_api", "find_first_unit_widget_from_deviceID"):
+    for name in ("domo_delete_widget", "domo_read_nValue_sValue", "domo_read_Options", "domo_update_api"):
         setattr(abstract, name, MagicMock(name=name))
 
     stubs = {
         "Modules.tools": tools, "Modules.zigateConsts": consts,
         "Zigbee.zclCommands": zcl_commands, "Zigbee.zclRawCommands": raw_commands,
-        "Classes.AdminWidgets": admin, "Modules.domoticzAbstractLayer": abstract,
+        "Modules.domoticzAbstractLayer": abstract,
     }
     sys.modules.pop("Classes.SceneManagement", None)
     sys.modules.pop("Classes.SceneSelector", None)
@@ -134,17 +141,15 @@ def domoticz(loaded):
     """The functions the module imported are repointed at a new fake for each test."""
     fake = FakeDomoticz()
     module = loaded.selector
-    module.domo_create_api = fake.create
     module.domo_delete_widget = fake.delete
     module.domo_read_nValue_sValue = fake.read_values
     module.domo_read_Options = fake.read_options
     module.domo_update_api = fake.update
-    module.find_first_unit_widget_from_deviceID = fake.first_unit
     return fake
 
 
 @pytest.fixture
-def plugin():
+def plugin(domoticz):
     p = types.SimpleNamespace()
     p.log = MagicMock()
     p.ControllerLink = MagicMock()
@@ -158,6 +163,9 @@ def plugin():
     p.groupmgt = types.SimpleNamespace(
         ListOfGroups={GROUP: {"Name": "Living room", "Devices": [[LAMP, "0b", LAMP_IEEE]]}},
         Devices={}, processCommand=MagicMock(name="processCommand"),
+        FullRemoveOfGroup=MagicMock(name="FullRemoveOfGroup"),
+        create_scene_selector=domoticz.create_selector,
+        group_widget_unit=domoticz.group_unit, scene_selector_unit=domoticz.selector_unit,
     )
     return p
 
@@ -192,14 +200,14 @@ class TestLevels:
     def test_a_selector_comes_with_the_first_scene(self, scenes, domoticz):
         assert domoticz.widgets == {}
         add(scenes, "Movie")
-        selector = domoticz.selector()
-        assert (selector["Type"], selector["Subtype"], selector["Switchtype"]) == (244, 62, 18)
-        assert selector["Name"] == "Living room - Scenes"
+        assert domoticz.selector()["Name"] == "Living room - Scenes"
         assert domoticz.names() == ["Off", "Movie"]
 
-    def test_the_selector_is_not_a_unit_of_the_group(self, scenes, domoticz):
+    def test_the_selector_is_unit_2_of_the_group(self, scenes, domoticz):
+        domoticz.widgets[GROUP] = {1: {"Options": {}}}
         add(scenes, "Movie")
-        assert GROUP not in domoticz.widgets
+        assert sorted(domoticz.widgets) == [GROUP]
+        assert sorted(domoticz.widgets[GROUP]) == [1, SELECTOR_UNIT]
 
     def test_nothing_touches_domoticz_before_the_heartbeat(self, scenes, domoticz):
         # create_scene comes from a REST thread
@@ -327,7 +335,7 @@ class TestCommands:
 
     def test_a_level_recalls_its_scene_with_one_frame(self, loaded, scenes, domoticz):
         add(scenes, "Movie", "Reading")
-        scenes.selector_command(SELECTOR, "Set Level", 20)
+        scenes.selector_command(GROUP, "Set Level", 20)
         recall = self.recall(loaded)
         recall.assert_called_once()
         assert recall.call_args.args[1:5] + (recall.call_args.args[5],) == (GROUP, "01", "01", GROUP, scene_id(scenes, "Reading"))
@@ -335,15 +343,15 @@ class TestCommands:
 
     def test_the_selector_shows_the_level_with_triggers(self, scenes, domoticz):
         add(scenes, "Movie", "Reading")
-        scenes.selector_command(SELECTOR, "Set Level", 20)
+        scenes.selector_command(GROUP, "Set Level", 20)
         assert (domoticz.selector()["nValue"], domoticz.level()) == (2, "20")
         assert domoticz.updates[-1]["SuppressTriggers"] is False
 
     def test_the_same_level_recalls_again(self, loaded, scenes, domoticz):
         """The lamps may have been changed since: choosing a scene again is not a no-op."""
         add(scenes, "Movie")
-        scenes.selector_command(SELECTOR, "Set Level", 10)
-        scenes.selector_command(SELECTOR, "Set Level", 10)
+        scenes.selector_command(GROUP, "Set Level", 10)
+        scenes.selector_command(GROUP, "Set Level", 10)
         assert self.recall(loaded).call_count == 2
 
     def test_a_recall_from_the_webui_moves_the_selector(self, scenes, domoticz):
@@ -361,7 +369,7 @@ class TestCommands:
 
     def test_a_recall_is_shown_once(self, scenes, domoticz):
         add(scenes, "Movie")
-        scenes.selector_command(SELECTOR, "Set Level", 10)
+        scenes.selector_command(GROUP, "Set Level", 10)
         domoticz.selector()["sValue"] = "0"
         scenes.heartbeat()
         assert domoticz.level() == "0"
@@ -369,38 +377,38 @@ class TestCommands:
     def test_off_switches_the_group_off(self, scenes, domoticz, plugin):
         domoticz.widgets[GROUP] = {1: {"Options": {}, "nValue": 1, "sValue": "On"}}
         add(scenes, "Movie")
-        scenes.selector_command(SELECTOR, "Set Level", 10)
-        scenes.selector_command(SELECTOR, "Off", 0)
+        scenes.selector_command(GROUP, "Set Level", 10)
+        scenes.selector_command(GROUP, "Off", 0)
         plugin.groupmgt.processCommand.assert_called_once_with(1, GROUP, "Off", 0, "")
         assert (domoticz.selector()["nValue"], domoticz.level()) == (0, "0")
 
     def test_off_recalls_nothing(self, loaded, scenes, domoticz):
         add(scenes, "Movie")
-        scenes.selector_command(SELECTOR, "Off", 0)
+        scenes.selector_command(GROUP, "Off", 0)
         self.recall(loaded).assert_not_called()
 
     def test_a_free_slot_does_nothing(self, loaded, scenes, domoticz, plugin):
         add(scenes, "Movie", "Reading", "Dinner")
-        scenes.selector_command(SELECTOR, "Set Level", 30)
+        scenes.selector_command(GROUP, "Set Level", 30)
         scenes.delete_scene(GROUP, scene_id(scenes, "Reading"))
         scenes.heartbeat()
         self.recall(loaded).reset_mock()
-        scenes.selector_command(SELECTOR, "Set Level", 20)
+        scenes.selector_command(GROUP, "Set Level", 20)
         self.recall(loaded).assert_not_called()
         plugin.groupmgt.processCommand.assert_not_called()
         assert domoticz.level() == "30"
 
     def test_other_commands_are_ignored(self, loaded, scenes, domoticz, plugin):
         add(scenes, "Movie")
-        scenes.selector_command(SELECTOR, "On", 0)
+        scenes.selector_command(GROUP, "On", 0)
         self.recall(loaded).assert_not_called()
         plugin.groupmgt.processCommand.assert_not_called()
 
     def test_a_group_that_is_gone(self, loaded, scenes, domoticz, plugin):
         add(scenes, "Movie")
         del plugin.groupmgt.ListOfGroups[GROUP]
-        scenes.selector_command(SELECTOR, "Set Level", 10)
-        scenes.selector_command(SELECTOR, "Off", 0)
+        scenes.selector_command(GROUP, "Set Level", 10)
+        scenes.selector_command(GROUP, "Off", 0)
         self.recall(loaded).assert_not_called()
         plugin.groupmgt.processCommand.assert_not_called()
 
@@ -409,7 +417,7 @@ class TestShownLevel:
 
     def test_deleting_the_scene_on_show_goes_back_to_off_quietly(self, scenes, domoticz):
         add(scenes, "Movie", "Reading")
-        scenes.selector_command(SELECTOR, "Set Level", 10)
+        scenes.selector_command(GROUP, "Set Level", 10)
         scenes.delete_scene(GROUP, scene_id(scenes, "Movie"))
         scenes.heartbeat()
         assert domoticz.level() == "0"
@@ -417,7 +425,7 @@ class TestShownLevel:
 
     def test_a_new_level_keeps_the_scene_on_show(self, scenes, domoticz):
         add(scenes, "Movie")
-        scenes.selector_command(SELECTOR, "Set Level", 10)
+        scenes.selector_command(GROUP, "Set Level", 10)
         add(scenes, "Reading")
         assert domoticz.level() == "10"
 
@@ -436,42 +444,56 @@ class TestRemoval:
         add(scenes, "Movie")
         scenes.delete_scene(GROUP, scene_id(scenes, "Movie"))
         scenes.heartbeat()
-        assert SELECTOR not in domoticz.widgets
+        assert not domoticz.has_selector()
+
+    def test_the_widget_of_the_group_keeps_the_group(self, scenes, domoticz, plugin):
+        domoticz.widgets[GROUP] = {1: {"Options": {}}}
+        add(scenes, "Movie")
+        scenes.delete_scene(GROUP, scene_id(scenes, "Movie"))
+        scenes.heartbeat()
+        assert not domoticz.has_selector()
+        plugin.groupmgt.FullRemoveOfGroup.assert_not_called()
+
+    def test_without_the_widget_of_the_group_the_selector_was_holding_it(self, scenes, domoticz, plugin):
+        add(scenes, "Movie")
+        scenes.delete_scene(GROUP, scene_id(scenes, "Movie"))
+        scenes.heartbeat()
+        plugin.groupmgt.FullRemoveOfGroup.assert_called_once_with(None, GROUP)
 
     def test_a_member_leaving_with_the_last_scene(self, scenes, domoticz):
         add(scenes, "Movie")
         scenes.member_removed(GROUP, LAMP, "0b", LAMP_IEEE)
         scenes.heartbeat()
-        assert SELECTOR not in domoticz.widgets
+        assert not domoticz.has_selector()
 
     def test_the_user_deleting_it_keeps_scenes_and_group(self, scenes, domoticz, plugin, store):
         add(scenes, "Movie")
-        del domoticz.widgets[SELECTOR]
-        scenes.selector_removed(SELECTOR)
+        domoticz.user_deletes_selector()
+        scenes.selector_removed(GROUP)
         assert len(scenes.group_view(GROUP)["scenes"]) == 1
         assert GROUP in plugin.groupmgt.ListOfGroups
         assert store.get(GROUP)["selectorRemoved"] is True
 
     def test_it_stays_deleted_across_a_restart(self, loaded, scenes, domoticz, plugin, store):
         add(scenes, "Movie")
-        del domoticz.widgets[SELECTOR]
-        scenes.selector_removed(SELECTOR)
+        domoticz.user_deletes_selector()
+        scenes.selector_removed(GROUP)
         restarted = loaded.management.SceneManagement(plugin, store, loaded.selector.SceneSelector(plugin))
         restarted.heartbeat()
-        assert SELECTOR not in domoticz.widgets
+        assert not domoticz.has_selector()
 
     def test_it_stays_deleted_after_a_rename(self, scenes, domoticz):
         add(scenes, "Movie")
-        del domoticz.widgets[SELECTOR]
-        scenes.selector_removed(SELECTOR)
+        domoticz.user_deletes_selector()
+        scenes.selector_removed(GROUP)
         scenes.rename_scene(GROUP, scene_id(scenes, "Movie"), "Cinema")
         scenes.heartbeat()
-        assert SELECTOR not in domoticz.widgets
+        assert not domoticz.has_selector()
 
     def test_a_new_scene_brings_it_back_with_every_scene(self, scenes, domoticz):
         add(scenes, "Movie")
-        del domoticz.widgets[SELECTOR]
-        scenes.selector_removed(SELECTOR)
+        domoticz.user_deletes_selector()
+        scenes.selector_removed(GROUP)
         add(scenes, "Reading")
         assert domoticz.names() == ["Off", "Movie", "Reading"]
 
@@ -479,7 +501,7 @@ class TestRemoval:
         add(scenes, "Movie")
         scenes.delete_scene(GROUP, scene_id(scenes, "Movie"))
         scenes.heartbeat()
-        scenes.selector_removed(SELECTOR)
+        scenes.selector_removed(GROUP)
         assert store.get(GROUP) is None
 
     def test_a_group_list_that_could_not_be_read_costs_no_widget(self, scenes, domoticz, plugin):
@@ -487,7 +509,7 @@ class TestRemoval:
         del plugin.groupmgt.ListOfGroups[GROUP]
         scenes._selector_changed(GROUP)
         scenes.heartbeat()
-        assert SELECTOR in domoticz.widgets
+        assert domoticz.has_selector()
 
 
 class TestWithoutASelector:
@@ -498,7 +520,6 @@ class TestWithoutASelector:
         scenes.create_scene(GROUP, "Movie")
         scenes.heartbeat()
         assert domoticz.widgets == {}
-        assert scenes.is_selector(SELECTOR) is False
 
 
 class TestCreationRefused:
@@ -515,17 +536,3 @@ class TestCreationRefused:
         domoticz.refuse_creation = False
         add(scenes, "Reading")
         assert domoticz.names() == ["Off", "Movie", "Reading"]
-
-
-class TestDeviceIds:
-
-    def test_a_selector_is_recognised(self, loaded):
-        selector = loaded.selector.SceneSelector(None)
-        assert selector.is_selector(SELECTOR)
-        assert not selector.is_selector(GROUP)
-        assert not selector.is_selector(LAMP_IEEE)
-        assert not selector.is_selector("Z4D-01-01")
-
-    def test_group_and_deviceid_round_trip(self, loaded):
-        selector = loaded.selector.SceneSelector(None)
-        assert selector.group_of(selector.device_id(GROUP)) == GROUP

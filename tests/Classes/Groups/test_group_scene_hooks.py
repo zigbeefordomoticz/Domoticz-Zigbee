@@ -49,6 +49,8 @@ def _deps():
         "Classes.GroupMgtv2.GrpDomoticz": dict(
             LookForGroupAndCreateIfNeeded=MagicMock(),
             create_domoticz_group_device=MagicMock(),
+            group_widget_unit=MagicMock(return_value=1),
+            is_scene_selector=MagicMock(return_value=False),
             remove_domoticz_group_device=MagicMock(),
             update_domoticz_group_name=MagicMock(),
         ),
@@ -56,7 +58,7 @@ def _deps():
             checkIfIkeaRound5BToBeAdded=MagicMock(return_value=False),
             checkIfIkeaRound5BToBeRemoved=MagicMock(return_value=False),
         ),
-        "Modules.domoticzAbstractLayer": dict(find_first_unit_widget_from_deviceID=MagicMock(return_value=1)),
+        "Modules.domoticzAbstractLayer": dict(domo_units=MagicMock(return_value=[1])),
         "Modules.tools": dict(mainPoweredDevice=MagicMock(return_value=True)),
         "Modules.zigateConsts": dict(LEGRAND_REMOTES=("Double gangs remote switch",)),
     }
@@ -86,6 +88,8 @@ def grp():
 @pytest.fixture
 def groupmgt(grp):
     grp.remove_group_member_ship.reset_mock()
+    grp.domo_units.return_value = [1]
+    grp.is_scene_selector.return_value = False
     manager = MagicMock()
     grp.remove_group_member_ship.side_effect = lambda *args: manager.remove_group_member_ship()
     groups = MagicMock()
@@ -106,6 +110,44 @@ def test_full_remove_tells_the_scene_manager_before_remove_group(grp, groupmgt):
     grp.FullRemoveOfGroup(groupmgt, 1, GROUP)
     names = [c[0] for c in groupmgt.scenemgt.method_calls]
     assert names == ["member_removed", "remove_group_member_ship"]
+
+
+def test_the_widget_of_a_group_with_a_selector_keeps_the_members(grp, groupmgt):
+    grp.domo_units.return_value = [1, 2]
+    grp.FullRemoveOfGroup(groupmgt, 1, GROUP)
+    grp.remove_group_member_ship.assert_not_called()
+    groupmgt.scenemgt.member_removed.assert_not_called()
+    assert "keeps its members" in groupmgt.logging.call_args.args[1]
+
+
+def test_the_selector_of_a_group_with_a_widget_keeps_the_members(grp, groupmgt):
+    grp.domo_units.return_value = [1, 2]
+    grp.is_scene_selector.return_value = True
+    grp.FullRemoveOfGroup(groupmgt, 2, GROUP)
+    groupmgt.scenemgt.selector_removed.assert_called_once_with(GROUP)
+    grp.remove_group_member_ship.assert_not_called()
+
+
+def test_the_last_widget_takes_the_members(grp, groupmgt):
+    grp.domo_units.return_value = [2]
+    grp.is_scene_selector.return_value = True
+    grp.FullRemoveOfGroup(groupmgt, 2, GROUP)
+    groupmgt.scenemgt.selector_removed.assert_called_once_with(GROUP)
+    grp.remove_group_member_ship.assert_called_once()
+
+
+def test_a_selector_removed_by_the_plugin_was_the_last_widget(grp, groupmgt):
+    grp.domo_units.return_value = []
+    grp.FullRemoveOfGroup(groupmgt, None, GROUP)
+    grp.remove_group_member_ship.assert_called_once()
+
+
+def test_a_selector_outliving_its_group(grp, groupmgt):
+    grp.is_scene_selector.return_value = True
+    groupmgt.ListOfGroups = {}
+    grp.FullRemoveOfGroup(groupmgt, 2, GROUP)
+    groupmgt.scenemgt.selector_removed.assert_called_once_with(GROUP)
+    grp.remove_group_member_ship.assert_not_called()
 
 
 def test_scenes_not_enabled(grp, groupmgt):
