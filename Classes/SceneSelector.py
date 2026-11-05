@@ -14,9 +14,9 @@ The Domoticz side of the native Zigbee scenes: one Selector Switch per group wit
 scenes, a scene being a level. SceneManagement decides what the levels are, this only
 talks to Domoticz, and only from the Domoticz thread.
 
-The Selector has a DeviceID of its own, and is not a second unit of the group's:
-onDeviceRemoved takes any unit of a group DeviceID for the group itself, so deleting
-the Selector would empty the group.
+The Selector is a second unit of the DeviceID of the group: unit 1 is the widget of the
+group, unit 2 the Selector. GrpDomoticz owns these units, this only knows the levels.
+The group loses its members with the last of the two, see GrpServices.FullRemoveOfGroup.
 
 A level is a position in Domoticz: the name at index n is level n * 10. Scripts and
 events hold a level, so a scene keeps its level for life, and a deleted one leaves a
@@ -25,15 +25,12 @@ same reason, and the other options are the user's. They must all be sent back, a
 Domoticz replaces the options as a whole.
 """
 
-from Classes.AdminWidgets import Z4D_DEVICEID_SCENE_SELECTOR
-from Modules.domoticzAbstractLayer import (
-    domo_create_api, domo_delete_widget, domo_read_nValue_sValue,
-    domo_read_Options, domo_update_api, find_first_unit_widget_from_deviceID)
+from Modules.domoticzAbstractLayer import (domo_delete_widget,
+                                           domo_read_nValue_sValue,
+                                           domo_read_Options, domo_update_api)
 
 SCENE_LOG = "Scene"
 
-SELECTOR_UNIT = 1
-SELECTOR_TYPE, SELECTOR_SUBTYPE, SELECTOR_SWITCHTYPE = 244, 62, 18
 WIDGET_CREATION_FAILED = -1
 
 LEVEL_STEP = 10
@@ -74,67 +71,56 @@ class SceneSelector:
     def _devices(self):
         return self.plugin.groupmgt.Devices
 
-    @staticmethod
-    def is_selector(DeviceID):
-        return DeviceID.startswith(Z4D_DEVICEID_SCENE_SELECTOR)
-
-    @staticmethod
-    def group_of(DeviceID):
-        return DeviceID[len(Z4D_DEVICEID_SCENE_SELECTOR):]
-
-    @staticmethod
-    def device_id(GroupId):
-        return Z4D_DEVICEID_SCENE_SELECTOR + GroupId
+    @property
+    def _groupmgt(self):
+        return self.plugin.groupmgt
 
     def _unit(self, GroupId):
-        return find_first_unit_widget_from_deviceID(self.plugin, self._devices, self.device_id(GroupId))
+        return self._groupmgt.scene_selector_unit(GroupId)
 
     def sync(self, GroupId, group_name, levels):
         """Create the Selector of a group, or bring it to these {level: name}."""
-        device_id = self.device_id(GroupId)
         names = _level_names(levels)
         unit = self._unit(GroupId)
         if unit is None:
             self._create(GroupId, group_name, names)
             return
 
-        current = domo_read_Options(self.plugin, self._devices, device_id, unit) or {}
+        current = domo_read_Options(self.plugin, self._devices, GroupId, unit) or {}
         options = _options(current, names)
-        shown = self._shown_level(device_id, unit)
+        shown = self._shown_level(GroupId, unit)
         level = shown if shown in levels else 0
         if options != current or level != shown:
             # A list of names that changed is not an event: the triggers stay quiet
-            self.logging("Debug", "sync - %s levels %s, level %s" % (device_id, options["LevelNames"], level), GroupId)
-            domo_update_api(self.plugin, self._devices, device_id, unit, *_level_values(level), Options=options, SuppressTriggers=True)
+            self.logging("Debug", "sync - %s/%s levels %s, level %s" % (GroupId, unit, options["LevelNames"], level), GroupId)
+            domo_update_api(self.plugin, self._devices, GroupId, unit, *_level_values(level), Options=options, SuppressTriggers=True)
 
     def _create(self, GroupId, group_name, names):
-        device_id = self.device_id(GroupId)
-        self.logging("Debug", "create - %s levels %s" % (device_id, names), GroupId)
-        idx = domo_create_api(
-            self.plugin, self._devices, device_id, SELECTOR_UNIT, "%s - Scenes" % (group_name or GroupId),
-            Type_=SELECTOR_TYPE, Subtype_=SELECTOR_SUBTYPE, Switchtype_=SELECTOR_SWITCHTYPE,
-            widgetOptions=_options(DEFAULT_OPTIONS, names),
-        )
+        self.logging("Debug", "create - %s levels %s" % (GroupId, names), GroupId)
+        idx = self._groupmgt.create_scene_selector(GroupId, "%s - Scenes" % (group_name or GroupId), _options(DEFAULT_OPTIONS, names))
         if idx == WIDGET_CREATION_FAILED:
             self.logging("Log", "The Selector of the scenes of group %s was not created: scenes stay available from the WebUI" % GroupId, GroupId)
 
-    def _shown_level(self, device_id, unit):
-        _, sValue = domo_read_nValue_sValue(self.plugin, self._devices, device_id, unit)
+    def _shown_level(self, GroupId, unit):
+        _, sValue = domo_read_nValue_sValue(self.plugin, self._devices, GroupId, unit)
         return int(sValue) if str(sValue).isdigit() else 0
 
     def show(self, GroupId, level):
         """Set the level, with the triggers: this is what events and scripts wait for."""
         unit = self._unit(GroupId)
         if unit is not None:
-            domo_update_api(self.plugin, self._devices, self.device_id(GroupId), unit, *_level_values(level))
+            domo_update_api(self.plugin, self._devices, GroupId, unit, *_level_values(level))
 
     def remove(self, GroupId):
+        """No scene left. When the widget of the group went first, this was what kept the group."""
         unit = self._unit(GroupId)
-        if unit is not None:
-            self.logging("Debug", "remove - %s" % self.device_id(GroupId), GroupId)
-            domo_delete_widget(self.plugin, self._devices, self.device_id(GroupId), unit)
+        if unit is None:
+            return
+        self.logging("Debug", "remove - %s/%s" % (GroupId, unit), GroupId)
+        domo_delete_widget(self.plugin, self._devices, GroupId, unit)
+        if self._groupmgt.group_widget_unit(GroupId) is None:
+            self._groupmgt.FullRemoveOfGroup(None, GroupId)
 
     def group_off(self, GroupId):
-        """The Off level: the group is switched off as from its own widget."""
-        unit = find_first_unit_widget_from_deviceID(self.plugin, self._devices, GroupId)
-        self.plugin.groupmgt.processCommand(unit, GroupId, "Off", 0, "")
+        """The Off level: the group is switched off as from its own widget, which may be gone."""
+        self._groupmgt.processCommand(self._groupmgt.group_widget_unit(GroupId), GroupId, "Off", 0, "")
