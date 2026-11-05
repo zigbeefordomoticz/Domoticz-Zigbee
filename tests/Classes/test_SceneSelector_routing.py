@@ -84,9 +84,10 @@ PREAMBLE = textwrap.dedent(
     SELECTOR_UNIT = 2
 
     for name in ("zcl_raw_add_scene", "zcl_raw_recall_scene", "zcl_raw_store_scene", "zcl_raw_remove_scene",
-                 "zcl_raw_remove_all_scenes"):
+                 "zcl_raw_remove_all_scenes", "zcl_raw_get_scene_membership"):
         setattr(scene_module, name, MagicMock(name=name))
     group_services.remove_group_member_ship = MagicMock(name="remove_group_member_ship")
+    group_services.look_for_group_member_ship = MagicMock(name="look_for_group_member_ship")
     group_widgets.zcl_group_onoff_off_noeffect = MagicMock(name="zcl_group_onoff_off_noeffect")
     group_widgets.zcl_group_onoff_off_witheffect = MagicMock(name="zcl_group_onoff_off_witheffect")
     group_widgets.zcl_group_onoff_on = MagicMock(name="zcl_group_onoff_on")
@@ -111,12 +112,14 @@ PREAMBLE = textwrap.dedent(
         }),
     )
     plugin.ControllerLink.loadTransmit.return_value = 0
-    plugin.groupmgt = GroupsManagement(
-        MagicMock(), True, 2025, 2, 0, plugin.pluginconf, plugin.ControllerLink, plugin.adminWidgets, "/tmp", 1, devices,
-        plugin.ListOfDevices, plugin.IEEE2NWK, plugin.ListOfDomoticzWidget, plugin.DeviceConf, plugin.log, MagicMock(),
-        plugin.pluginParameters, [],
-    )
-    plugin.groupmgt.GroupStatus = "ready"
+    def group_management():
+        return GroupsManagement(
+            MagicMock(), True, 2025, 2, 0, plugin.pluginconf, plugin.ControllerLink, plugin.adminWidgets, "/tmp", 1, devices,
+            plugin.ListOfDevices, plugin.IEEE2NWK, plugin.ListOfDomoticzWidget, plugin.DeviceConf, plugin.log, MagicMock(),
+            plugin.pluginParameters, [],
+        )
+
+    plugin.groupmgt = group_management()
 
     def start_scenes():
         plugin.scenemgt = scene_module.SceneManagement(plugin, PluginStore("Z4D_Scenes", 1), SceneSelector(plugin))
@@ -124,6 +127,26 @@ PREAMBLE = textwrap.dedent(
 
     def stop_scenes():
         plugin.scenemgt = plugin.groupmgt.scenemgt = None
+
+    def restart(groups=None, store=None):
+        # The file and the store as they are, or as given, and Domoticz as it is
+        saved = plugin.groupmgt.ListOfGroups if groups is None else groups
+        kept_store = plugin.scenemgt.store if store is None else store
+        GroupsManagement.load_groups_list_from_json = lambda self: setattr(self, "ListOfGroups", saved)
+        plugin.groupmgt = group_management()
+        plugin.scenemgt = scene_module.SceneManagement(plugin, kept_store, SceneSelector(plugin))
+        plugin.groupmgt.scenemgt = plugin.scenemgt
+        plugin.scenemgt.heartbeat()
+
+    def group_heartbeats():
+        plugin.groupmgt.hearbeat_group_mgt()
+        plugin.scenemgt.heartbeat()
+
+    def group_scan():
+        group_services.scan_device_for_grp_membership(plugin.groupmgt, NWKID, EP)
+
+    def group_answer(group):
+        plugin.groupmgt.look_for_group_member_ship_response("01" + EP + "0004" + "ff" + "01" + group + NWKID)
 
     start_scenes()
     on_command = plugin_module.BasePlugin.onCommand
@@ -231,7 +254,6 @@ SCENARIOS = {
         user_deletes("1001", SELECTOR_UNIT)
         assert members_left() == 0
         assert scene_count("1001") == 1
-        assert plugin.scenemgt.store.get("1001")["selectorRemoved"] is True
         plugin.scenemgt.heartbeat()
         assert units("1001") == [1]
 
@@ -352,8 +374,14 @@ SCENARIOS = {
         on_command(plugin, "1001", SELECTOR_UNIT, "Set Level", 10, "")
         scene_module.zcl_raw_recall_scene.assert_not_called()
         user_deletes("1001", SELECTOR_UNIT)
-        assert plugin.scenemgt.store.get("1001")["selectorRemoved"] is True
+        assert plugin.scenemgt.store.get("1001") is not None
         assert members_left() == 0
+
+        # Told apart from a device: the Selector is known as deleted, and stays so when the group returns
+        plugin.groupmgt.ListOfGroups["1001"] = {"Name": "Living room", "Devices": [[NWKID, EP, IEEE]]}
+        plugin.scenemgt._selector_changed("1001")
+        plugin.scenemgt.heartbeat()
+        assert units("1001") == [1]
         assert not errors(), errors()
     """,
     "an_admin_widget_is_a_selector_and_not_a_scene_selector": """
@@ -361,6 +389,207 @@ SCENARIOS = {
         assert not plugin.groupmgt.is_scene_selector("Zigate-01-0001", 1)
         on_command(plugin, "Zigate-01-0001", 1, "Set Level", 10, "")
         plugin.adminWidgets.handleCommand.assert_called_once()
+    """,
+    "a_restart_brings_the_group_widget_back": """
+        add_group("1001")
+        clear()
+        user_deletes("1001", 1)
+        restart()
+        assert units("1001") == [1, SELECTOR_UNIT]
+        assert devices["1001"].Units[1].Name == "Zigbee - Living room", devices["1001"].Units[1].Name
+        assert members_left() == 0
+        assert plugin.groupmgt.ListOfGroups["1001"]["Devices"] == [[NWKID, EP, IEEE]]
+        assert scene_count("1001") == 1
+        assert not errors(), errors()
+
+        # Back for good: the group now goes by removing both again
+        user_deletes("1001", SELECTOR_UNIT)
+        assert members_left() == 0
+        user_deletes("1001", 1)
+        assert members_left() == 1
+    """,
+    "a_restart_brings_the_selector_back": """
+        add_group("1001", scenes=("Movie", "Reading"))
+        user_deletes("1001", SELECTOR_UNIT)
+        plugin.scenemgt.heartbeat()
+        assert units("1001") == [1]
+        clear()
+        restart()
+        assert units("1001") == [1, SELECTOR_UNIT]
+        assert devices["1001"].Units[SELECTOR_UNIT].stored_options["LevelNames"] == "Off|Movie|Reading"
+        assert not errors(), errors()
+    """,
+    "a_group_scan_brings_both_back": """
+        add_group("1001")
+        user_deletes("1001", 1)
+        group_heartbeats()
+        assert units("1001") == [SELECTOR_UNIT]
+        plugin.groupmgt.request_widgets_restore()
+        group_heartbeats()
+        assert units("1001") == [1, SELECTOR_UNIT]
+
+        user_deletes("1001", SELECTOR_UNIT)
+        group_heartbeats()
+        assert units("1001") == [1]
+        plugin.groupmgt.request_widgets_restore()
+        group_heartbeats()
+        assert units("1001") == [1, SELECTOR_UNIT]
+        assert not errors(), errors()
+    """,
+    "a_scene_scan_brings_both_back": """
+        add_group("1001")
+        user_deletes("1001", SELECTOR_UNIT)
+        group_heartbeats()
+        plugin.scenemgt.scan_group("1001")
+        group_heartbeats()
+        assert units("1001") == [1, SELECTOR_UNIT]
+        assert not errors(), errors()
+    """,
+    "the_ping_group_gets_no_widget": """
+        plugin.pluginconf.pluginConf["pingViaGroup"] = 0x1234
+        plugin.groupmgt.ListOfGroups["1234"] = {"Name": "Ping", "Devices": [[NWKID, EP, IEEE]]}
+        plugin.groupmgt.restore_group_widgets()
+        assert units("1234") == []
+    """,
+    "a_scan_of_a_single_lamp_keeps_its_group": """
+        add_group("1001")
+        widget, selector = devices["1001"].Units[1], devices["1001"].Units[SELECTOR_UNIT]
+        clear()
+        group_scan()
+        group_heartbeats()
+
+        # The lamp has not answered yet, or will not: nothing went
+        assert plugin.groupmgt.ListOfGroups["1001"]["Name"] == "Living room"
+        assert plugin.groupmgt.ListOfGroups["1001"]["Devices"] == []
+        assert devices["1001"].Units[1] is widget and widget.in_database
+        assert devices["1001"].Units[SELECTOR_UNIT] is selector and selector.in_database
+        assert scene_count("1001") == 1
+
+        group_answer("1001")
+        assert plugin.groupmgt.ListOfGroups["1001"]["Name"] == "Living room"
+        assert plugin.groupmgt.ListOfGroups["1001"]["Devices"] == [[NWKID, EP, IEEE]]
+        assert devices["1001"].Units[1] is widget
+        assert not errors(), errors()
+    """,
+    "a_scan_brings_back_the_widget_of_a_known_group": """
+        add_group("1001", scenes=())
+        del devices["1001"].Units[1]
+        group_answer("1001")
+        assert units("1001") == [1]
+        assert devices["1001"].Units[1].Name == "Zigbee - Living room"
+    """,
+    "lost_configuration_rebuilt_by_a_scan_then_a_scene_scan": """
+        # Groups and scenes lost, and Domoticz lost its widgets too
+        restart(groups={}, store=PluginStore("Z4D_Scenes", 1))
+        assert devices == {}
+
+        group_answer("1001")
+        assert plugin.groupmgt.ListOfGroups["1001"]["Devices"] == [[NWKID, EP, IEEE]]
+        assert units("1001") == [1]
+        plugin.scenemgt.heartbeat()
+        assert units("1001") == [1]
+
+        plugin.scenemgt.scan_group("1001")
+        plugin.scenemgt.membership_response(NWKID, EP, "00", "1001", ["03", "07"])
+        group_heartbeats()
+        assert units("1001") == [1, SELECTOR_UNIT]
+        assert devices["1001"].Units[SELECTOR_UNIT].stored_options["LevelNames"] == "Off|Scene 03|Scene 07"
+        assert not errors(), errors()
+    """,
+    "lost_configuration_with_the_widgets_still_in_domoticz": """
+        add_group("1001", scenes=("Movie", "Reading"))
+        widget, selector = devices["1001"].Units[1], devices["1001"].Units[SELECTOR_UNIT]
+        selector.Options["SelectorStyle"] = "1"
+        restart(groups={}, store=PluginStore("Z4D_Scenes", 1))
+
+        group_answer("1001")
+        plugin.scenemgt.scan_group("1001")
+        plugin.scenemgt.membership_response(NWKID, EP, "00", "1001", ["01", "02"])
+        group_heartbeats()
+        assert units("1001") == [1, SELECTOR_UNIT]
+        assert devices["1001"].Units[1] is widget and devices["1001"].Units[SELECTOR_UNIT] is selector
+        assert selector.stored_options["LevelNames"] == "Off|Scene 01|Scene 02", selector.stored_options
+        assert selector.stored_options["SelectorStyle"] == "1"
+        assert not errors(), errors()
+    """,
+    "an_empty_group_goes_with_its_widgets": """
+        add_group("1001")
+        group_scan()
+        clear()
+        user_deletes("1001", 1)
+        assert "1001" in plugin.groupmgt.ListOfGroups
+        user_deletes("1001", SELECTOR_UNIT)
+        assert "1001" not in plugin.groupmgt.ListOfGroups
+        assert plugin.scenemgt.store.get("1001") is None
+        assert not errors(), errors()
+    """,
+    "an_empty_group_deleted_from_the_webui": """
+        import Classes.GroupMgtv2.GrpWebServices as web
+        add_group("1001")
+        group_scan()
+        clear()
+
+        # As REST: from another thread, so no widget moves there
+        web.delGroup(plugin.groupmgt, "1001")
+        assert "1001" in plugin.groupmgt.ListOfGroups
+        assert units("1001") == [1, SELECTOR_UNIT]
+
+        group_heartbeats()
+        assert "1001" not in plugin.groupmgt.ListOfGroups
+        assert plugin.scenemgt.store.get("1001") is None
+        assert units("1001") == []
+        assert not errors(), errors()
+    """,
+    "a_device_removed_leaves_a_group_with_a_selector": """
+        add_group("1001")
+        plugin.groupmgt.RemoveNwkIdFromAllGroups(NWKID)
+        assert plugin.groupmgt.ListOfGroups["1001"]["Devices"] == []
+        assert units("1001") == [1, SELECTOR_UNIT]
+    """,
+    "a_device_removed_takes_a_group_without_a_scene_as_before": """
+        add_group("1001", scenes=())
+        plugin.groupmgt.RemoveNwkIdFromAllGroups(NWKID)
+        assert "1001" not in plugin.groupmgt.ListOfGroups
+    """,
+    "a_device_removed_leaves_an_unrelated_empty_group": """
+        add_group("1001")
+        plugin.groupmgt.ListOfGroups["2002"] = {"Name": "Empty", "Devices": []}
+        FakeUnit("2002", "Zigbee - Empty", 1, Type=244, Subtype=73, Switchtype=0).Create()
+        plugin.groupmgt.RemoveNwkIdFromAllGroups(NWKID)
+        assert "2002" in plugin.groupmgt.ListOfGroups
+        assert units("2002") == [1]
+    """,
+    "the_scan_routes_of_the_webui_bring_the_widgets_back": """
+        import Classes.WebServer.rest_Groups as rest
+        web = types.SimpleNamespace(groupmgt=plugin.groupmgt, logging=MagicMock(), pluginconf=plugin.pluginconf)
+        add_group("1001")
+
+        user_deletes("1001", 1)
+        rest.rest_rescan_group(web, "GET", None, [])
+        assert units("1001") == [SELECTOR_UNIT], "a REST thread must not touch a widget"
+        group_heartbeats()
+        assert units("1001") == [1, SELECTOR_UNIT]
+
+        user_deletes("1001", 1)
+        group_heartbeats()
+        assert units("1001") == [SELECTOR_UNIT]
+        rest.rest_scan_devices_for_group(web, "PUT", b'["c577"]', [])
+        assert units("1001") == [SELECTOR_UNIT], "a REST thread must not touch a widget"
+        group_heartbeats()
+        assert units("1001") == [1, SELECTOR_UNIT]
+    """,
+    "a_group_id_used_again_is_not_held": """
+        add_group("1001", scenes=("Movie",))
+        user_deletes("1001", 1)
+        assert "1001" in plugin.groupmgt.GroupWidgetsRemoved
+        user_deletes("1001", SELECTOR_UNIT)
+        del plugin.groupmgt.ListOfGroups["1001"]
+
+        group_answer("1001")
+        assert units("1001") == [1]
+        del devices["1001"].Units[1]
+        group_answer("1001")
+        assert units("1001") == [1]
     """,
     "a_device_widget_is_not_a_group": """
         assert not plugin.groupmgt.is_group_widget(IEEE, 1)

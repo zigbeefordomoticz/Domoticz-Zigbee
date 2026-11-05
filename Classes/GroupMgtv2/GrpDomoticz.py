@@ -211,6 +211,20 @@ def scene_selector_unit(self, GroupId):
     return next((unit for unit in domo_units(self, self.Devices, GroupId) if is_scene_selector(self, GroupId, unit)), None)
 
 
+def restore_group_widgets(self):
+    """
+    A widget stays until the Group and its Scenes are removed: at each start, and on a
+    scan, what is missing comes back, a widget the user removed included. As the groups
+    that update_domoticz_group_device skips, the group of pingViaGroup has no widget.
+    """
+    self.GroupWidgetsRemoved.clear()
+    for GroupId in list(self.ListOfGroups):
+        if int(GroupId, 16) != self.pluginconf.pluginConf["pingViaGroup"] and group_widget_unit(self, GroupId) is None:
+            LookForGroupAndCreateIfNeeded(self, GroupId)
+    if self.scenemgt:
+        self.scenemgt.restore_selectors()
+
+
 def create_scene_selector(self, GroupId, Name, options):
     """
     The Selector goes on unit 2, the next free one on a group from before 8.1.003 sitting
@@ -247,6 +261,7 @@ def create_domoticz_group_device(self, GroupName, GroupId):
         return None
 
     self.ListOfGroups[GroupId]["WidgetType"] = idx
+    self.GroupWidgetsRemoved.discard(GroupId)
     return idx
 
 
@@ -260,15 +275,12 @@ def LookForGroupAndCreateIfNeeded(self, GroupId):
         update_domoticz_group_device_widget(self, GroupId)
         return
 
-    if scene_selector_unit(self, GroupId) is not None:
-        # The user removed this widget and kept the Selector: the group goes with the Selector
-        self.logging("Debug", f"LookForGroupAndCreateIfNeeded - '{GroupId}' only has its scene Selector left")
+    if GroupId in self.GroupWidgetsRemoved:
+        # Until the next start or scan, or until the Selector goes and the group with it
+        self.logging("Debug", f"LookForGroupAndCreateIfNeeded - '{GroupId}' widget removed by the user")
         return
 
-    if "GroupName" not in self.ListOfGroups[GroupId]:
-        self.ListOfGroups[GroupId]["GroupName"] = "Zigate Group %s" % GroupId
-
-    GroupName = self.ListOfGroups[GroupId]["GroupName"]
+    GroupName = self.ListOfGroups[GroupId].get("Name") or "Zigate Group %s" % GroupId
     if create_domoticz_group_device(self, GroupName, GroupId):
         update_domoticz_group_device_widget(self, GroupId)
 

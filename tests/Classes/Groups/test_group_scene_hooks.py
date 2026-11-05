@@ -52,6 +52,7 @@ def _deps():
             group_widget_unit=MagicMock(return_value=1),
             is_scene_selector=MagicMock(return_value=False),
             remove_domoticz_group_device=MagicMock(),
+            scene_selector_unit=MagicMock(return_value=None),
             update_domoticz_group_name=MagicMock(),
         ),
         "Classes.GroupMgtv2.GrpIkeaRemote": dict(
