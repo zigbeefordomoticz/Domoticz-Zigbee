@@ -61,7 +61,9 @@ SCRIPT = textwrap.dedent(
     plugin.IEEE2NWK = {IEEE: NWKID}
     plugin.ControllerLink = MagicMock()
     plugin.ControllerLink.loadTransmit.return_value = 0
-    plugin.groupmgt = types.SimpleNamespace(ListOfGroups={GROUP: {"Name": "Living room", "Devices": [[NWKID, EP, IEEE]]}})
+    plugin.groupmgt = types.SimpleNamespace(
+        ListOfGroups={GROUP: {"Name": "Living room", "Devices": [[NWKID, EP, IEEE]]}}, request_widgets_restore=lambda: None,
+    )
 
     store = PluginStore("Z4D_Scenes", 1)
     plugin.scenemgt = SceneManagement(plugin, store)

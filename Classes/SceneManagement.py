@@ -18,8 +18,7 @@ A store record is one group, keyed by its GroupId:
 
     {"scenes": {SceneId: {"name", "transitionTime", "createdAt", "updatedAt",
                           "lastRecalled", "selectorLevel",
-                          "members": {"<ieee>-<ep>": member}}},
-     "selectorRemoved": True}
+                          "members": {"<ieee>-<ep>": member}}}}
 
 GroupId and SceneId are hex strings, as in ListOfGroups ("1001", "03"). A member
 is keyed by IEEE, which survives a re-pairing, and by endpoint, as two endpoints
@@ -63,10 +62,10 @@ Each group with scenes has a Selector Switch in Domoticz (Classes/SceneSelector.
 a scene being a level, Off being the group switched off. A scene takes the lowest free
 level and keeps it for life. The Selector is only touched from the Domoticz thread: a
 change marks the group, and the heartbeat brings its Selector up to date. A group with
-no scene left has no Selector. One the user deleted stays deleted, "selectorRemoved",
-until the group gets a new scene. The widget of a group and its Selector go together
-in one way: the members only leave the group with the last of the two
-(GrpServices.FullRemoveOfGroup).
+no scene left has no Selector. One the user deleted comes back with the next new scene
+of the group, the next scan or the next start: as long as there are scenes it is
+expected, and a scene scan rebuilds it after a store was lost. The members only leave
+a group with the last of its two widgets (GrpServices.FullRemoveOfGroup).
 
 The decoders (forwarder thread), the REST calls (a thread per client) and the
 heartbeat all change the records, hence the lock around each read-modify-write.
@@ -165,6 +164,8 @@ class SceneManagement:
         # The groups whose Selector is behind, and the scene each last recalled
         self._selector_behind = set(store.keys()) if selector else set()
         self._selector_recalled = {}
+        # The Selectors the user deleted, until the next start, scan or new scene
+        self._selector_removed = set()
         self._fail_interrupted_captures()
 
     def logging(self, logType, message, nwkid=None, module=SCENE_LOG):
@@ -298,7 +299,7 @@ class SceneManagement:
     def _add_scene(self, GroupId, record, SceneId, name, transition_time, members):
         self.logging("Debug", "create_scene - group %s scene %s %s, transition %ss" % (GroupId, SceneId, name, transition_time))
         now = int(time())
-        record.pop("selectorRemoved", None)
+        self._selector_removed.discard(GroupId)
         record["scenes"][SceneId] = {
             "name": name,
             "transitionTime": transition_time,
@@ -408,6 +409,7 @@ class SceneManagement:
         """Ask each member which scenes of the group it holds. The answers come through the views."""
         with self._lock:
             members = self._check_group_for_capture(GroupId)
+            self.plugin.groupmgt.request_widgets_restore()
             if self._scan_running(GroupId):
                 return self.group_view(GroupId)
             self._check_load()
@@ -677,7 +679,7 @@ class SceneManagement:
             return
         if self._assign_levels(record):
             self.store.set(GroupId, record)
-        if record.get("selectorRemoved"):
+        if GroupId in self._selector_removed:
             return
         scenes = record["scenes"]
         self.selector.sync(GroupId, self._groups[GroupId].get("Name", ""), {scene["selectorLevel"]: scene["name"] for scene in scenes.values()})
@@ -711,9 +713,21 @@ class SceneManagement:
         with self._lock:
             record = self.store.get(GroupId)
             if record is not None:
-                self.logging("Log", "Selector of group %s removed: it comes back with the next new scene of the group" % GroupId, GroupId)
-                record["selectorRemoved"] = True
-                self.store.set(GroupId, record)
+                self.logging("Log", "Selector of group %s removed: it comes back with the next new scene, scan or start" % GroupId, GroupId)
+                self._selector_removed.add(GroupId)
+
+    def restore_selectors(self):
+        """From GrpDomoticz.restore_group_widgets, on the Domoticz thread."""
+        with self._lock:
+            self._selector_removed.clear()
+            if self.selector:
+                self._selector_behind.update(self.store.keys())
+
+    def group_removed(self, GroupId):
+        """The group is gone, and no member was there to take its scenes with it."""
+        with self._lock:
+            self.store.delete(GroupId)
+            self._selector_changed(GroupId)
 
     # ── Views, for REST ─────────────────────────────────────────────────────
 

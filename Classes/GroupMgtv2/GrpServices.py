@@ -25,6 +25,7 @@ from Classes.GroupMgtv2.GrpDomoticz import (LookForGroupAndCreateIfNeeded,
                                             group_widget_unit,
                                             is_scene_selector,
                                             remove_domoticz_group_device,
+                                            scene_selector_unit,
                                             update_domoticz_group_name)
 from Classes.GroupMgtv2.GrpIkeaRemote import (checkIfIkeaRound5BToBeAdded,
                                               checkIfIkeaRound5BToBeRemoved)
@@ -134,12 +135,15 @@ def recover_legrand_groups_from_devices(self):
 def RemoveNwkIdFromAllGroups(self, Nwkid):
     " call my plugin when removing one device"
     self.logging("Debug", "RemoveNwkIdFromAllGroups - Remove Nwk from all groups: %s" % Nwkid)
-    remove_nwkid_from_all_groups(self, Nwkid)
+    held = [GrpId for GrpId, group in self.ListOfGroups.items() if any(device[0] == Nwkid for device in group["Devices"])]
+    # A group with a Selector stays, its last device gone: the user removes it through its widgets
+    keep = {GrpId for GrpId in held if scene_selector_unit(self, GrpId) is not None}
+    remove_nwkid_from_all_groups(self, Nwkid, keep)
 
     # Check if any groups are empty. If so remove the Domoticz Widget
     self.logging("Debug", "RemoveNwkIdFromAllGroups - ListOfGroups: %s" % str(self.ListOfGroups.keys()))
     for GrpId in list(self.ListOfGroups):
-        if check_if_group_empty(self, GrpId):
+        if GrpId in held and GrpId not in keep and check_if_group_empty(self, GrpId):
             self.logging("Debug", "RemoveNwkIdFromAllGroups - Empty Group: %s" % GrpId)
             remove_group(self, GrpId)
             remove_domoticz_group_device(self, GrpId)
@@ -173,7 +177,11 @@ def FullRemoveOfGroup(self, unit, GroupId):
         return
     if any(other != unit for other in domo_units(self, self.Devices, GroupId)):
         if not selector:
-            self.logging("Log", "Widget of group %s removed: the group keeps its members until its scene Selector is removed too" % GroupId)
+            self.GroupWidgetsRemoved.add(GroupId)
+            self.logging("Log", "Widget of group %s removed: the group keeps its members until its scene Selector is removed too. It comes back at the next start or scan" % GroupId)
+        return
+    if check_if_group_empty(self, GroupId):
+        remove_empty_group(self, GroupId)
         return
     self.logging("Status", "Removing the members of group %s" % GroupId)
     for NwkId, Ep, IEEE in self.ListOfGroups[GroupId]["Devices"]:
@@ -181,6 +189,16 @@ def FullRemoveOfGroup(self, unit, GroupId):
         if NwkId:
             scenes_member_removed(self, GroupId, NwkId, Ep, IEEE)
             remove_group_member_ship(self, NwkId, Ep, GroupId)
+    self.write_groups_list()
+
+
+def remove_empty_group(self, GroupId):
+    """A group a scan left without devices: no Remove Group response will ever take it away."""
+    self.logging("Status", "Removing the empty group %s" % GroupId)
+    remove_domoticz_group_device(self, GroupId)
+    remove_group(self, GroupId)
+    if self.scenemgt:
+        self.scenemgt.group_removed(GroupId)
     self.write_groups_list()
 
 
@@ -198,8 +216,10 @@ def scan_device_for_grp_membership(self, NwkId, Ep):
     if "GroupMemberShip" in self.ListOfDevices[NwkId]:
         del self.ListOfDevices[NwkId]["GroupMemberShip"]
 
-    # Remove Group MemberShip from Group, as we will check.
-    RemoveNwkIdFromAllGroups(self, NwkId)
+    # Remove Group MemberShip from Group, as we will check. Every group stays, with its name
+    # and its widgets: a device that does not answer is no reason to lose them.
+    remove_nwkid_from_all_groups(self, NwkId, set(self.ListOfGroups))
+    self.write_groups_list()
 
     # Finaly submit the request
     look_for_group_member_ship(self, NwkId, Ep)

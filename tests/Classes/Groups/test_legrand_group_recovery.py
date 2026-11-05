@@ -55,6 +55,7 @@ def _deps():
             create_domoticz_group_device=MagicMock(),
             group_widget_unit=MagicMock(return_value=1),
             is_scene_selector=MagicMock(return_value=False),
+            scene_selector_unit=MagicMock(return_value=None),
             remove_domoticz_group_device=MagicMock(),
             update_domoticz_group_name=MagicMock(),
         ),
