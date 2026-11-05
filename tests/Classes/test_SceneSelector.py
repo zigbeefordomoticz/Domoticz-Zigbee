@@ -282,6 +282,14 @@ class TestLevels:
 class TestOptions:
     """Domoticz replaces the options as a whole, and they are partly the user's."""
 
+    def test_buttons_by_default_so_a_scene_can_be_recalled_again(self, scenes, domoticz):
+        """
+        The dashboard's dropdown is a selectmenu that only reacts to a change of level, so
+        the level on show could not be chosen again (www/app/widgets/dzLightWidget.js).
+        """
+        add(scenes, "Movie")
+        assert domoticz.selector()["Options"]["SelectorStyle"] == "0"
+
     def test_all_options_are_sent_with_new_levels(self, scenes, domoticz):
         add(scenes, "Movie")
         add(scenes, "Reading")
@@ -289,10 +297,10 @@ class TestOptions:
 
     def test_the_user_keeps_style_and_hidden_off(self, scenes, domoticz):
         add(scenes, "Movie")
-        domoticz.selector()["Options"].update({"SelectorStyle": "0", "LevelOffHidden": "true"})
+        domoticz.selector()["Options"].update({"SelectorStyle": "1", "LevelOffHidden": "true"})
         add(scenes, "Reading")
         options = domoticz.selector()["Options"]
-        assert (options["SelectorStyle"], options["LevelOffHidden"]) == ("0", "true")
+        assert (options["SelectorStyle"], options["LevelOffHidden"]) == ("1", "true")
 
     def test_the_actions_stay_on_their_levels(self, scenes, domoticz):
         add(scenes, "Movie", "Reading")
