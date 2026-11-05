@@ -30,6 +30,8 @@ DEVICEID_TXT_WIDGET = "Zigate-03-"
 Z4D_DEVICEID_ADMIN_WIDGET = "Z4D-01-"
 Z4D_DEVICEID_STATUS_WIDGET = "Z4D-02-"
 Z4D_DEVICEID_TXT_WIDGET = "Z4D-03-"
+# Not an admin widget, but not a device or a group either: Z4D-Scenes-<GroupId>
+Z4D_DEVICEID_SCENE_SELECTOR = "Z4D-Scenes-"
 
 Z4D_DEVICEID_ADMIN_WIDGET_TXT = "Z4D Administration"
 Z4D_DEVICEID_STATUS_WIDGET_TXT = "Z4D Status"
@@ -42,6 +44,7 @@ ADMIN_WIDGET_PREFIXES = {
     Z4D_DEVICEID_ADMIN_WIDGET,
     Z4D_DEVICEID_STATUS_WIDGET,
     Z4D_DEVICEID_TXT_WIDGET,
+    Z4D_DEVICEID_SCENE_SELECTOR,
 }
 
 # Status widget nValue mapping — defined once at module level
