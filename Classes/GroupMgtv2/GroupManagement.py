@@ -66,7 +66,11 @@ class GroupsManagement(object):
     from Classes.GroupMgtv2.GrpDatabase import (load_groups_list_from_json,
                                                 update_due_to_nwk_id_change,
                                                 write_groups_list)
-    from Classes.GroupMgtv2.GrpDomoticz import (processCommand,
+    from Classes.GroupMgtv2.GrpDomoticz import (create_scene_selector,
+                                                group_widget_unit,
+                                                is_scene_selector,
+                                                processCommand,
+                                                scene_selector_unit,
                                                 update_domoticz_group_device)
     from Classes.GroupMgtv2.GrpIkeaRemote import \
         manageIkeaTradfriRemoteLeftRight
@@ -78,7 +82,7 @@ class GroupsManagement(object):
         FullRemoveOfGroup, RemoveNwkIdFromAllGroups,
         add_group_member_ship_from_remote, addGroupMemberShip,
         checkAndTriggerIfMajGroupNeeded, get_available_grp_id,
-        recover_legrand_groups_from_devices)
+        is_group_widget, recover_legrand_groups_from_devices)
     from Classes.GroupMgtv2.GrpWebServices import (
         ScanAllDevicesForGroupMemberShip, ScanDevicesForGroupMemberShip,
         process_web_request)

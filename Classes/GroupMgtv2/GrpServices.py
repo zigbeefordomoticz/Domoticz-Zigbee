@@ -22,11 +22,13 @@ from Classes.GroupMgtv2.GrpDatabase import (check_if_group_empty,
                                             remove_nwkid_from_all_groups)
 from Classes.GroupMgtv2.GrpDomoticz import (LookForGroupAndCreateIfNeeded,
                                             create_domoticz_group_device,
+                                            group_widget_unit,
+                                            is_scene_selector,
                                             remove_domoticz_group_device,
                                             update_domoticz_group_name)
 from Classes.GroupMgtv2.GrpIkeaRemote import (checkIfIkeaRound5BToBeAdded,
                                               checkIfIkeaRound5BToBeRemoved)
-from Modules.domoticzAbstractLayer import find_first_unit_widget_from_deviceID
+from Modules.domoticzAbstractLayer import domo_units
 from Modules.tools import mainPoweredDevice
 from Modules.zigateConsts import LEGRAND_REMOTES
 
@@ -124,7 +126,7 @@ def recover_legrand_groups_from_devices(self):
                 )
                 checkToCreateOrUpdateGroup(self, NwkId, Ep, GrpId)
 
-            elif find_first_unit_widget_from_deviceID(self, self.Devices, GrpId) is None:
+            elif group_widget_unit(self, GrpId) is None:
                 self.logging("Status", "Recovering the Domoticz widget of Legrand group %s" % GrpId, GrpId)
                 LookForGroupAndCreateIfNeeded(self, GrpId)
 
@@ -151,12 +153,29 @@ def scenes_member_removed(self, GroupId, NwkId, Ep, IEEE):
         self.scenemgt.member_removed(GroupId, NwkId, Ep, IEEE)
 
 
+def is_group_widget(self, DeviceID, Unit):
+    """The widget of a group or its Selector, which can outlive the group."""
+    return DeviceID in self.ListOfGroups or is_scene_selector(self, DeviceID, Unit)
+
+
 def FullRemoveOfGroup(self, unit, GroupId):
-    # Call by onRemove call from Domoticz
-    # The widget has been removed by Domoticz, we have to cleanup
+    """
+    A widget of the group is gone. The members leave with the last one: a Selector needs
+    the group, and scenes do not survive it. unit is None when the plugin removed that
+    last widget: Domoticz then calls nothing, and the unit is already out of Devices.
+    In onDeviceRemoved it is out of the database, and still in Devices.
+    """
     self.logging("Debug", "process_remove_group Unit: %s GroupId: %s" % (unit, GroupId), GroupId)
+    selector = is_scene_selector(self, GroupId, unit)
+    if selector and self.scenemgt:
+        self.scenemgt.selector_removed(GroupId)
     if GroupId not in self.ListOfGroups:
         return
+    if any(other != unit for other in domo_units(self, self.Devices, GroupId)):
+        if not selector:
+            self.logging("Log", "Widget of group %s removed: the group keeps its members until its scene Selector is removed too" % GroupId, GroupId)
+        return
+    self.logging("Status", "Removing the members of group %s" % GroupId, GroupId)
     for NwkId, Ep, IEEE in self.ListOfGroups[GroupId]["Devices"]:
         NwkId = checkNwkIdAndUpdateIfAny(self, NwkId, IEEE)
         if NwkId:

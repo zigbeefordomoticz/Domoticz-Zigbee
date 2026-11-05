@@ -11,15 +11,15 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 import json
+from itertools import count
 
 from Classes.GroupMgtv2.GrpCommands import (set_hue_saturation,
                                             set_kelvin_color, set_rgb_color)
 from Classes.GroupMgtv2.GrpDatabase import update_due_to_nwk_id_change
 from Modules.domoticzAbstractLayer import (
-    domo_create_api, domo_delete_widget, domo_read_Name,
-    domo_read_nValue_sValue, domo_read_SwitchType_SubType_Type,
-    domo_update_api, domo_update_name, domo_update_SwitchType_SubType_Type,
-    find_first_unit_widget_from_deviceID)
+    domo_check_unit, domo_create_api, domo_delete_widget, domo_read_Name,
+    domo_read_nValue_sValue, domo_read_SwitchType_SubType_Type, domo_units,
+    domo_update_api, domo_update_name, domo_update_SwitchType_SubType_Type)
 from Modules.tools import (Hex_Format, get_deviceconf_parameter_value,
                            is_domoticz_latest_typename, is_hex)
 from Modules.zigateConsts import ADDRESS_MODE, LEGRAND_REMOTES, ZIGATE_EP
@@ -40,6 +40,11 @@ from dataclasses import dataclass
 # Constants
 # ---------------------------------------------------------------------------
 DEFAULT_GROUP_UNIT = 1  # As of 8.1.003, DomoticzEx, all groups will be using Unit 1 at creation (only legacy will rely on Unit)
+
+# The Selector of the scenes of a group has the DeviceID of the group, next to its widget
+SCENE_SELECTOR_UNIT = 2
+SCENE_SELECTOR_TYPE, SCENE_SELECTOR_SUBTYPE, SCENE_SELECTOR_SWITCHTYPE = 244, 62, 18
+GROUP_DEVICEID_LENGTH = 4
 
 WIDGET_STYLE = {
     # "Widget": (Type_, Subtype_, SwitchType_)
@@ -182,6 +187,43 @@ class GroupAccumulator:
 
 
 
+def is_scene_selector(self, GroupId, unit):
+    """
+    Is this widget the Selector of the scenes of a group.
+
+    By its type: a group from before 8.1.003 can be on any unit, unit 2 included, and
+    no group widget has this subtype. The SwitchType is the user's, Domoticz lets it
+    change. The length is for the admin widgets, which are Selectors as well.
+    """
+    if len(GroupId) != GROUP_DEVICEID_LENGTH:
+        return False
+    _, subtype, type_ = domo_read_SwitchType_SubType_Type(self, self.Devices, GroupId, unit)
+    return (type_, subtype) == (SCENE_SELECTOR_TYPE, SCENE_SELECTOR_SUBTYPE)
+
+
+def group_widget_unit(self, GroupId):
+    """The unit of the widget of a group, None without one. Never its Selector."""
+    return next((unit for unit in domo_units(self, self.Devices, GroupId) if not is_scene_selector(self, GroupId, unit)), None)
+
+
+def scene_selector_unit(self, GroupId):
+    """The unit of the Selector of the scenes of a group, None without one."""
+    return next((unit for unit in domo_units(self, self.Devices, GroupId) if is_scene_selector(self, GroupId, unit)), None)
+
+
+def create_scene_selector(self, GroupId, Name, options):
+    """
+    The Selector goes on unit 2, the next free one on a group from before 8.1.003 sitting
+    there. The widget of the group always comes first, on the unit it keeps for good.
+    """
+    LookForGroupAndCreateIfNeeded(self, GroupId)
+    unit = next(unit for unit in count(SCENE_SELECTOR_UNIT) if not domo_check_unit(self, self.Devices, GroupId, unit))
+    return domo_create_api(
+        self, self.Devices, GroupId, unit, Name,
+        Type_=SCENE_SELECTOR_TYPE, Subtype_=SCENE_SELECTOR_SUBTYPE, Switchtype_=SCENE_SELECTOR_SWITCHTYPE, widgetOptions=options,
+    )
+
+
 def create_domoticz_group_device(self, GroupName, GroupId):
     """ Create Device for just created group in Domoticz. """
     
@@ -191,7 +233,7 @@ def create_domoticz_group_device(self, GroupName, GroupId):
         self.logging( "Error", "createDomoticzGroupDevice - Invalid Group Name: %s or GroupdID: %s" % (GroupName, GroupId), GroupId, {"Error code": "GRP0001", "GroupId": GroupId, "GroupName": GroupName} )
         return
 
-    if find_first_unit_widget_from_deviceID(self, self.Devices, GroupId):
+    if group_widget_unit(self, GroupId):
         self.logging( "Log", f"createDomoticzGroupDevice - {GroupId} exists already in Domoticz", GroupId  )
         return
 
@@ -213,9 +255,14 @@ def LookForGroupAndCreateIfNeeded(self, GroupId):
     if GroupId not in self.ListOfGroups:
         return
 
-    if find_first_unit_widget_from_deviceID(self, self.Devices, GroupId):
+    if group_widget_unit(self, GroupId):
         # Group Exist and has a valid unit
         update_domoticz_group_device_widget(self, GroupId)
+        return
+
+    if scene_selector_unit(self, GroupId) is not None:
+        # The user removed this widget and kept the Selector: the group goes with the Selector
+        self.logging("Debug", f"LookForGroupAndCreateIfNeeded - '{GroupId}' only has its scene Selector left", GroupId)
         return
 
     if "GroupName" not in self.ListOfGroups[GroupId]:
@@ -234,7 +281,7 @@ def update_domoticz_group_device_widget_name(self, GroupName, GroupId):
         self.logging( "Error", "update_domoticz_group_device_widget_name - Invalid Group Name: %s or GroupdID: %s" % (GroupName, GroupId), GroupId, {"Error code": "GRP0003", "GroupId": GroupId, "GroupName": GroupName}, )
         return
 
-    unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
+    unit = group_widget_unit(self, GroupId)
     if unit is None:
         self.logging( "Debug", f"update_domoticz_group_device_widget_name - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}", GroupId )
         LookForGroupAndCreateIfNeeded(self, GroupId)
@@ -251,7 +298,7 @@ def update_domoticz_group_device_widget(self, GroupId):
     if GroupId == "":
         self.logging("Error", "update_domoticz_group_device_widget - Invalid GroupdID: %s" % (GroupId), GroupId, {"Error code": "GRP0004", "GroupId": GroupId})
 
-    unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
+    unit = group_widget_unit(self, GroupId)
     if unit is None:
         self.logging( "Debug", f"update_domoticz_group_device_widget - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}", GroupId )
         return
@@ -546,7 +593,7 @@ def update_domoticz_group_device(self, GroupId):
         self.logging( "Debug", "update_domoticz_group_device - no Devices for that group: %s" % self.ListOfGroups[GroupId], GroupId)
         return
 
-    unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
+    unit = group_widget_unit(self, GroupId)
     if unit is None:
         self.logging( "Debug", f"update_domoticz_group_device - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}", GroupId )
         LookForGroupAndCreateIfNeeded(self, GroupId)
@@ -758,9 +805,9 @@ def update_domoticz_group_name(self, GrpId, NewGrpName):
 def remove_domoticz_group_device(self, GroupId):
     " User has removed the Domoticz Device corresponding to this group"
 
-    unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
-    if unit is None and GroupId in self.ListOfGroups:
-        self.logging( "Debug", f"remove_domoticz_group_device - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}", GroupId )
+    unit = group_widget_unit(self, GroupId)
+    if unit is None:
+        self.logging( "Debug", f"remove_domoticz_group_device - no unit found for GroupId {GroupId}", GroupId )
         return
     domo_delete_widget( self, self.Devices, GroupId, unit)
 
@@ -860,6 +907,12 @@ def check_and_fix_missing_device(self, GroupId, NwkId, ieee):
     return None
 
 
+def _update_group_widget(self, GrpId, unit, nValue, sValue, **kwargs):
+    # No unit: the Off of the scene Selector of a group whose widget the user removed
+    if unit is not None:
+        domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue, **kwargs)
+
+
 def processCommand(self, unit, GrpId, Command, Level, Color_):
 
     # Begin
@@ -881,21 +934,21 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
             sValue = "0"
             update_device_list_attribute(self, GrpId, "0102", 0)
             zcl_group_window_covering_on(self, GrpId, ZIGATE_EP, EPout)
-            domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
+            _update_group_widget(self, GrpId, unit, nValue, sValue)
 
         elif Command in ( "On", "Open",):
             nValue = 1
             sValue = "100"
             zcl_group_window_covering_off(self, GrpId, ZIGATE_EP, EPout)
             update_device_list_attribute(self, GrpId, "0102", 100)
-            domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
+            _update_group_widget(self, GrpId, unit, nValue, sValue)
 
         elif Command == "Stop":
             nValue = 17
             sValue = "0"
             zcl_group_window_covering_stop(self, GrpId, ZIGATE_EP, EPout)
             update_device_list_attribute(self, GrpId, "0102", 50)
-            domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
+            _update_group_widget(self, GrpId, unit, nValue, sValue)
 
         elif Command == "Set Level":
             nValue = 2
@@ -906,7 +959,7 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
             update_device_list_attribute(self, GrpId, "0102", Level)
             self.logging( "Debug", "processGroupCommand - requesting level: %s for Group: %s" % (Level, GrpId), GrpId, )
             zcl_group_window_covering_level(self, GrpId, ZIGATE_EP, EPout, level="%02x" %Level)
-            domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
+            _update_group_widget(self, GrpId, unit, nValue, sValue)
 
         resetDevicesHeartBeat(self, GrpId)
         return
@@ -928,7 +981,7 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         # Update Device
         nValue = 0
         sValue = "Off"
-        domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
+        _update_group_widget(self, GrpId, unit, nValue, sValue)
 
         update_device_list_attribute(self, GrpId, "0006", "00")
         update_domoticz_group_device(self, GrpId)
@@ -936,7 +989,7 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
     elif Command in ( "On", "Open", ):
         nValue = 1
         sValue = "On"
-        domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
+        _update_group_widget(self, GrpId, unit, nValue, sValue)
 
         update_device_list_attribute(self, GrpId, "0006", "01")
         update_domoticz_group_device(self, GrpId)
@@ -976,7 +1029,7 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         # Update Device
         nValue = 2
         sValue = str(Level)
-        domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
+        _update_group_widget(self, GrpId, unit, nValue, sValue)
 
     elif Command == "Set Color":
         Hue_List = json.loads(Color_)
@@ -1029,7 +1082,7 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         # Update Device
         nValue = 1
         sValue = str(Level)
-        domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue, Color=Color_)
+        _update_group_widget(self, GrpId, unit, nValue, sValue, Color=Color_)
 
     # Request to force ReadAttribute to each devices part of that group
     resetDevicesHeartBeat(self, GrpId)

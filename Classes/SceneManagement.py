@@ -64,7 +64,9 @@ a scene being a level, Off being the group switched off. A scene takes the lowes
 level and keeps it for life. The Selector is only touched from the Domoticz thread: a
 change marks the group, and the heartbeat brings its Selector up to date. A group with
 no scene left has no Selector. One the user deleted stays deleted, "selectorRemoved",
-until the group gets a new scene.
+until the group gets a new scene. The widget of a group and its Selector go together
+in one way: the members only leave the group with the last of the two
+(GrpServices.FullRemoveOfGroup).
 
 The decoders (forwarder thread), the REST calls (a thread per client) and the
 heartbeat all change the records, hence the lock around each read-modify-write.
@@ -650,9 +652,6 @@ class SceneManagement:
 
     # ── Selector widget ─────────────────────────────────────────────────────
 
-    def is_selector(self, DeviceID):
-        return self.selector is not None and self.selector.is_selector(DeviceID)
-
     def _selector_changed(self, GroupId):
         if self.selector:
             self._selector_behind.add(GroupId)
@@ -685,19 +684,18 @@ class SceneManagement:
         if recalled in scenes:
             self.selector.show(GroupId, scenes[recalled]["selectorLevel"])
 
-    def selector_command(self, DeviceID, Command, Level):
+    def selector_command(self, GroupId, Command, Level):
         """A level chosen on a Selector, from onCommand."""
-        GroupId = self.selector.group_of(DeviceID)
         with self._lock:
             if GroupId not in self._groups:
-                self.logging("Log", "Selector %s: group %s is not known" % (DeviceID, GroupId), GroupId)
+                self.logging("Log", "Selector of group %s: the group is not known" % GroupId, GroupId)
             elif Command == "Off":
                 self.selector.group_off(GroupId)
                 self.selector.show(GroupId, 0)
             elif Command == "Set Level":
                 self._selector_recall(GroupId, Level)
             else:
-                self.logging("Debug", "selector_command - %s: %s ignored" % (DeviceID, Command), GroupId)
+                self.logging("Debug", "selector_command - group %s: %s ignored" % (GroupId, Command), GroupId)
 
     def _selector_recall(self, GroupId, Level):
         scenes = self.store.get(GroupId, {"scenes": {}})["scenes"]
@@ -708,9 +706,8 @@ class SceneManagement:
         self.recall_scene(GroupId, SceneId)
         self._sync_selector(GroupId)
 
-    def selector_removed(self, DeviceID):
+    def selector_removed(self, GroupId):
         """The user deleted the Selector. The scenes are still there, on the devices and in the WebUI."""
-        GroupId = self.selector.group_of(DeviceID)
         with self._lock:
             record = self.store.get(GroupId)
             if record is not None:
