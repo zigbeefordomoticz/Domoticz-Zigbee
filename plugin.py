@@ -146,6 +146,7 @@ from Classes.NetworkMap import NetworkMap
 from Classes.OTA import OTAManagement
 from Classes.PluginConf import PluginConf
 from Classes.SceneManagement import SceneManagement
+from Classes.SceneSelector import SceneSelector
 from Classes.ThreadSafeDeviceDict import ThreadSafeDeviceDict
 from Classes.TransportStats import TransportStatistics
 from Classes.WebServer.WebServer import WebServer
@@ -801,6 +802,9 @@ class BasePlugin:
             self.log.logging("Plugin", "Status", f"Request device {DeviceID} to be removed from Group(s)")
             self.groupmgt.FullRemoveOfGroup(Unit, DeviceID)
 
+        elif self.scenemgt and self.scenemgt.is_selector(DeviceID):
+            self.scenemgt.selector_removed(DeviceID)
+
         load_list_of_domoticz_widget(self, Devices)
 
 
@@ -963,6 +967,10 @@ class BasePlugin:
             # Command belongs to a Zigate group
             self.log.logging( "Command", "Log", "Command: %s/%s/%s to Group: %s" % (Command, Level, Color, DeviceID), )
             self.groupmgt.processCommand(Unit, DeviceID, Command, Level, Color)
+
+        elif self.scenemgt and self.scenemgt.is_selector(DeviceID):
+            self.log.logging("Command", "Log", "Command: %s/%s to Scene Selector: %s" % (Command, Level, DeviceID))
+            self.scenemgt.selector_command(DeviceID, Command, Level)
 
         elif DeviceID.find("Zigate-01-") != -1:
             self.log.logging("Command", "Debug", "onCommand - Command adminWidget: %s " % Command)
@@ -1664,7 +1672,7 @@ def start_SceneManagement(self):
         return
 
     self.log.logging("Plugin", "Status", "Z4D starts native Zigbee scenes")
-    self.scenemgt = SceneManagement(self, self.PluginStores[SCENES_STORE])
+    self.scenemgt = SceneManagement(self, self.PluginStores[SCENES_STORE], SceneSelector(self))
     self.groupmgt.scenemgt = self.scenemgt
     if self.webserver:
         self.webserver.update_sceneManagement(self.scenemgt)
