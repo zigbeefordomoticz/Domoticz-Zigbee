@@ -29,8 +29,9 @@ REMOTE, REMOTE_IEEE = "b001", "2122232425262728"
 
 COMMANDS = (
     "zcl_raw_add_scene", "zcl_raw_get_scene_membership", "zcl_raw_recall_scene",
-    "zcl_raw_remove_all_scenes", "zcl_raw_remove_scene", "zcl_raw_store_scene",
+    "zcl_raw_remove_all_scenes", "zcl_raw_remove_scene", "zcl_raw_store_scene", "zcl_raw_window_covering",
 )
+DIRECT = ("zcl_move_to_level_with_onoff", "zcl_onoff_off_noeffect", "zcl_onoff_on", "zcl_window_covering_percentage")
 
 
 def lamp(ieee, ep, cluster_in, cluster_out=(), state=None):
@@ -64,7 +65,7 @@ def loaded():
     consts.MAX_LOAD_ZIGATE = 5
     consts.ZIGATE_EP = "01"
     zcl_commands = types.ModuleType("Zigbee.zclCommands")
-    for name in ("zcl_move_to_level_with_onoff", "zcl_onoff_off_noeffect", "zcl_onoff_on"):
+    for name in DIRECT:
         setattr(zcl_commands, name, MagicMock(name=name))
     raw_commands = types.ModuleType("Zigbee.zclRawCommands")
     for name in COMMANDS:
@@ -84,7 +85,7 @@ def loaded():
 @pytest.fixture
 def mod(loaded):
     """The commands sent are what the tests assert on, so they start each test clean."""
-    for name in COMMANDS + ("zcl_move_to_level_with_onoff", "zcl_onoff_off_noeffect", "zcl_onoff_on"):
+    for name in COMMANDS + DIRECT:
         getattr(loaded, name).reset_mock()
     return loaded
 
@@ -575,6 +576,97 @@ class TestPartOfTheGroup:
         scenes.membership_response(SOFA, "01", "00", GROUP, [])
         assert list(stored(store)["members"]) == [self.CEILING_KEY]
         assert stored(store)["members"][self.CEILING_KEY]["status"] == "synced"
+
+
+class TestCovers:
+
+    KEY = "3132333435363738-01"
+
+    def _add_cover(self, plugin, cluster_in=("0102",), state=None):
+        plugin.ListOfDevices["c003"] = lamp("3132333435363738", "01", cluster_in, state=state)
+        plugin.IEEE2NWK["3132333435363738"] = "c003"
+        plugin.groupmgt.ListOfGroups[GROUP]["Devices"].append(["c003", "01", "3132333435363738"])
+
+    def test_a_cover_without_the_scenes_cluster_is_direct_control(self, scenes, plugin, store):
+        self._add_cover(plugin)
+        scenes.create_scene(GROUP, "Evening")
+        assert stored(store)["members"][self.KEY]["capability"] == "fallback"
+
+    def test_a_cover_with_the_scenes_cluster_stores_the_scene(self, mod, scenes, plugin, store):
+        self._add_cover(plugin, ("0005", "0102"))
+        scenes.create_scene(GROUP, "Evening")
+        assert stored(store)["members"][self.KEY]["capability"] == "native"
+        assert "c003" in [c.args[1] for c in mod.zcl_raw_add_scene.call_args_list]
+
+    def test_a_remote_of_covers_is_no_member(self, scenes, plugin, store):
+        plugin.ListOfDevices["c003"] = lamp("3132333435363738", "01", ("0000",), cluster_out=("0102",))
+        plugin.IEEE2NWK["3132333435363738"] = "c003"
+        plugin.groupmgt.ListOfGroups[GROUP]["Devices"].append(["c003", "01", "3132333435363738"])
+        scenes.create_scene(GROUP, "Evening")
+        assert self.KEY not in stored(store)["members"]
+
+    @pytest.mark.parametrize("lift, tilt", [(60, 15), ("3c", "0f")])
+    def test_the_position_is_in_the_snapshot(self, scenes, plugin, store, lift, tilt):
+        self._add_cover(plugin, state={"0102": {"0008": lift, "0009": tilt}})
+        scenes.create_scene(GROUP, "Evening")
+        assert stored(store)["members"][self.KEY]["snapshot"] == {"onOff": None, "level": None, "lift": 60, "tilt": 15}
+
+    def test_a_lamp_has_no_position(self, scenes, store):
+        scenes.create_scene(GROUP, "Evening")
+        assert stored(store)["members"][STRIP_IEEE + "-01"]["snapshot"] == {"onOff": 1, "level": 0x78}
+
+    def test_a_recall_sends_the_position_to_a_direct_cover(self, mod, scenes, plugin):
+        self._add_cover(plugin, state={"0102": {"0008": 60, "0009": 15}})
+        scenes.create_scene(GROUP, "Evening")
+        scenes.recall_scene(GROUP, "01")
+        assert mod.zcl_window_covering_percentage.call_args.args[1:] == ("c003", "01", "3c")
+        assert mod.zcl_raw_window_covering.call_args.args[1:5] == ("c003", mod.ZIGATE_EP, "01", "GoToTiltPercentage")
+        assert mod.zcl_raw_window_covering.call_args.kwargs["percentage"] == "0f"
+
+    def test_fully_open_is_a_position(self, mod, scenes, plugin):
+        self._add_cover(plugin, state={"0102": {"0008": 0}})
+        scenes.create_scene(GROUP, "Evening")
+        scenes.recall_scene(GROUP, "01")
+        assert mod.zcl_window_covering_percentage.call_args.args[3] == "00"
+        mod.zcl_raw_window_covering.assert_not_called()
+
+    def test_a_flat_tilt_is_a_position(self, mod, scenes, plugin):
+        self._add_cover(plugin, state={"0102": {"0008": 60, "0009": 0}})
+        scenes.create_scene(GROUP, "Evening")
+        scenes.recall_scene(GROUP, "01")
+        assert mod.zcl_raw_window_covering.call_args.kwargs["percentage"] == "00"
+
+    def test_a_cover_never_seen_is_sent_nothing(self, mod, scenes, plugin):
+        self._add_cover(plugin)
+        scenes.create_scene(GROUP, "Evening")
+        scenes.recall_scene(GROUP, "01")
+        mod.zcl_window_covering_percentage.assert_not_called()
+
+    def test_a_position_is_not_also_sent_as_a_level(self, mod, scenes, plugin):
+        self._add_cover(plugin, ("0102", "0008"), state={"0102": {"0008": 60}, "0008": {"0000": "78"}})
+        scenes.create_scene(GROUP, "Evening", members=[CEILING_IEEE + "-0b", self.KEY])
+        scenes.recall_scene(GROUP, "01")
+        mod.zcl_window_covering_percentage.assert_called_once()
+        mod.zcl_move_to_level_with_onoff.assert_not_called()
+
+    def test_a_native_cover_only_gets_the_group_cast(self, mod, scenes, plugin):
+        self._add_cover(plugin, ("0005", "0102"), state={"0102": {"0008": 60}})
+        scenes.create_scene(GROUP, "Evening", members=[CEILING_IEEE + "-0b", self.KEY])
+        scenes.recall_scene(GROUP, "01")
+        mod.zcl_raw_recall_scene.assert_called_once()
+        mod.zcl_window_covering_percentage.assert_not_called()
+
+    @pytest.mark.parametrize("before, now, moved", [
+        (60, 60, False), (60, 62, False), (60, 58, False), (60, 63, True), (60, 57, True), (0, 100, True), (None, 60, False), (60, None, False),
+    ])
+    def test_how_far_a_position_counts(self, mod, before, now, moved):
+        state = {"onOff": None, "level": None}
+        assert mod._member_moved({**state, "lift": before}, {**state, "lift": now}) is moved
+        assert mod._member_moved({**state, "tilt": before}, {**state, "tilt": now}) is moved
+
+    def test_a_state_saved_without_a_position_says_nothing(self, mod):
+        state = {"onOff": 1, "level": 100}
+        assert mod._member_moved(state, {**state, "lift": 60}) is False
 
 
 class TestRetry:
