@@ -65,7 +65,9 @@ class FakeDomoticz:
 
     def update(self, plugin, Devices, DeviceID_, Unit_, nValue, sValue, Options=None, SuppressTriggers=False):
         widget = self.widgets[DeviceID_][Unit_]
-        widget.update({"nValue": nValue, "sValue": sValue})
+        # As Domoticz: a suppressed update does not write the value
+        if not SuppressTriggers:
+            widget.update({"nValue": nValue, "sValue": sValue})
         if Options is not None:
             widget["Options"] = dict(Options)
         self.updates.append({"nValue": nValue, "sValue": sValue, "Options": Options, "SuppressTriggers": SuppressTriggers})
@@ -415,13 +417,14 @@ class TestCommands:
 
 class TestShownLevel:
 
-    def test_deleting_the_scene_on_show_goes_back_to_off_quietly(self, scenes, domoticz):
+    def test_deleting_the_scene_on_show_goes_back_to_off(self, scenes, domoticz):
         add(scenes, "Movie", "Reading")
         scenes.selector_command(GROUP, "Set Level", 10)
         scenes.delete_scene(GROUP, scene_id(scenes, "Movie"))
         scenes.heartbeat()
         assert domoticz.level() == "0"
-        assert domoticz.updates[-1]["SuppressTriggers"] is True
+        assert domoticz.updates[-1]["SuppressTriggers"] is False
+        assert domoticz.updates[-2]["SuppressTriggers"] is True
 
     def test_a_new_level_keeps_the_scene_on_show(self, scenes, domoticz):
         add(scenes, "Movie")
@@ -433,7 +436,8 @@ class TestShownLevel:
         add(scenes, "Movie")
         domoticz.selector()["sValue"] = "Off"
         add(scenes, "Reading")
-        assert domoticz.level() == "0"
+        assert scenes.selector.level(GROUP) == 0
+        assert domoticz.updates[-1]["SuppressTriggers"] is True
 
 
 # ─── Removal ─────────────────────────────────────────────────────────────────
