@@ -14,11 +14,11 @@ REST API of the native Zigbee scenes, on /rest-z4d/1/scenes:
 
     GET     /scenes                         every group, with its scenes
     GET     /scenes/<group>                 one group
-    PUT     /scenes/<group>                 create    {"name", "transitionTime", "sceneId", "comment"}
+    PUT     /scenes/<group>                 create    {"name", "transitionTime", "sceneId", "comment", "members"}
     PUT     /scenes/<group>/scan            ask the members which scenes they hold
-    PUT     /scenes/<group>/<scene>         rename    {"name", "comment"}
+    PUT     /scenes/<group>/<scene>         edit      {"name", "comment", "members"}
     DELETE  /scenes/<group>/<scene>         remove from the devices and the store
-    PUT     /scenes/<group>/<scene>/capture {"transitionTime"}, optional
+    PUT     /scenes/<group>/<scene>/capture {"transitionTime", "members"}, optional
     PUT     /scenes/<group>/<scene>/recall
     PUT     /scenes/<group>/<scene>/retry
 
@@ -30,6 +30,12 @@ body has no preflight.
 "sceneId" is optional, two hex digits. With it the capture only starts after a scan of
 the group: the answer is the view of the group, and its "scan" gives the outcome in
 "capture", {"sceneId", "name", "state": "waiting" | "started" | "refused", "error"}.
+
+"members" is optional, a list of "<ieee>-<endpoint>" of the group, with at least one
+that has the Scenes cluster. A scene is on those. Without it a new scene is on the whole
+group, and a capture on the members the scene has. On an edit it is the members the
+scene keeps, so it can only be shorter: a device leaving forgets the scene and stays in
+the group.
 
 A refused request answers with {"error": <code>}, the code of the SceneError.
 """
@@ -50,6 +56,7 @@ ERROR_STATUS = {
     "TRANSITION_INVALID": "400 BAD REQUEST",
     "COMMENT_INVALID": "400 BAD REQUEST",
     "SCENE_ID_INVALID": "400 BAD REQUEST",
+    "MEMBERS_INVALID": "400 BAD REQUEST",
     "GROUP_NOT_FOUND": "404 NOT FOUND",
     "SCENE_NOT_FOUND": "404 NOT FOUND",
     "GROUP_NOT_ALLOWED": "409 CONFLICT",
@@ -83,7 +90,7 @@ def _serve(scenemgt, verb, data, parameters):
 
     if verb == "PUT" and len(parameters) == 1:
         body = _body(data)
-        return scenemgt.create_scene(parameters[0], body.get("name"), body.get("transitionTime", 1), body.get("sceneId"), body.get("comment"))
+        return scenemgt.create_scene(parameters[0], body.get("name"), body.get("transitionTime", 1), body.get("sceneId"), body.get("comment"), body.get("members"))
 
     # Not a scene ID, which is two hex digits
     if verb == "PUT" and len(parameters) == 2 and parameters[1] == "scan":
@@ -91,7 +98,7 @@ def _serve(scenemgt, verb, data, parameters):
 
     if verb == "PUT" and len(parameters) == 2:
         body = _body(data)
-        return scenemgt.rename_scene(parameters[0], parameters[1], body.get("name"), body.get("comment"))
+        return scenemgt.edit_scene(parameters[0], parameters[1], body.get("name"), body.get("comment"), body.get("members"))
 
     if verb == "DELETE" and len(parameters) == 2:
         scenemgt.delete_scene(parameters[0], parameters[1])
@@ -100,7 +107,8 @@ def _serve(scenemgt, verb, data, parameters):
     if verb == "PUT" and len(parameters) == 3:
         group_id, scene_id, action = parameters
         if action == "capture":
-            return scenemgt.capture_scene(group_id, scene_id, _body(data).get("transitionTime"))
+            body = _body(data)
+            return scenemgt.capture_scene(group_id, scene_id, body.get("transitionTime"), body.get("members"))
         if action == "recall":
             return scenemgt.recall_scene(group_id, scene_id)
         if action == "retry":
