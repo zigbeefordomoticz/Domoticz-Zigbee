@@ -42,6 +42,7 @@ PREAMBLE = textwrap.dedent(
             self.Options = dict(Options or {})
             self.stored_options = dict(Options or {})
             self.nValue, self.sValue, self.Color = 0, "", ""
+            self.stored_value = (0, "")
             self.updates = []
             self.in_database = False
 
@@ -56,6 +57,11 @@ PREAMBLE = textwrap.dedent(
             assert self.in_database, "Update of a unit deleted from Domoticz"
             if UpdateOptions:
                 self.stored_options = dict(self.Options)
+            # As CUnitEx_update: suppressed, the value is not written, and the object reads the database back
+            if SuppressTriggers:
+                self.nValue, self.sValue = self.stored_value
+            else:
+                self.stored_value = (self.nValue, self.sValue)
             self.updates.append({"SuppressTriggers": SuppressTriggers, "UpdateOptions": UpdateOptions})
 
         def Delete(self):
@@ -615,7 +621,7 @@ SCENARIOS = {
         state["0006"]["0000"] = "00"
         plugin.scenemgt.heartbeat()
         assert (selector.nValue, selector.sValue) == (0, "0"), selector.sValue
-        assert selector.updates[-1] == {"SuppressTriggers": True, "UpdateOptions": False}, selector.updates
+        assert selector.updates[-1] == {"SuppressTriggers": False, "UpdateOptions": False}, selector.updates
         assert not group_off_sent()
         scene_module.zcl_raw_recall_scene.assert_not_called()
         assert not errors(), errors()
