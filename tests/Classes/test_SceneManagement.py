@@ -693,6 +693,75 @@ class TestScan:
         assert error_code(scenes.scan_group, GROUP) == "COORDINATOR_BUSY"
 
 
+class TestSceneTable:
+    """The ZCL only gives what a device has left: the total is that and what it holds."""
+
+    def slots(self, scenes, nwkid=CEILING):
+        member = next(m for m in scenes.group_view(GROUP)["members"] if m["nwkId"] == nwkid)
+        return member["sceneSlots"]
+
+    def scan(self, scenes, held, capacity, nwkid=CEILING, ep="0b", group=GROUP):
+        scenes.scan_group(group)
+        scenes.membership_response(nwkid, ep, "00", group, held, capacity)
+        if group == GROUP:
+            # The other lamp, or the next scan would find this one still running
+            scenes.membership_response(SOFA, "01", "85", group, [])
+
+    def test_unknown_before_a_scan(self, scenes):
+        assert self.slots(scenes) == {"used": 0, "total": None}
+
+    def test_a_scan_gives_the_total(self, scenes, plugin):
+        self.scan(scenes, ["01", "02"], 14)
+        assert self.slots(scenes) == {"used": 2, "total": 16}
+        assert plugin.ListOfDevices[CEILING]["SceneTable"] == {"0b": 16}
+
+    def test_the_total_stays_as_scenes_come_and_go(self, mod, scenes):
+        self.scan(scenes, [], 16)
+        scenes.create_scene(GROUP, "Reading")
+        complete_capture(mod, scenes, CEILING, "0b")
+        assert self.slots(scenes) == {"used": 1, "total": 16}
+        scenes.delete_scene(GROUP, "01")
+        assert self.slots(scenes) == {"used": 0, "total": 16}
+
+    def test_a_scene_not_stored_yet_does_not_count(self, scenes):
+        self.scan(scenes, [], 16)
+        scenes.create_scene(GROUP, "Reading")
+        assert self.slots(scenes) == {"used": 0, "total": 16}
+
+    def test_the_table_is_shared_by_the_groups(self, scenes, plugin):
+        plugin.groupmgt.ListOfGroups["2002"]["Devices"].append([CEILING, "0b", CEILING_IEEE])
+        self.scan(scenes, ["01"], 10, group="2002")
+        self.scan(scenes, ["01", "02"], 10)
+        assert self.slots(scenes) == {"used": 3, "total": 13}
+
+    @pytest.mark.parametrize("capacity", [0xfe, 0xff])
+    def test_a_device_that_cannot_tell(self, scenes, plugin, capacity):
+        self.scan(scenes, [], 16)
+        self.scan(scenes, ["01"], capacity)
+        assert self.slots(scenes) == {"used": 1, "total": None}
+        assert plugin.ListOfDevices[CEILING]["SceneTable"] == {}
+
+    def test_a_refusal_leaves_the_total(self, scenes):
+        self.scan(scenes, [], 16)
+        scenes.scan_group(GROUP)
+        scenes.membership_response(CEILING, "0b", "85", GROUP, [])
+        assert self.slots(scenes)["total"] == 16
+
+    def test_no_table_without_the_scenes_cluster(self, scenes):
+        assert self.slots(scenes, STRIP) is None
+
+    def test_a_scene_shows_the_table_of_its_members(self, mod, scenes):
+        self.scan(scenes, [], 16)
+        view = scenes.create_scene(GROUP, "Reading")
+        slots = {member["nwkId"]: member["sceneSlots"] for member in view["members"]}
+        assert slots[CEILING] == {"used": 0, "total": 16}
+        assert slots[STRIP] is None
+
+    def test_the_endpoints_of_a_device_are_apart(self, scenes, plugin):
+        plugin.ListOfDevices[CEILING]["SceneTable"] = {"0c": 16}
+        assert self.slots(scenes)["total"] is None
+
+
 def asked_ids(mod):
     return [c.args[5] for c in mod.zcl_raw_add_scene.call_args_list]
 
