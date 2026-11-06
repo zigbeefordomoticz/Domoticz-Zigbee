@@ -591,6 +591,149 @@ SCENARIOS = {
         group_answer("1001")
         assert units("1001") == [1]
     """,
+    "a_device_leaving_the_scene_takes_the_selector_to_off": """
+        clock = [1000]
+        scene_module.time = lambda: clock[0]
+        add_group("1001", scenes=("Movie", "Reading"))
+        selector = devices["1001"].Units[SELECTOR_UNIT]
+        state = plugin.ListOfDevices[NWKID]["Ep"][EP]
+
+        on_command(plugin, "1001", SELECTOR_UNIT, "Set Level", 10, "")
+        assert selector.sValue == "10"
+        # The transition (1 s) and SCENE_SETTLE_TIME: what the fade reports is not a change
+        state["0008"]["0000"] = "40"
+        clock[0] += 10
+        plugin.scenemgt.heartbeat()
+        assert selector.sValue == "10"
+        state["0008"]["0000"] = "c0"
+        clock[0] += 2
+        plugin.scenemgt.heartbeat()
+        plugin.scenemgt.heartbeat()
+        assert selector.sValue == "10"
+
+        clear()
+        state["0006"]["0000"] = "00"
+        plugin.scenemgt.heartbeat()
+        assert (selector.nValue, selector.sValue) == (0, "0"), selector.sValue
+        assert selector.updates[-1] == {"SuppressTriggers": True, "UpdateOptions": False}, selector.updates
+        assert not group_off_sent()
+        scene_module.zcl_raw_recall_scene.assert_not_called()
+        assert not errors(), errors()
+
+        count = len(selector.updates)
+        plugin.scenemgt.heartbeat()
+        state["0006"]["0000"] = "01"
+        plugin.scenemgt.heartbeat()
+        assert len(selector.updates) == count, "Off stays until a scene is chosen"
+    """,
+    "a_level_moves_the_selector_only_past_the_reporting_change": """
+        clock = [1000]
+        scene_module.time = lambda: clock[0]
+        add_group("1001")
+        selector = devices["1001"].Units[SELECTOR_UNIT]
+        state = plugin.ListOfDevices[NWKID]["Ep"][EP]
+        on_command(plugin, "1001", SELECTOR_UNIT, "Set Level", 10, "")
+        clock[0] += 12
+        plugin.scenemgt.heartbeat()
+        state["0008"]["0000"] = "85"
+        plugin.scenemgt.heartbeat()
+        assert selector.sValue == "10", "a dimmer holds back a change of 5"
+        state["0008"]["0000"] = "86"
+        plugin.scenemgt.heartbeat()
+        assert selector.sValue == "0", "a change of 6 is a command"
+    """,
+    "the_level_of_a_lamp_that_is_off_is_not_a_change": """
+        clock = [1000]
+        scene_module.time = lambda: clock[0]
+        add_group("1001")
+        selector = devices["1001"].Units[SELECTOR_UNIT]
+        state = plugin.ListOfDevices[NWKID]["Ep"][EP]
+        state["0006"]["0000"] = "00"
+        on_command(plugin, "1001", SELECTOR_UNIT, "Set Level", 10, "")
+        clock[0] += 12
+        plugin.scenemgt.heartbeat()
+        state["0008"]["0000"] = "20"
+        plugin.scenemgt.heartbeat()
+        assert selector.sValue == "10"
+    """,
+    "the_settle_time_follows_the_transition": """
+        clock = [1000]
+        scene_module.time = lambda: clock[0]
+        add_group("1001", scenes=())
+        plugin.scenemgt.create_scene("1001", "Slow", 30)
+        plugin.scenemgt.heartbeat()
+        selector = devices["1001"].Units[SELECTOR_UNIT]
+        state = plugin.ListOfDevices[NWKID]["Ep"][EP]
+        on_command(plugin, "1001", SELECTOR_UNIT, "Set Level", 10, "")
+        clock[0] += 39
+        state["0008"]["0000"] = "20"
+        plugin.scenemgt.heartbeat()
+        state["0008"]["0000"] = "80"
+        plugin.scenemgt.heartbeat()
+        assert selector.sValue == "10", "still fading"
+    """,
+    "a_device_outside_the_scene_does_not_count": """
+        clock = [1000]
+        scene_module.time = lambda: clock[0]
+        add_group("1001")
+        other, other_ieee = "d001", "b1b2c3d4e5f60708"
+        plugin.ListOfDevices[other] = {
+            "IEEE": other_ieee, "ZDeviceName": "Plug", "Ep": {"01": {"ClusterType": {"501": "Switch"}, "0006": {"0000": "01"}}},
+            "Epv2": {"01": {"ClusterIn": {"0005": {}, "0006": {}}}},
+        }
+        plugin.IEEE2NWK[other_ieee] = other
+        plugin.groupmgt.ListOfGroups["1001"]["Devices"].append([other, "01", other_ieee])
+        selector = devices["1001"].Units[SELECTOR_UNIT]
+        on_command(plugin, "1001", SELECTOR_UNIT, "Set Level", 10, "")
+        clock[0] += 12
+        plugin.scenemgt.heartbeat()
+        plugin.ListOfDevices[other]["Ep"]["01"]["0006"]["0000"] = "00"
+        plugin.scenemgt.heartbeat()
+        assert selector.sValue == "10"
+    """,
+    "after_a_restart_the_selector_still_follows_its_scene": """
+        clock = [1000]
+        scene_module.time = lambda: clock[0]
+        add_group("1001", scenes=("Movie", "Reading"))
+        selector = devices["1001"].Units[SELECTOR_UNIT]
+        on_command(plugin, "1001", SELECTOR_UNIT, "Set Level", 20, "")
+        restart()
+        plugin.scenemgt.heartbeat()
+        plugin.scenemgt.heartbeat()
+        assert selector.sValue == "20"
+        plugin.ListOfDevices[NWKID]["Ep"][EP]["0006"]["0000"] = "00"
+        plugin.scenemgt.heartbeat()
+        assert selector.sValue == "0"
+    """,
+    "off_or_a_gone_scene_stops_the_watch": """
+        clock = [1000]
+        scene_module.time = lambda: clock[0]
+        add_group("1001", scenes=("Movie", "Reading"))
+        selector = devices["1001"].Units[SELECTOR_UNIT]
+        state = plugin.ListOfDevices[NWKID]["Ep"][EP]
+
+        on_command(plugin, "1001", SELECTOR_UNIT, "Set Level", 10, "")
+        clock[0] += 12
+        plugin.scenemgt.heartbeat()
+        on_command(plugin, "1001", SELECTOR_UNIT, "Off", 0, "")
+        assert plugin.scenemgt._selector_shown == {}
+
+        on_command(plugin, "1001", SELECTOR_UNIT, "Set Level", 20, "")
+        clock[0] += 12
+        plugin.scenemgt.heartbeat()
+        plugin.scenemgt.delete_scene("1001", plugin.scenemgt.group_view("1001")["scenes"][1]["sceneId"])
+        plugin.scenemgt.heartbeat()
+        plugin.scenemgt.heartbeat()
+        assert selector.sValue == "0"
+        assert plugin.scenemgt._selector_shown == {}
+
+        on_command(plugin, "1001", SELECTOR_UNIT, "Set Level", 10, "")
+        user_deletes("1001", SELECTOR_UNIT)
+        assert plugin.scenemgt._selector_shown == {}
+        state["0006"]["0000"] = "00"
+        plugin.scenemgt.heartbeat()
+        assert not errors(), errors()
+    """,
     "a_device_widget_is_not_a_group": """
         assert not plugin.groupmgt.is_group_widget(IEEE, 1)
         assert not plugin.groupmgt.is_scene_selector("1001", None)
