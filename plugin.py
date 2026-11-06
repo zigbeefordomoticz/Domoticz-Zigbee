@@ -145,6 +145,8 @@ from Classes.NetworkEnergy import NetworkEnergy
 from Classes.NetworkMap import NetworkMap
 from Classes.OTA import OTAManagement
 from Classes.PluginConf import PluginConf
+from Classes.SceneManagement import SceneManagement
+from Classes.SceneSelector import SceneSelector
 from Classes.ThreadSafeDeviceDict import ThreadSafeDeviceDict
 from Classes.TransportStats import TransportStatistics
 from Classes.WebServer.WebServer import WebServer
@@ -160,7 +162,8 @@ from Modules.checkingUpdate import (is_internet_available,
 from Modules.command import domoticz_command
 from Modules.database import (LoadDeviceList, flush_plugin_listofdevice,
                               checkDevices2LOD, checkListOfDevice2Devices,
-                              import_local_device_conf, load_plugin_stores)
+                              SCENES_STORE, import_local_device_conf,
+                              load_plugin_stores)
 from Modules.domoticzAbstractLayer import (
     domo_read_Name, load_list_of_domoticz_widget,
     retrieve_widgetid_from_deviceId_unit)
@@ -256,6 +259,7 @@ class BasePlugin:
         self.configureReporting = None
         self.ControllerLink= None
         self.groupmgt = None
+        self.scenemgt = None
         self.networkmap = None
         self.zigpy_topology = None
         self.associated_devices_scan = None
@@ -794,7 +798,7 @@ class BasePlugin:
 
             self.log.logging("Plugin", "Debug", f"ListOfDevices :After REMOVE {self.ListOfDevices}")
   
-        elif self.groupmgt and DeviceID in self.groupmgt.ListOfGroups:
+        elif self.groupmgt and self.groupmgt.is_group_widget(DeviceID, Unit):
             self.log.logging("Plugin", "Status", f"Request device {DeviceID} to be removed from Group(s)")
             self.groupmgt.FullRemoveOfGroup(Unit, DeviceID)
 
@@ -956,6 +960,12 @@ class BasePlugin:
             # Command belongs to a end node
             domoticz_command(self, Devices, DeviceID, Unit, self.IEEE2NWK[ DeviceID], Command, Level, Color)
 
+        elif self.groupmgt and self.groupmgt.is_scene_selector(DeviceID, Unit):
+            # On the DeviceID of a group, and never a command for the group: left in Domoticz, it does nothing
+            self.log.logging("Command", "Log", "Command: %s/%s to Scene Selector: %s" % (Command, Level, DeviceID))
+            if self.scenemgt:
+                self.scenemgt.selector_command(DeviceID, Command, Level)
+
         elif self.groupmgt and DeviceID in self.groupmgt.ListOfGroups:
             # Command belongs to a Zigate group
             self.log.logging( "Command", "Log", "Command: %s/%s/%s to Group: %s" % (Command, Level, Color, DeviceID), )
@@ -1048,6 +1058,9 @@ class BasePlugin:
         # Group Management
         if self.groupmgt:
             self.groupmgt.hearbeat_group_mgt()
+
+        if self.scenemgt:
+            self.scenemgt.heartbeat()
 
         if self.flush_list_of_devices:
             # If triggered / result of remap_device_nwkid()
@@ -1552,6 +1565,10 @@ def zigateInit_Phase3(self):
         self.log.logging("Plugin", "Status", "Z4D starts Group Management")
         start_GrpManagement(self, Parameters["HomeFolder"])
 
+    # Enable native Zigbee scenes
+    if self.scenemgt is None and self.pluginconf.pluginConf.get("enableNativeScenes"):
+        start_SceneManagement(self)
+
     # Create Network Energy object
     if self.networkenergy is None:
         self.networkenergy = NetworkEnergy(
@@ -1645,6 +1662,19 @@ def zigateInit_Phase3(self):
         self.log.logging("Plugin", "Log", "EnableTraceMalloc is enabled, starting tracemalloc with a stack depth of 25")
         tracemalloc.start(TRACE_MALLOC_MAX_DEPTH)
         self._snapshot_enabled = True
+
+
+def start_SceneManagement(self):
+    """Scenes live on groups, and go through the zigpy radios only."""
+    if self.groupmgt is None or self.zigbee_communication != "zigpy":
+        self.log.logging("Plugin", "Log", "enableNativeScenes needs Group Management and a zigpy radio: scenes are not started")
+        return
+
+    self.log.logging("Plugin", "Status", "Z4D starts native Zigbee scenes")
+    self.scenemgt = SceneManagement(self, self.PluginStores[SCENES_STORE], SceneSelector(self))
+    self.groupmgt.scenemgt = self.scenemgt
+    if self.webserver:
+        self.webserver.update_sceneManagement(self.scenemgt)
 
 
 def start_GrpManagement(self, homefolder):
