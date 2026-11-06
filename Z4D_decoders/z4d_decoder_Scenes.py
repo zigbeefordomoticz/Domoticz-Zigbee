@@ -95,4 +95,4 @@ def Decode80A6(self, Devices, MsgData, MsgLQI):
     self.log.logging(SCENE_LOG, 'Debug', 'Decode80A6 - Scene Membership response - %s/%s Group ID: %s Capacity: %s Scene List: %s' % (
         MsgSrcAddr, MsgEP, MsgGroupID, MsgCapacity, MsgScene), MsgSrcAddr)
     if scenemgt:
-        scenemgt.membership_response(MsgSrcAddr, MsgEP, MsgDataStatus, MsgGroupID, MsgScene)
+        scenemgt.membership_response(MsgSrcAddr, MsgEP, MsgDataStatus, MsgGroupID, MsgScene, MsgCapacity)
