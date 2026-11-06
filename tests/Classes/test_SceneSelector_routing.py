@@ -697,6 +697,29 @@ SCENARIOS = {
         plugin.scenemgt.heartbeat()
         assert selector.sValue == "10"
     """,
+    "a_member_taken_out_of_the_scene_no_longer_counts": """
+        clock = [1000]
+        scene_module.time = lambda: clock[0]
+        add_group("1001", scenes=())
+        other, other_ieee = "d001", "b1b2c3d4e5f60708"
+        plugin.ListOfDevices[other] = {
+            "IEEE": other_ieee, "ZDeviceName": "Plug", "Ep": {"01": {"ClusterType": {"501": "Switch"}, "0006": {"0000": "01"}}},
+            "Epv2": {"01": {"ClusterIn": {"0005": {}, "0006": {}}}},
+        }
+        plugin.IEEE2NWK[other_ieee] = other
+        plugin.groupmgt.ListOfGroups["1001"]["Devices"].append([other, "01", other_ieee])
+        scene_id = plugin.scenemgt.create_scene("1001", "Movie")["sceneId"]
+        plugin.scenemgt.heartbeat()
+        selector = devices["1001"].Units[SELECTOR_UNIT]
+        on_command(plugin, "1001", SELECTOR_UNIT, "Set Level", 10, "")
+        clock[0] += 12
+        plugin.scenemgt.heartbeat()
+        plugin.scenemgt.edit_scene("1001", scene_id, "Movie", members=["%s-%s" % (IEEE, EP)])
+        plugin.ListOfDevices[other]["Ep"]["01"]["0006"]["0000"] = "00"
+        plugin.scenemgt.heartbeat()
+        assert selector.sValue == "10"
+        assert not errors(), errors()
+    """,
     "after_a_restart_the_selector_still_follows_its_scene": """
         clock = [1000]
         scene_module.time = lambda: clock[0]
