@@ -23,6 +23,10 @@ events hold a level, so a scene keeps its level for life, and a deleted one leav
 free slot instead of moving the next ones. The actions of the levels are kept for the
 same reason, and the other options are the user's. They must all be sent back, as
 Domoticz replaces the options as a whole.
+
+Domoticz only writes a value with its triggers: a suppressed update writes the options
+and reads the old value back. So a level always moves as an event, with the action of
+the level, and only a list of names is quiet. It does not come back through onCommand.
 """
 
 from Modules.domoticzAbstractLayer import (domo_delete_widget,
@@ -89,11 +93,13 @@ class SceneSelector:
         current = domo_read_Options(self.plugin, self._devices, GroupId, unit) or {}
         options = _options(current, names)
         shown = self._shown_level(GroupId, unit)
-        level = shown if shown in levels else 0
-        if options != current or level != shown:
+        if options != current:
             # A list of names that changed is not an event: the triggers stay quiet
-            self.logging("Debug", "sync - %s/%s levels %s, level %s" % (GroupId, unit, options["LevelNames"], level), GroupId)
-            domo_update_api(self.plugin, self._devices, GroupId, unit, *_level_values(level), Options=options, SuppressTriggers=True)
+            self.logging("Debug", "sync - %s/%s levels %s" % (GroupId, unit, options["LevelNames"]), GroupId)
+            domo_update_api(self.plugin, self._devices, GroupId, unit, *_level_values(shown), Options=options, SuppressTriggers=True)
+        if shown and shown not in levels:
+            self.logging("Debug", "sync - %s/%s level %s is gone" % (GroupId, unit, shown), GroupId)
+            self.show(GroupId, 0)
 
     def _create(self, GroupId, group_name, names):
         self.logging("Debug", "create - %s levels %s" % (GroupId, names), GroupId)
@@ -106,16 +112,10 @@ class SceneSelector:
         return int(sValue) if str(sValue).isdigit() else 0
 
     def show(self, GroupId, level):
-        """Set the level, with the triggers: this is what events and scripts wait for."""
+        """Set the level, with the triggers: this is what events and scripts wait for, and Domoticz writes no value without them."""
         unit = self._unit(GroupId)
         if unit is not None:
             domo_update_api(self.plugin, self._devices, GroupId, unit, *_level_values(level))
-
-    def clear(self, GroupId):
-        """The lights left the scene. Not an event: nobody chose Off, and it may carry actions."""
-        unit = self._unit(GroupId)
-        if unit is not None:
-            domo_update_api(self.plugin, self._devices, GroupId, unit, *_level_values(0), SuppressTriggers=True)
 
     def level(self, GroupId):
         """The level shown, 0 without a Selector."""

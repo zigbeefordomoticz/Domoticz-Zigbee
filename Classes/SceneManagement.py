@@ -75,7 +75,9 @@ has settled, not with the snapshot, which a device may have stored differently.
 A recall settles after its transition and SCENE_SETTLE_TIME, as the fade sends reports
 of its own, and a level has to move by more than LEVEL_REPORT_CHANGE, as that is what
 a dimmer holds back until its next periodic report. On/off and level only, like the
-snapshot: a colour or a shutter leaving a scene is not seen.
+snapshot: a colour or a shutter leaving a scene is not seen. Going to Off is an event
+with the action of the Off level, as Domoticz writes no value without its triggers, but
+it does not reach onCommand: the group is not switched off.
 
 The decoders (forwarder thread), the REST calls (a thread per client) and the
 heartbeat all change the records, hence the lock around each read-modify-write.
@@ -745,7 +747,7 @@ class SceneManagement:
         if moved:
             self.logging("Debug", "Scene %s of group %s left by %s: Selector to Off" % (shown["sceneId"], GroupId, moved), GroupId)
             del self._selector_shown[GroupId]
-            self.selector.clear(GroupId)
+            self.selector.show(GroupId, 0)
 
     def selector_command(self, GroupId, Command, Level):
         """A level chosen on a Selector, from onCommand."""
