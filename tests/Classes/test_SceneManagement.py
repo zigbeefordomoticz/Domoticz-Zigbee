@@ -440,6 +440,69 @@ class TestRename:
         assert error_code(scenes.rename_scene, GROUP, "02", "Reading") == "NAME_DUPLICATE"
 
 
+class TestComment:
+
+    def test_none_by_default(self, scenes, store):
+        assert scenes.create_scene(GROUP, "Reading")["comment"] == ""
+        assert stored(store)["comment"] == ""
+
+    def test_kept_and_trimmed(self, scenes, store):
+        view = scenes.create_scene(GROUP, "Reading", comment="  Lights for the sofa ")
+        assert view["comment"] == "Lights for the sofa"
+        assert stored(store)["comment"] == "Lights for the sofa"
+
+    def test_a_scene_from_before_the_comments(self, scenes, store):
+        scenes.create_scene(GROUP, "Reading")
+        record = store.get(GROUP)
+        del record["scenes"]["01"]["comment"]
+        store.set(GROUP, record)
+        assert scenes.group_view(GROUP)["scenes"][0]["comment"] == ""
+        assert scenes.rename_scene(GROUP, "01", "Evening")["comment"] == ""
+
+    @pytest.mark.parametrize("comment", ["x" * 201, 12, ["a"]])
+    def test_refused(self, scenes, comment):
+        assert error_code(scenes.create_scene, GROUP, "Reading", comment=comment) == "COMMENT_INVALID"
+
+    def test_the_longest(self, scenes):
+        assert scenes.create_scene(GROUP, "Reading", comment="x" * 200)["comment"] == "x" * 200
+
+    def test_a_rename_without_a_comment_leaves_it(self, scenes, store):
+        scenes.create_scene(GROUP, "Reading", comment="Sofa")
+        scenes.rename_scene(GROUP, "01", "Evening")
+        assert stored(store)["comment"] == "Sofa"
+
+    def test_it_can_change_and_be_emptied(self, mod, scenes, store):
+        scenes.create_scene(GROUP, "Reading", comment="Sofa")
+        mod.zcl_raw_add_scene.reset_mock()
+        scenes.rename_scene(GROUP, "01", "Reading", "Table")
+        assert stored(store)["comment"] == "Table"
+        scenes.rename_scene(GROUP, "01", "Reading", "")
+        assert stored(store)["comment"] == ""
+        for name in COMMANDS:
+            getattr(mod, name).assert_not_called()
+
+    def test_a_refused_rename_changes_nothing(self, scenes, store):
+        scenes.create_scene(GROUP, "Reading", comment="Sofa")
+        assert error_code(scenes.rename_scene, GROUP, "01", "Evening", "x" * 201) == "COMMENT_INVALID"
+        assert stored(store)["name"] == "Reading"
+
+    def test_a_recapture_keeps_it(self, scenes, store):
+        scenes.create_scene(GROUP, "Reading", comment="Sofa")
+        scenes.capture_scene(GROUP, "01")
+        assert stored(store)["comment"] == "Sofa"
+
+    def test_it_waits_with_a_chosen_scene_id(self, scenes, store):
+        scenes.create_scene(GROUP, "Reading", SceneId="2a", comment="Sofa")
+        scan_answers = (CEILING, "0b"), (SOFA, "01")
+        for nwkid, ep in scan_answers:
+            scenes.membership_response(nwkid, ep, "00", GROUP, [])
+        assert stored(store, "2a")["comment"] == "Sofa"
+
+    def test_the_view_of_a_capture_does_not_show_it_twice(self, scenes):
+        view = scenes.create_scene(GROUP, "Reading", SceneId="2a", comment="Sofa")
+        assert "comment" not in view["scan"]["capture"]
+
+
 # ─── Recall ──────────────────────────────────────────────────────────────────
 
 class TestRecall:

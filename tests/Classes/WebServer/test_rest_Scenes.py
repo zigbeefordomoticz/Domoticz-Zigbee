@@ -53,10 +53,10 @@ def server():
 @pytest.mark.parametrize("verb, parameters, body, method, expected", [
     ("GET", [], None, "groups_view", ()),
     ("GET", ["1001"], None, "group_view", ("1001",)),
-    ("PUT", ["1001"], b'{"name": "Reading", "transitionTime": 3}', "create_scene", ("1001", "Reading", 3, None)),
-    ("PUT", ["1001"], b'{"name": "Reading", "transitionTime": 3, "sceneId": "2a"}', "create_scene", ("1001", "Reading", 3, "2a")),
-    ("PUT", ["1001"], b'{"name": "Reading"}', "create_scene", ("1001", "Reading", 1, None)),
-    ("PUT", ["1001", "03"], b'{"name": "Evening"}', "rename_scene", ("1001", "03", "Evening")),
+    ("PUT", ["1001"], b'{"name": "Reading", "transitionTime": 3}', "create_scene", ("1001", "Reading", 3, None, None)),
+    ("PUT", ["1001"], b'{"name": "Reading", "transitionTime": 3, "sceneId": "2a"}', "create_scene", ("1001", "Reading", 3, "2a", None)),
+    ("PUT", ["1001"], b'{"name": "Reading"}', "create_scene", ("1001", "Reading", 1, None, None)),
+    ("PUT", ["1001", "03"], b'{"name": "Evening"}', "rename_scene", ("1001", "03", "Evening", None)),
     ("PUT", ["1001", "03", "capture"], None, "capture_scene", ("1001", "03", None)),
     ("PUT", ["1001", "03", "capture"], b'{"transitionTime": 5}', "capture_scene", ("1001", "03", 5)),
     ("PUT", ["1001", "03", "recall"], None, "recall_scene", ("1001", "03")),
@@ -77,7 +77,22 @@ def test_delete(rest, server):
 
 def test_a_create_without_a_name_is_left_to_the_scene_manager(rest, server):
     rest.rest_scenes(server, "PUT", None, ["1001"])
-    server.scenemgt.create_scene.assert_called_once_with("1001", None, 1, None)
+    server.scenemgt.create_scene.assert_called_once_with("1001", None, 1, None, None)
+
+
+def test_a_comment_reaches_the_scene_manager(rest, server):
+    server.scenemgt.create_scene.return_value = {}
+    server.scenemgt.rename_scene.return_value = {}
+    rest.rest_scenes(server, "PUT", json.dumps({"name": "Movie", "comment": "Sofa"}).encode(), ["1001"])
+    server.scenemgt.create_scene.assert_called_once_with("1001", "Movie", 1, None, "Sofa")
+    rest.rest_scenes(server, "PUT", json.dumps({"name": "Movie", "comment": "Table"}).encode(), ["1001", "03"])
+    server.scenemgt.rename_scene.assert_called_once_with("1001", "03", "Movie", "Table")
+
+
+def test_a_rename_without_a_comment(rest, server):
+    server.scenemgt.rename_scene.return_value = {}
+    rest.rest_scenes(server, "PUT", json.dumps({"name": "Movie"}).encode(), ["1001", "03"])
+    server.scenemgt.rename_scene.assert_called_once_with("1001", "03", "Movie", None)
 
 
 @pytest.mark.parametrize("verb, parameters, body", [

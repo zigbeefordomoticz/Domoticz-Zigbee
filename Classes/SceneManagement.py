@@ -16,7 +16,7 @@ the ZCL Scenes cluster (0x0005), and recalled with one group-cast frame.
 A scene belongs to a group, and is identified on a device by (GroupId, SceneId).
 A store record is one group, keyed by its GroupId:
 
-    {"scenes": {SceneId: {"name", "transitionTime", "createdAt", "updatedAt",
+    {"scenes": {SceneId: {"name", "comment", "transitionTime", "createdAt", "updatedAt",
                           "lastRecalled", "selectorLevel",
                           "members": {"<ieee>-<ep>": member}}}}
 
@@ -36,6 +36,9 @@ what is left, so the total is that and the scenes the store has on the device, a
 groups together, as the table is shared. It is kept on the device, in "SceneTable",
 as {endpoint: total}: it stays when the store is lost. A device that cannot tell what
 it has left, or holds scenes the plugin never scanned, only makes it less exact.
+
+A comment is only known to the plugin, like the name: a device holds neither, so a
+scan cannot bring it back after a store was lost.
 
 A scan asks each member which scenes of the group it holds, with Get Scene
 Membership. A scene the plugin does not know, set by a remote or another
@@ -116,6 +119,7 @@ GROUP_CAST_EP = "01"
 MAX_SCENE_ID = 0xff
 SCENE_ID_FORMAT = re.compile("[0-9a-fA-F]{2}")
 MAX_NAME_LENGTH = 32
+MAX_COMMENT_LENGTH = 200
 # 0xffff means "no transition time" in the ZCL
 MAX_TRANSITION_TIME = 0xfffe
 DEFAULT_TRANSITION_TIME = 1
@@ -278,6 +282,13 @@ class SceneManagement:
                 raise SceneError("NAME_DUPLICATE")
         return name
 
+    def _check_comment(self, comment):
+        if comment is None:
+            return ""
+        if not isinstance(comment, str) or len(comment.strip()) > MAX_COMMENT_LENGTH:
+            raise SceneError("COMMENT_INVALID")
+        return comment.strip()
+
     def _check_transition(self, transition_time):
         if isinstance(transition_time, bool) or not isinstance(transition_time, int) or not 0 <= transition_time <= MAX_TRANSITION_TIME:
             raise SceneError("TRANSITION_INVALID")
@@ -310,7 +321,7 @@ class SceneManagement:
 
     # ── Requests ────────────────────────────────────────────────────────────
 
-    def create_scene(self, GroupId, name, transition_time=DEFAULT_TRANSITION_TIME, SceneId=None):
+    def create_scene(self, GroupId, name, transition_time=DEFAULT_TRANSITION_TIME, SceneId=None, comment=None):
         """
         Capture the current state of a group as a new scene. With a SceneId, the capture
         only starts after a scan: the answer is then the view of the group, not a scene.
@@ -320,6 +331,7 @@ class SceneManagement:
             record = self.store.get(GroupId, {"scenes": {}})
             name = self._check_name(record, name)
             self._check_transition(transition_time)
+            comment = self._check_comment(comment)
             if SceneId is not None:
                 SceneId = self._check_scene_id(record, SceneId)
             if self._capture_waiting(GroupId):
@@ -327,19 +339,20 @@ class SceneManagement:
             self._check_load()
 
             if SceneId is not None:
-                return self._capture_after_scan(GroupId, SceneId, name, transition_time, members)
+                return self._capture_after_scan(GroupId, SceneId, name, transition_time, members, comment)
 
             SceneId = self._allocate_scene_id(record)
-            self._add_scene(GroupId, record, SceneId, name, transition_time, members)
+            self._add_scene(GroupId, record, SceneId, name, transition_time, members, comment)
             return self._scene_view(GroupId, SceneId, record["scenes"][SceneId])
 
-    def _add_scene(self, GroupId, record, SceneId, name, transition_time, members):
+    def _add_scene(self, GroupId, record, SceneId, name, transition_time, members, comment=""):
         self.logging("Debug", "create_scene - group %s scene %s %s, transition %ss" % (GroupId, SceneId, name, transition_time))
         now = int(time())
         self._selector_removed.discard(GroupId)
         record["scenes"][SceneId] = {
             "name": name,
             "transitionTime": transition_time,
+            "comment": comment,
             "createdAt": now,
             "updatedAt": now,
             "lastRecalled": None,
@@ -348,9 +361,9 @@ class SceneManagement:
         self._capture(GroupId, SceneId, record, members)
         self._selector_changed(GroupId)
 
-    def _capture_after_scan(self, GroupId, SceneId, name, transition_time, members):
+    def _capture_after_scan(self, GroupId, SceneId, name, transition_time, members, comment=""):
         self.logging("Debug", "create_scene - group %s scene %s %s: scan first" % (GroupId, SceneId, name))
-        capture = {"sceneId": SceneId, "name": name, "transitionTime": transition_time, "state": CAPTURE_WAITING, "error": None}
+        capture = {"sceneId": SceneId, "name": name, "transitionTime": transition_time, "comment": comment, "state": CAPTURE_WAITING, "error": None}
         if self._scan_running(GroupId):
             self._scans[GroupId]["capture"] = capture
         else:
@@ -392,14 +405,16 @@ class SceneManagement:
                 self._send_add(GroupId, SceneId, key, members[key], scene["transitionTime"])
             return self._scene_view(GroupId, SceneId, scene)
 
-    def rename_scene(self, GroupId, SceneId, name):
-        """Nothing goes to the devices: the name is only known to the plugin."""
+    def rename_scene(self, GroupId, SceneId, name, comment=None):
+        """Nothing goes to the devices. Without a comment, the one it has stays."""
         with self._lock:
             record = self._scene_record(GroupId, SceneId)
             scene = record["scenes"][SceneId]
             new_name = self._check_name(record, name, SceneId)
+            new_comment = scene.get("comment", "") if comment is None else self._check_comment(comment)
             self.logging("Debug", "rename_scene - group %s scene %s from %s to %s" % (GroupId, SceneId, scene["name"], new_name))
             scene["name"] = new_name
+            scene["comment"] = new_comment
             scene["updatedAt"] = int(time())
             self.store.set(GroupId, record)
             self._selector_changed(GroupId)
@@ -629,7 +644,7 @@ class SceneManagement:
             capture.update({"state": CAPTURE_REFUSED, "error": e.code})
             return
         capture["state"] = CAPTURE_STARTED
-        self._add_scene(GroupId, record, capture["sceneId"], capture["name"], capture["transitionTime"], members)
+        self._add_scene(GroupId, record, capture["sceneId"], capture["name"], capture["transitionTime"], members, capture["comment"])
 
     def _discovered_scene(self, record, SceneId, now):
         """Named so that it can be told apart, recalled and renamed like any scene."""
@@ -849,6 +864,7 @@ class SceneManagement:
             "groupId": GroupId,
             "sceneId": SceneId,
             "name": scene["name"],
+            "comment": scene.get("comment", ""),
             "transitionTime": scene["transitionTime"],
             "discovered": scene.get("discovered", False),
             "createdAt": scene["createdAt"],
