@@ -111,6 +111,17 @@ class SceneSelector:
         if unit is not None:
             domo_update_api(self.plugin, self._devices, GroupId, unit, *_level_values(level))
 
+    def clear(self, GroupId):
+        """The lights left the scene. Not an event: nobody chose Off, and it may carry actions."""
+        unit = self._unit(GroupId)
+        if unit is not None:
+            domo_update_api(self.plugin, self._devices, GroupId, unit, *_level_values(0), SuppressTriggers=True)
+
+    def level(self, GroupId):
+        """The level shown, 0 without a Selector."""
+        unit = self._unit(GroupId)
+        return 0 if unit is None else self._shown_level(GroupId, unit)
+
     def remove(self, GroupId):
         """No scene left. When the widget of the group went first, this was what kept the group."""
         unit = self._unit(GroupId)
