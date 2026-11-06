@@ -16,7 +16,7 @@ the ZCL Scenes cluster (0x0005), and recalled with one group-cast frame.
 A scene belongs to a group, and is identified on a device by (GroupId, SceneId).
 A store record is one group, keyed by its GroupId:
 
-    {"scenes": {SceneId: {"name", "transitionTime", "createdAt", "updatedAt",
+    {"scenes": {SceneId: {"name", "comment", "transitionTime", "createdAt", "updatedAt",
                           "lastRecalled", "selectorLevel",
                           "members": {"<ieee>-<ep>": member}}}}
 
@@ -30,6 +30,15 @@ of a device can be in the same group. It is one of:
 The snapshot is the on/off and level the plugin last saw at the capture. A fallback
 member is sent it at a recall. On a native member it is only shown: the scene is what
 the device stored, and a member a scan found has none.
+
+The size of the scene table of a device is not in the ZCL: Get Scene Membership gives
+what is left, so the total is that and the scenes the store has on the device, all
+groups together, as the table is shared. It is kept on the device, in "SceneTable",
+as {endpoint: total}: it stays when the store is lost. A device that cannot tell what
+it has left, or holds scenes the plugin never scanned, only makes it less exact.
+
+A comment is only known to the plugin, like the name: a device holds neither, so a
+scan cannot bring it back after a store was lost.
 
 A scan asks each member which scenes of the group it holds, with Get Scene
 Membership. A scene the plugin does not know, set by a remote or another
@@ -110,6 +119,7 @@ GROUP_CAST_EP = "01"
 MAX_SCENE_ID = 0xff
 SCENE_ID_FORMAT = re.compile("[0-9a-fA-F]{2}")
 MAX_NAME_LENGTH = 32
+MAX_COMMENT_LENGTH = 200
 # 0xffff means "no transition time" in the ZCL
 MAX_TRANSITION_TIME = 0xfffe
 DEFAULT_TRANSITION_TIME = 1
@@ -134,6 +144,9 @@ SELECTOR_LEVEL_STEP = 10
 
 CAPABILITY_NATIVE = "native"
 CAPABILITY_FALLBACK = "fallback"
+
+# Capacity of Get Scene Membership: 0xfe is "at least one more", 0xff is unknown
+CAPACITY_NOT_A_COUNT = 0xfe
 
 ERROR_TIMEOUT = "timeout"
 ERROR_INTERRUPTED = "interrupted"
@@ -269,6 +282,13 @@ class SceneManagement:
                 raise SceneError("NAME_DUPLICATE")
         return name
 
+    def _check_comment(self, comment):
+        if comment is None:
+            return ""
+        if not isinstance(comment, str) or len(comment.strip()) > MAX_COMMENT_LENGTH:
+            raise SceneError("COMMENT_INVALID")
+        return comment.strip()
+
     def _check_transition(self, transition_time):
         if isinstance(transition_time, bool) or not isinstance(transition_time, int) or not 0 <= transition_time <= MAX_TRANSITION_TIME:
             raise SceneError("TRANSITION_INVALID")
@@ -301,7 +321,7 @@ class SceneManagement:
 
     # ── Requests ────────────────────────────────────────────────────────────
 
-    def create_scene(self, GroupId, name, transition_time=DEFAULT_TRANSITION_TIME, SceneId=None):
+    def create_scene(self, GroupId, name, transition_time=DEFAULT_TRANSITION_TIME, SceneId=None, comment=None):
         """
         Capture the current state of a group as a new scene. With a SceneId, the capture
         only starts after a scan: the answer is then the view of the group, not a scene.
@@ -311,6 +331,7 @@ class SceneManagement:
             record = self.store.get(GroupId, {"scenes": {}})
             name = self._check_name(record, name)
             self._check_transition(transition_time)
+            comment = self._check_comment(comment)
             if SceneId is not None:
                 SceneId = self._check_scene_id(record, SceneId)
             if self._capture_waiting(GroupId):
@@ -318,19 +339,20 @@ class SceneManagement:
             self._check_load()
 
             if SceneId is not None:
-                return self._capture_after_scan(GroupId, SceneId, name, transition_time, members)
+                return self._capture_after_scan(GroupId, SceneId, name, transition_time, members, comment)
 
             SceneId = self._allocate_scene_id(record)
-            self._add_scene(GroupId, record, SceneId, name, transition_time, members)
+            self._add_scene(GroupId, record, SceneId, name, transition_time, members, comment)
             return self._scene_view(GroupId, SceneId, record["scenes"][SceneId])
 
-    def _add_scene(self, GroupId, record, SceneId, name, transition_time, members):
+    def _add_scene(self, GroupId, record, SceneId, name, transition_time, members, comment=""):
         self.logging("Debug", "create_scene - group %s scene %s %s, transition %ss" % (GroupId, SceneId, name, transition_time))
         now = int(time())
         self._selector_removed.discard(GroupId)
         record["scenes"][SceneId] = {
             "name": name,
             "transitionTime": transition_time,
+            "comment": comment,
             "createdAt": now,
             "updatedAt": now,
             "lastRecalled": None,
@@ -339,9 +361,9 @@ class SceneManagement:
         self._capture(GroupId, SceneId, record, members)
         self._selector_changed(GroupId)
 
-    def _capture_after_scan(self, GroupId, SceneId, name, transition_time, members):
+    def _capture_after_scan(self, GroupId, SceneId, name, transition_time, members, comment=""):
         self.logging("Debug", "create_scene - group %s scene %s %s: scan first" % (GroupId, SceneId, name))
-        capture = {"sceneId": SceneId, "name": name, "transitionTime": transition_time, "state": CAPTURE_WAITING, "error": None}
+        capture = {"sceneId": SceneId, "name": name, "transitionTime": transition_time, "comment": comment, "state": CAPTURE_WAITING, "error": None}
         if self._scan_running(GroupId):
             self._scans[GroupId]["capture"] = capture
         else:
@@ -383,14 +405,16 @@ class SceneManagement:
                 self._send_add(GroupId, SceneId, key, members[key], scene["transitionTime"])
             return self._scene_view(GroupId, SceneId, scene)
 
-    def rename_scene(self, GroupId, SceneId, name):
-        """Nothing goes to the devices: the name is only known to the plugin."""
+    def rename_scene(self, GroupId, SceneId, name, comment=None):
+        """Nothing goes to the devices. Without a comment, the one it has stays."""
         with self._lock:
             record = self._scene_record(GroupId, SceneId)
             scene = record["scenes"][SceneId]
             new_name = self._check_name(record, name, SceneId)
+            new_comment = scene.get("comment", "") if comment is None else self._check_comment(comment)
             self.logging("Debug", "rename_scene - group %s scene %s from %s to %s" % (GroupId, SceneId, scene["name"], new_name))
             scene["name"] = new_name
+            scene["comment"] = new_comment
             scene["updatedAt"] = int(time())
             self.store.set(GroupId, record)
             self._selector_changed(GroupId)
@@ -545,8 +569,11 @@ class SceneManagement:
                 self.logging("Log", "Scene %s of group %s not stored on %s/%s: status %s" % (SceneId, GroupId, nwkid, ep, status), nwkid)
                 self._set_member_status(GroupId, SceneId, key, STATUS_FAILED, status)
 
-    def membership_response(self, nwkid, ep, status, GroupId, scenes):
-        """A Get Scene Membership response, from the decoders. scenes is a list of SceneId."""
+    def membership_response(self, nwkid, ep, status, GroupId, scenes, capacity=None):
+        """
+        A Get Scene Membership response, from the decoders. scenes is a list of SceneId,
+        capacity what the device has left, None on a refusal.
+        """
         with self._lock:
             key = "%s-%s" % (self.plugin.ListOfDevices.get(nwkid, {}).get("IEEE"), ep)
             scan = self._scans.get(GroupId)
@@ -558,10 +585,26 @@ class SceneManagement:
             if status == SUCCESS:
                 self.logging("Debug", "membership_response - %s/%s, group %s holds %s" % (nwkid, ep, GroupId, scenes), nwkid)
                 self._apply_membership(GroupId, key, ep, scenes, scan)
+                self._note_scene_table(nwkid, ep, key, capacity)
             else:
                 scan["noAnswer"].append(nwkid)
             if not scan["waiting"]:
                 self._scan_finished(GroupId, scan)
+
+    def _scenes_held(self, key):
+        """What the store has on a member, in all its groups: they share one table."""
+        records = (self.store.get(GroupId) for GroupId in list(self.store.keys()))
+        return sum(scene["members"].get(key, {}).get("status") == STATUS_SYNCED for record in records for scene in record["scenes"].values())
+
+    def _note_scene_table(self, nwkid, ep, key, capacity):
+        device = self.plugin.ListOfDevices[nwkid]
+        table = dict(device.get("SceneTable", {}))
+        if capacity is None or capacity >= CAPACITY_NOT_A_COUNT:
+            table.pop(ep, None)
+        else:
+            table[ep] = self._scenes_held(key) + capacity
+        self.logging("Debug", "_note_scene_table - %s/%s capacity %s, table %s" % (nwkid, ep, capacity, table), nwkid)
+        device["SceneTable"] = table
 
     def _apply_membership(self, GroupId, key, ep, scenes, scan):
         record = self.store.get(GroupId, {"scenes": {}})
@@ -601,7 +644,7 @@ class SceneManagement:
             capture.update({"state": CAPTURE_REFUSED, "error": e.code})
             return
         capture["state"] = CAPTURE_STARTED
-        self._add_scene(GroupId, record, capture["sceneId"], capture["name"], capture["transitionTime"], members)
+        self._add_scene(GroupId, record, capture["sceneId"], capture["name"], capture["transitionTime"], members, capture["comment"])
 
     def _discovered_scene(self, record, SceneId, now):
         """Named so that it can be told apart, recalled and renamed like any scene."""
@@ -799,6 +842,13 @@ class SceneManagement:
     def _device_name(self, nwkid):
         return self.plugin.ListOfDevices.get(nwkid, {}).get("ZDeviceName", "")
 
+    def _scene_slots(self, key, member):
+        """The scenes on a member of the group and its table, None when it has no table."""
+        if member["capability"] != CAPABILITY_NATIVE:
+            return None
+        table = self.plugin.ListOfDevices.get(member["nwkid"], {}).get("SceneTable", {})
+        return {"used": self._scenes_held(key), "total": table.get(member["ep"])}
+
     def _scene_view(self, GroupId, SceneId, scene):
         members = self._group_members(GroupId)
         held = {key: member for key, member in scene["members"].items() if key in members}
@@ -806,6 +856,7 @@ class SceneManagement:
         for key, member in held.items():
             view = {"ieee": members[key]["ieee"], "nwkId": members[key]["nwkid"], "name": self._device_name(members[key]["nwkid"])}
             view.update(member)
+            view["sceneSlots"] = self._scene_slots(key, members[key])
             views.append(view)
 
         native = [member for member in held.values() if member["capability"] == CAPABILITY_NATIVE]
@@ -813,6 +864,7 @@ class SceneManagement:
             "groupId": GroupId,
             "sceneId": SceneId,
             "name": scene["name"],
+            "comment": scene.get("comment", ""),
             "transitionTime": scene["transitionTime"],
             "discovered": scene.get("discovered", False),
             "createdAt": scene["createdAt"],
@@ -853,8 +905,9 @@ class SceneManagement:
                 "capable": GroupId != GROUP_NOT_FOR_SCENES and any(member["capability"] == CAPABILITY_NATIVE for member in members.values()),
                 "members": [
                     {"ieee": member["ieee"], "nwkId": member["nwkid"], "endpoint": member["ep"],
-                     "name": self._device_name(member["nwkid"]), "capability": member["capability"]}
-                    for member in members.values()
+                     "name": self._device_name(member["nwkid"]), "capability": member["capability"],
+                     "sceneSlots": self._scene_slots(key, member)}
+                    for key, member in members.items()
                 ],
                 "scenes": [self._scene_view(GroupId, SceneId, scene) for SceneId, scene in sorted(record["scenes"].items())],
                 "scan": self._scan_view(GroupId),
