@@ -14,9 +14,9 @@ REST API of the native Zigbee scenes, on /rest-z4d/1/scenes:
 
     GET     /scenes                         every group, with its scenes
     GET     /scenes/<group>                 one group
-    PUT     /scenes/<group>                 create    {"name", "transitionTime", "sceneId"}
+    PUT     /scenes/<group>                 create    {"name", "transitionTime", "sceneId", "comment"}
     PUT     /scenes/<group>/scan            ask the members which scenes they hold
-    PUT     /scenes/<group>/<scene>         rename    {"name"}
+    PUT     /scenes/<group>/<scene>         rename    {"name", "comment"}
     DELETE  /scenes/<group>/<scene>         remove from the devices and the store
     PUT     /scenes/<group>/<scene>/capture {"transitionTime"}, optional
     PUT     /scenes/<group>/<scene>/recall
@@ -48,6 +48,7 @@ ERROR_STATUS = {
     "NAME_INVALID": "400 BAD REQUEST",
     "NAME_DUPLICATE": "400 BAD REQUEST",
     "TRANSITION_INVALID": "400 BAD REQUEST",
+    "COMMENT_INVALID": "400 BAD REQUEST",
     "SCENE_ID_INVALID": "400 BAD REQUEST",
     "GROUP_NOT_FOUND": "404 NOT FOUND",
     "SCENE_NOT_FOUND": "404 NOT FOUND",
@@ -82,14 +83,15 @@ def _serve(scenemgt, verb, data, parameters):
 
     if verb == "PUT" and len(parameters) == 1:
         body = _body(data)
-        return scenemgt.create_scene(parameters[0], body.get("name"), body.get("transitionTime", 1), body.get("sceneId"))
+        return scenemgt.create_scene(parameters[0], body.get("name"), body.get("transitionTime", 1), body.get("sceneId"), body.get("comment"))
 
     # Not a scene ID, which is two hex digits
     if verb == "PUT" and len(parameters) == 2 and parameters[1] == "scan":
         return scenemgt.scan_group(parameters[0])
 
     if verb == "PUT" and len(parameters) == 2:
-        return scenemgt.rename_scene(parameters[0], parameters[1], _body(data).get("name"))
+        body = _body(data)
+        return scenemgt.rename_scene(parameters[0], parameters[1], body.get("name"), body.get("comment"))
 
     if verb == "DELETE" and len(parameters) == 2:
         scenemgt.delete_scene(parameters[0], parameters[1])
