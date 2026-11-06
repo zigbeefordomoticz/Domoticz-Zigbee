@@ -90,7 +90,7 @@ PREAMBLE = textwrap.dedent(
     SELECTOR_UNIT = 2
 
     for name in ("zcl_raw_add_scene", "zcl_raw_recall_scene", "zcl_raw_store_scene", "zcl_raw_remove_scene",
-                 "zcl_raw_remove_all_scenes", "zcl_raw_get_scene_membership"):
+                 "zcl_raw_remove_all_scenes", "zcl_raw_get_scene_membership", "zcl_window_covering_percentage", "zcl_raw_window_covering"):
         setattr(scene_module, name, MagicMock(name=name))
     group_services.remove_group_member_ship = MagicMock(name="remove_group_member_ship")
     group_services.look_for_group_member_ship = MagicMock(name="look_for_group_member_ship")
@@ -718,6 +718,54 @@ SCENARIOS = {
         plugin.ListOfDevices[other]["Ep"]["01"]["0006"]["0000"] = "00"
         plugin.scenemgt.heartbeat()
         assert selector.sValue == "10"
+        assert not errors(), errors()
+    """,
+    "a_cover_settles_for_longer_and_then_counts": """
+        clock = [1000]
+        scene_module.time = lambda: clock[0]
+        add_group("1001", scenes=())
+        cover, cover_ieee = "d002", "b2b2c3d4e5f60708"
+        plugin.ListOfDevices[cover] = {
+            "IEEE": cover_ieee, "ZDeviceName": "Shutter", "Ep": {"01": {"ClusterType": {"701": "WindowCovering"}, "0102": {"0008": 20}}},
+            "Epv2": {"01": {"ClusterIn": {"0005": {}, "0102": {}}}},
+        }
+        plugin.IEEE2NWK[cover_ieee] = cover
+        plugin.groupmgt.ListOfGroups["1001"]["Devices"].append([cover, "01", cover_ieee])
+        plugin.scenemgt.create_scene("1001", "Evening")
+        plugin.scenemgt.heartbeat()
+        selector = devices["1001"].Units[SELECTOR_UNIT]
+        position = plugin.ListOfDevices[cover]["Ep"]["01"]["0102"]
+        on_command(plugin, "1001", SELECTOR_UNIT, "Set Level", 10, "")
+
+        for travelled in (30, 40, 50, 60, 70, 80):
+            clock[0] += 19
+            position["0008"] = travelled
+            plugin.scenemgt.heartbeat()
+            assert selector.sValue == "10", "still travelling"
+
+        clock[0] += 40
+        plugin.scenemgt.heartbeat()
+        plugin.scenemgt.heartbeat()
+        assert selector.sValue == "10"
+        position["0008"] = 50
+        plugin.scenemgt.heartbeat()
+        assert selector.sValue == "0", "moved by hand"
+        assert not errors(), errors()
+    """,
+    "a_shutter_without_the_scenes_cluster_gets_its_position": """
+        add_group("1001", scenes=())
+        cover, cover_ieee = "d002", "b2b2c3d4e5f60708"
+        plugin.ListOfDevices[cover] = {
+            "IEEE": cover_ieee, "ZDeviceName": "Shutter", "Ep": {"01": {"ClusterType": {"701": "WindowCovering"}, "0102": {"0008": 20}}},
+            "Epv2": {"01": {"ClusterIn": {"0102": {}}}},
+        }
+        plugin.IEEE2NWK[cover_ieee] = cover
+        plugin.groupmgt.ListOfGroups["1001"]["Devices"].append([cover, "01", cover_ieee])
+        plugin.scenemgt.create_scene("1001", "Evening")
+        plugin.scenemgt.heartbeat()
+        on_command(plugin, "1001", SELECTOR_UNIT, "Set Level", 10, "")
+        sent = scene_module.zcl_window_covering_percentage
+        assert sent.call_args.args[1:] == (cover, "01", "14"), sent.call_args
         assert not errors(), errors()
     """,
     "after_a_restart_the_selector_still_follows_its_scene": """
