@@ -31,6 +31,12 @@ The snapshot is the on/off and level the plugin last saw at the capture. A fallb
 member is sent it at a recall. On a native member it is only shown: the scene is what
 the device stored, and a member a scan found has none.
 
+The size of the scene table of a device is not in the ZCL: Get Scene Membership gives
+what is left, so the total is that and the scenes the store has on the device, all
+groups together, as the table is shared. It is kept on the device, in "SceneTable",
+as {endpoint: total}: it stays when the store is lost. A device that cannot tell what
+it has left, or holds scenes the plugin never scanned, only makes it less exact.
+
 A scan asks each member which scenes of the group it holds, with Get Scene
 Membership. A scene the plugin does not know, set by a remote or another
 controller, becomes a record with "discovered": True and a null transition time,
@@ -132,6 +138,9 @@ SELECTOR_LEVEL_STEP = 10
 
 CAPABILITY_NATIVE = "native"
 CAPABILITY_FALLBACK = "fallback"
+
+# Capacity of Get Scene Membership: 0xfe is "at least one more", 0xff is unknown
+CAPACITY_NOT_A_COUNT = 0xfe
 
 ERROR_TIMEOUT = "timeout"
 ERROR_INTERRUPTED = "interrupted"
@@ -543,8 +552,11 @@ class SceneManagement:
                 self.logging("Log", "Scene %s of group %s not stored on %s/%s: status %s" % (SceneId, GroupId, nwkid, ep, status), nwkid)
                 self._set_member_status(GroupId, SceneId, key, STATUS_FAILED, status)
 
-    def membership_response(self, nwkid, ep, status, GroupId, scenes):
-        """A Get Scene Membership response, from the decoders. scenes is a list of SceneId."""
+    def membership_response(self, nwkid, ep, status, GroupId, scenes, capacity=None):
+        """
+        A Get Scene Membership response, from the decoders. scenes is a list of SceneId,
+        capacity what the device has left, None on a refusal.
+        """
         with self._lock:
             key = "%s-%s" % (self.plugin.ListOfDevices.get(nwkid, {}).get("IEEE"), ep)
             scan = self._scans.get(GroupId)
@@ -556,10 +568,26 @@ class SceneManagement:
             if status == SUCCESS:
                 self.logging("Debug", "membership_response - %s/%s, group %s holds %s" % (nwkid, ep, GroupId, scenes), nwkid)
                 self._apply_membership(GroupId, key, ep, scenes, scan)
+                self._note_scene_table(nwkid, ep, key, capacity)
             else:
                 scan["noAnswer"].append(nwkid)
             if not scan["waiting"]:
                 self._scan_finished(GroupId, scan)
+
+    def _scenes_held(self, key):
+        """What the store has on a member, in all its groups: they share one table."""
+        records = (self.store.get(GroupId) for GroupId in list(self.store.keys()))
+        return sum(scene["members"].get(key, {}).get("status") == STATUS_SYNCED for record in records for scene in record["scenes"].values())
+
+    def _note_scene_table(self, nwkid, ep, key, capacity):
+        device = self.plugin.ListOfDevices[nwkid]
+        table = dict(device.get("SceneTable", {}))
+        if capacity is None or capacity >= CAPACITY_NOT_A_COUNT:
+            table.pop(ep, None)
+        else:
+            table[ep] = self._scenes_held(key) + capacity
+        self.logging("Debug", "_note_scene_table - %s/%s capacity %s, table %s" % (nwkid, ep, capacity, table), nwkid)
+        device["SceneTable"] = table
 
     def _apply_membership(self, GroupId, key, ep, scenes, scan):
         record = self.store.get(GroupId, {"scenes": {}})
@@ -797,6 +825,13 @@ class SceneManagement:
     def _device_name(self, nwkid):
         return self.plugin.ListOfDevices.get(nwkid, {}).get("ZDeviceName", "")
 
+    def _scene_slots(self, key, member):
+        """The scenes on a member of the group and its table, None when it has no table."""
+        if member["capability"] != CAPABILITY_NATIVE:
+            return None
+        table = self.plugin.ListOfDevices.get(member["nwkid"], {}).get("SceneTable", {})
+        return {"used": self._scenes_held(key), "total": table.get(member["ep"])}
+
     def _scene_view(self, GroupId, SceneId, scene):
         members = self._group_members(GroupId)
         held = {key: member for key, member in scene["members"].items() if key in members}
@@ -804,6 +839,7 @@ class SceneManagement:
         for key, member in held.items():
             view = {"ieee": members[key]["ieee"], "nwkId": members[key]["nwkid"], "name": self._device_name(members[key]["nwkid"])}
             view.update(member)
+            view["sceneSlots"] = self._scene_slots(key, members[key])
             views.append(view)
 
         native = [member for member in held.values() if member["capability"] == CAPABILITY_NATIVE]
@@ -851,8 +887,9 @@ class SceneManagement:
                 "capable": GroupId != GROUP_NOT_FOR_SCENES and any(member["capability"] == CAPABILITY_NATIVE for member in members.values()),
                 "members": [
                     {"ieee": member["ieee"], "nwkId": member["nwkid"], "endpoint": member["ep"],
-                     "name": self._device_name(member["nwkid"]), "capability": member["capability"]}
-                    for member in members.values()
+                     "name": self._device_name(member["nwkid"]), "capability": member["capability"],
+                     "sceneSlots": self._scene_slots(key, member)}
+                    for key, member in members.items()
                 ],
                 "scenes": [self._scene_view(GroupId, SceneId, scene) for SceneId, scene in sorted(record["scenes"].items())],
                 "scan": self._scan_view(GroupId),
