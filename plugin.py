@@ -202,6 +202,7 @@ from Modules.greenPower import (green_power_widget_command,
                                 green_power_widget_removed,
                                 is_green_power_device_id)
 from Modules.greenPowerFeed import GP_FEED_ATTRIBUTE, GreenPowerFeed, gp_feed
+from Modules.greenPowerModels import gp_models, load_gp_models
 from Modules.greenPowerStore import gp_devices_for_zigpy
 from Modules.zigpy_preload import device_has_left_the_network
 from Zigbee.zdpCommands import (zdp_get_permit_joint_status,
@@ -580,6 +581,9 @@ class BasePlugin:
 
         # Import Zcl Cluster definitions
         load_zcl_cluster(self)
+
+        # Green Power device types (Conf/ZGPmodel)
+        load_gp_models(self)
         
         # Import Certified Device Configuration
         import_local_device_conf(self)
@@ -1764,6 +1768,7 @@ def start_web_server(self, webserver_port, webserver_homefolder):
         self.webserver.update_firmware(self.FirmwareVersion)
     self.webserver.update_plugin_stores(self.PluginStores)
     self.webserver.update_green_power_feed(gp_feed(self))
+    self.webserver.update_green_power_models(gp_models(self))
 
 
 def pingZigate(self):
