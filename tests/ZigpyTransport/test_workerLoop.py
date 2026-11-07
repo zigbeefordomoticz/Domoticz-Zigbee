@@ -220,6 +220,18 @@ class TestDispatchCommand(unittest.TestCase):
 
         self.assertIsNotNone(t.manual_interference_scan_task)
 
+    # ---- PERMIT-GP --------------------------------------------------------
+
+    def test_permit_gp_opens_green_power_only(self):
+        # Green Power page of Admin > Provisionning: no Zigbee permit join
+        t = make_transport()
+        t._radiomodule = "ezsp"
+        data = {"cmd": "PERMIT-GP", "datas": {"Duration": 240}, "ACKIsDisable": False, "Sqn": 0}
+        self._dispatch(t, data)
+        t.app.open_gp_commissioning.assert_called_once_with(240)
+        t.app.permit.assert_not_called()
+        t.app.permit_ncp.assert_not_called()
+
     # ---- PERMIT-TO-JOIN ---------------------------------------------------
 
     def test_permit_to_join_non_deconz(self):

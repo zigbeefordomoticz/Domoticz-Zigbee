@@ -132,7 +132,7 @@ async def dispatch_command(self, data):
     """
     Dispatches a parsed command dict to the appropriate handler.
 
-    Handles: COORDINATOR-BACKUP, GET-TIME, PERMIT-TO-JOIN, RAW-COMMAND,
+    Handles: COORDINATOR-BACKUP, GET-TIME, PERMIT-TO-JOIN, PERMIT-GP, RAW-COMMAND,
     REMOVE-DEVICE, REQ-NWK-STATUS, SET-*, INTERFERENCE-SCAN,
     ZIGPY-TOPOLOGY-SCAN, RESTART-ZIGPY-STACK, RESET-RADIO-COMMUNICATION.
     """
@@ -148,6 +148,10 @@ async def dispatch_command(self, data):
 
     elif cmd == "PERMIT-TO-JOIN":
         await _permit_to_joint(self, data)
+
+    elif cmd == "PERMIT-GP":
+        # Green Power commissioning only (Green Power page of Admin > Provisionning)
+        await self.app.open_gp_commissioning(datas["Duration"])
 
     elif cmd == "RAW-COMMAND":
         self.log.logging("TransportZigpy", "Debug",

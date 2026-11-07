@@ -18,7 +18,10 @@ not in ListOfDevices, so the routes built on ListOfDevices never show them:
                       page opened pairing
     /zgp-device-raw   Tools → Data: the store content
     /zgp-pairing      Admin → Provisioning: the pairing feed, what happens
-                      while a GPD is being paired (Modules/greenPowerFeed.py)
+                      while a GPD is being paired (Modules/greenPowerFeed.py);
+                      PUT opens or closes Green Power commissioning only,
+                      with the device type for the GPDs it commissions
+    /zgp-models       the device types of Conf/ZGPmodel (Modules/greenPowerModels.py)
 
 The store record holds the GPD security key: it never leaves the plugin
 (SECRET_FIELDS are dropped from every answer).
@@ -29,6 +32,7 @@ import time
 
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
+from Modules.greenPowerModels import gp_model_list, gp_models
 from Modules.greenPowerStore import gp_store
 
 SECRET_FIELDS = ("security_key",)
@@ -181,21 +185,70 @@ def rest_zgp_device_raw(self, verb, data, parameters):
     return _response
 
 
+# zigpy permit_gp() takes up to 254 s (0xFE)
+GP_WINDOW_MAX = 254
+
+
+def _bad_request(response, message):
+    response["Status"] = "400 BAD REQUEST"
+    response["Data"] = json.dumps({"BE_Error": message})
+    return response
+
+
+def rest_zgp_models(self, verb, data, parameters):
+    """GET /zgp-models: the Green Power device types, [{"Name", "Description", "Order", "Widgets"}]."""
+    _response = prepResponseMessage(self, setupHeadersResponse())
+    _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+    if verb == "GET":
+        _response["Data"] = json.dumps(gp_model_list(self))
+    return _response
+
+
+def _open_gp_commissioning(self, data, response):
+    """PUT /zgp-pairing {"Duration": seconds, 0 closes; "Model": device type or null}."""
+    try:
+        request = json.loads(data.decode("utf-8") if isinstance(data, (bytes, bytearray)) else data)
+    except (ValueError, AttributeError):
+        return _bad_request(response, "expected a JSON object")
+    if not isinstance(request, dict):
+        return _bad_request(response, "expected a JSON object")
+
+    duration = request.get("Duration")
+    if not isinstance(duration, int) or isinstance(duration, bool) or not 0 <= duration <= GP_WINDOW_MAX:
+        return _bad_request(response, "Duration: seconds from 0 to %s" % GP_WINDOW_MAX)
+    model = request.get("Model") or None
+    if model is not None and model not in gp_models(self):
+        return _bad_request(response, "Model: unknown Green Power device type %s" % model)
+    if getattr(self, "zigbee_communication", None) != "zigpy":
+        return _bad_request(response, "Green Power needs a zigpy coordinator")
+
+    feed = getattr(self, "GreenPowerFeed", None)
+    if feed is not None:
+        feed.set_pairing_model(model if duration else None)
+    self.ControllerLink.sendData("PERMIT-GP", {"Duration": duration})
+    response["Data"] = json.dumps({"Duration": duration, "Model": model})
+    return response
+
+
 def rest_zgp_pairing(self, verb, data, parameters):
     """
     GET /zgp-pairing            the Green Power pairing feed (Modules/greenPowerFeed.py)
     GET /zgp-pairing/<seq>      only the events after <seq>, for polling
+    PUT /zgp-pairing            {"Duration", "Model"}: open (or close, 0) Green Power
+                                commissioning only; the GPDs it commissions get Model
 
-    {"GreenPowerEnable", "Channel", "Window": {"State", "Until"}, "Seq", "Events"}
+    {"GreenPowerEnable", "Channel", "Window": {"State", "Until", "Remaining"}, "Model", "Seq", "Events"}
     """
     _response = prepResponseMessage(self, setupHeadersResponse())
     _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+    if verb == "PUT":
+        return _open_gp_commissioning(self, data, _response)
     if verb != "GET":
         return _response
 
     since = int(parameters[0]) if len(parameters) == 1 and parameters[0].isdigit() else 0
     feed = getattr(self, "GreenPowerFeed", None)
-    answer = feed.snapshot(since) if feed is not None else {"Window": {"State": None, "Until": None}, "Seq": 0, "Events": []}
+    answer = feed.snapshot(since) if feed is not None else {"Window": {"State": None, "Until": None, "Remaining": 0}, "Model": None, "Seq": 0, "Events": []}
     controller = getattr(self, "ControllerData", None) or {}
     answer["GreenPowerEnable"] = bool(self.pluginconf.pluginConf.get("GreenPowerEnable"))
     answer["Channel"] = controller.get("Channel")

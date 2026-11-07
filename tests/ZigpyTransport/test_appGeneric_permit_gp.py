@@ -70,7 +70,7 @@ HARNESS = textwrap.dedent(
                 self.green_power = types.SimpleNamespace(is_commissioning=sc.get("commissioning", False))
 
     app = FakeApp()
-    asyncio.run(AG.permit_gp(app, sc["time_s"]))
+    asyncio.run(getattr(AG, sc.get("call", "permit_gp"))(app, sc["time_s"]))
     print("RESULT=" + json.dumps({"calls": app.calls, "logs": app.log.records, "frames": app.frames}))
     """
 )
@@ -148,3 +148,23 @@ class TestZigpyWithoutGreenPower:
     def test_nothing_called(self):
         result = _run(time_s=60, enabled=1, green_power=False)
         assert result["calls"] == []
+
+
+class TestGreenPowerPageOpen:
+    # open_gp_commissioning(): PERMIT-GP from the Green Power page, not gated by GreenPowerEnable
+
+    def test_opens_with_the_setting_off(self):
+        result = _run(call="open_gp_commissioning", time_s=240, enabled=0)
+        assert result["calls"] == [240]
+        assert any("opening Green Power commissioning only for 240" in msg for msg in _status(result))
+        assert _windows(result) == [(0x01, 240)]
+
+    def test_closes(self):
+        result = _run(call="open_gp_commissioning", time_s=0, enabled=0, commissioning=True)
+        assert result["calls"] == [0]
+        assert _windows(result) == [(0x00, 0)]
+
+    def test_zigpy_without_green_power_is_an_error(self):
+        result = _run(call="open_gp_commissioning", time_s=240, green_power=False)
+        assert result["calls"] == []
+        assert any(level == "Error" for level, _ in result["logs"])

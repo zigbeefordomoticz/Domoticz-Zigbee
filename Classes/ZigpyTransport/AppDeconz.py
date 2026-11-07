@@ -151,6 +151,9 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
     def gp_packet_received(self, packet) -> None:
         Classes.ZigpyTransport.AppGeneric.gp_packet_received(self, packet)
 
+    async def open_gp_commissioning(self, time_s: int) -> None:
+        await Classes.ZigpyTransport.AppGeneric.open_gp_commissioning(self, time_s)
+
 
     def packet_received(self, packet: t.ZigbeePacket) -> None:
         return Classes.ZigpyTransport.AppGeneric.packet_received(self,packet)

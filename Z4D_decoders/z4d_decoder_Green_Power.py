@@ -67,10 +67,15 @@ def Decode9E00(self, Devices, MsgData, MsgLQI):
     previous = store.get(ieee)
     stored = gp_device_record(record, int(time.time()), lqi, previous=previous)
     if previous:
-        # Commissioned again: the GPD keeps its widgets
-        for key in ("Model", "Ep"):
+        # Commissioned again: the GPD keeps its widgets, and the type they were made from
+        for key in ("Model", "Ep", "RequestedModel"):
             if key in previous:
                 stored[key] = previous[key]
+    # The device type picked on the Green Power page for this window (Conf/ZGPmodel),
+    # for a GPD that has no widget yet
+    requested = gp_feed(self).pairing_model()
+    if requested and not any(ep.get("ClusterType") for ep in (stored.get("Ep") or {}).values()):
+        stored["RequestedModel"] = requested
     store.set(ieee, stored)
     # Written at the next heartbeat, not at the periodic flush
     request_gp_store_flush(self)

@@ -27,6 +27,8 @@ Modules/database.py PLUGIN_STORES:
               Commissioned  time of the first commissioning (epoch seconds)
               LastSeen      time of the last frame (epoch seconds)
               LQI           LQI of the last frame
+              RequestedModel  device type picked on the Green Power page
+                            before pairing (Conf/ZGPmodel), if any
 
 The record holds the GPD security key ("security_key", hex): never log a
 record or the store content.
