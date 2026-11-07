@@ -139,7 +139,9 @@ def _normalize_tarif(self, op_tarifaire):
         base_tarifaire = "EJP"  # Treat any EJPx as EJP
     elif op_tarifaire == "HEURES PLEINES":
         base_tarifaire = "HC"
-    elif op_tarifaire == "H PLEINE/CREUSE":   # Fix https://easydomoticz.com/forum/viewtopic.php?t=14468
+    elif op_tarifaire in ("H PLEINE/CREUSE", "H PLEINE-CREUSE"):
+        # "/": https://easydomoticz.com/forum/viewtopic.php?t=14468
+        # "-": EDF Zen Fixe
         base_tarifaire = "HC"
     else:
         base_tarifaire = op_tarifaire
@@ -154,7 +156,7 @@ def _is_tempo_tarif(self, op_tarifaire):
 
 def _is_hchp_standard_tarif(self, op_tarifaire):
     """ Return true if the current op tarif is HC/HP """
-    return _normalize_tarif(self, op_tarifaire ) in ("HCHP 22h-6h",)
+    return _normalize_tarif(self, op_tarifaire ) in ("HCHP 22h-6h", "HC")
 
 
 def _zlinky_update_color(self, nwkid, op_tarifaire, previous_color, new_color):
@@ -259,7 +261,13 @@ def _normalize_tempo_color(self, color):
 def _normalize_hchp_color(self, ltarf_value):
     """Normalize the given color to the HC/HP format."""
     self.log.logging("ZLinky", "Debug", f"_normalize_hchp_color {ltarf_value}")
-    
+
+    if not isinstance(ltarf_value, str):
+        return ltarf_value
+
+    # Some meters pad the label with a double space ("HEURE  PLEINE")
+    ltarf_value = " ".join(ltarf_value.split())
+
     if ltarf_value == "HEURES PLEINES":
         self.log.logging("ZLinky", "Debug", f"_normalize_hchp_color {ltarf_value} --> HP..")
         return "HP.."
