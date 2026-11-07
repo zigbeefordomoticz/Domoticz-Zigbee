@@ -80,8 +80,9 @@ def Decode9E00(self, Devices, MsgData, MsgLQI):
     webserver = getattr(self, "webserver", None)
     if webserver:
         webserver.add_green_power_device_in_pairing_mode(ieee, record.get("nwk"))
+    # A unidirectional GPD gets no answer: the user takes it out of its commissioning mode
     gp_feed(self).add("commissioned", IEEE=ieee, SrcId=gp_src_id(ieee), NwkId=record.get("nwk"),
-                      DeviceId=record.get("device_id"), Again=bool(record.get("recommissioned")))
+                      DeviceId=record.get("device_id"), Again=bool(record.get("recommissioned")), Hint="leave-pairing")
 
 
 def Decode9E01(self, Devices, MsgData, MsgLQI):

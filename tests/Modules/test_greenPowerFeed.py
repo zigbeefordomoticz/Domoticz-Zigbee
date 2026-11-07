@@ -28,7 +28,8 @@ IEEE = "00000000c220bd02"
     (0x21, HEARD_WINDOW_OPEN, "not-pairing"),
     (0x21, HEARD_ENCRYPTED, "encrypted"),
     (0x21, HEARD_KNOWN | HEARD_WINDOW_OPEN, None),
-    (0xE0, HEARD_KNOWN | HEARD_WINDOW_OPEN, None),
+    (0xE0, HEARD_KNOWN | HEARD_WINDOW_OPEN, "still-pairing"),
+    (0xE0, HEARD_KNOWN, "still-pairing"),
     (0xE3, HEARD_WINDOW_OPEN, None),
 ])
 def test_hint(command_id, flags, hint):

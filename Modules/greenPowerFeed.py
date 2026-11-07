@@ -20,7 +20,10 @@ stop. Events, newest last, in memory only (the last FEED_SIZE):
     heard       a GPDF reached the network (9e03), with a hint when it tells
                 why nothing gets paired
     commissioned / widgets / no-widget / removed
-                the pairing steps that follow (9e00, widget creation, 9e02)
+                the pairing steps that follow (9e00, widget creation, 9e02).
+                commissioned carries the hint leave-pairing: a unidirectional
+                GPD is not told it is paired, the user takes it out of its
+                commissioning mode
 
 Written from the forwarder thread (decoders) and the heartbeat (widgets),
 read from the Domoticz thread (WebServer): every access holds the lock.
@@ -95,12 +98,15 @@ def heard_hint(command_id, flags):
 
         commissioning   a Commissioning while the window is open: pairing follows
         window-closed   a Commissioning while the window is closed: refused
+        still-pairing   a Commissioning from a GPD already paired: it is still in
+                        its commissioning mode, where some GPDs step to the next
+                        channel at each press
         not-pairing     an unpaired GPD sending a normal command: it reaches the
                         network, but is not in its commissioning mode
         encrypted       an unpaired GPD's encrypted frame: nothing to read
     """
     if flags & HEARD_KNOWN:
-        return None
+        return "still-pairing" if command_id == GPD_COMMISSIONING else None
     if flags & HEARD_ENCRYPTED:
         return "encrypted"
     if command_id == GPD_COMMISSIONING:
