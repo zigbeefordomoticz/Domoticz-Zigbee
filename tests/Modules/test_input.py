@@ -55,7 +55,8 @@ def stub_external_modules():
             {"Decode804B": MagicMock()}),
         ("Z4D_decoders.z4d_decoder_Green_Power",
             {"Decode9E00": MagicMock(name="Decode9E00"), "Decode9E01": MagicMock(name="Decode9E01"),
-             "Decode9E02": MagicMock(name="Decode9E02")}),
+             "Decode9E02": MagicMock(name="Decode9E02"), "Decode9E03": MagicMock(name="Decode9E03"),
+             "Decode9E04": MagicMock(name="Decode9E04")}),
         ("Z4D_decoders.z4d_decoder_groups",
             {"Decode8060": MagicMock(), "Decode8061": MagicMock(),
              "Decode8062": MagicMock(), "Decode8063": MagicMock()}),
@@ -369,6 +370,8 @@ def test_green_power_types_in_decoders(input_module):
     assert input_module.DECODERS["9e00"] is input_module.Decode9E00
     assert input_module.DECODERS["9e01"] is input_module.Decode9E01
     assert input_module.DECODERS["9e02"] is input_module.Decode9E02
+    assert input_module.DECODERS["9e03"] is input_module.Decode9E03
+    assert input_module.DECODERS["9e04"] is input_module.Decode9E04
 
 
 def test_8139_alias(input_module):

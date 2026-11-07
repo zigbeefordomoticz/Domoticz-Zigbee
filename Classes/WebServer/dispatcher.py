@@ -86,6 +86,7 @@ def setup_list_rest_commands( self ):
         {"Name": "zdevice-raw", "Verbs": {"GET", "PUT"}, "function": self.rest_zDevice_raw},
         {"Name": "zdevice", "Verbs": {"GET", "DELETE"}, "function": self.rest_zDevice},
         {"Name": "zgp-device-raw", "Verbs": {"GET"}, "function": self.rest_zgp_device_raw},
+        {"Name": "zgp-pairing", "Verbs": {"GET"}, "function": self.rest_zgp_pairing},
         {"Name": "ieee2nwk-raw", "Verbs": {"GET"}, "function": self.rest_IEEE2NWK_raw},
         {"Name": "zgroup-list-available-device", "Verbs": {"GET"}, "function": self.rest_zGroup_lst_avlble_dev },
         {"Name": "zgroup", "Verbs": {"GET", "PUT"}, "function": self.rest_zGroup},
