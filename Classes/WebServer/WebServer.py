@@ -20,6 +20,7 @@ import time
 from collections import deque
 
 from Classes.PluginConf import SETTINGS
+from Classes.WebServer.rest_GreenPower import green_power_supported
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
 from Modules.actuators import actuators
@@ -434,7 +435,10 @@ class WebServer(object):
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
-            _response["Data"] = json.dumps(get_plugin_parameters(self))
+            plugin_parameters = get_plugin_parameters(self)
+            # The WebUI shows the Green Power settings and pages only when True
+            plugin_parameters["GreenPowerSupported"] = green_power_supported(self)
+            _response["Data"] = json.dumps(plugin_parameters)
         return _response
 
     def rest_nwk_stat(self, verb, data, parameters):
@@ -655,6 +659,8 @@ class WebServer(object):
                     if param not in SETTINGS[_theme]["param"]:
                         continue
                     if SETTINGS[_theme]["param"][param]["hidden"]:
+                        continue
+                    if SETTINGS[_theme]["param"][param].get("GreenPowerOnly") and not green_power_supported(self):
                         continue
                     if  (
                         "ZigpyRadio" in SETTINGS[_theme]["param"][param]
