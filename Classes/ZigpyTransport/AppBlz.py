@@ -153,6 +153,9 @@ class App_blz(zigpy_blz.zigbee.application.ControllerApplication):
     def gp_packet_received(self, packet) -> None:
         Classes.ZigpyTransport.AppGeneric.gp_packet_received(self, packet)
 
+    async def open_gp_commissioning(self, time_s: int) -> None:
+        await Classes.ZigpyTransport.AppGeneric.open_gp_commissioning(self, time_s)
+
 
     def get_zigpy_version(self):
         return Classes.ZigpyTransport.AppGeneric.get_zigpy_version(self)
