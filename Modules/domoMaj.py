@@ -60,16 +60,29 @@ def MajDomoDevice(self, Devices, NwkId, Ep, ClusterId, value, Attribute_="", Col
     self.log.logging( "Widget", "Debug", "MajDomoDevice NwkId: %s Ep: %s ClusterId: %s Value: %s ValueType: %s Attribute: %s Color: %s ModelName: %s" % (
         NwkId, Ep, ClusterId, value, type(value), Attribute_, Color_, model_name), NwkId, )
 
-    # Get the CluserType ( Action type) from Cluster Id
-    ClusterType = TypeFromCluster(self, ClusterId)
-    self.log.logging("Widget", "Debug", "------> ClusterType = " + str(ClusterType), NwkId)
-
     ClusterTypeList = retrieve_widget_type_list(self, Devices, device_id_ieee, NwkId)
     self.log.logging("Widget", "Debug", "------> ClusterTypeList = " + str(ClusterTypeList), NwkId)
     
     if len(ClusterTypeList) == 0:
         # We don't have any widgets associated to the NwkId
         return
+
+    maj_domo_widgets(self, Devices, NwkId, device_id_ieee, model_name, ClusterTypeList, Ep, ClusterId, value, Attribute_, Color_)
+
+
+def maj_domo_widgets(self, Devices, NwkId, device_id_ieee, model_name, ClusterTypeList, Ep, ClusterId, value, Attribute_="", Color_=""):
+    """
+    Update the widgets of ClusterTypeList, [(WidgetEp, Widget_Idx, WidgetType), ...], with a
+    value received on Ep/ClusterId.
+
+    Called by MajDomoDevice() for a Zigbee device, and for a Green Power device
+    (Modules/greenPowerWidgets.py) with NwkId None: a GPD is not in ListOfDevices, and its NWK
+    alias may be the NwkId of a real device, which the NwkId-keyed helpers would then act on.
+    The branches a GPD reaches do not use NwkId other than for logging.
+    """
+    # Get the CluserType ( Action type) from Cluster Id
+    ClusterType = TypeFromCluster(self, ClusterId)
+    self.log.logging("Widget", "Debug", "------> ClusterType = " + str(ClusterType), NwkId)
 
     # Look for each entry in ClusterTypeList
     for WidgetEp, Widget_Idx, WidgetType in ClusterTypeList:
@@ -1919,6 +1932,10 @@ def retreive_device_unit( self, Devices, NwkId, Ep, device_id_ieee, ClusterId, W
 def CheckUpdateGroup(self, NwkId, Ep, ClusterId):
 
     if ClusterId not in ("0006", "0008", "0102"):
+        return
+
+    if NwkId is None:
+        # Green Power device: not a group member
         return
 
     if self.groupmgt:

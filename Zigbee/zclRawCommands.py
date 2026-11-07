@@ -22,6 +22,7 @@ DEFAULT_ACK_MODE = False
 
 # Logged once, under the first enabled category
 DEFAULT_RESPONSE_LOG = ["zclDefaultResponse", "zclCommand", "zclDecoder"]
+SCENE_LOG = ["zclCommand", "Scene"]
 
 # General Command Frame
 
@@ -471,6 +472,95 @@ def zcl_raw_send_group_member_ship_identify(self, nwkid, epin, epout, GrpId, ack
     raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
     return sqn
 
+
+# Cluster 0005: Scenes
+######################
+#
+# GroupId and SceneId are hex strings, as everywhere in this module ("1001", "03").
+# A scene command only answers when it is unicast, so Recall is the one command
+# offered in group mode: the others are sent to each member, for its response.
+
+def _scene_group_field(GroupId):
+    return struct.pack("<H", int(GroupId, 16)).hex()
+
+
+def _zcl_raw_scene_command(self, nwkid, epin, epout, command, data, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
+    # Cluster Frame:
+    # 0b xxxx xxxx
+    #           |- Frame Type: Cluster Specific (0x01)
+    #          |-- Manufacturer Specific False
+    #         |--- Command Direction: Client to Server (0)
+    #       | ---- Disable default response: True
+    #    |||- ---- Reserved : 0x000
+    #
+    cluster_frame = 0b00010001
+
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    payload = "%02x" % cluster_frame + sqn + command + data
+    raw_APS_request(self, nwkid, epout, "0005", "0104", payload, zigpyzqn=sqn, zigate_ep=epin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    return sqn
+
+
+def zcl_raw_add_scene(self, nwkid, epin, epout, GroupId, SceneId, transition_time=0, ackIsDisabled=DEFAULT_ACK_MODE):
+    """
+    Add Scene with an empty name and no extension field set: it only creates the
+    entry with its transition time, which Store Scene cannot set.
+
+    Args:
+        transition_time: In seconds, unlike Recall Scene.
+    """
+    self.log.logging(SCENE_LOG, "Debug", "zcl_raw_add_scene %s %s %s %s %s %s" % (nwkid, epin, epout, GroupId, SceneId, transition_time), nwkid)
+    zcl_command_formated_logging( self, "Add_Scene (Raw)", nwkid, epout, "0005", GroupId, SceneId, transition_time, ackIsDisabled)
+
+    data = _scene_group_field(GroupId) + SceneId + struct.pack("<H", transition_time).hex() + "00"
+    return _zcl_raw_scene_command(self, nwkid, epin, epout, "00", data, ackIsDisabled=ackIsDisabled)
+
+
+def zcl_raw_remove_scene(self, nwkid, epin, epout, GroupId, SceneId, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging(SCENE_LOG, "Debug", "zcl_raw_remove_scene %s %s %s %s %s" % (nwkid, epin, epout, GroupId, SceneId), nwkid)
+    zcl_command_formated_logging( self, "Remove_Scene (Raw)", nwkid, epout, "0005", GroupId, SceneId, ackIsDisabled)
+
+    data = _scene_group_field(GroupId) + SceneId
+    return _zcl_raw_scene_command(self, nwkid, epin, epout, "02", data, ackIsDisabled=ackIsDisabled)
+
+
+def zcl_raw_remove_all_scenes(self, nwkid, epin, epout, GroupId, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging(SCENE_LOG, "Debug", "zcl_raw_remove_all_scenes %s %s %s %s" % (nwkid, epin, epout, GroupId), nwkid)
+    zcl_command_formated_logging( self, "Remove_All_Scenes (Raw)", nwkid, epout, "0005", GroupId, ackIsDisabled)
+
+    return _zcl_raw_scene_command(self, nwkid, epin, epout, "03", _scene_group_field(GroupId), ackIsDisabled=ackIsDisabled)
+
+
+def zcl_raw_store_scene(self, nwkid, epin, epout, GroupId, SceneId, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging(SCENE_LOG, "Debug", "zcl_raw_store_scene %s %s %s %s %s" % (nwkid, epin, epout, GroupId, SceneId), nwkid)
+    zcl_command_formated_logging( self, "Store_Scene (Raw)", nwkid, epout, "0005", GroupId, SceneId, ackIsDisabled)
+
+    data = _scene_group_field(GroupId) + SceneId
+    return _zcl_raw_scene_command(self, nwkid, epin, epout, "04", data, ackIsDisabled=ackIsDisabled)
+
+
+def zcl_raw_recall_scene(self, nwkid, epin, epout, GroupId, SceneId, transition_time=None, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
+    """
+    Recall Scene. For a group-cast, nwkid is the group and groupaddrmode is True.
+
+    Args:
+        transition_time: In 1/10 s, unlike Add Scene. None leaves the optional field
+                         out, and the device uses the transition time it holds.
+    """
+    self.log.logging(SCENE_LOG, "Debug", "zcl_raw_recall_scene %s %s %s %s %s %s %s" % (nwkid, epin, epout, GroupId, SceneId, transition_time, groupaddrmode), nwkid)
+    zcl_command_formated_logging( self, "Recall_Scene (Raw)", nwkid, epout, "0005", GroupId, SceneId, transition_time, groupaddrmode, ackIsDisabled)
+
+    data = _scene_group_field(GroupId) + SceneId
+    if transition_time is not None:
+        data += struct.pack("<H", transition_time).hex()
+    return _zcl_raw_scene_command(self, nwkid, epin, epout, "05", data, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+
+
+def zcl_raw_get_scene_membership(self, nwkid, epin, epout, GroupId, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging(SCENE_LOG, "Debug", "zcl_raw_get_scene_membership %s %s %s %s" % (nwkid, epin, epout, GroupId), nwkid)
+    zcl_command_formated_logging( self, "Get_Scene_Membership (Raw)", nwkid, epout, "0005", GroupId, ackIsDisabled)
+
+    return _zcl_raw_scene_command(self, nwkid, epin, epout, "06", _scene_group_field(GroupId), ackIsDisabled=ackIsDisabled)
 
 
 # Cluster 0006: On/Off

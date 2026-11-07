@@ -1,0 +1,14 @@
+{
+    "Description": "On/Off switch",
+    "Order": 1,
+    "Ep": {
+        "01": {
+            "Type": "Switch"
+        }
+    },
+    "Commands": {
+        "20": ["0006", "00"],
+        "21": ["0006", "01"],
+        "22": ["0006", "toggle"]
+    }
+}

@@ -1,0 +1,256 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Implementation of Zigbee for Domoticz plugin.
+#
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
+"""
+Green Power devices (GPD) in the WebUI.
+
+The GPDs live in the Green Power device store (Modules/greenPowerStore.py),
+not in ListOfDevices, so the routes built on ListOfDevices never show them:
+
+    /rcv-nw-hrdwr     Admin → Provisioning: rest_Provisioning appends the
+                      entries built here for the GPDs commissioned since the
+                      page opened pairing
+    /zgp-device-raw   Tools → Data: the store content
+    /zgp-pairing      Admin → Provisioning: the pairing feed, what happens
+                      while a GPD is being paired (Modules/greenPowerFeed.py);
+                      PUT opens or closes Green Power commissioning only,
+                      with the device type for the GPDs it commissions
+    /zgp-models       the device types of Conf/ZGPmodel (Modules/greenPowerModels.py)
+
+The store record holds the GPD security key: it never leaves the plugin
+(SECRET_FIELDS are dropped from every answer).
+"""
+
+import json
+import time
+
+from Classes.WebServer.headerResponse import (prepResponseMessage,
+                                              setupHeadersResponse)
+from Modules.greenPowerModels import gp_model_list, gp_models
+from Modules.greenPowerStore import gp_store
+
+SECRET_FIELDS = ("security_key",)
+
+# A GPD that has no widget this long after its commissioning gets none: its
+# widgets are created at the next heartbeat, or never (unknown model)
+GP_PROVISIONING_TIMEOUT = 60
+
+GP_PROFILE_ID = "a1e0"
+GP_PROFILE_DESC = "Green Power"
+
+# GP Device IDs (Green Power specification, as zigpy.zgp.types.DeviceID)
+GP_DEVICE_IDS = {
+    0x00: "Simple Generic 1-state Switch",
+    0x01: "Simple Generic 2-state Switch",
+    0x02: "On/Off Switch",
+    0x03: "Level Control Switch",
+    0x04: "Simple Sensor",
+    0x05: "Advanced Generic 1-state Switch",
+    0x06: "Advanced Generic 2-state Switch",
+    0x07: "Generic Switch",
+    0x10: "Color Dimmer Switch",
+    0x11: "Light Sensor",
+    0x12: "Occupancy Sensor",
+    0x20: "Door Lock Controller",
+    0x30: "Temperature Sensor",
+    0x31: "Pressure Sensor",
+    0x32: "Flow Sensor",
+    0x33: "Indoor Environment Sensor",
+    0xFE: "Manufacturer specific",
+}
+
+# Model names of the built-in fallback (Modules/greenPowerWidgets.BUILTIN_MODEL_PREFIX)
+BUILTIN_MODEL_PREFIX = "GreenPower-"
+
+
+def public_gp_record(record):
+    """A copy of a store record without its secrets."""
+    return {key: value for key, value in record.items() if key not in SECRET_FIELDS}
+
+
+def gp_widget_names(self, record):
+    """Names of the Domoticz widgets of a GPD, from its ClusterType entries."""
+    names = []
+    widgets = getattr(self, "ListOfDomoticzWidget", None) or {}
+    for ep_record in (record.get("Ep") or {}).values():
+        for widget_idx in (ep_record.get("ClusterType") or {}):
+            widget = widgets.get(int(widget_idx))
+            if widget and widget.get("Name") and widget["Name"] not in names:
+                names.append(widget["Name"])
+    return names
+
+
+def _has_widgets(record):
+    return any(ep.get("ClusterType") for ep in (record.get("Ep") or {}).values())
+
+
+def gp_new_hardware(self, ieee, record):
+    """
+    The /rcv-nw-hrdwr entry of a GPD, with the fields of a Zigbee device
+    (NewHardware in the WebUI) plus GreenPower and WidgetList: a GPD is not in
+    /zdevice-name, where the page finds the widgets of a Zigbee device.
+    """
+    device_id = record.get("device_id")
+    model = record.get("Model") or ""
+    return {
+        "NwkId": record.get("nwk") or "",
+        "GreenPower": True,
+        "IEEE": ieee,
+        "ProfileId": GP_PROFILE_ID,
+        "ProfileIdDesc": GP_PROFILE_DESC,
+        "ZDeviceID": "" if device_id is None else "%02x" % int(device_id),
+        "ZDeviceIDDesc": GP_DEVICE_IDS.get(device_id, "Unknown") if device_id is not None else "Unknown",
+        "Model": model,
+        "PluginCertified": "no" if not model or model.startswith(BUILTIN_MODEL_PREFIX) else "yes",
+        "Ep": [],
+        "WidgetList": gp_widget_names(self, record),
+    }
+
+
+def gp_provisioning_entries(self, now=None):
+    """
+    /rcv-nw-hrdwr entries of the GPDs commissioned since pairing was opened
+    from the page (self.GreenPowerInPairingMode: ieee → (commissioning time, nwk)).
+
+    As for a Zigbee device: NwkId only while its widgets are not created yet,
+    then once with ProvisionStatus, after which it leaves the queue.
+    """
+    now = time.time() if now is None else now
+    pending = getattr(self, "GreenPowerInPairingMode", None)
+    if not pending:
+        return []
+
+    store = gp_store(self)
+    entries = []
+    for ieee, (since, nwk) in list(pending.items()):
+        record = store.get(ieee) if store is not None else None
+        if record is None:
+            # Removed meanwhile, or no store
+            pending.pop(ieee, None)
+            entries.append({"NwkId": nwk or "", "IEEE": ieee, "GreenPower": True, "ProvisionStatus": "Failed", "ProvisionStatusDesc": "Failed"})
+            continue
+
+        if _has_widgets(record):
+            pending.pop(ieee, None)
+            entry = gp_new_hardware(self, ieee, record)
+            entry.update({"ProvisionStatus": "inDB", "ProvisionStatusDesc": "inDB"})
+            entries.append(entry)
+            continue
+
+        if now - since > GP_PROVISIONING_TIMEOUT:
+            # Commissioned, but no configuration gives it a widget
+            pending.pop(ieee, None)
+            entry = gp_new_hardware(self, ieee, record)
+            entry.update({"ProvisionStatus": "Unexpected", "ProvisionStatusDesc": "No widget for this Green Power device"})
+            entries.append(entry)
+            continue
+
+        entries.append({"NwkId": record.get("nwk") or "", "IEEE": ieee, "GreenPower": True})
+    return entries
+
+
+def rest_zgp_device_raw(self, verb, data, parameters):
+    """
+    GET /zgp-device-raw            the Green Power device store, one entry per GPD
+    GET /zgp-device-raw/<ieee>     one GPD ({} when unknown)
+
+    Each entry is the store record without its security key, plus IEEE and
+    WidgetList.
+    """
+    _response = prepResponseMessage(self, setupHeadersResponse())
+    _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+    if verb != "GET":
+        return _response
+
+    store = gp_store(self)
+    records = store.snapshot() if store is not None else {}
+
+    def entry(ieee, record):
+        answer = public_gp_record(record)
+        answer["IEEE"] = ieee
+        answer["WidgetList"] = gp_widget_names(self, record)
+        return answer
+
+    if len(parameters) == 0:
+        _response["Data"] = json.dumps([entry(ieee, record) for ieee, record in sorted(records.items())], sort_keys=False)
+    elif len(parameters) == 1:
+        ieee = parameters[0].lower()
+        _response["Data"] = json.dumps(entry(ieee, records[ieee]) if ieee in records else {}, sort_keys=False)
+    return _response
+
+
+# zigpy permit_gp() takes up to 254 s (0xFE)
+GP_WINDOW_MAX = 254
+
+
+def _bad_request(response, message):
+    response["Status"] = "400 BAD REQUEST"
+    response["Data"] = json.dumps({"BE_Error": message})
+    return response
+
+
+def rest_zgp_models(self, verb, data, parameters):
+    """GET /zgp-models: the Green Power device types, [{"Name", "Description", "Order", "Widgets"}]."""
+    _response = prepResponseMessage(self, setupHeadersResponse())
+    _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+    if verb == "GET":
+        _response["Data"] = json.dumps(gp_model_list(self))
+    return _response
+
+
+def _open_gp_commissioning(self, data, response):
+    """PUT /zgp-pairing {"Duration": seconds, 0 closes; "Model": device type or null}."""
+    try:
+        request = json.loads(data.decode("utf-8") if isinstance(data, (bytes, bytearray)) else data)
+    except (ValueError, AttributeError):
+        return _bad_request(response, "expected a JSON object")
+    if not isinstance(request, dict):
+        return _bad_request(response, "expected a JSON object")
+
+    duration = request.get("Duration")
+    if not isinstance(duration, int) or isinstance(duration, bool) or not 0 <= duration <= GP_WINDOW_MAX:
+        return _bad_request(response, "Duration: seconds from 0 to %s" % GP_WINDOW_MAX)
+    model = request.get("Model") or None
+    if model is not None and model not in gp_models(self):
+        return _bad_request(response, "Model: unknown Green Power device type %s" % model)
+    if getattr(self, "zigbee_communication", None) != "zigpy":
+        return _bad_request(response, "Green Power needs a zigpy coordinator")
+
+    feed = getattr(self, "GreenPowerFeed", None)
+    if feed is not None:
+        feed.set_pairing_model(model if duration else None)
+    self.ControllerLink.sendData("PERMIT-GP", {"Duration": duration})
+    response["Data"] = json.dumps({"Duration": duration, "Model": model})
+    return response
+
+
+def rest_zgp_pairing(self, verb, data, parameters):
+    """
+    GET /zgp-pairing            the Green Power pairing feed (Modules/greenPowerFeed.py)
+    GET /zgp-pairing/<seq>      only the events after <seq>, for polling
+    PUT /zgp-pairing            {"Duration", "Model"}: open (or close, 0) Green Power
+                                commissioning only; the GPDs it commissions get Model
+
+    {"GreenPowerEnable", "Channel", "Window": {"State", "Until", "Remaining"}, "Model", "Seq", "Events"}
+    """
+    _response = prepResponseMessage(self, setupHeadersResponse())
+    _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+    if verb == "PUT":
+        return _open_gp_commissioning(self, data, _response)
+    if verb != "GET":
+        return _response
+
+    since = int(parameters[0]) if len(parameters) == 1 and parameters[0].isdigit() else 0
+    feed = getattr(self, "GreenPowerFeed", None)
+    answer = feed.snapshot(since) if feed is not None else {"Window": {"State": None, "Until": None, "Remaining": 0}, "Model": None, "Seq": 0, "Events": []}
+    controller = getattr(self, "ControllerData", None) or {}
+    answer["GreenPowerEnable"] = bool(self.pluginconf.pluginConf.get("GreenPowerEnable"))
+    answer["Channel"] = controller.get("Channel")
+    _response["Data"] = json.dumps(answer, sort_keys=False)
+    return _response

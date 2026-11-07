@@ -104,10 +104,12 @@ class WebServer(object):
     from Classes.WebServer.rest_Energy import (rest_req_nwk_full,
                                                rest_req_nwk_inter)
     from Classes.WebServer.rest_Gammatroniques import rest_TICMeter
-    from Classes.WebServer.rest_Groups import (rest_rescan_group,
+    from Classes.WebServer.rest_Groups import (group_management_status,
+                                               rest_rescan_group,
                                                rest_scan_devices_for_group,
                                                rest_zGroup,
                                                rest_zGroup_lst_avlble_dev)
+    from Classes.WebServer.rest_Scenes import rest_scenes
     from Classes.WebServer.rest_logging import (rest_csp_report,
                                                 rest_logErrorHistory,
                                                 rest_logErrorHistoryClear,
@@ -121,6 +123,9 @@ class WebServer(object):
     from Classes.WebServer.rest_PluginUpgrade import (
         certified_devices_update, rest_certified_devices_update,
         rest_plugin_upgrade, rest_reload_device_conf)
+    from Classes.WebServer.rest_GreenPower import (rest_zgp_device_raw,
+                                                   rest_zgp_models,
+                                                   rest_zgp_pairing)
     from Classes.WebServer.rest_Provisioning import (rest_full_reprovisionning,
                                                      rest_new_hrdwr,
                                                      rest_rcv_nw_hrdwr)
@@ -202,10 +207,17 @@ class WebServer(object):
         self.permitTojoin = permitTojoin
 
         self.groupmgt = None
+        self.scenemgt = None
         self.OTA = None
         self.ListOfDevices = ListOfDevices
         self.DevicesInPairingMode = []
+        # Green Power devices commissioned since the Provisioning page opened pairing: ieee → (time, nwk)
+        self.GreenPowerInPairingMode = {}
         self.fakeDevicesInPairingMode = 0
+        # Plugin stores (Modules/database.load_plugin_stores), set by update_plugin_stores()
+        self.PluginStores = {}
+        # Green Power pairing feed (Modules/greenPowerFeed.py), set by update_green_power_feed()
+        self.GreenPowerFeed = None
         self.IEEE2NWK = IEEE2NWK
         self.DeviceConf = DeviceConf
         self.Devices = Devices
@@ -267,9 +279,25 @@ class WebServer(object):
     def add_element_to_devices_in_pairing_mode( self, nwkid):
         if nwkid not in self.DevicesInPairingMode:
             self.DevicesInPairingMode.append( nwkid )
+
+    def add_green_power_device_in_pairing_mode(self, ieee, nwk):
+        self.GreenPowerInPairingMode.setdefault(ieee, (time.time(), nwk))
+
+    def update_plugin_stores(self, plugin_stores):
+        self.PluginStores = plugin_stores or {}
+
+    def update_green_power_feed(self, feed):
+        self.GreenPowerFeed = feed
+
+    def update_green_power_models(self, models):
+        # Green Power device types (Modules/greenPowerModels.py), read by gp_models()
+        self.GreenPowerModels = models or {}
         
     def update_groupManagement(self, groupmanagement):
         self.groupmgt = groupmanagement if groupmanagement else None
+
+    def update_sceneManagement(self, scenemanagement):
+        self.scenemgt = scenemanagement if scenemanagement else None
 
     def update_OTA(self, OTA):
         self.OTA = OTA or None
@@ -306,9 +334,10 @@ class WebServer(object):
                 # The plugin's clock, which StartTime / EndTime are read against: the browser's may differ
                 health["OTAupdateTime"] = int(time.time())
 
-            if self.groupmgt:
-                health["GroupStatus"] = self.groupmgt.GroupStatus
-                
+            group_status = self.group_management_status()
+            if group_status:
+                health["GroupStatus"] = group_status
+
             if a_topology_scan_is_running(self):
                 health["Topology"] = "In Progress"
 

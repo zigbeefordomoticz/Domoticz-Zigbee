@@ -317,11 +317,26 @@ def find_first_unit_widget_from_deviceID(self, Devices, DeviceID):
     return next(iter(units), None)
 
 
+def domo_units(self, Devices, DeviceID):
+    """The units of a DeviceID, in order. A DeviceID can hold several: find_first_unit_widget_from_deviceID only tells one."""
+    self.log.logging("AbstractDz", "Debug", f"domo_units: {DeviceID}")
+    return sorted(Devices[DeviceID].Units) if _device_exists(Devices, DeviceID) else []
+
+
 def _get_available_units(self, Devices, DeviceId) -> set:
     """Return the set of already-allocated unit numbers for DeviceId."""
     if _device_exists(Devices, DeviceId):
         return set(Devices[DeviceId].Units.keys())
     return set()
+
+def domo_other_units(self, Devices, DeviceId, Unit) -> set:
+    """
+    Units of DeviceId other than Unit. In onDeviceRemoved(), Domoticz still
+    lists the unit being removed (it drops it after the callback returns), so
+    an empty result means Unit is the device's last one.
+    """
+    return _get_available_units(self, Devices, DeviceId) - {Unit}
+
 
 def get_unit_counts(self, Devices, DeviceId) -> dict:
     """
@@ -606,12 +621,9 @@ def domo_delete_widget(self, Devices, DeviceID_, Unit_):
                          f"domo_delete_widget - Delete() raised: {e}")
         return
 
-    if _device_exists(Devices, DeviceID_) and len(Devices[DeviceID_].Units) == 0:
-        try:
-            Devices[DeviceID_].Delete()
-        except Exception as e:
-            self.log.logging("AbstractDz", "Error",
-                             f"domo_delete_widget - Device.Delete() raised: {e}")
+    # DomoticzEx takes the unit out of its database, and only takes it out of Units
+    # when the user deleted it (onDeviceRemoved): the widget would still look there
+    Devices[DeviceID_].Units.pop(Unit_, None)
 
     load_list_of_domoticz_widget(self, Devices)
 
