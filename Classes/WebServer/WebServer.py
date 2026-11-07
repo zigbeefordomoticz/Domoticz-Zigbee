@@ -120,7 +120,8 @@ class WebServer(object):
     from Classes.WebServer.rest_PluginUpgrade import (
         certified_devices_update, rest_certified_devices_update,
         rest_plugin_upgrade, rest_reload_device_conf)
-    from Classes.WebServer.rest_GreenPower import rest_zgp_device_raw
+    from Classes.WebServer.rest_GreenPower import (rest_zgp_device_raw,
+                                                   rest_zgp_pairing)
     from Classes.WebServer.rest_Provisioning import (rest_full_reprovisionning,
                                                      rest_new_hrdwr,
                                                      rest_rcv_nw_hrdwr)
@@ -210,6 +211,8 @@ class WebServer(object):
         self.fakeDevicesInPairingMode = 0
         # Plugin stores (Modules/database.load_plugin_stores), set by update_plugin_stores()
         self.PluginStores = {}
+        # Green Power pairing feed (Modules/greenPowerFeed.py), set by update_green_power_feed()
+        self.GreenPowerFeed = None
         self.IEEE2NWK = IEEE2NWK
         self.DeviceConf = DeviceConf
         self.Devices = Devices
@@ -277,6 +280,9 @@ class WebServer(object):
 
     def update_plugin_stores(self, plugin_stores):
         self.PluginStores = plugin_stores or {}
+
+    def update_green_power_feed(self, feed):
+        self.GreenPowerFeed = feed
         
     def update_groupManagement(self, groupmanagement):
         self.groupmgt = groupmanagement if groupmanagement else None

@@ -281,3 +281,34 @@ def build_plugin_9e02_frame_content(self, device):  # Green Power device removed
     frame_payload = _gp_ieee(device)
     frame_payload += "%04x" % device.nwk
     return encapsulate_plugin_frame("9e02", frame_payload, "%02x" % 0x00)
+
+
+# 9e03 flags
+GP_HEARD_KNOWN = 0x01          # the GPD is commissioned
+GP_HEARD_WINDOW_OPEN = 0x02    # the commissioning window was open on reception
+GP_HEARD_ENCRYPTED = 0x04      # not decrypted by the radio: the command id is ciphertext
+GP_HEARD_VIA_PROXY = 0x08      # tunneled by a proxy (router), not received by the coordinator
+GP_HEARD_RSSI = 0x10           # rssi field is meaningful
+
+
+def build_plugin_9e03_frame_content(self, ieee, command_id, flags, proxy_nwk, rssi, lqi):  # Green Power frame heard
+    # What a GPDF tells about the pairing in progress. Never its payload: a
+    # Commissioning payload carries the GPD key
+    frame_payload = "%016x" % ieee
+    frame_payload += "%02x" % (command_id & 0xFF)
+    frame_payload += "%02x" % flags
+    frame_payload += "%04x" % (0xFFFF if proxy_nwk is None else proxy_nwk)
+    frame_payload += "%02x" % ((rssi or 0) & 0xFF)
+    return encapsulate_plugin_frame("9e03", frame_payload, "%02x" % (lqi or 0x00))
+
+
+# 9e04 states
+GP_WINDOW_CLOSED = 0x00
+GP_WINDOW_OPENED = 0x01
+GP_WINDOW_DISABLED = 0x02      # pairing opened, Green Power commissioning not: GreenPowerEnable off
+
+
+def build_plugin_9e04_frame_content(self, state, seconds):  # Green Power commissioning window
+    frame_payload = "%02x" % state
+    frame_payload += "%04x" % (seconds & 0xFFFF)
+    return encapsulate_plugin_frame("9e04", frame_payload, "%02x" % 0x00)
