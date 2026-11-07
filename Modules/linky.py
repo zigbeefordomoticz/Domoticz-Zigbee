@@ -176,7 +176,7 @@ def linky_tarif_color_ntarf( self, nwkid, value ):
     if opt_tarif == "BASE":
         return BASE_LINKY_NTARF_TARIF_MATRIX.get(value, (3, f"NTARF: {value} Unknown Tarif"))
     
-    if opt_tarif in ( "HCHP 22h-6h", "H PLEINE/CREUSE"):
+    if opt_tarif in ( "HCHP 22h-6h", "H PLEINE/CREUSE", "H PLEINE-CREUSE"):
         return HCHP_LINKY_NTARF_TARIF_MATRIX.get(value, (3, f"NTARF: {value} Unknown Tarif"))
     
     if opt_tarif == "TEMPO":
