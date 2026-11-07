@@ -15,6 +15,7 @@ from time import time
 
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
+from Classes.WebServer.rest_GreenPower import gp_provisioning_entries
 from Modules.basicOutputs import (ZigatePermitToJoin, setExtendedPANID,
                                   start_Zigate, zigateBlueLed)
 from Modules.domoticzAbstractLayer import (domoticz_error_api,
@@ -55,6 +56,7 @@ def rest_new_hrdwr(self, verb, data, parameters):
         if len(self.DevicesInPairingMode):
             del self.DevicesInPairingMode
             self.DevicesInPairingMode = []
+        self.GreenPowerInPairingMode.clear()
         if not self.ControllerData:
             # Seems we are in None mode - Testing for ben
             self.fakeDevicesInPairingMode = 0
@@ -70,6 +72,7 @@ def rest_new_hrdwr(self, verb, data, parameters):
         if len(self.DevicesInPairingMode) != 0:
             del self.DevicesInPairingMode
             self.DevicesInPairingMode = []
+        self.GreenPowerInPairingMode.clear()
 
         if not self.ControllerData:
             # Seems we are in None mode - Testing for ben
@@ -129,6 +132,9 @@ def rest_rcv_nw_hrdwr(self, verb, data, parameters):
             self.DevicesInPairingMode.append(list(self.ListOfDevices.keys())[0])
             self.DevicesInPairingMode.append(list(self.ListOfDevices.keys())[1])
             self.DevicesInPairingMode.append(list(self.ListOfDevices.keys())[2])
+
+    # Green Power devices are not in ListOfDevices: built from their store
+    data["NewDevices"].extend(gp_provisioning_entries(self))
 
     domoticz_log_api("Assisted Pairing: Polling: %s" % str(self.DevicesInPairingMode))
     if len(self.DevicesInPairingMode) == 0:
