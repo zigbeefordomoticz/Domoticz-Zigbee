@@ -121,6 +121,7 @@ class WebServer(object):
     from Classes.WebServer.rest_PluginUpgrade import (
         certified_devices_update, rest_certified_devices_update,
         rest_plugin_upgrade, rest_reload_device_conf)
+    from Classes.WebServer.rest_GreenPower import rest_zgp_device_raw
     from Classes.WebServer.rest_Provisioning import (rest_full_reprovisionning,
                                                      rest_new_hrdwr,
                                                      rest_rcv_nw_hrdwr)
@@ -205,7 +206,11 @@ class WebServer(object):
         self.OTA = None
         self.ListOfDevices = ListOfDevices
         self.DevicesInPairingMode = []
+        # Green Power devices commissioned since the Provisioning page opened pairing: ieee → (time, nwk)
+        self.GreenPowerInPairingMode = {}
         self.fakeDevicesInPairingMode = 0
+        # Plugin stores (Modules/database.load_plugin_stores), set by update_plugin_stores()
+        self.PluginStores = {}
         self.IEEE2NWK = IEEE2NWK
         self.DeviceConf = DeviceConf
         self.Devices = Devices
@@ -267,6 +272,12 @@ class WebServer(object):
     def add_element_to_devices_in_pairing_mode( self, nwkid):
         if nwkid not in self.DevicesInPairingMode:
             self.DevicesInPairingMode.append( nwkid )
+
+    def add_green_power_device_in_pairing_mode(self, ieee, nwk):
+        self.GreenPowerInPairingMode.setdefault(ieee, (time.time(), nwk))
+
+    def update_plugin_stores(self, plugin_stores):
+        self.PluginStores = plugin_stores or {}
         
     def update_groupManagement(self, groupmanagement):
         self.groupmgt = groupmanagement if groupmanagement else None
