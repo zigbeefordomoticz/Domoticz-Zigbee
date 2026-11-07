@@ -183,8 +183,11 @@ except ImportError:
 from zigpy.backups import NetworkBackup
 
 from Classes.ZigpyTransport.greenPower import (
-    is_green_power_device, register_green_power_listener,
-    restore_green_power_devices)
+    is_green_power_device, register_green_power_listener, report_gp_packet,
+    report_gp_window, restore_green_power_devices)
+from Classes.ZigpyTransport.plugin_encoders import (GP_WINDOW_CLOSED,
+                                                    GP_WINDOW_DISABLED,
+                                                    GP_WINDOW_OPENED)
 from Classes.ZigpyTransport.instrumentation import write_capture_rx_frames
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8002_frame_content, build_plugin_8014_frame_content,
@@ -1189,6 +1192,9 @@ async def permit_gp(self, time_s: int) -> None:
 
     if not self.pluginconf.pluginConf.get("GreenPowerEnable") and (time_s or not green_power.is_commissioning):
         self.log.logging("TransportZigpy", "Debug", "permit_gp(%s) skipped, Green Power not enabled" % time_s)
+        if time_s:
+            # Shown on Admin → Provisioning: pairing is open, Green Power commissioning is not
+            report_gp_window(self, GP_WINDOW_DISABLED, time_s)
         return
 
     if time_s:
@@ -1197,6 +1203,19 @@ async def permit_gp(self, time_s: int) -> None:
         self.log.logging("TransportZigpy", "Status", "++ closing Green Power commissioning")
 
     await super(type(self),self).permit_gp(time_s)
+    report_gp_window(self, GP_WINDOW_OPENED if time_s else GP_WINDOW_CLOSED, time_s)
+
+
+def gp_packet_received(self, packet) -> None:
+    """
+    A Green Power frame (GPDF), received by the coordinator or tunneled by a proxy.
+
+    Overrides ControllerApplication.gp_packet_received() (zigpy > 2.3.0),
+    where every GPDF converges, to report it to the Green Power pairing feed
+    (greenPower.report_gp_packet(), which never raises) before zigpy handles it.
+    """
+    report_gp_packet(self, packet)
+    super(type(self), self).gp_packet_received(packet)
 
 
 def measure_execution_time(func):

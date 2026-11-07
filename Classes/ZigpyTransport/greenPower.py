@@ -27,6 +27,9 @@ nothing here blocks the event loop.
     device_removed(dev)        GPD removed            → 9e02
     gp_command_received        GPD command            → 9e01
 
+The pairing feed (report_gp_packet / report_gp_window, below) adds 9e03 and
+9e04.
+
 The application events also fire for Zigbee devices; they are ignored here.
 device_joined is not used: it fires before zigpy finalises the device, and
 device_initialized follows immediately with the final object.
@@ -39,8 +42,10 @@ import traceback
 import zigpy.device
 
 from Classes.ZigpyTransport.plugin_encoders import (
-    build_plugin_9e00_frame_content, build_plugin_9e01_frame_content,
-    build_plugin_9e02_frame_content)
+    GP_HEARD_ENCRYPTED, GP_HEARD_KNOWN, GP_HEARD_RSSI, GP_HEARD_VIA_PROXY,
+    GP_HEARD_WINDOW_OPEN, build_plugin_9e00_frame_content,
+    build_plugin_9e01_frame_content, build_plugin_9e02_frame_content,
+    build_plugin_9e03_frame_content, build_plugin_9e04_frame_content)
 
 # Absent from zigpy before 2.3.0
 GREEN_POWER_DEVICE = getattr(zigpy.device, "GreenPowerDevice", None)
@@ -112,6 +117,69 @@ class GreenPowerListener:
     def _log_error(self, event_name, device, error):
         self._app.log.logging("GreenPower", "Error", "Green Power %s for %s failed: %s\n%s" % (
             event_name, device, error, traceback.format_exc()))
+
+
+# ─── Pairing feed (Admin → Provisioning) ─────────────────────────────────────
+#
+# What the user cannot see without the logs while pairing a GPD: which GPDFs
+# reach the network, and whether the commissioning window is open.
+#
+#   report_gp_packet()  a GPDF, from AppGeneric.gp_packet_received()  → 9e03
+#   report_gp_window()  the window, from AppGeneric.permit_gp()       → 9e04
+#
+# A GPDF is reported only while the window is open, or when its GPD is not
+# commissioned: the commands of a paired GPD in daily use are not.
+
+
+def _gp_packet_ieee(packet):
+    """The EUI64 zigpy registers the GPD of a GPDF under (synthetic for a SrcID GPD)."""
+    import zigpy.zgp.types as zgp_t
+    import zigpy.zgp.util as zgp_util
+
+    if packet.application_id is zgp_t.ApplicationID.SrcID:
+        return None if packet.src_id is None else zgp_util.synthetic_ieee(packet.src_id)
+    return packet.ieee
+
+
+def report_gp_packet(app, packet):
+    """Report a GPDF zigpy received to the pairing feed. Never raises: zigpy must still get it."""
+    try:
+        import zigpy.types as t
+        import zigpy.zgp.types as zgp_t
+
+        ieee = _gp_packet_ieee(packet)
+        if ieee is None or packet.command_id is None:
+            return
+
+        known = is_green_power_device(app.devices.get(ieee))
+        green_power = getattr(app, "green_power", None)
+        window_open = bool(green_power is not None and green_power.is_commissioning)
+        if known and not window_open:
+            return
+
+        flags = GP_HEARD_KNOWN if known else 0
+        if window_open:
+            flags |= GP_HEARD_WINDOW_OPEN
+        if packet.security_status is zgp_t.SecurityStatus.Unprocessed and packet.security_level is zgp_t.SecurityLevel.Encrypted:
+            flags |= GP_HEARD_ENCRYPTED
+        if packet.gpp_short_addr is not None:
+            flags |= GP_HEARD_VIA_PROXY
+        if packet.rssi is not None:
+            flags |= GP_HEARD_RSSI
+
+        app.callBackFunction(build_plugin_9e03_frame_content(
+            app, t.uint64_t.deserialize(ieee.serialize())[0], int(packet.command_id), flags,
+            None if packet.gpp_short_addr is None else int(packet.gpp_short_addr), packet.rssi, packet.lqi))
+    except Exception as e:
+        app.log.logging("GreenPower", "Error", "Green Power pairing feed: GPDF not reported: %s\n%s" % (e, traceback.format_exc()))
+
+
+def report_gp_window(app, state, seconds=0):
+    """Report the commissioning window (GP_WINDOW_*) to the pairing feed."""
+    try:
+        app.callBackFunction(build_plugin_9e04_frame_content(app, state, seconds))
+    except Exception as e:
+        app.log.logging("GreenPower", "Error", "Green Power pairing feed: window not reported: %s\n%s" % (e, traceback.format_exc()))
 
 
 def register_green_power_listener(app):

@@ -201,6 +201,7 @@ from Modules.zigpyBackup import handle_zigpy_backup
 from Modules.greenPower import (green_power_widget_command,
                                 green_power_widget_removed,
                                 is_green_power_device_id)
+from Modules.greenPowerFeed import GP_FEED_ATTRIBUTE, GreenPowerFeed, gp_feed
 from Modules.greenPowerStore import gp_devices_for_zigpy
 from Modules.zigpy_preload import device_has_left_the_network
 from Zigbee.zdpCommands import (zdp_get_permit_joint_status,
@@ -296,6 +297,8 @@ class BasePlugin:
         self.StartupFolder = None
         self.DeviceListName = None
         self.PluginStores = {}
+        # Created here, before the transport and the WebServer use it from their threads
+        setattr(self, GP_FEED_ATTRIBUTE, GreenPowerFeed())
         self.pluginParameters = None
 
         self.PluginHealth = {}
@@ -1760,6 +1763,7 @@ def start_web_server(self, webserver_port, webserver_homefolder):
     if self.FirmwareVersion:
         self.webserver.update_firmware(self.FirmwareVersion)
     self.webserver.update_plugin_stores(self.PluginStores)
+    self.webserver.update_green_power_feed(gp_feed(self))
 
 
 def pingZigate(self):
