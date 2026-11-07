@@ -36,15 +36,22 @@ First version: On/Off (GPD commands Off / On / Toggle → cluster 0006 →
 Switch). Scenes, buttons, move/step, sensors: later.
 """
 
-from Modules.domoCreate import SIMPLE_WIDGET, set_default_value
+from Modules.domoCreate import (SIMPLE_WIDGET, createSwitchSelector,
+                                number_switch_selectors, off_hidden,
+                                selector_style, set_default_value)
 from Modules.domoMaj import maj_domo_widgets
 from Modules.domoticzAbstractLayer import (domo_create_api,
                                            domo_read_nValue_sValue,
                                            find_widget_unit_from_WidgetID,
                                            retreive_free_unit_for_widget)
 from Modules.greenPowerFeed import gp_feed, gp_src_id
+from Modules.greenPowerModels import gp_model_command, gp_models
 from Modules.greenPowerStore import (GP_WIDGET_CREATION_REQUESTS, gp_store,
                                      request_gp_store_flush)
+from Modules.switchSelectorWidgets import SWITCH_SELECTORS
+
+# Domoticz selector switch (Type, Subtype, Switchtype), as createDomoticzWidget() creates them
+SELECTOR_WIDGET = (244, 62, 18)
 
 GP_CONFIG_KEY = "GreenPower"
 
@@ -76,10 +83,19 @@ def _hex(value, digits):
 
 def find_gp_device_config(self, record):
     """
-    (model name, configuration) for a GPD store record, from certified JSON
-    (self.DeviceConf) or, as last resort, built from its declared commands.
+    (model name, configuration) for a GPD store record:
+
+    1. the device type the user picked before pairing (record "RequestedModel",
+       Conf/ZGPmodel, Modules/greenPowerModels.py);
+    2. certified JSON (self.DeviceConf);
+    3. as last resort, built from its declared commands.
+
     (None, None) when nothing applies.
     """
+    requested = record.get("RequestedModel")
+    if requested and requested in gp_models(self):
+        return requested, gp_models(self)[requested]
+
     device_id = _hex(record.get("device_id"), 2)
     manufacturer_id = _hex(record.get("manufacturer_id"), 4)
     model_id = _hex(record.get("model_id"), 4)
@@ -155,7 +171,7 @@ def create_gp_widgets(self, Devices, ieee):
         for widget_type in _widget_types(ep_conf):
             widget_idx = _create_gp_widget(self, Devices, ieee, nwk, ep, widget_type, nick_name)
             if widget_idx is not None:
-                cluster_type[str(widget_idx)] = SIMPLE_WIDGET[widget_type].get("ForceClusterType") or widget_type
+                cluster_type[str(widget_idx)] = SIMPLE_WIDGET.get(widget_type, {}).get("ForceClusterType") or widget_type
         if cluster_type:
             ep_records[ep] = {"ClusterType": cluster_type}
 
@@ -167,8 +183,16 @@ def create_gp_widgets(self, Devices, ieee):
 
 
 def _create_gp_widget(self, Devices, ieee, nwk, ep, widget_type, nick_name):
-    """Create one widget with the definition the Zigbee path uses for the same type (SIMPLE_WIDGET)."""
+    """
+    Create one widget with the definition the Zigbee path uses for the same type:
+    SIMPLE_WIDGET, or a selector of SWITCH_SELECTORS with its levels.
+    """
     widget_record = SIMPLE_WIDGET.get(widget_type)
+    selector_options = None
+    if widget_record is None and widget_type in SWITCH_SELECTORS and number_switch_selectors(widget_type) > 1:
+        selector_options = createSwitchSelector(self, number_switch_selectors(widget_type), DeviceType=widget_type,
+                                                OffHidden=off_hidden(widget_type), SelectorStyle=selector_style(widget_type))
+        widget_record = dict(zip(("Type", "Subtype", "Switchtype"), SELECTOR_WIDGET))
     if widget_record is None:
         self.log.logging("GreenPower", "Error", "Green Power device %s: widget type %s not supported for Green Power yet" % (ieee, widget_type),
                          nwk, {"Error code": "GPWIDGET-TYPE-01", "WidgetType": widget_type})
@@ -187,6 +211,7 @@ def _create_gp_widget(self, Devices, ieee, nwk, ep, widget_type, nick_name):
         Subtype_=widget_record.get("Subtype"),
         Switchtype_=widget_record.get("Switchtype"),
         Image=widget_record.get("Image"),
+        widgetOptions=selector_options,
     )
     if widget_idx is None or widget_idx == -1:
         self.log.logging("GreenPower", "Error", "Green Power device %s: Domoticz refused widget %s" % (ieee, widget_type),
@@ -201,17 +226,21 @@ def _create_gp_widget(self, Devices, ieee, nwk, ep, widget_type, nick_name):
 
 def update_gp_widgets(self, Devices, ieee, command_id):
     """Update the widgets of a GPD with a command it sent (9e01)."""
-    translation = GP_COMMAND_TO_ZCL.get(command_id)
-    if translation is None:
-        return
-
     store = gp_store(self)
     record = store.get(ieee) if store is not None else None
     if record is None:
         return
 
-    cluster, value = translation
     model_name = record.get("Model", "")
+    # A device type of Conf/ZGPmodel maps its own commands; the others use the On/Off set
+    if model_name in gp_models(self):
+        translation = gp_model_command(self, model_name, command_id)
+    else:
+        translation = GP_COMMAND_TO_ZCL.get(command_id)
+    if translation is None:
+        return
+
+    cluster, value = translation
     for ep, ep_record in (record.get("Ep") or {}).items():
         for widget_idx, widget_type in (ep_record.get("ClusterType") or {}).items():
             widget_value = _toggled_value(self, Devices, ieee, widget_idx) if value == TOGGLE else value

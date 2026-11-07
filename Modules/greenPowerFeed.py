@@ -25,6 +25,10 @@ stop. Events, newest last, in memory only (the last FEED_SIZE):
                 GPD is not told it is paired, the user takes it out of its
                 commissioning mode
 
+The feed also holds the device type the user picked for the window opened
+from the Green Power page (Modules/greenPowerModels.py): the GPD commissioned
+while it is open gets it. It is dropped when the window closes.
+
 Written from the forwarder thread (decoders) and the heartbeat (widgets),
 read from the Domoticz thread (WebServer): every access holds the lock.
 """
@@ -122,6 +126,7 @@ class GreenPowerFeed:
         self._events = deque(maxlen=size)
         self._seq = 0
         self._window = {"State": None, "Until": None}
+        self._model = None
 
     def add(self, event, now=None, **fields):
         with self._lock:
@@ -138,7 +143,23 @@ class GreenPowerFeed:
                 "State": state,
                 "Until": int(now + seconds) if state == "opened" and seconds else None,
             }
+            if state != "opened":
+                self._model = None
         return self.add("window", now=now, State=state, Seconds=seconds)
+
+    def set_pairing_model(self, model_name):
+        """The device type for the GPDs commissioned in the window about to open (None: automatic)."""
+        with self._lock:
+            self._model = model_name
+
+    def pairing_model(self, now=None):
+        """The device type picked for the open window, None once it has closed."""
+        now = time.time() if now is None else now
+        with self._lock:
+            until = self._window["Until"]
+            if self._model is not None and until is not None and now >= until:
+                self._model = None
+            return self._model
 
     def heard(self, ieee, command_id, flags, proxy, rssi, lqi, now=None):
         encrypted = bool(flags & HEARD_ENCRYPTED)
@@ -159,8 +180,12 @@ class GreenPowerFeed:
         )
 
     def snapshot(self, since=0, now=None):
-        """Window state and the events after `since` (a Seq), oldest first."""
+        """
+        Window state (with the seconds left, from the plugin clock), the device
+        type picked for it, and the events after `since` (a Seq), oldest first.
+        """
         now = time.time() if now is None else now
+        model = self.pairing_model(now)
         with self._lock:
             window = dict(self._window)
             events = [dict(e) for e in self._events if e["Seq"] > since]
@@ -168,7 +193,8 @@ class GreenPowerFeed:
         if window["State"] == "opened" and window["Until"] is not None and now >= window["Until"]:
             # zigpy closes the window on its own when it expires
             window = {"State": "closed", "Until": None}
-        return {"Window": window, "Seq": seq, "Events": events}
+        window["Remaining"] = max(0, int(window["Until"] - now)) if window["Until"] is not None else 0
+        return {"Window": window, "Model": model, "Seq": seq, "Events": events}
 
 
 def gp_feed(self):

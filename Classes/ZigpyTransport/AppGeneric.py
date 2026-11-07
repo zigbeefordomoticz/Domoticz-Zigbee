@@ -1258,6 +1258,30 @@ async def permit_gp(self, time_s: int) -> None:
     report_gp_window(self, GP_WINDOW_OPENED if time_s else GP_WINDOW_CLOSED, time_s)
 
 
+async def open_gp_commissioning(self, time_s: int) -> None:
+    """
+    Open or close (time_s=0) Green Power commissioning only, from the Green
+    Power page of Admin > Provisionning (PERMIT-GP, workerLoop.py).
+
+    Unlike permit_gp(), which zigpy's permit() calls on every Zigbee permit
+    join, this is an explicit request: 'GreenPowerEnable' does not gate it,
+    and the Zigbee network is not opened.
+    """
+    green_power = getattr(self, "green_power", None)
+    if green_power is None:
+        self.log.logging("TransportZigpy", "Error", "Green Power commissioning not available: zigpy without Green Power support",
+                         None, {"Error code": "GPWINDOW-OPEN-01"})
+        return
+
+    if time_s:
+        self.log.logging("TransportZigpy", "Status", "++ opening Green Power commissioning only for %s seconds" % time_s)
+    else:
+        self.log.logging("TransportZigpy", "Status", "++ closing Green Power commissioning")
+
+    await super(type(self), self).permit_gp(time_s)
+    report_gp_window(self, GP_WINDOW_OPENED if time_s else GP_WINDOW_CLOSED, time_s)
+
+
 def gp_packet_received(self, packet) -> None:
     """
     A Green Power frame (GPDF), received by the coordinator or tunneled by a proxy.

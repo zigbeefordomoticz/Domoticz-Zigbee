@@ -320,6 +320,30 @@ class TestWidgets:
         assert record["Ep"] == {"01": {"ClusterType": {"7": "Switch"}}} and record["Model"] == "GreenPower-OnOff"
         assert record["security_key"] == NEW_KEY.hex()
 
+    def test_commissioning_takes_the_type_picked_for_the_window(self, decoder, helpers, plugin, transport, gp_types):
+        feed = gp_feed_module().gp_feed(plugin)
+        feed.set_pairing_model("GreenPower-OnOff-Dim")
+        feed.window("opened", 240)
+
+        GreenPowerListener(transport).device_initialized(make_gpd(transport, gp_types))
+        decode_last(helpers, decoder, plugin, transport)
+
+        assert plugin.store.records[IEEE_HEX]["RequestedModel"] == "GreenPower-OnOff-Dim"
+
+    def test_a_device_with_widgets_keeps_its_type(self, decoder, helpers, plugin, transport, gp_types):
+        listener = GreenPowerListener(transport)
+        listener.device_initialized(make_gpd(transport, gp_types))
+        decode_last(helpers, decoder, plugin, transport)
+        plugin.store.records[IEEE_HEX].update({"Model": "GreenPower-OnOff", "Ep": {"01": {"ClusterType": {"7": "Switch"}}}})
+        feed = gp_feed_module().gp_feed(plugin)
+        feed.set_pairing_model("GreenPower-OnOff-Dim")
+        feed.window("opened", 240)
+
+        listener.device_reinterviewed(make_gpd(transport, gp_types, key=NEW_KEY))
+        decode_last(helpers, decoder, plugin, transport)
+
+        assert "RequestedModel" not in plugin.store.records[IEEE_HEX]
+
     def test_command_updates_the_widgets(self, decoder, helpers, plugin, transport, gp_types, widget_updates):
         dev = make_gpd(transport, gp_types)
         GreenPowerListener(transport).device_initialized(dev)
