@@ -17,6 +17,7 @@ import time
 import zigpy.application
 import zigpy.config as zigpy_conf
 import zigpy.types as zigpy_t
+import zigpy_znp.commands as c
 import zigpy_znp.commands.util
 import zigpy_znp.config as znp_conf
 import zigpy_znp.types as t
@@ -28,6 +29,11 @@ from Classes.ZigpyTransport.firmwareversionHelper import \
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8010_frame_content, build_plugin_8015_frame_content)
 from Modules.zigbeeVersionTable import ZNP_MODEL
+
+# Green Power endpoint and Green Power group (GP spec A.3.3.2.2, A.3.5.2.1). zigpy
+# only has them from 2.4 on (zigpy.zgp.types), so they are repeated here.
+GP_ENDPOINT = 0xF2
+GP_GROUP_ID = 0x0B84
 
 LOGGER = logging.getLogger(__name__)
 
@@ -126,6 +132,19 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
         self.log.logging("TransportZigpy", "Status", "++ ZNP Radio register any additional/specific Ep")
         await Classes.ZigpyTransport.AppGeneric.register_specific_endpoints(self)
+
+        await register_green_power_group(self)
+
+
+    async def _subscribe_to_multicast_group(self, group_id, endpoint_id):
+        """
+        Ask Z-Stack to put a coordinator endpoint in a group.
+
+        zigpy-znp does not implement this hook of ControllerApplication (zigpy >
+        2.3.0), so zigpy's Green Power manager, which joins the Green Power group
+        at startup and after each commissioning, did nothing on ZNP.
+        """
+        await znp_add_endpoint_to_group(self, endpoint_id, group_id)
 
 
     def get_device(self, ieee=None, nwk=None):
@@ -254,3 +273,46 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
     def is_deconz(self):
         return False
+
+
+async def register_green_power_group(self):
+    """
+    Put the Green Power endpoint (0xF2) in the Green Power group (0x0B84), at
+    every startup, as zigbee-herdsman does on Z-Stack.
+
+    The Green Power notifications that the proxies forward, the coordinator's
+    own proxy included, reach the coordinator on that group. zigpy only joins
+    it once a Green Power device is commissioned, so on ZNP the first Green
+    Power device could never be commissioned. Nothing to do with a zigpy
+    without Green Power, which registers no Green Power endpoint.
+    """
+    if getattr(self, "green_power", None) is None:
+        return
+
+    self.log.logging("TransportZigpy", "Status", "++ ZNP Radio join the Green Power group 0x%04x on Ep 0x%02x" % (GP_GROUP_ID, GP_ENDPOINT))
+    await znp_add_endpoint_to_group(self, GP_ENDPOINT, GP_GROUP_ID)
+
+
+async def znp_add_endpoint_to_group(self, endpoint, group_id):
+    """
+    Add a coordinator endpoint to a group of Z-Stack's APS group table, unless
+    it is already there (the table is kept in NV across restarts).
+
+    ZDO.ExtFindGroup answers status, group id, name length and name: status 0
+    means the endpoint is already in the group.
+    """
+    try:
+        found = await self._znp.request(c.ZDO.ExtFindGroup.Req(Endpoint=endpoint, GroupId=group_id))
+        if found.Group[:1] == bytes([t.Status.SUCCESS]):
+            self.log.logging("TransportZigpy", "Debug", "ZNP Ep 0x%02x already in group 0x%04x" % (endpoint, group_id))
+            return
+
+        await self._znp.request(
+            c.ZDO.ExtAddGroup.Req(Endpoint=endpoint, GroupId=group_id, GroupName=t.CharacterString("")),
+            RspStatus=t.Status.SUCCESS,
+        )
+        self.log.logging("TransportZigpy", "Status", "++ ZNP Ep 0x%02x added to group 0x%04x" % (endpoint, group_id))
+
+    except Exception as e:
+        self.log.logging("TransportZigpy", "Error", "ZNP: unable to add Ep 0x%02x to group 0x%04x: %s" % (endpoint, group_id, e),
+                         None, {"Error code": "ZNPGRP-ADD-01", "Endpoint": "0x%02x" % endpoint, "Group": "0x%04x" % group_id})
