@@ -299,13 +299,7 @@ def LoadDeviceList(self):
             # We need to adjust the Model to the right mode
             update_zlinky_device_model_if_needed(self, addr)
 
-    if self.pluginconf.pluginConf["resetReadAttributes"]:
-        self.pluginconf.pluginConf["resetReadAttributes"] = False
-        self.pluginconf.write_Settings()
-
-    if self.pluginconf.pluginConf["resetConfigureReporting"]:
-        self.pluginconf.pluginConf["resetConfigureReporting"] = False
-        self.pluginconf.write_Settings()
+    switch_off_one_shot_resets(self)
 
     load_new_param_definition(self)
     
@@ -1472,6 +1466,22 @@ def cleanup_ota(self, nwkid):
     if clean_ota:
         # Replace OTAUpgrade dict with the cleaned one
         self.ListOfDevices[nwkid]["OTAUpgrade"] = clean_ota
+
+# Resets applied to every device while the device list loads. Each one is
+# switched off afterwards, so it runs at one start only.
+ONE_SHOT_RESETS = ("resetReadAttributes", "resetConfigureReporting", "resetOTAUpdate")
+
+
+def switch_off_one_shot_resets(self):
+    """Switch off the one-shot resets once LoadDeviceList has applied them."""
+    applied = [name for name in ONE_SHOT_RESETS if self.pluginconf.pluginConf.get(name)]
+    if not applied:
+        return
+    for name in applied:
+        self.pluginconf.pluginConf[name] = False
+    self.log.logging("Database", "Status", "Applied once and switched off: %s" % ", ".join(applied))
+    self.pluginconf.write_Settings()
+
 
 def force_removal_ota_update(self, nwkid):
     """
