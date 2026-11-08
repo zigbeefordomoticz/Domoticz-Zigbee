@@ -859,9 +859,12 @@ def _is_device_tobe_switched_off(self, Devices, DeviceID_, Unit_):
 
 def device_touch_api(self, Devices, DeviceId_):
     """Touch all widgets for a device (skipping meter widgets)."""
-    self.log.logging("AbstractDz", "Debug", f"device_touch_api: {DeviceId_}")
+    nwkid = self.IEEE2NWK.get(DeviceId_)
+    self.log.logging(["AbstractDz", "WidgetTouch"], "Debug", f"device_touch_api: {DeviceId_}", nwkid)
 
     if not _device_exists(Devices, DeviceId_):
+        self.log.logging(["AbstractDz", "WidgetTouch"], "Debug",
+                         f"device_touch_api: {DeviceId_} not in Domoticz, nothing to touch", nwkid)
         return
 
     now = time.time()
@@ -870,18 +873,31 @@ def device_touch_api(self, Devices, DeviceId_):
 
 
 def _device_touch_unit_api(self, Devices, DeviceId_, Unit_, now):
-    """Touch one widget for a device."""
-    self.log.logging("AbstractDz", "Debug",
-                     f"_device_touch_unit_api: {DeviceId_} {Unit_}")
+    """Touch one widget for a device.
+
+    The widget is touched when its LastUpdate is more than DELAY_BETWEEN_TOUCH seconds old.
+    An empty or unreadable LastUpdate cannot be compared, so the widget is touched as well:
+    Touch() writes a fresh LastUpdate, and the next call compares normally.
+    """
+    nwkid = self.IEEE2NWK.get(DeviceId_)
+    self.log.logging(["AbstractDz", "WidgetTouch"], "Debug",
+                     f"_device_touch_unit_api: {DeviceId_} {Unit_}", nwkid)
 
     if not _device_unit_exists(Devices, DeviceId_, Unit_):
+        self.log.logging(["AbstractDz", "WidgetTouch"], "Debug",
+                         f"_device_touch_unit_api: {DeviceId_} {Unit_} unit not found, not touched", nwkid)
         return
 
     if _is_meter_widget(self, Devices, DeviceId_, Unit_):
+        self.log.logging(["AbstractDz", "WidgetTouch"], "Debug",
+                         f"_device_touch_unit_api: {DeviceId_} {Unit_} meter widget, not touched", nwkid)
         return
 
     last_time = Devices[DeviceId_].Units[Unit_].LastUpdate
     if not last_time:
+        self.log.logging(["AbstractDz", "WidgetTouch"], "Debug",
+                         f"_device_touch_unit_api: {DeviceId_} {Unit_} LastUpdate empty, touching", nwkid)
+        _touch_unit(self, Devices, DeviceId_, Unit_, nwkid)
         return
 
     try:
@@ -889,22 +905,50 @@ def _device_touch_unit_api(self, Devices, DeviceId_, Unit_, now):
             time.strptime(last_time, "%Y-%m-%d %H:%M:%S")
         )
     except (ValueError, OverflowError) as e:
-        self.log.logging("AbstractDz", "Error",
-                         f"_device_touch_unit_api - Cannot parse LastUpdate '{last_time}': {e}")
+        self.log.logging(
+            "AbstractDz", "Error",
+            f"_device_touch_unit_api - Cannot parse LastUpdate '{last_time}' of {DeviceId_} {Unit_}: {e}, touching",
+            nwkid,
+            context={"Error code": "TOUCH0001", "DeviceId": DeviceId_, "Unit": Unit_,
+                     "LastUpdate": last_time, "Exception": f"{type(e).__name__}: {e}"},
+        )
+        _touch_unit(self, Devices, DeviceId_, Unit_, nwkid)
         return
 
+    age = int(now - last_update_time_seconds)
     if now > (last_update_time_seconds + DELAY_BETWEEN_TOUCH):
-        try:
-            Devices[DeviceId_].Units[Unit_].Touch()
-        except Exception as e:
-            self.log.logging("AbstractDz", "Error",
-                             f"_device_touch_unit_api - Touch() raised: {e}")
+        self.log.logging(["AbstractDz", "WidgetTouch"], "Debug",
+                         f"_device_touch_unit_api: {DeviceId_} {Unit_} LastUpdate '{last_time}' ({age}s ago), touching", nwkid)
+        _touch_unit(self, Devices, DeviceId_, Unit_, nwkid)
+    else:
+        self.log.logging(["AbstractDz", "WidgetTouch"], "Debug",
+                         f"_device_touch_unit_api: {DeviceId_} {Unit_} LastUpdate '{last_time}' ({age}s ago) "
+                         f"within {DELAY_BETWEEN_TOUCH}s, not touched", nwkid)
+
+
+def _touch_unit(self, Devices, DeviceId_, Unit_, nwkid):
+    """Call Unit.Touch(), logging the LastUpdate Domoticz reports afterwards."""
+    unit = Devices[DeviceId_].Units[Unit_]
+    try:
+        unit.Touch()
+    except Exception as e:
+        self.log.logging(
+            "AbstractDz", "Error",
+            f"_device_touch_unit_api - Touch() raised for {DeviceId_} {Unit_}: {e}",
+            nwkid,
+            context={"Error code": "TOUCH0002", "DeviceId": DeviceId_, "Unit": Unit_,
+                     "Exception": f"{type(e).__name__}: {e}"},
+        )
+        return
+    self.log.logging(["AbstractDz", "WidgetTouch"], "Debug",
+                     f"_device_touch_unit_api: {DeviceId_} {Unit_} touched, LastUpdate now '{unit.LastUpdate}'", nwkid)
 
 
 def timeout_widget_api(self, Devices, DeviceId_, timeout_value):
     """ TimedOut all Device Widgets """
-    self.log.logging("AbstractDz", "Debug", f"timeout_widget_api: {DeviceId_}")
-    
+    nwkid = self.IEEE2NWK.get(DeviceId_)
+    self.log.logging(["AbstractDz", "WidgetTouch"], "Debug", f"timeout_widget_api: {DeviceId_} TimedOut={timeout_value}", nwkid)
+
     if not _device_exists(Devices, DeviceId_):
         return
 
