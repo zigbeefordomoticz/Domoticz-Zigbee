@@ -102,6 +102,12 @@ class TestSettingsTableConsistency(unittest.TestCase):
                 self.assertEqual(ALL[parent]["type"], "bool")
                 self.assertNotEqual(parent, param)
 
+    def test_group_settings_hide_without_group_management(self):
+        for theme in ("GroupManagement", "CommandTransition"):
+            for param, definition in SETTINGS[theme]["param"].items():
+                with self.subTest(param=param):
+                    self.assertEqual(definition.get("DependsOn"), "enablegroupmanagement")
+
     def test_default_within_range(self):
         for param, definition in ALL.items():
             if definition["type"] not in ("int", "float"):

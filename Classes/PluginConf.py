@@ -190,12 +190,12 @@ SETTINGS = {
     "CommandTransition": {
         "Order": 10,
         "param": {
-            "GrpfadingOff": { "type": "list", "list": {"default": 0, "50% fade, 12s to off": 1, "20% dim up, 1s off": 2, "No fade": 255}, "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, "Group": "GroupTransitions", },
-            "GrpmoveToHueSatu": { "type": "int", "default": 0, "current": None, "restart": 0, "hidden": True, "Advanced": False, },
-            "GrpmoveToColourTemp": { "type": "int", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, "Group": "GroupTransitions", "Unit": "ds", "Min": 0, "Max": 65535, "Step": 1, },
-            "GrpmoveToColourRGB": { "type": "int", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, "Group": "GroupTransitions", "Unit": "ds", "Min": 0, "Max": 65535, "Step": 1, },
-            "GrpmoveToLevel": { "type": "int", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, "Group": "GroupTransitions", "Unit": "ds", "Min": 0, "Max": 65535, "Step": 1, },
-            "GroupLevelWithOnOff": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": False, "Group": "GroupTransitions", },
+            "GrpfadingOff": { "type": "list", "list": {"default": 0, "50% fade, 12s to off": 1, "20% dim up, 1s off": 2, "No fade": 255}, "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, "Group": "GroupTransitions", "DependsOn": "enablegroupmanagement", },
+            "GrpmoveToHueSatu": { "type": "int", "default": 0, "current": None, "restart": 0, "hidden": True, "Advanced": False, "DependsOn": "enablegroupmanagement", },
+            "GrpmoveToColourTemp": { "type": "int", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, "Group": "GroupTransitions", "Unit": "ds", "Min": 0, "Max": 65535, "Step": 1, "DependsOn": "enablegroupmanagement", },
+            "GrpmoveToColourRGB": { "type": "int", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, "Group": "GroupTransitions", "Unit": "ds", "Min": 0, "Max": 65535, "Step": 1, "DependsOn": "enablegroupmanagement", },
+            "GrpmoveToLevel": { "type": "int", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, "Group": "GroupTransitions", "Unit": "ds", "Min": 0, "Max": 65535, "Step": 1, "DependsOn": "enablegroupmanagement", },
+            "GroupLevelWithOnOff": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": False, "Group": "GroupTransitions", "DependsOn": "enablegroupmanagement", },
         },
     },
     # Plugin Transport
