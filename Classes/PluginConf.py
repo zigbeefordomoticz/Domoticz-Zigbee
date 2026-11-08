@@ -359,6 +359,7 @@ SETTINGS = {
             "WidgetUpdate": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "WidgetLevel3": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "WidgetReset": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "WidgetTouch": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "WriteAttributes": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "ZLinky": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "ZosungIR": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
