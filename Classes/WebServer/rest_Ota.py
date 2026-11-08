@@ -577,11 +577,11 @@ def rest_ota_firmware_available(self, verb, data, parameters):
                     'url': url,
                 }
 
-                self.logging("Status", f"Processing OTA update for {zdevice_name}: {device}")
+                self.logging("Debug", f"Processing OTA update for {zdevice_name}: {device}")
                 _fwAvail.append(device)
 
         # Log collected firmware availability information
-        self.logging("Status", f"Collected OTA firmware availability: {_fwAvail}")
+        self.logging("Debug", f"Collected OTA firmware availability: {_fwAvail}")
 
         # Include firmware data in the response
         _response["Data"] = json.dumps(_fwAvail, sort_keys=True)
