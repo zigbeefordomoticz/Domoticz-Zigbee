@@ -109,7 +109,7 @@ SETTINGS = {
             "ConfigureReportingChunk": { "type": "int", "default": 3, "current": None, "restart": 0, "hidden": False, "Advanced": True, "Group": "PairingPace", "Min": 1, "Max": 7, "Step": 1, },
             "AqaraOppleBulbMode": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True, "Group": "ManufacturerModes", },
             "reenforcementWiser": { "type": "int", "default": 300, "current": None, "restart": 0, "hidden": True, "Advanced": True, },
-            "ReadAttributeChunk": { "type": "int", "default": 10, "current": None, "restart": 0, "hidden": False, "Advanced": True, "Group": "PairingPace", },
+            "ReadAttributeChunk": { "type": "int", "default": 3, "current": None, "restart": 0, "hidden": False, "Advanced": True, "Group": "PairingPace", "Min": 1, "Max": 7, "Step": 1, },
             "ReadAttributeChunkWhenPairing": { "type": "int", "default": 3, "current": None, "restart": 0, "hidden": False, "Advanced": True, "Group": "PairingPace", "Min": 1, "Max": 7, "Step": 1, },
             "ZiGateConfigureReporting": { "type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,"ZigpyRadio": "", "Group": "ManufacturerModes", },
             "bindingDelay": { "type": "float","default": 0.75,"current": None,"restart": 0,"hidden": False,"Advanced": True, "Group": "PairingPace", "Unit": "s", "Min": 0, "Max": 5, "Step": 0.05, },
