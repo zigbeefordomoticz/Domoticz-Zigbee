@@ -142,7 +142,7 @@ SETTINGS = {
             "forcePassiveWidget": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True, "Group": "WidgetsLogging", },
             "allowForceCreationDomoDevice": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": True, "Advanced": True, },
             "ForceDeviceTimedOut_afterXhours": { "type": "int", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True, "Group": "Health", "Unit": "h", "Min": 0, "Max": 720, "Step": 1, },
-            "HealthTimeOut": { "type": "int", "default": 21600, "current": None, "restart": 0, "hidden": False, "Advanced": True, "Group": "Health", "Unit": "s", "Min": 600, "Max": 604800, "Step": 60, },
+            "HealthTimeOut": { "type": "int", "default": 21600, "current": None, "restart": 0, "hidden": False, "Advanced": True, "Group": "Health", "Unit": "s", "Min": 0, "Max": 604800, "Step": 60, },
             "resetPluginDS": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": True, "Advanced": True, },
             "resetConfigureReporting": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "Group": "OneTimeResets", "OneShot": True, },
             "checkConfigurationReporting": { "type": "int", "default": 75600, "current": None, "restart": 0, "hidden": False, "Advanced": True, "Group": "ReportingBinding", "Unit": "s", "Min": 0, "Max": 604800, "Step": 60, },

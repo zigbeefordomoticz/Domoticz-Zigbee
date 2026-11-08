@@ -148,6 +148,12 @@ class TestSettingsTableConsistency(unittest.TestCase):
                     if key in definition:
                         self.assertIsInstance(definition[key], str)
 
+    def test_zero_switches_off_where_the_plugin_allows_it(self):
+        # 0 disables these checks in the plugin, so the range must accept it
+        for param in ("HealthTimeOut", "ForceDeviceTimedOut_afterXhours", "checkConfigurationReporting"):
+            with self.subTest(param=param):
+                self.assertEqual(ALL[param].get("Min"), 0)
+
     def test_one_shot_resets(self):
         one_shots = sorted(param for param, definition in ALL.items() if definition.get("OneShot"))
         self.assertEqual(one_shots, ["resetConfigureReporting", "resetOTAUpdate", "resetReadAttributes"])
