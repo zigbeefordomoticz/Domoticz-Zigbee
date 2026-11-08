@@ -307,14 +307,14 @@ def Update_Battery_Device( self, Devices, NwkId, BatteryLvl, ):
      
 
 def timedOutDevice(self, Devices, NwkId=None, MarkTimedOut=True):
-    self.log.logging("WidgetLevel3", "Debug", f"timedOutDevice Object {NwkId} {MarkTimedOut}")
+    self.log.logging(["WidgetLevel3", "WidgetTouch"], "Debug", f"timedOutDevice Object {NwkId} {MarkTimedOut}", NwkId)
 
     device_info = self.ListOfDevices.get(NwkId, {})
     if not device_info.get("IEEE") or device_info.get("Health") == "Disabled":
         return
 
     device_info["Health"] = "TimedOut" if MarkTimedOut else "Live"
-    self.log.logging("WidgetLevel3", "Debug", f"timedOutDevice Object {NwkId} MarkTimedOut: {MarkTimedOut}")
+    self.log.logging(["WidgetLevel3", "WidgetTouch"], "Debug", f"timedOutDevice Object {NwkId} MarkTimedOut: {MarkTimedOut}", NwkId)
 
     _IEEE = device_info["IEEE"]
     timed_out = domo_read_TimedOut(self, Devices, _IEEE)
@@ -342,22 +342,25 @@ def lastSeenUpdate(self, Devices, NwkId=None):
     device_data_stamp = device_data.get( 'Stamp')
     device_data_stamp.setdefault("LastSeen", 0)
     if device_data_stamp.get("LastSeen") and now < ( int(device_data_stamp.get("LastSeen")) + DELAY_BETWEEN_TOUCH):
-        self.log.logging("WidgetLevel3", "Debug", f"lastSeenUpdate Nwkid {NwkId} too early {device_data_stamp.get('LastSeen')}")     
+        self.log.logging(["WidgetLevel3", "WidgetTouch"], "Debug", f"lastSeenUpdate Nwkid {NwkId} too early {device_data_stamp.get('LastSeen')}", NwkId)
         return
 
     device_data_stamp["LastSeen"] = now
     _IEEE = device_data.get("IEEE", "")
 
     if not is_domoticz_touch(self):
-        self.log.logging("WidgetLevel3", "Debug", f"Not the good Domoticz level for Touch {self.VersionNewFashion} {self.DomoticzMajor} {self.DomoticzMinor}", NwkId)
+        self.log.logging(["WidgetLevel3", "WidgetTouch"], "Debug", f"Not the good Domoticz level for Touch {self.VersionNewFashion} {self.DomoticzMajor} {self.DomoticzMinor}", NwkId)
         return
-    
-    self.log.logging("WidgetLevel3", "Debug", f"lastSeenUpdate Nwkid {NwkId} DeviceId {_IEEE}")
+
+    self.log.logging(["WidgetLevel3", "WidgetTouch"], "Debug", f"lastSeenUpdate Nwkid {NwkId} DeviceId {_IEEE}", NwkId)
 
     if domo_read_TimedOut(self, Devices, _IEEE):
-        timeout_widget_api(self, Devices, _IEEE, 0) 
-    else:
-        device_touch_api(self, Devices, _IEEE)
+        # The device is back: clear the TimedOut flag, and touch the widgets too. Domoticz keeps
+        # TimedOut in memory only, so clearing it does not refresh LastUpdate, and Stamp.LastSeen
+        # set above holds the next touch back for DELAY_BETWEEN_TOUCH.
+        timeout_widget_api(self, Devices, _IEEE, 0)
+
+    device_touch_api(self, Devices, _IEEE)
 
 
 def GetType(self, Addr, Ep):

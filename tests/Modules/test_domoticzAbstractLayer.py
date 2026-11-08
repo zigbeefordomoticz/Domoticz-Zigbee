@@ -1129,18 +1129,59 @@ class TestDeviceTouchApi(unittest.TestCase):
         domo.device_touch_api(obj, devices, "ieee-1")
         self.assertFalse(devices["ieee-1"].Units[1]._touched)
 
-    def test_malformed_last_update_does_not_raise(self):
+    def test_malformed_last_update_touches_and_reports(self):
+        # A LastUpdate that cannot be compared must not block the touch forever:
+        # Touch() writes a fresh one. The bad value is reported as TOUCH0001.
         obj = _make_self()
         devices = _make_devices(("ieee-1", [(1, {})]))
         devices["ieee-1"].Units[1].LastUpdate = "not-a-date"
-        # Must not raise
         domo.device_touch_api(obj, devices, "ieee-1")
+        self.assertTrue(devices["ieee-1"].Units[1]._touched)
+        errors = [c for c in obj.log.logging.call_args_list if c.args[1] == "Error"]
+        self.assertEqual(len(errors), 1)
+        self.assertEqual(errors[0].kwargs["context"]["Error code"], "TOUCH0001")
 
-    def test_empty_last_update_does_not_raise(self):
+    def test_empty_last_update_touches(self):
         obj = _make_self()
         devices = _make_devices(("ieee-1", [(1, {})]))
         devices["ieee-1"].Units[1].LastUpdate = ""
         domo.device_touch_api(obj, devices, "ieee-1")
+        self.assertTrue(devices["ieee-1"].Units[1]._touched)
+        errors = [c for c in obj.log.logging.call_args_list if c.args[1] == "Error"]
+        self.assertEqual(errors, [])
+
+    def test_touch_exception_is_reported(self):
+        obj = _make_self()
+        devices = _make_devices(("ieee-1", [(1, {})]))
+        devices["ieee-1"].Units[1].LastUpdate = "2000-01-01 00:00:00"
+        devices["ieee-1"].Units[1].Touch = MagicMock(side_effect=RuntimeError("boom"))
+        domo.device_touch_api(obj, devices, "ieee-1")
+        errors = [c for c in obj.log.logging.call_args_list if c.args[1] == "Error"]
+        self.assertEqual(len(errors), 1)
+        self.assertEqual(errors[0].kwargs["context"]["Error code"], "TOUCH0002")
+
+    def test_recent_last_update_logs_not_touched(self):
+        obj = _make_self()
+        devices = _make_devices(("ieee-1", [(1, {})]))
+        devices["ieee-1"].Units[1].LastUpdate = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        domo.device_touch_api(obj, devices, "ieee-1")
+        messages = [c.args[2] for c in obj.log.logging.call_args_list]
+        self.assertTrue(any("not touched" in m for m in messages), messages)
+
+    def test_touch_logs_go_to_widgettouch_category_with_nwkid(self):
+        # The touch decision is logged under WidgetTouch, next to the existing AbstractDz
+        # category, and carries the nwkid so MatchingNwkId filters on the device.
+        obj = _make_self()
+        obj.IEEE2NWK = {"ieee-1": "1f55"}
+        devices = _make_devices(("ieee-1", [(1, {})]))
+        devices["ieee-1"].Units[1].LastUpdate = "2000-01-01 00:00:00"
+        domo.device_touch_api(obj, devices, "ieee-1")
+        debug_calls = [c for c in obj.log.logging.call_args_list if c.args[1] == "Debug"]
+        self.assertTrue(debug_calls)
+        for c in debug_calls:
+            self.assertEqual(c.args[0], ["AbstractDz", "WidgetTouch"])
+            self.assertEqual(c.args[3], "1f55")
+        self.assertTrue(any("touched, LastUpdate now" in c.args[2] for c in debug_calls))
 
 
 # ---------------------------------------------------------------------------
