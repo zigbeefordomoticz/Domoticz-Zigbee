@@ -123,3 +123,68 @@ def test_metering_hex_string_values():
         assert value == 0.1, value
         """
     )
+
+
+# compute_metering_conso() asks the device for 0x0300/0x0301/0x0302 only when a
+# value is still needed for the attribute being decoded. It used to re-read on
+# every report when the model overrode the Summation pair but not the Power pair
+# (certified TS011F-plug), and when the device answered 0x86 Unsupported Attribute.
+READ_CHECK = """
+def read_count(conf, stored, statuses=None, attr_id="0000"):
+    zch.ReadAttributeRequest_0702_multiplier_divisor.reset_mock()
+    p = make_plugin("0702", dict(stored))
+    p.ListOfDevices["1234"]["Model"] = "TS011F-plug"
+    if conf is not None:
+        p.DeviceConf = {"TS011F-plug": conf}
+    if statuses:
+        p.ListOfDevices["1234"]["ReadAttributes"] = {"Ep": {"01": {"0702": {
+            "TimeStamp": 0, "iSQN": {}, "Attributes": dict(statuses), "ZigateRequest": {}}}}}
+    zch.compute_metering_conso(p, "1234", "01", "0702", attr_id, 100)
+    return zch.ReadAttributeRequest_0702_multiplier_divisor.call_count
+
+TS011F = {"MeteringUnit": "Unitless", "SummationMeteringMultiplier": 10, "SummationMeteringDivisor": 1}
+UNSUPPORTED = {"0300": "00", "0301": "86", "0302": "86"}
+"""
+
+
+def _run_read_check(snippet):
+    return _run(READ_CHECK + textwrap.dedent(snippet))
+
+
+def test_metering_no_read_when_overrides_cover_the_attribute():
+    _run_read_check(
+        """
+        # Summation report, Summation pair overridden: nothing to read, Power pair irrelevant
+        assert read_count(TS011F, {"0300": "kW"}) == 0
+        assert read_count(TS011F, {}) == 0
+        # Same configuration, Power report: the Power pair is not overridden and not stored
+        assert read_count(TS011F, {"0300": "kW"}, attr_id="0400") == 1
+        """
+    )
+
+
+def test_metering_no_read_after_unsupported_attribute():
+    _run_read_check(
+        """
+        # Field case (TS011F _TZ3000_ynmowqk2): 0x0301/0x0302 answered 0x86
+        assert read_count(TS011F, {"0300": "kW"}, UNSUPPORTED, attr_id="0400") == 0
+        assert read_count(None, {"0300": "kW"}, UNSUPPORTED) == 0
+        # Any error status is final, as for normalizedReadAttributeReq, which skips such attributes
+        assert read_count(None, {"0300": "kW"}, {"0301": "86", "0302": "c3"}) == 0
+        """
+    )
+
+
+def test_metering_read_until_values_are_known():
+    _run_read_check(
+        """
+        # No configuration, nothing stored, never asked: read
+        assert read_count(None, {}) == 1
+        assert read_count(None, {"0300": 0}) == 1
+        # Everything stored: no read
+        assert read_count(None, {"0300": 0, "0301": 1, "0302": 1000}) == 0
+        # Other attribute id (PC321 per-phase power): no override applies, stored values are needed
+        assert read_count(TS011F, {"0300": 0, "0301": 1, "0302": 1000}, attr_id="2000") == 0
+        assert read_count(TS011F, {"0300": 0}, attr_id="2000") == 1
+        """
+    )
