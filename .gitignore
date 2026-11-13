@@ -17,6 +17,8 @@ Data/ZigateGroupsConfig**
 Data/Zigate.json
 Data/*.backup**
 Data/zigpy_persistent**
+Data/GreenPowerDevices-*
+Data/Z4D_Scenes-*
 www/zigate/reports/*
 Logs/*
 Reports/*
