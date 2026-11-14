@@ -145,6 +145,8 @@ from Classes.NetworkEnergy import NetworkEnergy
 from Classes.NetworkMap import NetworkMap
 from Classes.OTA import OTAManagement
 from Classes.PluginConf import PluginConf
+from Classes.SceneManagement import SceneManagement
+from Classes.SceneSelector import SceneSelector
 from Classes.ThreadSafeDeviceDict import ThreadSafeDeviceDict
 from Classes.TransportStats import TransportStatistics
 from Classes.WebServer.WebServer import WebServer
@@ -160,7 +162,8 @@ from Modules.checkingUpdate import (is_internet_available,
 from Modules.command import domoticz_command
 from Modules.database import (LoadDeviceList, flush_plugin_listofdevice,
                               checkDevices2LOD, checkListOfDevice2Devices,
-                              import_local_device_conf, load_plugin_stores)
+                              SCENES_STORE, import_local_device_conf,
+                              load_plugin_stores)
 from Modules.domoticzAbstractLayer import (
     domo_read_Name, load_list_of_domoticz_widget,
     retrieve_widgetid_from_deviceId_unit)
@@ -198,6 +201,12 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_set_certificate, zigate_set_mode)
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
+from Modules.greenPower import (green_power_widget_command,
+                                green_power_widget_removed,
+                                is_green_power_device_id)
+from Modules.greenPowerFeed import GP_FEED_ATTRIBUTE, GreenPowerFeed, gp_feed
+from Modules.greenPowerModels import gp_models, load_gp_models
+from Modules.greenPowerStore import gp_devices_for_zigpy
 from Modules.zigpy_preload import device_has_left_the_network
 from Zigbee.zdpCommands import (zdp_get_permit_joint_status,
                                 zdp_NWK_address_request)
@@ -256,6 +265,7 @@ class BasePlugin:
         self.configureReporting = None
         self.ControllerLink= None
         self.groupmgt = None
+        self.scenemgt = None
         self.networkmap = None
         self.zigpy_topology = None
         self.associated_devices_scan = None
@@ -292,6 +302,8 @@ class BasePlugin:
         self.StartupFolder = None
         self.DeviceListName = None
         self.PluginStores = {}
+        # Created here, before the transport and the WebServer use it from their threads
+        setattr(self, GP_FEED_ATTRIBUTE, GreenPowerFeed())
         self.pluginParameters = None
 
         self.PluginHealth = {}
@@ -573,6 +585,9 @@ class BasePlugin:
 
         # Import Zcl Cluster definitions
         load_zcl_cluster(self)
+
+        # Green Power device types (Conf/ZGPmodel)
+        load_gp_models(self)
         
         # Import Certified Device Configuration
         import_local_device_conf(self)
@@ -794,7 +809,10 @@ class BasePlugin:
 
             self.log.logging("Plugin", "Debug", f"ListOfDevices :After REMOVE {self.ListOfDevices}")
   
-        elif self.groupmgt and DeviceID in self.groupmgt.ListOfGroups:
+        elif is_green_power_device_id(self, DeviceID):
+            green_power_widget_removed(self, Devices, DeviceID, Unit)
+
+        elif self.groupmgt and self.groupmgt.is_group_widget(DeviceID, Unit):
             self.log.logging("Plugin", "Status", f"Request device {DeviceID} to be removed from Group(s)")
             self.groupmgt.FullRemoveOfGroup(Unit, DeviceID)
 
@@ -864,6 +882,11 @@ class BasePlugin:
 
     def zigpy_chk_upd_device(self, ieee, nwkid ):
         reconcile_ieee_nwkid(self, nwkid, ieee)
+
+
+    def zigpy_get_all_gp_devices(self):
+        """Return the Green Power device store records, for restoring into zigpy at startup."""
+        return gp_devices_for_zigpy(self)
 
 
     def zigpy_get_all_devices(self):
@@ -956,10 +979,19 @@ class BasePlugin:
             # Command belongs to a end node
             domoticz_command(self, Devices, DeviceID, Unit, self.IEEE2NWK[ DeviceID], Command, Level, Color)
 
+        elif self.groupmgt and self.groupmgt.is_scene_selector(DeviceID, Unit):
+            # On the DeviceID of a group, and never a command for the group: left in Domoticz, it does nothing
+            self.log.logging("Command", "Log", "Command: %s/%s to Scene Selector: %s" % (Command, Level, DeviceID))
+            if self.scenemgt:
+                self.scenemgt.selector_command(DeviceID, Command, Level)
+
         elif self.groupmgt and DeviceID in self.groupmgt.ListOfGroups:
             # Command belongs to a Zigate group
             self.log.logging( "Command", "Log", "Command: %s/%s/%s to Group: %s" % (Command, Level, Color, DeviceID), )
             self.groupmgt.processCommand(Unit, DeviceID, Command, Level, Color)
+
+        elif is_green_power_device_id(self, DeviceID):
+            green_power_widget_command(self, DeviceID, Unit, Command)
 
         elif DeviceID.find("Zigate-01-") != -1:
             self.log.logging("Command", "Debug", "onCommand - Command adminWidget: %s " % Command)
@@ -1048,6 +1080,9 @@ class BasePlugin:
         # Group Management
         if self.groupmgt:
             self.groupmgt.hearbeat_group_mgt()
+
+        if self.scenemgt:
+            self.scenemgt.heartbeat()
 
         if self.flush_list_of_devices:
             # If triggered / result of remap_device_nwkid()
@@ -1317,7 +1352,8 @@ def _start_zigpy_backend(self, backend_key):
         self.HardwareID,
         radio_lib,
         SerialPort,
-        communication_specifics
+        communication_specifics,
+        zigpy_get_all_gp_devices=self.zigpy_get_all_gp_devices,
         )
 
     self.ControllerLink.open_cie_connection()
@@ -1552,6 +1588,10 @@ def zigateInit_Phase3(self):
         self.log.logging("Plugin", "Status", "Z4D starts Group Management")
         start_GrpManagement(self, Parameters["HomeFolder"])
 
+    # Enable native Zigbee scenes
+    if self.scenemgt is None and self.pluginconf.pluginConf.get("enableNativeScenes"):
+        start_SceneManagement(self)
+
     # Create Network Energy object
     if self.networkenergy is None:
         self.networkenergy = NetworkEnergy(
@@ -1645,6 +1685,19 @@ def zigateInit_Phase3(self):
         self.log.logging("Plugin", "Log", "EnableTraceMalloc is enabled, starting tracemalloc with a stack depth of 25")
         tracemalloc.start(TRACE_MALLOC_MAX_DEPTH)
         self._snapshot_enabled = True
+
+
+def start_SceneManagement(self):
+    """Scenes live on groups, and go through the zigpy radios only."""
+    if self.groupmgt is None or self.zigbee_communication != "zigpy":
+        self.log.logging("Plugin", "Log", "enableNativeScenes needs Group Management and a zigpy radio: scenes are not started")
+        return
+
+    self.log.logging("Plugin", "Status", "Z4D starts native Zigbee scenes")
+    self.scenemgt = SceneManagement(self, self.PluginStores[SCENES_STORE], SceneSelector(self))
+    self.groupmgt.scenemgt = self.scenemgt
+    if self.webserver:
+        self.webserver.update_sceneManagement(self.scenemgt)
 
 
 def start_GrpManagement(self, homefolder):
@@ -1743,6 +1796,9 @@ def start_web_server(self, webserver_port, webserver_homefolder):
     )
     if self.FirmwareVersion:
         self.webserver.update_firmware(self.FirmwareVersion)
+    self.webserver.update_plugin_stores(self.PluginStores)
+    self.webserver.update_green_power_feed(gp_feed(self))
+    self.webserver.update_green_power_models(gp_models(self))
 
 
 def pingZigate(self):

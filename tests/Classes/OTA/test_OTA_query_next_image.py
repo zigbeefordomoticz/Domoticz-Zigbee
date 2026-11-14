@@ -230,7 +230,7 @@ def test_online_index_hit_is_reported_once(ota, radio):
 
     assert _response(radio) == (NO_IMAGE_AVAILABLE,)
     assert ota.ListOfDevices[DEVICE_NWKID]["OTAUpdate"] == {
-        0x2203: {"currentversion": str(0x01000000), "newestversion": str(0x02000000), "url": "https://example.invalid/bulb.ota"}
+        str(0x2203): {"currentversion": str(0x01000000), "newestversion": str(0x02000000), "url": "https://example.invalid/bulb.ota"}
     }
     assert ota.zigbee_ota_found_in_index == [(0x117C, 0x2203, 0x01000000)]
 

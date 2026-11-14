@@ -41,6 +41,7 @@ import Modules.tools
 from Classes.AdminWidgets import ADMIN_WIDGET_PREFIXES
 from Classes.PluginStore import PluginStore
 from Modules.domoticzAbstractLayer import getConfigItem, setConfigItem
+from Modules.greenPowerStore import GP_STORE_NAME, GP_STORE_VERSION, gp_store
 from Modules.manufacturer_code import check_and_update_manufcode
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_CUSTOM_CONFIGURE_REPORTING,
@@ -55,7 +56,12 @@ PLUGIN_DATABASE_RECORD_VERSION = 4
 # Record stores persisted next to ListOfDevices (Classes/PluginStore.py), as
 # (name, version, upgrade): a feature whose records must not live in
 # ListOfDevices declares its store here.
-PLUGIN_STORES = ()
+SCENES_STORE = "Z4D_Scenes"
+# (name, record format version, upgrade callable or None)
+PLUGIN_STORES = (
+    (GP_STORE_NAME, GP_STORE_VERSION, None),
+    (SCENES_STORE, 1, None),
+)
 
 CIE_ATTRIBUTES = {
     "Version", 
@@ -81,6 +87,7 @@ MANDATORY_ATTRIBUTES = (
     "ColorInfos",
     "ClusterType",
     "ConfigSource",
+    "SceneTable",
     "DeviceType",
     "Ep",
     "Epv2",
@@ -292,13 +299,7 @@ def LoadDeviceList(self):
             # We need to adjust the Model to the right mode
             update_zlinky_device_model_if_needed(self, addr)
 
-    if self.pluginconf.pluginConf["resetReadAttributes"]:
-        self.pluginconf.pluginConf["resetReadAttributes"] = False
-        self.pluginconf.write_Settings()
-
-    if self.pluginconf.pluginConf["resetConfigureReporting"]:
-        self.pluginconf.pluginConf["resetConfigureReporting"] = False
-        self.pluginconf.write_Settings()
+    switch_off_one_shot_resets(self)
 
     load_new_param_definition(self)
     
@@ -781,6 +782,11 @@ def checkListOfDevice2Devices(self, Devices):
         self.log.logging("Database", "Debug", f"checkListOfDevice2Devices - {widget_idx} {device_id} {widget_name}")
 
         if len(device_id) == 4 or any(device_id.startswith(p) for p in ADMIN_WIDGET_PREFIXES):
+            continue
+
+        gp_devices = gp_store(self)
+        if gp_devices is not None and device_id in gp_devices:
+            # Green Power device widget: the GPD is in the Green Power device store, not in ListOfDevices
             continue
 
         if device_id not in self.IEEE2NWK:
@@ -1460,6 +1466,22 @@ def cleanup_ota(self, nwkid):
     if clean_ota:
         # Replace OTAUpgrade dict with the cleaned one
         self.ListOfDevices[nwkid]["OTAUpgrade"] = clean_ota
+
+# Resets applied to every device while the device list loads. Each one is
+# switched off afterwards, so it runs at one start only.
+ONE_SHOT_RESETS = ("resetReadAttributes", "resetConfigureReporting", "resetOTAUpdate")
+
+
+def switch_off_one_shot_resets(self):
+    """Switch off the one-shot resets once LoadDeviceList has applied them."""
+    applied = [name for name in ONE_SHOT_RESETS if self.pluginconf.pluginConf.get(name)]
+    if not applied:
+        return
+    for name in applied:
+        self.pluginconf.pluginConf[name] = False
+    self.log.logging("Database", "Status", "Applied once and switched off: %s" % ", ".join(applied))
+    self.pluginconf.write_Settings()
+
 
 def force_removal_ota_update(self, nwkid):
     """

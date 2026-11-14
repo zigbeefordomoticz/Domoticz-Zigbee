@@ -106,11 +106,30 @@ def test_declared_store_is_loaded_flushed_with_the_device_list_and_reloaded():
 def test_no_store_declared_leaves_the_flush_unchanged():
     _run(
         """
-        assert database.PLUGIN_STORES == ()
+        database.PLUGIN_STORES = ()
         with tempfile.TemporaryDirectory() as tmp:
             p = make_plugin(tmp)
             database.load_plugin_stores(p)
             assert p.PluginStores == {}
+
+            database.flush_plugin_listofdevice(p)
+
+            assert sorted(os.listdir(tmp)) == ["DeviceList-1.txt"]
+            assert p.log.errors() == []
+        """
+    )
+
+
+def test_green_power_store_declared_and_written_only_once_used():
+    # An install without Green Power device gets no new file
+    _run(
+        """
+        from Modules.greenPowerStore import GP_STORE_NAME, GP_STORE_VERSION
+        assert (GP_STORE_NAME, GP_STORE_VERSION, None) in database.PLUGIN_STORES
+        with tempfile.TemporaryDirectory() as tmp:
+            p = make_plugin(tmp)
+            database.load_plugin_stores(p)
+            assert p.PluginStores[GP_STORE_NAME].writable
 
             database.flush_plugin_listofdevice(p)
 

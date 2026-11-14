@@ -13,12 +13,22 @@
 import json
 from time import time
 
+from Classes.GroupMgtv2.GrpErrorCodes import GroupRequestError
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
 from Modules.domoticzAbstractLayer import (
     domo_browse_widgets, domo_read_Device_Idx, domo_read_Name,
     domoticz_error_api, retrieve_widgetid_from_deviceId_unit)
 from Modules.tools import mainPoweredDevice
+
+GROUP_ERROR_STATUS = {
+    "GROUP_ID_INVALID": "400 BAD REQUEST",
+    "GROUP_ID_RESERVED": "400 BAD REQUEST",
+    "GROUP_ID_IN_USE": "409 CONFLICT",
+}
+
+# As in GroupsManagement: the same status, from before it exists
+GROUP_STATUS_STARTING = "Starting"
 
 LIST_CLUSTERTYPE_FOR_GROUPS = ( 
     "LvlControl", "Switch", "Plug",
@@ -195,6 +205,7 @@ def rest_rescan_group(self, verb, data, parameters):
         return _response
     if self.groupmgt:
         self.groupmgt.ScanAllDevicesForGroupMemberShip()
+        self.groupmgt.request_widgets_restore()
     else:
         domoticz_error_api("rest_rescan_group Group not enabled!!!")
     action = {"Name": "Full Scan", "TimeStamp": int(time())}
@@ -227,9 +238,26 @@ def rest_scan_devices_for_group(self, verb, data, parameter):
     data = json.loads(data)
     self.logging("Debug", "rest_scan_devices_for_group - Trigger GroupMemberShip scan for devices: %s " % (data))
     self.groupmgt.ScanDevicesForGroupMemberShip(data)
+    self.groupmgt.request_widgets_restore()
     action = {"Name": "Scan of device requested.", "TimeStamp": int(time())}
     _response["Data"] = json.dumps(action, sort_keys=True)
     return _response
+
+
+def group_management_status(self):
+    """
+    The status of Group Management, None when it is not enabled.
+
+    The web server is up long before the plugin starts Group Management, which it does
+    once the radio is there, so no object does not mean it is off. A setting turned on
+    while the plugin runs only counts after the restart it asks for: until then nothing
+    is starting.
+    """
+    if self.groupmgt:
+        return self.groupmgt.GroupStatus
+    if self.pluginconf.pluginConf.get("enablegroupmanagement") and not self.restart_needed["RestartNeeded"]:
+        return GROUP_STATUS_STARTING
+    return None
 
 
 def rest_zGroup(self, verb, data, parameters):
@@ -239,7 +267,11 @@ def rest_zGroup(self, verb, data, parameters):
 
     self.logging("Debug", f"rest_zGroup {verb} {data} {parameters}")
     if self.groupmgt is None:
-        domoticz_error_api("Looks like Group Management is not enabled")
+        if group_management_status(self) == GROUP_STATUS_STARTING:
+            # Not a fault: a WebUI page open during the start asks for the groups
+            self.logging("Log", "Group Management is not yet ready: the plugin is still starting")
+        else:
+            domoticz_error_api("Group Management is not enabled")
         return _response
 
     if verb == "GET":
@@ -255,13 +287,15 @@ def rest_zGroup(self, verb, data, parameters):
 def _zgroup_put( self, data, parameters):
     _response = prepResponseMessage(self, setupHeadersResponse())
     _response["Data"] = {}
-    if self.groupmgt is None:
-        self.logging("Error", "Looks like Group Management is not enabled")
-        return _response
 
     if len(parameters) == 0:
         data = data.decode("utf8")
-        self.groupmgt.process_web_request(json.loads(data))
+        try:
+            self.groupmgt.process_web_request(json.loads(data))
+        except GroupRequestError as e:
+            self.logging("Log", f"zgroup_put refused: {e.code}")
+            _response["Status"] = GROUP_ERROR_STATUS[e.code]
+            _response["Data"] = json.dumps({"error": e.code})
 
     return _response
 

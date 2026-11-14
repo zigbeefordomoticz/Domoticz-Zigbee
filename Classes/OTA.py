@@ -201,10 +201,13 @@ VENDOR_PROFILES = {
     },
 
     0x1189: {  # Osram / LEDVANCE
-        "max_data": 56,
+        # LEDVANCE firmware requests 63-byte blocks, but rejects 48- and 50-byte
+        # blocks with MALFORMED_COMMAND and never acknowledges 63-byte ones.
+        # 40 bytes is the working size (zigpy/zigpy#1965, LEDVANCE DIM, image type 0x006F).
+        "max_data": 40,
         "min_delay": 0.12,
         "retry": 3,
-        "notes": "Generally easier OTA; check mesh stability during upgrade."
+        "notes": "Firmware bug: blocks above 40 bytes are rejected, whatever size is requested."
     },
     0xBBAA: {  # Osram / LEDVANCE
         "max_data": 56,
@@ -2312,8 +2315,8 @@ def notify_upgrade_end(
         request["Progress"] = "Success"
         
         # The firmware announced by the online index is now installed: forget it. OTAUpdate is
-        # keyed by the image type as notify_ota_firmware_available() stores it (an int), which
-        # becomes its decimal string once the device list is reloaded from JSON.
+        # keyed by the image type as a decimal string (notify_ota_firmware_available()); older
+        # plugins stored an int, and the hex forms are dropped as well.
         ota_update = self.ListOfDevices.get(MsgSrcAddr, {}).get("OTAUpdate", {})
         for key in (image_type, str(image_type), "%x" % image_type, "%04x" % image_type):
             ota_update.pop(key, None)
@@ -2589,8 +2592,12 @@ def notify_ota_firmware_available(self, srcnwkid, manufcode, imagetype, filevers
     logging(self, "Status", "   URL to download: %s" % _ota_available["url"], srcnwkid)
 
     if srcnwkid in self.ListOfDevices:
+        # Keyed by the image type as a decimal string: the form the key takes once the device
+        # list went through JSON. An int key would sit next to the reloaded string one, and the
+        # same firmware would be listed twice.
         ota = self.ListOfDevices[srcnwkid].setdefault("OTAUpdate", {})
-        ota[imagetype] = {
+        ota.pop(imagetype, None)
+        ota[str(imagetype)] = {
             "currentversion": str(fileversion),
             "newestversion": str(_ota_available["fileVersion"]),
             "url": _ota_available["url"],
