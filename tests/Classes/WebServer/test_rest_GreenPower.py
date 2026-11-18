@@ -45,6 +45,15 @@ class FakeStore:
     def snapshot(self):
         return copy.deepcopy(self.records)
 
+    def update(self, key, fields):
+        if key not in self.records:
+            return False
+        self.records[key].update(copy.deepcopy(fields))
+        return True
+
+    def delete(self, key):
+        self.records.pop(key, None)
+
 
 class FakeWebServer:
     def __init__(self, records):
@@ -373,3 +382,94 @@ def test_models_list(gp_webserver):
 
     assert [m["Name"] for m in payload][:2] == ["GreenPower-OnOff", "GreenPower-OnOff-Dim"]
     assert payload[1]["Widgets"] == ["GenericLvlControl"]
+
+
+
+# ─── /zgp-device (Devices → details of a GPD without widgets) ───────────────
+
+@pytest.fixture
+def removals(monkeypatch):
+    """Stands in for Modules.greenPower.remove_green_power_device (tested with the widget removal)."""
+    calls = []
+
+    def remove_green_power_device(self, ieee):
+        calls.append(ieee)
+        self.PluginStores["GreenPowerDevices"].delete(ieee)
+        return True
+
+    monkeypatch.setitem(sys.modules, "Modules.greenPower", SimpleNamespace(remove_green_power_device=remove_green_power_device))
+    return calls
+
+
+def zgp_device(webserver, verb, parameters, body=None):
+    from Classes.WebServer.rest_GreenPower import rest_zgp_device
+
+    raw = None if body is None else (body if isinstance(body, bytes) else json.dumps(body).encode("utf-8"))
+    response = rest_zgp_device(webserver, verb, raw, list(parameters))
+    return response, json.loads(response["Data"]) if response.get("Data") else None
+
+
+def test_put_sets_the_type_of_a_gpd_without_widgets_and_queues_its_widgets(gp_webserver):
+    gp_webserver.PluginStores["GreenPowerDevices"].records[IEEE] = gp_record()
+
+    response, payload = zgp_device(gp_webserver, "PUT", [IEEE.upper()], {"Model": "GreenPower-OnOff-Dim"})
+
+    assert response["Status"] == "200 OK"
+    assert payload == {"IEEE": IEEE, "Model": "GreenPower-OnOff-Dim"}
+    assert gp_webserver.PluginStores["GreenPowerDevices"].records[IEEE]["RequestedModel"] == "GreenPower-OnOff-Dim"
+    assert gp_webserver.gp_widget_creation_requests == {IEEE}
+    assert gp_webserver.flush_list_of_devices is True
+
+
+@pytest.mark.parametrize("body", [b"{not json", ["GreenPower-OnOff"], {}, {"Model": None}, {"Model": "No-Such-Type"}])
+def test_put_refuses_a_bad_type(gp_webserver, body):
+    gp_webserver.PluginStores["GreenPowerDevices"].records[IEEE] = gp_record()
+
+    response, payload = zgp_device(gp_webserver, "PUT", [IEEE], body)
+
+    assert response["Status"] == "400 BAD REQUEST"
+    assert "BE_Error" in payload
+    assert "RequestedModel" not in gp_webserver.PluginStores["GreenPowerDevices"].records[IEEE]
+    assert not hasattr(gp_webserver, "gp_widget_creation_requests")
+
+
+def test_delete_removes_a_gpd_without_widgets(gp_webserver, removals):
+    gp_webserver.PluginStores["GreenPowerDevices"].records[IEEE] = gp_record()
+
+    response, payload = zgp_device(gp_webserver, "DELETE", [IEEE])
+
+    assert response["Status"] == "200 OK"
+    assert payload == {"IEEE": IEEE, "Removed": True}
+    assert removals == [IEEE]
+    assert IEEE not in gp_webserver.PluginStores["GreenPowerDevices"].records
+
+
+@pytest.mark.parametrize("verb,body", [("PUT", {"Model": "GreenPower-OnOff"}), ("DELETE", None)])
+def test_a_gpd_with_widgets_is_left_alone(gp_webserver, removals, verb, body):
+    gp_webserver.PluginStores["GreenPowerDevices"].records[IEEE] = gp_record(**WITH_WIDGET)
+
+    response, payload = zgp_device(gp_webserver, verb, [IEEE], body)
+
+    assert response["Status"] == "400 BAD REQUEST"
+    assert "last widget" in payload["BE_Error"]
+    assert removals == []
+    assert gp_webserver.PluginStores["GreenPowerDevices"].records[IEEE]["Model"] == "GreenPower-OnOff"
+    assert "RequestedModel" not in gp_webserver.PluginStores["GreenPowerDevices"].records[IEEE]
+
+
+@pytest.mark.parametrize("verb,parameters", [("DELETE", ["0000000012345678"]), ("PUT", ["0000000012345678"]), ("DELETE", []), ("DELETE", [IEEE, "x"])])
+def test_unknown_gpd_or_bad_path_is_refused(gp_webserver, removals, verb, parameters):
+    gp_webserver.PluginStores["GreenPowerDevices"].records[IEEE] = gp_record()
+
+    response, _ = zgp_device(gp_webserver, verb, parameters, {"Model": "GreenPower-OnOff"})
+
+    assert response["Status"] == "400 BAD REQUEST"
+    assert removals == []
+
+
+def test_no_store_is_refused(gp_webserver, removals):
+    gp_webserver.PluginStores = {}
+
+    response, _ = zgp_device(gp_webserver, "DELETE", [IEEE])
+
+    assert response["Status"] == "400 BAD REQUEST"
