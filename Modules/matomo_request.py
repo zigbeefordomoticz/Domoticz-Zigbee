@@ -261,6 +261,40 @@ def matomo_plugin_update(self, status):
         send_matomo_request( self, action_name="Plugin Action", event_category="Plugin", event_action="ErrorUpdate", event_name="Plugin Update with error" )
 
 
+def matomo_reconcile_opt_in_state(self):
+    """Report an opt-in change that was not made from the WebUI.
+
+    The WebUI sends Opt-In / Opt-Out when MatomoOptIn is toggled there. A
+    change made any other way (settings file, Domoticz database, a restored
+    backup) used to go unreported: the install only went silent. The state
+    last reported is kept in the hidden setting ``MatomoOptInReported``
+    (-1 = not known yet) and compared with ``MatomoOptIn`` at start:
+
+    * not known yet: record the current state, send nothing;
+    * same state: nothing to do;
+    * changed: send Opt-In or Opt-Out once, then record the new state.
+
+    Nothing is recorded while the event cannot be sent (no internet, or the
+    coordinator IEEE not known yet), so it is tried again at the next start.
+    """
+    current = 1 if self.pluginconf.pluginConf.get("MatomoOptIn") else 0
+    reported = self.pluginconf.pluginConf.get("MatomoOptInReported", -1)
+
+    if reported == current:
+        return
+
+    if reported in (0, 1):
+        if not self.internet_available or get_clientid(self) is None:
+            return
+        if current:
+            matomo_opt_in_action(self)
+        else:
+            matomo_opt_out_action(self)
+
+    self.pluginconf.pluginConf["MatomoOptInReported"] = current
+    self.pluginconf.write_Settings()
+
+
 def send_matomo_request(self, action_name, custom_variable=None, custom_dimension=None, event_category=None, event_action=None, event_name=None):
     """
     Sends a tracking request to Matomo with optional custom variables, dimensions, and events.

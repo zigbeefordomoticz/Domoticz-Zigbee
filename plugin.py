@@ -173,6 +173,7 @@ from Modules.input import zigbee_receive_message
 from Modules.matomo_request import (matomo_coordinator_initialisation,
                                     matomo_plugin_analytics_infos,
                                     matomo_plugin_restart,
+                                    matomo_reconcile_opt_in_state,
                                     matomo_plugin_shutdown,
                                     matomo_plugin_started)
 from Modules.paramDevice import initialize_device_settings
@@ -1673,6 +1674,9 @@ def zigateInit_Phase3(self):
     if self.iaszonemgt and self.ControllerIEEE:
         self.iaszonemgt.setZigateIEEE(self.ControllerIEEE)
     
+    # Report an opt-in change made outside the WebUI (sent once, then remembered)
+    matomo_reconcile_opt_in_state(self)
+
     if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
         self.log.logging("Plugin", "Status", "Z4D sends analytics information. (if you need to disable, disable the MatomoOptIn parameter via the WebUI - Settings)")
         matomo_plugin_started(self)
