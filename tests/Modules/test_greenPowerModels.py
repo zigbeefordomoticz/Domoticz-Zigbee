@@ -46,7 +46,7 @@ def test_shipped_types_all_load():
 
     models = load_gp_models(p, REPO_CONF)
 
-    assert {"GreenPower-OnOff", "GreenPower-OnOff-Dim", "GreenPower-4Buttons"} <= set(models)
+    assert {"GreenPower-OnOff", "GreenPower-OnOff-Dim", "GreenPower-4Buttons", "GreenPower-6Buttons", "GreenPower-2Buttons"} <= set(models)
     assert len(models) == len(list((REPO_CONF / "ZGPmodel").glob("*.json")))
     assert errors(p) == []
 
@@ -131,6 +131,29 @@ def test_command_mapping_per_payload_and_endpoint():
     assert gp_model_command(p, "GreenPower-4Buttons", 0x69, "05") is None  # two buttons at once
     assert gp_model_command(p, "GreenPower-4Buttons", 0x6A, "00") is None
     assert gp_model_command(p, "GreenPower-4Buttons", 0x69) is None
+
+
+def test_six_buttons_three_switches():
+    p = plugin()
+    load_gp_models(p, REPO_CONF)
+
+    # Both buttons together send both bits: 05 Up, 0a Down (field 2026-11-18, NodOn CWS-4-1-00)
+    expected = {"01": ("01", "f1"), "02": ("00", "f1"), "04": ("01", "f2"), "08": ("00", "f2"), "05": ("01", "f3"), "0a": ("00", "f3")}
+    for payload, (value, ep) in expected.items():
+        assert gp_model_command(p, "GreenPower-6Buttons", 0x69, payload) == ("0006", value, ep), payload
+    assert gp_model_command(p, "GreenPower-6Buttons", 0x6A, "00") is None
+
+
+def test_two_buttons_one_switch_any_contact_of_the_rocker():
+    p = plugin()
+    load_gp_models(p, REPO_CONF)
+
+    # A single rocker closes both contacts (05 / 0a), or sometimes only one of them
+    for payload in ("05", "01", "04"):
+        assert gp_model_command(p, "GreenPower-2Buttons", 0x69, payload) == ("0006", "01", "f1"), payload
+    for payload in ("0a", "02", "08"):
+        assert gp_model_command(p, "GreenPower-2Buttons", 0x69, payload) == ("0006", "00", "f1"), payload
+    assert gp_model_command(p, "GreenPower-2Buttons", 0x6A, "00") is None
 
 
 def test_payload_key_wins_over_the_bare_command(tmp_path):

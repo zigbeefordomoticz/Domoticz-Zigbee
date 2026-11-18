@@ -1,0 +1,17 @@
+{
+    "Description": "4-button switch (8-bit vector) with a single rocker: one On/Off switch, Up / Down",
+    "Order": 5,
+    "Ep": {
+        "f1": {
+            "Type": "Switch"
+        }
+    },
+    "Commands": {
+        "69/05": ["0006", "01", "f1"],
+        "69/0a": ["0006", "00", "f1"],
+        "69/01": ["0006", "01", "f1"],
+        "69/04": ["0006", "01", "f1"],
+        "69/02": ["0006", "00", "f1"],
+        "69/08": ["0006", "00", "f1"]
+    }
+}
