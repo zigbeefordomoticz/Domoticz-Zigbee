@@ -469,4 +469,3 @@ class TestPopulateCustomDimensions:
              patch.object(matomo, "get_network_size_items", return_value="Small"):
             dims = matomo.populate_custom_dimensions(plugin)
         assert "dimension11" in dims
-
