@@ -287,6 +287,33 @@ def test_on_off_toggle_update_the_switch():
     )
 
 
+def test_every_press_reaches_domoticz_even_when_unchanged():
+    # Field 2026-11-18: Off pressed on a switch already Off gave no Domoticz update, so no event
+    _run(
+        """
+        p = make_plugin()
+        commission(p)
+        unit = the_unit()
+
+        gpw.update_gp_widgets(p, DEVICES, GP_IEEE, 0x20)
+        before = unit.updates
+        gpw.update_gp_widgets(p, DEVICES, GP_IEEE, 0x20)
+        assert unit.updates == before + 1
+        assert (unit.nValue, unit.sValue) == (0, "Off")
+
+        gpw.update_gp_widgets(p, DEVICES, GP_IEEE, 0x21)
+        before = unit.updates
+        gpw.update_gp_widgets(p, DEVICES, GP_IEEE, 0x21)
+        assert unit.updates == before + 1
+        assert (unit.nValue, unit.sValue) == (1, "On")
+
+        # The widget stays a Switch in the store: nothing to migrate for GPDs paired before
+        assert list(stored(p)["Ep"]["01"]["ClusterType"].values()) == ["Switch"]
+        assert p.log.errors() == []
+        """
+    )
+
+
 def test_zigbee_device_on_the_alias_nwkid_untouched():
     _run(
         """
