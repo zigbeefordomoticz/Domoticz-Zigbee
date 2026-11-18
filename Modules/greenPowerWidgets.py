@@ -71,6 +71,12 @@ GP_DEVICE_ID_DEFAULT_COMMANDS = {
     0x02: sorted(GP_ONOFF_COMMANDS),  # On/Off switch
 }
 
+# A GPD only sends what the user does: every command is an event for Domoticz,
+# even when the widget already shows its value (Off pressed on a switch that is
+# Off). SwitchButton is the same Domoticz widget as Switch (244/73/0), updated
+# with ForceUpdate; applied at update time, so GPDs paired before keep working.
+GP_EVENT_WIDGET_TYPES = {"Switch": "SwitchButton"}
+
 BUILTIN_MODEL_PREFIX = "GreenPower-"
 DEFAULT_WIDGET_EP = "01"
 
@@ -253,7 +259,8 @@ def update_gp_widgets(self, Devices, ieee, command_id, payload=""):
             widget_value = _toggled_value(self, Devices, ieee, widget_idx) if value == TOGGLE else value
             if widget_value is None:
                 continue
-            maj_domo_widgets(self, Devices, None, ieee, model_name, [(ep, widget_idx, widget_type)], ep, cluster, widget_value)
+            event_type = GP_EVENT_WIDGET_TYPES.get(widget_type, widget_type)
+            maj_domo_widgets(self, Devices, None, ieee, model_name, [(ep, widget_idx, event_type)], ep, cluster, widget_value)
 
 
 def _toggled_value(self, Devices, ieee, widget_idx):
