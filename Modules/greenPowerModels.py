@@ -25,6 +25,14 @@ GPD commissioned in that window gets it (store record "RequestedModel").
                                                         maj_domo_widgets()
     }
 
+A command key can also carry the command payload, "69/04": GPDs that send
+the same command for every button tell the button in the payload (8-bit
+vector press 0x69 of a 4-button switch: one bit per button). The key with
+the payload wins over the bare command id. A target can name the endpoint of
+the widget it updates, [cluster, value, ep] (an endpoint of "Ep"); without
+it, every widget of the GPD is updated. The endpoints are the plugin's own
+(f1, f2, ...): a GPD has none.
+
 The file name, without .json, is the model name. Loaded once at startup into
 self.GreenPowerModels; a file that does not follow this shape is logged as an
 Error and left out.
@@ -39,6 +47,8 @@ GP_MODELS_ATTRIBUTE = "GreenPowerModels"
 
 _HEX2 = re.compile(r"[0-9a-f]{2}")
 _HEX4 = re.compile(r"[0-9a-f]{4}")
+# GPD command id, optionally followed by its payload: "20", "69/04"
+_COMMAND_KEY = re.compile(r"[0-9a-f]{2}(/([0-9a-f]{2})+)?")
 
 
 def _model_error(conf):
@@ -55,10 +65,12 @@ def _model_error(conf):
     if not isinstance(commands, dict) or not commands:
         return "no Commands"
     for command_id, target in commands.items():
-        if not _HEX2.fullmatch(str(command_id)):
-            return "Commands: %s is not a 2-hex GPD command id" % command_id
-        if not (isinstance(target, list) and len(target) == 2 and _HEX4.fullmatch(str(target[0])) and isinstance(target[1], str)):
-            return "Commands %s: needs [cluster (4 hex), value]" % command_id
+        if not _COMMAND_KEY.fullmatch(str(command_id)):
+            return "Commands: %s is not a 2-hex GPD command id, optionally /payload in hex" % command_id
+        if not (isinstance(target, list) and len(target) in (2, 3) and _HEX4.fullmatch(str(target[0])) and isinstance(target[1], str)):
+            return "Commands %s: needs [cluster (4 hex), value] or [cluster, value, ep]" % command_id
+        if len(target) == 3 and target[2] not in ep:
+            return "Commands %s: ep %s is not in Ep" % (command_id, target[2])
     return None
 
 
@@ -99,10 +111,21 @@ def gp_model_list(self):
     ]
 
 
-def gp_model_command(self, model_name, command_id):
-    """(cluster, value) for a GPD command under a device type, None when the type does not map it."""
+def gp_model_command(self, model_name, command_id, payload=""):
+    """
+    (cluster, value, ep) for a GPD command under a device type, None when the
+    type does not map it. ep is None when the target names no endpoint (every
+    widget). The key with the payload ("69/04") wins over the bare command id.
+    """
     conf = gp_models(self).get(model_name)
     if conf is None:
         return None
-    target = conf["Commands"].get("%02x" % command_id)
-    return None if target is None else (target[0], target[1])
+    commands = conf["Commands"]
+    target = None
+    if payload:
+        target = commands.get("%02x/%s" % (command_id, payload.lower()))
+    if target is None:
+        target = commands.get("%02x" % command_id)
+    if target is None:
+        return None
+    return target[0], target[1], (target[2] if len(target) == 3 else None)
