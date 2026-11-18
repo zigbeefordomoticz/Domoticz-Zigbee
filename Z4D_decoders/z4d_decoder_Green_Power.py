@@ -103,7 +103,7 @@ def Decode9E01(self, Devices, MsgData, MsgLQI):
 
     # Imported here: the widget layer pulls in most of Modules/
     from Modules.greenPowerWidgets import update_gp_widgets
-    update_gp_widgets(self, Devices, command["ieee"], int(command["command_id"], 16))
+    update_gp_widgets(self, Devices, command["ieee"], int(command["command_id"], 16), command["payload"])
 
 
 def Decode9E02(self, Devices, MsgData, MsgLQI):

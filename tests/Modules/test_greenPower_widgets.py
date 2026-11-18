@@ -381,6 +381,42 @@ def test_picked_on_off_type_matches_the_builtin_switch():
     )
 
 
+def test_four_button_type_two_switches_on_f1_f2():
+    _run(
+        """
+        from Modules.greenPowerModels import load_gp_models
+        # NodOn CWS-4-1-00 (field 2026-11-18): Generic Switch 0x07, no command list
+        p = make_plugin(gp_record(device_id=0x07, commands=[], RequestedModel="GreenPower-4Buttons"))
+        load_gp_models(p, "Conf")
+        commission(p)
+
+        units = DEVICES[GP_IEEE].Units
+        assert len(units) == 2, units
+        record = stored(p)
+        assert record["Model"] == "GreenPower-4Buttons"
+        assert set(record["Ep"]) == {"f1", "f2"}
+        by_ep = {ep: next(u for u in units.values() if str(u.ID) in r["ClusterType"]) for ep, r in record["Ep"].items()}
+        switch1, switch2 = by_ep["f1"], by_ep["f2"]
+
+        def press(payload):
+            gpw.update_gp_widgets(p, DEVICES, GP_IEEE, 0x69, payload)
+            gpw.update_gp_widgets(p, DEVICES, GP_IEEE, 0x6A, "00")  # release: ignored
+
+        press("01")
+        assert (switch1.nValue, switch2.nValue) == (1, 0)
+        press("04")
+        assert (switch1.nValue, switch2.nValue) == (1, 1)
+        press("02")
+        assert (switch1.nValue, switch2.nValue) == (0, 1)
+        press("08")
+        assert (switch1.nValue, switch2.nValue) == (0, 0)
+        press("05")  # two buttons at once: not mapped
+        assert (switch1.nValue, switch2.nValue) == (0, 0)
+        assert p.log.errors() == []
+        """
+    )
+
+
 def test_unknown_picked_type_falls_back_to_the_device_id():
     _run(
         """

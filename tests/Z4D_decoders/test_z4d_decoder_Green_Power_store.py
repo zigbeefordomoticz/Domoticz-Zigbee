@@ -85,7 +85,7 @@ def widget_updates(monkeypatch):
     """Stands in for Modules.greenPowerWidgets (tested in tests/Modules/test_greenPower_widgets.py)."""
     calls = []
     monkeypatch.setitem(sys.modules, "Modules.greenPowerWidgets", SimpleNamespace(
-        update_gp_widgets=lambda self, Devices, ieee, command_id: calls.append((ieee, command_id))))
+        update_gp_widgets=lambda self, Devices, ieee, command_id, payload="": calls.append((ieee, command_id, payload))))
     return calls
 
 
@@ -146,10 +146,11 @@ def decode_last(helpers, decoder, plugin, transport):
     {"9e00": decoder.Decode9E00, "9e01": decoder.Decode9E01, "9e02": decoder.Decode9E02}[msg_type](plugin, {}, msg_data, msg_lqi)
 
 
-def press(dev, frame_counter, command_id=0x20):
+def press(dev, frame_counter, command_id=0x20, payload=None):
     dev.frame_counter = frame_counter
+    command = None if payload is None else SimpleNamespace(serialize=lambda: payload)
     dev.emit("gp_command_received", zigpy_device.GreenPowerCommandReceived(
-        device_ieee=str(dev.ieee), endpoint_id=None, command_id=command_id, command=None))
+        device_ieee=str(dev.ieee), endpoint_id=None, command_id=command_id, command=command))
 
 
 def logged_text(plugin):
@@ -352,7 +353,18 @@ class TestWidgets:
         press(dev, 1235, command_id=0x21)
         decode_last(helpers, decoder, plugin, transport)
 
-        assert widget_updates == [(IEEE_HEX, 0x21)]
+        assert widget_updates == [(IEEE_HEX, 0x21, "")]
+
+    def test_command_payload_reaches_the_widgets(self, decoder, helpers, plugin, transport, gp_types, widget_updates):
+        # 8-bit vector press of a 4-button switch: the button is in the payload (field 2026-11-18)
+        dev = make_gpd(transport, gp_types)
+        GreenPowerListener(transport).device_initialized(dev)
+        decode_last(helpers, decoder, plugin, transport)
+
+        press(dev, 1235, command_id=0x69, payload=b"\x04")
+        decode_last(helpers, decoder, plugin, transport)
+
+        assert widget_updates == [(IEEE_HEX, 0x69, "04")]
 
     def test_command_from_unknown_device_updates_nothing(self, decoder, helpers, plugin, transport, gp_types, widget_updates):
         dev = make_gpd(transport, gp_types)

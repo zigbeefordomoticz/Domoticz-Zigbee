@@ -224,8 +224,12 @@ def _create_gp_widget(self, Devices, ieee, nwk, ep, widget_type, nick_name):
 
 # ─── Update ─────────────────────────────────────────────────────────────────
 
-def update_gp_widgets(self, Devices, ieee, command_id):
-    """Update the widgets of a GPD with a command it sent (9e01)."""
+def update_gp_widgets(self, Devices, ieee, command_id, payload=""):
+    """
+    Update the widgets of a GPD with a command it sent (9e01). payload is the
+    command payload in hex: a device type can map a command per payload
+    ("69/04", one button of a 4-button switch) to the widget of one endpoint.
+    """
     store = gp_store(self)
     record = store.get(ieee) if store is not None else None
     if record is None:
@@ -234,14 +238,17 @@ def update_gp_widgets(self, Devices, ieee, command_id):
     model_name = record.get("Model", "")
     # A device type of Conf/ZGPmodel maps its own commands; the others use the On/Off set
     if model_name in gp_models(self):
-        translation = gp_model_command(self, model_name, command_id)
+        translation = gp_model_command(self, model_name, command_id, payload)
     else:
         translation = GP_COMMAND_TO_ZCL.get(command_id)
+        translation = None if translation is None else translation + (None,)
     if translation is None:
         return
 
-    cluster, value = translation
+    cluster, value, target_ep = translation
     for ep, ep_record in (record.get("Ep") or {}).items():
+        if target_ep is not None and ep != target_ep:
+            continue
         for widget_idx, widget_type in (ep_record.get("ClusterType") or {}).items():
             widget_value = _toggled_value(self, Devices, ieee, widget_idx) if value == TOGGLE else value
             if widget_value is None:
