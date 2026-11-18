@@ -170,7 +170,8 @@ from Modules.domoticzAbstractLayer import (
 from Modules.gitInfos import get_git_infos
 from Modules.heartbeat import processListOfDevices
 from Modules.input import zigbee_receive_message
-from Modules.matomo_request import (matomo_coordinator_initialisation,
+from Modules.matomo_request import (matomo_check_coordinator_change,
+                                    matomo_coordinator_initialisation,
                                     matomo_plugin_analytics_infos,
                                     matomo_plugin_restart,
                                     matomo_reconcile_opt_in_state,
@@ -1680,6 +1681,7 @@ def zigateInit_Phase3(self):
     if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
         self.log.logging("Plugin", "Status", "Z4D sends analytics information. (if you need to disable, disable the MatomoOptIn parameter via the WebUI - Settings)")
         matomo_plugin_started(self)
+        matomo_check_coordinator_change(self)
 
     if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
         matomo_plugin_analytics_infos(self)

@@ -34,6 +34,7 @@ SETTINGS = {
         "Order": 1,
         "param": {
             "MatomoOptIn": { "type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": False, "Group": "Internet", "DependsOn": "internetAccess", },
+            "MatomoCoordinatorReported": { "type": "str", "default": "", "current": None, "restart": 0, "hidden": True, "Advanced": False, },
             "enablegroupmanagement": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": False, "Group": "Features", },
             "enableNativeScenes": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": False, "Group": "Features", },
             "enableReadAttributes": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": True, "Advanced": True, },
