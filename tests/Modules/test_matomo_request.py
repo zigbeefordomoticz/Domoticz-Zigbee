@@ -290,6 +290,49 @@ class TestGetDistribution:
 
 
 # ---------------------------------------------------------------------------
+# matomo_check_coordinator_change
+# ---------------------------------------------------------------------------
+
+class TestCheckCoordinatorChange:
+    """A replaced coordinator is reported once, linking the old and new ids."""
+
+    def run(self, matomo, plugin, reported):
+        plugin.pluginconf.pluginConf = {}
+        if reported is not None:
+            plugin.pluginconf.pluginConf["MatomoCoordinatorReported"] = reported
+        plugin.pluginconf.write_Settings.reset_mock()
+        with patch.object(matomo, "fetch_data_with_timeout") as mock_fetch:
+            matomo.matomo_check_coordinator_change(plugin)
+        return [c.args[2] for c in mock_fetch.call_args_list]
+
+    def test_first_start_records_without_sending(self, matomo, plugin):
+        for reported in (None, ""):
+            assert self.run(matomo, plugin, reported) == []
+            assert plugin.pluginconf.pluginConf["MatomoCoordinatorReported"] == matomo.get_clientid(plugin)
+            plugin.pluginconf.write_Settings.assert_called_once()
+
+    def test_same_coordinator_does_nothing(self, matomo, plugin):
+        assert self.run(matomo, plugin, matomo.get_clientid(plugin)) == []
+        plugin.pluginconf.write_Settings.assert_not_called()
+
+    def test_replaced_coordinator_sends_one_event(self, matomo, plugin):
+        old = hashlib.sha256("0011223344556677".encode()).hexdigest()
+        sent = self.run(matomo, plugin, old)
+        assert len(sent) == 1
+        assert sent[0]["e_c"] == "Coordinator"
+        assert sent[0]["e_a"] == "Replaced"
+        assert sent[0]["e_n"] == old
+        assert sent[0]["uid"] == matomo.get_clientid(plugin)
+        assert plugin.pluginconf.pluginConf["MatomoCoordinatorReported"] == matomo.get_clientid(plugin)
+
+    def test_unknown_coordinator_does_nothing(self, matomo, plugin):
+        plugin.ListOfDevices = {}
+        assert self.run(matomo, plugin, "abc") == []
+        assert plugin.pluginconf.pluginConf["MatomoCoordinatorReported"] == "abc"
+        plugin.pluginconf.write_Settings.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
 # fetch_data_with_timeout
 # ---------------------------------------------------------------------------
 
@@ -427,45 +470,3 @@ class TestPopulateCustomDimensions:
             dims = matomo.populate_custom_dimensions(plugin)
         assert "dimension11" in dims
 
-
-# ---------------------------------------------------------------------------
-# matomo_check_coordinator_change
-# ---------------------------------------------------------------------------
-
-class TestCheckCoordinatorChange:
-    """A replaced coordinator is reported once, linking the old and new ids."""
-
-    def run(self, matomo, plugin, reported):
-        plugin.pluginconf.pluginConf = {}
-        if reported is not None:
-            plugin.pluginconf.pluginConf["MatomoCoordinatorReported"] = reported
-        plugin.pluginconf.write_Settings.reset_mock()
-        with patch.object(matomo, "fetch_data_with_timeout") as mock_fetch:
-            matomo.matomo_check_coordinator_change(plugin)
-        return [c.args[2] for c in mock_fetch.call_args_list]
-
-    def test_first_start_records_without_sending(self, matomo, plugin):
-        for reported in (None, ""):
-            assert self.run(matomo, plugin, reported) == []
-            assert plugin.pluginconf.pluginConf["MatomoCoordinatorReported"] == matomo.get_clientid(plugin)
-            plugin.pluginconf.write_Settings.assert_called_once()
-
-    def test_same_coordinator_does_nothing(self, matomo, plugin):
-        assert self.run(matomo, plugin, matomo.get_clientid(plugin)) == []
-        plugin.pluginconf.write_Settings.assert_not_called()
-
-    def test_replaced_coordinator_sends_one_event(self, matomo, plugin):
-        old = hashlib.sha256("0011223344556677".encode()).hexdigest()
-        sent = self.run(matomo, plugin, old)
-        assert len(sent) == 1
-        assert sent[0]["e_c"] == "Coordinator"
-        assert sent[0]["e_a"] == "Replaced"
-        assert sent[0]["e_n"] == old
-        assert sent[0]["uid"] == matomo.get_clientid(plugin)
-        assert plugin.pluginconf.pluginConf["MatomoCoordinatorReported"] == matomo.get_clientid(plugin)
-
-    def test_unknown_coordinator_does_nothing(self, matomo, plugin):
-        plugin.ListOfDevices = {}
-        assert self.run(matomo, plugin, "abc") == []
-        assert plugin.pluginconf.pluginConf["MatomoCoordinatorReported"] == "abc"
-        plugin.pluginconf.write_Settings.assert_not_called()
