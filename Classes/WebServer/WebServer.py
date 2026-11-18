@@ -730,6 +730,8 @@ class WebServer(object):
                             else:
                                 # Opt-Out (we move from In to Out)
                                 matomo_opt_out_action(self)
+                            # Reported here, so the check at next start has nothing to send.
+                            self.pluginconf.pluginConf["MatomoOptInReported"] = 1 if self.pluginconf.pluginConf[param] else 0
                         
                         elif param == "blueLedOnOff":
                             if self.pluginconf.pluginConf[param] != setting_lst[setting]["current"]:

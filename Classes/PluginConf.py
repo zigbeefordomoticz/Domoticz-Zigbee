@@ -41,6 +41,7 @@ SETTINGS = {
             "allowOTA": { "type": "bool", "default": 1, "current": None, "restart": 1, "hidden": True, "Advanced": False, },
             "pingDevices": { "type": "bool", "default": 1, "current": None, "restart": 1, "hidden": False, "Advanced": True, },
             "PluginAnalytics": { "type": "bool", "default": -1, "current": None, "restart": 0, "hidden": True, "Advanced": False, },
+            "MatomoOptInReported": { "type": "int", "default": -1, "current": None, "restart": 0, "hidden": True, "Advanced": False, },
             "DomoticzCustomMenu": { "type": "bool", "default": 1, "current": None, "restart": 1, "hidden": False, "Advanced": False, },
             "NightShift": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, }
         },
