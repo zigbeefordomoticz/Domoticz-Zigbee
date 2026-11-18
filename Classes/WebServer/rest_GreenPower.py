@@ -22,6 +22,10 @@ not in ListOfDevices, so the routes built on ListOfDevices never show them:
                       PUT opens or closes Green Power commissioning only,
                       with the device type for the GPDs it commissions
     /zgp-models       the device types of Conf/ZGPmodel (Modules/greenPowerModels.py)
+    /zgp-device       Devices → details of a GPD that has no widget: PUT gives it
+                      a device type (its widgets follow), DELETE removes it.
+                      A GPD with widgets goes with its last widget, deleted in
+                      Domoticz (Modules/greenPower.green_power_widget_removed)
 
 The store record holds the GPD security key: it never leaves the plugin
 (SECRET_FIELDS are dropped from every answer).
@@ -33,7 +37,8 @@ import time
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
 from Modules.greenPowerModels import gp_model_list, gp_models
-from Modules.greenPowerStore import gp_store
+from Modules.greenPowerStore import (gp_store, request_gp_store_flush,
+                                     request_gp_widget_creation)
 
 SECRET_FIELDS = ("security_key",)
 
@@ -254,3 +259,70 @@ def rest_zgp_pairing(self, verb, data, parameters):
     answer["Channel"] = controller.get("Channel")
     _response["Data"] = json.dumps(answer, sort_keys=False)
     return _response
+
+
+def _json_request(data):
+    """The JSON object of a request body, None when it is not one."""
+    try:
+        request = json.loads(data.decode("utf-8") if isinstance(data, (bytes, bytearray)) else data)
+    except (ValueError, AttributeError, TypeError):
+        return None
+    return request if isinstance(request, dict) else None
+
+
+def _set_gp_device_type(self, store, ieee, data, response):
+    """PUT /zgp-device/<ieee> {"Model": device type}: the GPD's widgets are created at the next heartbeat."""
+    request = _json_request(data)
+    if request is None:
+        return _bad_request(response, "expected a JSON object")
+    model = request.get("Model")
+    if not isinstance(model, str) or model not in gp_models(self):
+        return _bad_request(response, "Model: unknown Green Power device type %s" % model)
+
+    store.update(ieee, {"RequestedModel": model})
+    request_gp_store_flush(self)
+    request_gp_widget_creation(self, ieee)
+    self.log.logging("GreenPower", "Status", "Green Power device %s: device type %s set from the WebUI, widgets at the next heartbeat" % (
+        ieee, model), (store.get(ieee) or {}).get("nwk"))
+    response["Data"] = json.dumps({"IEEE": ieee, "Model": model})
+    return response
+
+
+def _remove_gp_device(self, ieee, response):
+    """DELETE /zgp-device/<ieee>: zigpy unpairs the GPD and the store forgets it."""
+    # Imported here: Modules.greenPower pulls in the Domoticz abstraction layer
+    from Modules.greenPower import remove_green_power_device
+
+    remove_green_power_device(self, ieee)
+    response["Data"] = json.dumps({"IEEE": ieee, "Removed": True})
+    return response
+
+
+def rest_zgp_device(self, verb, data, parameters):
+    """
+    PUT    /zgp-device/<ieee>   {"Model": device type of /zgp-models}
+    DELETE /zgp-device/<ieee>
+
+    Both only for a GPD without widgets, typically one commissioned without a
+    device type that no configuration matched. A GPD with widgets keeps its
+    type (a widget's Domoticz type is frozen at creation) and is removed by
+    deleting its last widget in Domoticz.
+    """
+    _response = prepResponseMessage(self, setupHeadersResponse())
+    _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+    if verb not in ("PUT", "DELETE"):
+        return _response
+    if len(parameters) != 1:
+        return _bad_request(_response, "expected /zgp-device/<ieee>")
+
+    ieee = parameters[0].lower()
+    store = gp_store(self)
+    record = store.get(ieee) if store is not None else None
+    if record is None:
+        return _bad_request(_response, "unknown Green Power device %s" % ieee)
+    if _has_widgets(record):
+        return _bad_request(_response, "Green Power device %s has widgets: delete its last widget in Domoticz to remove it" % ieee)
+
+    if verb == "PUT":
+        return _set_gp_device_type(self, store, ieee, data, _response)
+    return _remove_gp_device(self, ieee, _response)
