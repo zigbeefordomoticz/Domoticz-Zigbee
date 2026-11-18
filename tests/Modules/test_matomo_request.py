@@ -79,6 +79,48 @@ def plugin():
 
 
 # ---------------------------------------------------------------------------
+# add_visit_dimensions / visit-scope copies in populate_custom_dimensions
+# ---------------------------------------------------------------------------
+
+class TestVisitDimensions:
+    """Visit-scope dimensions 13-17 mirror the main action-scope ones."""
+
+    def test_copies_and_chipset(self, matomo):
+        dims = {"dimension1": "2026.4", "dimension3": "9.1.009", "dimension4": "Ezsp - 7.4.4.0 build 0",
+                "dimension5": "Medium", "dimension6": "11.623"}
+        matomo.add_visit_dimensions(dims)
+        assert dims["dimension13"] == "9.1.009"
+        assert dims["dimension14"] == "Ezsp"
+        assert dims["dimension15"] == "2026.4"
+        assert dims["dimension16"] == "11.623"
+        assert dims["dimension17"] == "Medium"
+
+    def test_missing_values_are_not_invented(self, matomo):
+        dims = {"dimension3": "9.1.009"}
+        matomo.add_visit_dimensions(dims)
+        assert dims == {"dimension3": "9.1.009", "dimension13": "9.1.009"}
+
+    def test_chipset_without_version_part(self, matomo):
+        dims = {"dimension4": "Znp"}
+        matomo.add_visit_dimensions(dims)
+        assert dims["dimension14"] == "Znp"
+
+    def test_snapshot_carries_visit_dimensions(self, matomo, plugin):
+        plugin.pluginParameters["DisplayFirmwareVersion"] = "Znp - 20220219"
+        with patch.object(matomo, "get_distribution", return_value=None), \
+             patch.object(matomo, "get_architecture_model", return_value=None), \
+             patch.object(matomo, "get_ronelabs_model_custom_definition", return_value=None), \
+             patch.object(matomo, "get_raspberry_pi_model", return_value=None), \
+             patch.object(matomo, "get_network_size_items", return_value="Small"):
+            dims = matomo.populate_custom_dimensions(plugin)
+        assert dims["dimension13"] == dims["dimension3"]
+        assert dims["dimension14"] == "Znp"
+        assert dims["dimension15"] == dims["dimension1"]
+        assert dims["dimension16"] == dims["dimension6"]
+        assert dims["dimension17"] == "Small"
+
+
+# ---------------------------------------------------------------------------
 # get_clientid
 # ---------------------------------------------------------------------------
 
