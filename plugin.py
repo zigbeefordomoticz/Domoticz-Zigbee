@@ -529,7 +529,7 @@ class BasePlugin:
         self.StartupFolder = Parameters["StartupFolder"]
 
         Domoticz.Status("Z4D initializes a connection to Domoticz API/JSON")
-        self.domoticz_api = DomoticzAPIClient( Parameters["Mode5"], self.pluginconf, self.log)
+        self.domoticz_api = DomoticzAPIClient( Parameters["Mode5"], self.pluginconf, self.log, self.HardwareID)
         self.domoticz_device_cache = DomoticzDeviceCache(self.domoticz_api)
         
         self.domoticz_device_cache.dump_cache()

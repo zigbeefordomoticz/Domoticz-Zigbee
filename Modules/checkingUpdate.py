@@ -112,7 +112,7 @@ def start_version_check_worker(self, zigbee_communication, branch, zigate_model)
     already running.
 
     Args:
-        self: Plugin instance (.log, .pluginParameters, .internet_available,
+        self: Plugin instance (.log, .HardwareID, .pluginParameters, .internet_available,
               .FirmwareMajorVersion, .FirmwareVersion).
         zigbee_communication: "native" or "zigpy".
         branch: Branch label to look up in the DNS TXT record.
@@ -122,7 +122,7 @@ def start_version_check_worker(self, zigbee_communication, branch, zigate_model)
         if self.worker_thread is not None and self.worker_thread.is_alive():
             return
         self.stop_event.clear()
-        self.worker_thread = threading.Thread( name="VersionCheck", target=_worker_loop, args=(self, zigbee_communication, branch, zigate_model) )
+        self.worker_thread = threading.Thread( name=f"VersionCheck_{self.HardwareID}", target=_worker_loop, args=(self, zigbee_communication, branch, zigate_model) )
         self.worker_thread.daemon = False
         self.worker_thread.start()
 
