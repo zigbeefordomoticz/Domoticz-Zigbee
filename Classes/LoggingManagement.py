@@ -69,10 +69,12 @@ LOG_MAX_SESSIONS = 5
 LOG_RETENTION_SECONDS = 7 * 24 * 3600  # 7 days
 JSON_SAFE_MAX_DEPTH = 12  # Recursion guard for json_safe(); device entries are far shallower
 
+# Names must match the Thread(name=...) of each thread exactly: a ThreadXxx filter
+# turned on with a name no thread carries silences every debug line.
 THREAD_GROUP = {
     "Domoticz": [ "MainThread", ],
-    "Communication": [ "ZigateSerial_%s", "ZigateTCPIP_%s", "ZigpyCom_%s", ],
-    "Forwarder": [ "ZigateForwader_%s", "ZigpyForwarder_%s", ],
+    "Communication": [ "ZiGateSerial_%s", "ZiGateTCPIP_%s", "ZigpyCommunication_%s", ],
+    "Forwarder": [ "ZiGateForwarder_%s", "ZigpyForwarder_%s", ],
     "Writer": [ "ZiGateWriter_%s", ],
 }
 
