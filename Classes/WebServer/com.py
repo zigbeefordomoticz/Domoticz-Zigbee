@@ -413,7 +413,7 @@ def server_loop(self, ):
                 set_keepalive(client_socket)
 
                 self.logging("Debug", f"Accepted connection from {client_addr} {client_socket}")
-                client_thread = threading.Thread(target=handle_client, args=(self, client_socket, client_addr))
+                client_thread = threading.Thread( name=f"ZigbeeWebUIClient_{self.hardwareID}", target=handle_client, args=(self, client_socket, client_addr) )
                 client_thread.daemon = True
                 client_thread.start()
                 self.client_threads.append(client_thread)
