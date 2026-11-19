@@ -38,6 +38,21 @@ WINDOWS_CURL_COMMAND = r"c:\Windows\System32\curl.exe"
 DOMOTICZ_URL = "http://127.0.0.1:8080"
 ZIGBEE_PLUGIN_KEY = "Zigate"
 
+# Heartbeats (1 s) between two restart attempts while the coordinator does not answer.
+# A successful attempt restarts the plugin; a failed one must not be retried every second.
+STARTUP_RESTART_RETRY_DELAY = 300
+
+# curl exit codes caused by the "API base url" (Mode5) setting.
+CURL_HINTS = {
+    7: "nothing answers at this address: check the host and port of the API base url",
+    60: "the HTTPS certificate is not trusted (self-signed): use the local HTTP port, e.g. http://127.0.0.1:8080",
+}
+
+
+def restart_attempt_due(internal_hb, stop_threshold, retry_delay=STARTUP_RESTART_RETRY_DELAY):
+    """Return True on the first heartbeat past stop_threshold, then once every retry_delay heartbeats."""
+    return internal_hb > stop_threshold and (internal_hb - stop_threshold - 1) % retry_delay == 0
+
 
 def restartPluginViaDomoticzJsonApi(self, stop=False, erasePDM=False, url_base_api=DOMOTICZ_URL, auth=None):
     """
@@ -73,9 +88,11 @@ def restartPluginViaDomoticzJsonApi(self, stop=False, erasePDM=False, url_base_a
 
     # --- Call Domoticz -------------------------------------------------------
     try:
-        result = subprocess.check_output( [curl_command, "-s"] + auth_opts + [get_url], stderr=subprocess.STDOUT, )  # nosec B603
+        result = subprocess.check_output( [curl_command, "-sS"] + auth_opts + [get_url], stderr=subprocess.STDOUT, )  # nosec B603
     except subprocess.CalledProcessError as e:
-        domoticz_error_api( f"Domoticz gethardware call failed (rc={e.returncode}): {e.output!r}" )
+        hint = CURL_HINTS.get(e.returncode)
+        hint = f" — {hint}" if hint else ""
+        domoticz_error_api( f"Domoticz gethardware call failed (rc={e.returncode}): {e.output!r}{hint}" )
         return False
 
     if not result:
