@@ -68,6 +68,21 @@ GP_DEVICE_IDS = {
 # Model names of the built-in fallback (Modules/greenPowerWidgets.BUILTIN_MODEL_PREFIX)
 BUILTIN_MODEL_PREFIX = "GreenPower-"
 
+# zigpy radios that receive no Green Power frame (GPDF) by themselves, only through a router
+# with full Green Power support in between (zigpy discussion #1955): Green Power is not offered
+GREEN_POWER_UNSUPPORTED_RADIOS = ("znp",)
+
+
+def green_power_supported(self):
+    """
+    True when the coordinator can pair Green Power devices: a zigpy radio that receives
+    Green Power frames. The WebUI shows the Green Power settings and pages only then.
+    """
+    if getattr(self, "zigbee_communication", None) != "zigpy":
+        return False
+    radio = getattr(getattr(self, "ControllerLink", None), "_radiomodule", None)
+    return radio not in GREEN_POWER_UNSUPPORTED_RADIOS
+
 
 def public_gp_record(record):
     """A copy of a store record without its secrets."""
@@ -219,8 +234,8 @@ def _open_gp_commissioning(self, data, response):
     model = request.get("Model") or None
     if model is not None and model not in gp_models(self):
         return _bad_request(response, "Model: unknown Green Power device type %s" % model)
-    if getattr(self, "zigbee_communication", None) != "zigpy":
-        return _bad_request(response, "Green Power needs a zigpy coordinator")
+    if not green_power_supported(self):
+        return _bad_request(response, "Green Power needs a zigpy coordinator that receives Green Power frames (not ZNP)")
 
     feed = getattr(self, "GreenPowerFeed", None)
     if feed is not None:
