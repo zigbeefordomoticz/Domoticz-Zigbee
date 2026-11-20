@@ -37,6 +37,7 @@ SETTINGS = {
             "MatomoCoordinatorReported": { "type": "str", "default": "", "current": None, "restart": 0, "hidden": True, "Advanced": False, },
             "enablegroupmanagement": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": False, "Group": "Features", },
             "enableNativeScenes": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": False, "Group": "Features", },
+            "GreenPowerEnable": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, "GreenPowerOnly": True, "Group": "Features", },
             "enableReadAttributes": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": True, "Advanced": True, },
             "internetAccess": { "type": "bool", "default": 1, "current": None, "restart": 1, "hidden": False, "Advanced": False, "Group": "Internet", },
             "CheckSSLCertificateValidity": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "Group": "Domoticz", },
@@ -87,7 +88,6 @@ SETTINGS = {
             "EzspAllowUnsecuredRejoins": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "ezsp", "Group": "Radio", },
             "BellowsNoMoreEndDeviceChildren": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "ezsp", "Group": "Radio", },
             "zigpySourceRouting": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "Group": "Radio", },
-            "GreenPowerEnable": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True, "GreenPowerOnly": True, "Group": "GreenPower", },
             "forceZigpy_noasyncio": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": True, "Advanced": True, },
             "EnergyScanAtStatup": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": True, "Advanced": True, },
         }
