@@ -78,6 +78,17 @@ APIV = 1  # API Version
 SITE_ID = 9
 ACTION_NAME = "PluginInstanceInfos"
 
+# Visit-scope custom dimensions of site 9 (created 2026-11-18): visit key ->
+# the action-scope dimension it copies. Chipset (14) is derived from the
+# firmware label (4), see add_visit_dimensions().
+VISIT_DIMENSIONS = {
+    "dimension13": "dimension3",   # Plugin version
+    "dimension15": "dimension1",   # Domoticz version
+    "dimension16": "dimension6",   # Certified Db
+    "dimension17": "dimension5",   # Network size
+}
+VISIT_CHIPSET_DIMENSION = "dimension14"
+
 RONELABS_MODEL_INFO = "/etc/modelinfo"
 DEVICE_TREE_CONFIGURATION = "/proc/device-tree/model"
 
@@ -145,6 +156,14 @@ def populate_custom_dimensions(self):
         11 – Raspberry Pi model string
         12 – Raw coordinator MAC address (only on RoneLabs hardware, intentional)
 
+    Visit-scope copies (see ``VISIT_DIMENSIONS``), so Matomo can count
+    installs per value:
+        13 – Plugin version (= 3)
+        14 – Chipset: firmware family only, e.g. ``Ezsp`` (prefix of 4)
+        15 – Domoticz version (= 1)
+        16 – Certified device-DB version (= 6)
+        17 – Network size category (= 5)
+
     Returns:
         dict: Mapping of ``"dimensionN"`` keys to sanitised string values.
               Keys for unavailable data are omitted.
@@ -207,7 +226,26 @@ def populate_custom_dimensions(self):
     if pi_model:
         _custom_dimensions[ "dimension11"] = clean_custom_dimension_value(pi_model)
 
+    add_visit_dimensions(_custom_dimensions)
     return _custom_dimensions
+
+
+def add_visit_dimensions(custom_dimensions):
+    """Add the visit-scope copies of the main dimensions (Matomo ids 13-17).
+
+    Action-scope dimensions can only be counted per visit; a visit-scope
+    dimension gives the number of installs (unique visitors) per value.
+    Copies only the values present in *custom_dimensions*.
+    """
+    for visit_key, action_key in VISIT_DIMENSIONS.items():
+        if action_key in custom_dimensions:
+            custom_dimensions[visit_key] = custom_dimensions[action_key]
+
+    firmware = custom_dimensions.get("dimension4")
+    if firmware:
+        chipset = firmware.split(" - ")[0].strip()
+        if chipset:
+            custom_dimensions[VISIT_CHIPSET_DIMENSION] = chipset
 
 
 def matomo_plugin_analytics_infos(self):
