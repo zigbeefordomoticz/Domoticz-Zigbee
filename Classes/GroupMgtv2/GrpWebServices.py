@@ -10,8 +10,10 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
+import re
 from time import time
 
+from Classes.GroupMgtv2.GrpErrorCodes import GroupRequestError
 from Classes.GroupMgtv2.GrpIkeaRemote import Ikea5BToBeAddedToListIfExist
 from Classes.GroupMgtv2.GrpServices import (
     SendGroupIdentifyEffect, create_new_group_and_attach_devices,
@@ -19,6 +21,11 @@ from Classes.GroupMgtv2.GrpServices import (
     submitForGroupMemberShipScaner, update_group_and_add_devices,
     update_group_and_remove_devices, updateGroupName)
 from Modules.tools import getListOfEpForCluster, mainPoweredDevice
+
+
+# 0xfff8 and above are reserved by the ZCL
+MAX_GROUP_ID = 0xfff7
+GROUP_ID_FORMAT = re.compile("[0-9a-fA-F]{4}")
 
 
 def ScanAllDevicesForGroupMemberShip(self):
@@ -55,8 +62,10 @@ def process_web_request(self, webInput):
     Receive as GroupInput the json coming from the WebUI
     coordinatorInside:true  means Zigate must be part of the Group
     devicesSelected means a list of { EP and NwkId}
-    if '_GroupId' do not exist in the list of groups, then it is about creating a new group
+    Without '_GroupId' it is about creating a new group, and requestedGroupId asks for its id.
 
+    _GroupId cannot carry a new id: it is skipped when unknown, and every group
+    missing from the list is then removed.
     """
 
     # Begining
@@ -147,11 +156,24 @@ def transform_web_to_group_devices_list(self, WebDeviceList):
     return DeviceList
 
 
+def requested_group_id(self, GrpId):
+    """The id asked for a new group, to match a device set on a fixed group for instance."""
+    if not isinstance(GrpId, str) or not GROUP_ID_FORMAT.fullmatch(GrpId):
+        raise GroupRequestError("GROUP_ID_INVALID")
+    GrpId = GrpId.lower()
+    value = int(GrpId, 16)
+    if value == 0 or value > MAX_GROUP_ID or value == self.pluginconf.pluginConf["pingViaGroup"]:
+        raise GroupRequestError("GROUP_ID_RESERVED")
+    if GrpId in self.ListOfGroups:
+        raise GroupRequestError("GROUP_ID_IN_USE")
+    return GrpId
+
+
 def newGroup(self, GrpName, item):
 
     self.logging("Debug", " --  -- - > Creation of Group: %s " % GrpName)
     # New Group to be added
-    GrpId = get_group_id(self)
+    GrpId = get_group_id(self) if item.get("requestedGroupId") is None else requested_group_id(self, item["requestedGroupId"])
     if GrpId is None:
         self.logging("Error", " --  --  -- - > No available Group Id, cannot create Group: %s " % GrpName, None, {"Error code": "GRP0501", "GroupName": GrpName})
         return
