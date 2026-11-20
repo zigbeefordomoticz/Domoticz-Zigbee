@@ -201,10 +201,13 @@ VENDOR_PROFILES = {
     },
 
     0x1189: {  # Osram / LEDVANCE
-        "max_data": 56,
+        # LEDVANCE firmware requests 63-byte blocks, but rejects 48- and 50-byte
+        # blocks with MALFORMED_COMMAND and never acknowledges 63-byte ones.
+        # 40 bytes is the working size (zigpy/zigpy#1965, LEDVANCE DIM, image type 0x006F).
+        "max_data": 40,
         "min_delay": 0.12,
         "retry": 3,
-        "notes": "Generally easier OTA; check mesh stability during upgrade."
+        "notes": "Firmware bug: blocks above 40 bytes are rejected, whatever size is requested."
     },
     0xBBAA: {  # Osram / LEDVANCE
         "max_data": 56,
