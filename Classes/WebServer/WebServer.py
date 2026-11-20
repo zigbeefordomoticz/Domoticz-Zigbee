@@ -108,6 +108,7 @@ class WebServer(object):
                                                rest_scan_devices_for_group,
                                                rest_zGroup,
                                                rest_zGroup_lst_avlble_dev)
+    from Classes.WebServer.rest_Scenes import rest_scenes
     from Classes.WebServer.rest_logging import (rest_csp_report,
                                                 rest_logErrorHistory,
                                                 rest_logErrorHistoryClear,
@@ -205,6 +206,7 @@ class WebServer(object):
         self.permitTojoin = permitTojoin
 
         self.groupmgt = None
+        self.scenemgt = None
         self.OTA = None
         self.ListOfDevices = ListOfDevices
         self.DevicesInPairingMode = []
@@ -292,6 +294,9 @@ class WebServer(object):
         
     def update_groupManagement(self, groupmanagement):
         self.groupmgt = groupmanagement if groupmanagement else None
+
+    def update_sceneManagement(self, scenemanagement):
+        self.scenemgt = scenemanagement if scenemanagement else None
 
     def update_OTA(self, OTA):
         self.OTA = OTA or None

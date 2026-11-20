@@ -72,6 +72,7 @@ def setup_list_rest_commands( self ):
         {"Name": "rescan-groups", "Verbs": {"GET"}, "function": self.rest_rescan_group},
         {"Name": "restart-needed", "Verbs": {"GET"}, "function": self.rest_restart_needed},
         {"Name": "scan-device-for-grp", "Verbs": {"PUT"}, "function": self.rest_scan_devices_for_group },
+        {"Name": "scenes", "Verbs": {"GET", "PUT", "DELETE"}, "function": self.rest_scenes},
         {"Name": "setting-debug", "Verbs": {"GET", "PUT"}, "function": self.rest_Settings_with_debug},
         {"Name": "setting", "Verbs": {"GET", "PUT"}, "function": self.rest_Settings_wo_debug},
         {"Name": "sw-reset-zigate", "Verbs": {"GET"}, "function": self.rest_reset_zigate},

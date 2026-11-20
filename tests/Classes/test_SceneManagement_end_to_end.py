@@ -42,6 +42,7 @@ SCRIPT = textwrap.dedent(
     import Zigbee.zclRawCommands as raw
     from Classes.PluginStore import PluginStore
     from Classes.SceneManagement import SceneManagement
+    from Classes.WebServer.rest_Scenes import rest_scenes
     from zigpy.zcl import foundation
     from zigpy.zcl.clusters.general import Scenes
 
@@ -148,6 +149,28 @@ def test_a_lamp_with_a_full_table_is_failed():
     )
 
 
+def test_from_rest_to_the_lamp_and_back():
+    _run(
+        """
+        import json
+
+        server = types.SimpleNamespace(logging=MagicMock(), log=plugin.log, pluginconf=plugin.pluginconf, scenemgt=plugin.scenemgt)
+        lamp = Lamp()
+        with patch.object(raw, "raw_APS_request", lamp.receive), patch.object(raw, "get_and_inc_ZCL_SQN", return_value="3c"):
+            created = rest_scenes(server, "PUT", b'{"name": "Reading", "transitionTime": 2}', [GROUP])
+            assert created["Status"] == "200 OK", created
+            assert lamp.table == {(0x1001, 1): 2}, lamp.table
+
+            duplicate = rest_scenes(server, "PUT", b'{"name": "reading"}', [GROUP])
+            assert duplicate["Status"] == "400 BAD REQUEST", duplicate
+
+        listed = json.loads(rest_scenes(server, "GET", None, [])["Data"])
+        assert [s["name"] for s in listed[0]["scenes"]] == ["Reading"], listed
+        assert listed[0]["scenes"][0]["synced"] == 1, listed
+        """
+    )
+
+
 def test_a_scene_already_on_the_lamp_is_found_through_real_frames():
     _run(
         """
@@ -159,5 +182,29 @@ def test_a_scene_already_on_the_lamp_is_found_through_real_frames():
         assert view["scan"]["running"] is False and view["scan"]["found"] == 1
         scene = view["scenes"][0]
         assert (scene["sceneId"], scene["name"], scene["discovered"], scene["synced"]) == ("07", "Scene 07", True, 1)
+        """
+    )
+
+
+def test_a_chosen_id_through_rest_and_real_frames():
+    _run(
+        """
+        import json
+
+        server = types.SimpleNamespace(logging=MagicMock(), log=plugin.log, pluginconf=plugin.pluginconf, scenemgt=plugin.scenemgt)
+        lamp = Lamp()
+        lamp.table[(0x1001, 0x07)] = 5
+        with patch.object(raw, "raw_APS_request", lamp.receive), patch.object(raw, "get_and_inc_ZCL_SQN", return_value="3c"):
+            taken = json.loads(rest_scenes(server, "PUT", b'{"name": "Remote", "sceneId": "07"}', [GROUP])["Data"])
+            assert lamp.seen == ["get_scene_membership"], lamp.seen
+            assert taken["scan"]["capture"]["error"] == "SCENE_ID_IN_USE", taken
+            assert lamp.table == {(0x1001, 0x07): 5}, lamp.table
+
+            free = json.loads(rest_scenes(server, "PUT", b'{"name": "Remote", "transitionTime": 2, "sceneId": "2A"}', [GROUP])["Data"])
+        assert free["scan"]["capture"]["state"] == "started", free
+        assert lamp.seen == ["get_scene_membership", "get_scene_membership", "add", "store"], lamp.seen
+        assert lamp.table[(0x1001, 0x2a)] == 2, lamp.table
+        scene = next(s for s in free["scenes"] if s["sceneId"] == "2a")
+        assert (scene["name"], scene["synced"], scene["discovered"]) == ("Remote", 1, False), scene
         """
     )
