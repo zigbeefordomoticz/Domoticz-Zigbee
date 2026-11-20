@@ -503,6 +503,56 @@ class TestCleanup(unittest.TestCase):
             if not loop.is_closed():
                 loop.close()
 
+    def test_retrieves_task_exceptions(self):
+        from Classes.ZigpyTransport.supervisor import _cleanup
+
+        async def failing_on_cancel():
+            try:
+                await asyncio.sleep(9999)
+            except asyncio.CancelledError:
+                raise ValueError("boom")
+
+        loop = asyncio.new_event_loop()
+        handler = MagicMock()
+        loop.set_exception_handler(handler)
+        task = loop.create_task(failing_on_cancel())
+        loop.run_until_complete(asyncio.sleep(0))   # let the task start
+        t = make_transport()
+        _cleanup(t, loop)
+        del task
+        import gc
+        gc.collect()
+        handler.assert_not_called()
+
+    def test_stuck_task_does_not_block_cleanup(self):
+        """Issue #2267: a task that can never acknowledge its cancellation must not
+        hold _cleanup (and the zigpy thread) forever."""
+        from Classes.ZigpyTransport.supervisor import _cleanup
+
+        loop = asyncio.new_event_loop()
+
+        async def stubborn():
+            while True:
+                try:
+                    await asyncio.sleep(9999)
+                except asyncio.CancelledError:
+                    continue   # swallow every cancel
+
+        # The stuck task is destroyed still pending: keep that report out of the test output.
+        loop.set_exception_handler(MagicMock())
+        loop.create_task(stubborn())
+        loop.run_until_complete(asyncio.sleep(0))
+        t = make_transport()
+        start = time.monotonic()
+        with patch("Classes.ZigpyTransport.supervisor.CLEANUP_TASKS_TIMEOUT", 0.2):
+            _cleanup(t, loop)
+        self.assertLess(time.monotonic() - start, 5)
+        self.assertTrue(loop.is_closed())
+        errors = [c for c in t.log.logging.call_args_list if c.args[1] == "Error"]
+        self.assertEqual(len(errors), 1)
+        self.assertEqual(errors[0].args[4]["Error code"], "ZIGPY-STOP-01")
+        self.assertIn("stubborn", errors[0].args[4]["Pending tasks"][0])
+
 
 if __name__ == "__main__":
     unittest.main()

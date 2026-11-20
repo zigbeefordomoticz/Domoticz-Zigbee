@@ -45,6 +45,7 @@ DEAD_STACK_THRESHOLD       = 240   # seconds without heartbeat → stack DEAD
 STARTUP_TIMEOUT            = 120   # seconds to receive the first heartbeat
 WATCH_DG_HEARTBEAT_INTERVAL = 30   # poll interval inside _watchdog
 MAX_RESTARTS_PER_HOUR      = 5     # circuit-breaker threshold
+CLEANUP_TASKS_TIMEOUT      = 5.0   # seconds _cleanup waits for cancelled tasks to finish
 
 
 # ---------------------------------------------------------------------------
@@ -516,14 +517,48 @@ def _cleanup(self, loop):
     """
     self.log.logging("TransportZigpy", "Debug", "Cleaning up loop")
 
-    for task in asyncio.all_tasks(loop):
+    tasks = asyncio.all_tasks(loop)
+    for task in tasks:
         task.cancel()
 
-    try:
-        loop.run_until_complete(
-            asyncio.gather(*asyncio.all_tasks(loop), return_exceptions=True)
+    still_pending = set()
+    if tasks:
+        # Bounded wait: a task that cannot finish its cancellation must not hold the
+        # zigpy thread (and with it the plugin onStop) forever (issue #2267).
+        # asyncio.wait() does not cancel on timeout, unlike wait_for(gather()), which
+        # would wait again for the stuck task to acknowledge the cancellation.
+        try:
+            done, still_pending = loop.run_until_complete(
+                asyncio.wait(tasks, timeout=CLEANUP_TASKS_TIMEOUT)
+            )
+        except Exception:
+            done = set()
+
+        # Retrieve the results, so the loop does not log "Task exception was never retrieved".
+        for task in done:
+            if not task.cancelled():
+                task.exception()
+
+    if still_pending:
+        self.log.logging(
+            ["TransportZigpy", "StopProcess"], "Error",
+            f"Zigpy loop cleanup: {len(still_pending)} task(s) did not stop within "
+            f"{CLEANUP_TASKS_TIMEOUT}s, closing the loop anyway",
+            None,
+            {
+                "Error code": "ZIGPY-STOP-01",
+                "Pending tasks": [_task_label(task) for task in still_pending],
+            },
         )
-    except Exception:
-        pass  # nosec B110
 
     loop.close()
+
+
+def _task_label(task):
+    """Short description of a task for the error context: name + coroutine."""
+    try:
+        coro = task.get_coro()
+        coro_name = getattr(coro, "__qualname__", None) or repr(coro)
+    except Exception:
+        coro_name = "?"
+    return f"{task.get_name()} ({coro_name})"

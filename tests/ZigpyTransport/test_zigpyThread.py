@@ -91,21 +91,102 @@ class TestStopZigpyThread(unittest.TestCase):
         # Must not raise
         stop_zigpy_thread(t)
 
+    def _make_pending_task(self):
+        task = MagicMock()
+        task.done.return_value = False
+        return task
+
     def test_cancels_topology_scan_task(self):
         from Classes.ZigpyTransport.zigpyThread import stop_zigpy_thread
         t = make_transport()
-        mock_task = MagicMock()
+        t.zigpy_loop.is_closed.return_value = False
+        mock_task = self._make_pending_task()
         t.manual_topology_scan_task = mock_task
         stop_zigpy_thread(t)
-        mock_task.cancel.assert_called_once()
+        # Cancelled on the zigpy loop's own thread, never directly (issue #2267).
+        t.zigpy_loop.call_soon_threadsafe.assert_any_call(mock_task.cancel)
+        mock_task.cancel.assert_not_called()
 
     def test_cancels_interference_scan_task(self):
         from Classes.ZigpyTransport.zigpyThread import stop_zigpy_thread
         t = make_transport()
-        mock_task = MagicMock()
+        t.zigpy_loop.is_closed.return_value = False
+        mock_task = self._make_pending_task()
         t.manual_interference_scan_task = mock_task
         stop_zigpy_thread(t)
-        mock_task.cancel.assert_called_once()
+        t.zigpy_loop.call_soon_threadsafe.assert_any_call(mock_task.cancel)
+        mock_task.cancel.assert_not_called()
+
+    def test_no_cancel_when_task_already_done(self):
+        from Classes.ZigpyTransport.zigpyThread import stop_zigpy_thread
+        t = make_transport()
+        t.zigpy_loop.is_closed.return_value = False
+        mock_task = MagicMock()
+        mock_task.done.return_value = True
+        t.manual_topology_scan_task = mock_task
+        stop_zigpy_thread(t)
+        self.assertNotIn(call(mock_task.cancel), t.zigpy_loop.call_soon_threadsafe.call_args_list)
+        mock_task.cancel.assert_not_called()
+
+    def test_no_cancel_when_loop_closed(self):
+        from Classes.ZigpyTransport.zigpyThread import stop_zigpy_thread
+        t = make_transport()
+        t._shutdown_event = None
+        t.zigpy_loop.is_closed.return_value = True
+        mock_task = self._make_pending_task()
+        t.manual_topology_scan_task = mock_task
+        stop_zigpy_thread(t)
+        t.zigpy_loop.call_soon_threadsafe.assert_not_called()
+        mock_task.cancel.assert_not_called()
+
+    def test_cancel_survives_loop_closing_meanwhile(self):
+        from Classes.ZigpyTransport.zigpyThread import stop_zigpy_thread
+        t = make_transport()
+        t._shutdown_event = None
+        t.zigpy_loop.is_closed.return_value = False
+        t.zigpy_loop.call_soon_threadsafe.side_effect = RuntimeError("Event loop is closed")
+        t.manual_topology_scan_task = self._make_pending_task()
+        t.manual_interference_scan_task = self._make_pending_task()
+        # Must not raise, and must try both tasks.
+        stop_zigpy_thread(t)
+        self.assertEqual(t.zigpy_loop.call_soon_threadsafe.call_count, 2)
+
+    def test_cross_thread_cancel_on_debug_loop_lets_thread_exit(self):
+        """Issue #2267: a debug-mode loop in its own thread, a scan task awaiting a
+        future, stop_zigpy_thread() from another thread, then the supervisor cleanup.
+        The zigpy thread must exit."""
+        from Classes.ZigpyTransport.supervisor import _cleanup
+        from Classes.ZigpyTransport.zigpyThread import stop_zigpy_thread
+
+        t = make_transport()
+        t._shutdown_event = None
+        t.writer_queue = None
+        started = threading.Event()
+
+        def run():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.set_debug(True)
+            t.zigpy_loop = loop
+
+            async def scan():
+                await loop.create_future()   # like waiting for a ZDO response
+
+            t.manual_topology_scan_task = loop.create_task(scan())
+            loop.call_soon(started.set)
+            loop.call_later(0.5, loop.stop)
+            try:
+                loop.run_forever()
+            finally:
+                _cleanup(t, loop)
+
+        th = threading.Thread(target=run, daemon=True)
+        th.start()
+        self.assertTrue(started.wait(5))
+        stop_zigpy_thread(t)
+        th.join(10)
+        self.assertFalse(th.is_alive())
+        self.assertTrue(t.manual_topology_scan_task.cancelled())
 
     def test_no_cancel_when_tasks_are_none(self):
         from Classes.ZigpyTransport.zigpyThread import stop_zigpy_thread
