@@ -24,6 +24,8 @@ from Classes.TransportStats import TREND_REST_FIELDS
 from Classes.WebServer.rest_GreenPower import green_power_supported
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
+from Classes.WebServer.settings_metadata import (check_numeric_setting,
+                                                 setting_metadata)
 from Modules.actuators import actuators
 from Modules.basicOutputs import (PermitToJoin, ZigatePermitToJoin,
                                   initiate_change_channel, setExtendedPANID,
@@ -695,6 +697,7 @@ class WebServer(object):
                         "restart_need": SETTINGS[_theme]["param"][param]["restart"],
                         "Advanced": SETTINGS[_theme]["param"][param]["Advanced"],
                     }
+                    setting.update(setting_metadata(SETTINGS[_theme]["param"][param]))
 
                     if SETTINGS[_theme]["param"][param]["type"] == "hex":
                         if isinstance(self.pluginconf.pluginConf[param], int):
@@ -736,6 +739,12 @@ class WebServer(object):
 
                         found = True
                         upd = True
+                        valid, value = check_numeric_setting(SETTINGS[_theme]["param"][param], setting_lst[setting]["current"])
+                        if not valid:
+                            domoticz_error_api("Setting %s not updated: %s" % (param, value))
+                            continue
+                        setting_lst[setting]["current"] = value
+
                         if str(setting_lst[setting]["current"]) == str(self.pluginconf.pluginConf[param]):
                             # Nothing to do
                             continue
