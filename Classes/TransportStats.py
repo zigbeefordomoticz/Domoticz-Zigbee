@@ -14,6 +14,7 @@
 import json
 import time
 from collections import deque
+from pathlib import Path
 from Modules.domoticzAbstractLayer import (domoticz_error_api,
                                            domoticz_log_api,
                                            domoticz_status_api)
@@ -317,7 +318,8 @@ class TransportStatistics:
         stats[timing]["start"] = self._start
         stats[timing]["stop"] = timing
 
-        json_filename = self.pluginconf.pluginConf["pluginReports"] + "Transport-stats.json"
+        # pluginReports has no trailing separator (Classes/PluginConf.py builds it with pathlib)
+        json_filename = Path(self.pluginconf.pluginConf["pluginReports"]) / "Transport-stats.json"
         with open(json_filename, "at") as json_file:
             json_file.write("\n")
             json.dump(stats, json_file)
