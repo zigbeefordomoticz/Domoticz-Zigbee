@@ -27,9 +27,10 @@ of a device can be in the same group. It is one of:
     native:   {"endpoint", "capability", "status", "lastCheck", "error", "snapshot"}
     fallback: {"endpoint", "capability", "status": "n/a", "snapshot"}
 
-The snapshot is the on/off and level the plugin last saw at the capture. A fallback
-member is sent it at a recall. On a native member it is only shown: the scene is what
-the device stored, and a member a scan found has none.
+The snapshot is the on/off and level the plugin last saw at the capture, and the "lift"
+and "tilt" of a cover, as percentages as the device reports them, only when it has them.
+A fallback member is sent it at a recall. On a native member it is only shown: the scene
+is what the device stored, and a member a scan found has none.
 
 The size of the scene table of a device is not in the ZCL: Get Scene Membership gives
 what is left, so the total is that and the scenes the store has on the device, all
@@ -93,8 +94,10 @@ does not change the status of a group. It is compared with the state once a reca
 has settled, not with the snapshot, which a device may have stored differently.
 A recall settles after its transition and SCENE_SETTLE_TIME, as the fade sends reports
 of its own, and a level has to move by more than LEVEL_REPORT_CHANGE, as that is what
-a dimmer holds back until its next periodic report. On/off and level only, like the
-snapshot: a colour or a shutter leaving a scene is not seen. Going to Off is an event
+a dimmer holds back until its next periodic report. A cover settles after
+COVER_SETTLE_TIME instead, as it travels for longer than that and reports on its way.
+Like the snapshot this covers on/off, level and the position of a cover: a colour
+leaving a scene is not seen. Going to Off is an event
 with the action of the Off level, as Domoticz writes no value without its triggers, but
 it does not reach onCommand: the group is not switched off.
 
@@ -110,16 +113,20 @@ from time import time
 from Modules.tools import is_ack_tobe_disabled, is_hex
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP
 from Zigbee.zclCommands import (zcl_move_to_level_with_onoff,
-                                zcl_onoff_off_noeffect, zcl_onoff_on)
+                                zcl_onoff_off_noeffect, zcl_onoff_on,
+                                zcl_window_covering_percentage)
 from Zigbee.zclRawCommands import (zcl_raw_add_scene,
                                    zcl_raw_get_scene_membership,
                                    zcl_raw_recall_scene,
                                    zcl_raw_remove_all_scenes,
-                                   zcl_raw_remove_scene, zcl_raw_store_scene)
+                                   zcl_raw_remove_scene, zcl_raw_store_scene,
+                                   zcl_raw_window_covering)
 
 SCENE_CLUSTER = "0005"
 ONOFF_CLUSTER = "0006"
 LEVEL_CLUSTER = "0008"
+COVERING_CLUSTER = "0102"
+COVER_POSITIONS = {"lift": "0008", "tilt": "0009"}
 
 COORDINATOR_NWKID = "0000"
 GROUP_NOT_FOR_SCENES = "0000"
@@ -141,6 +148,10 @@ SCENE_RESPONSE_TIMEOUT = 30
 SCENE_SETTLE_TIME = 10
 # The Change of the default reporting of the level (0x0008/0x0000, Modules/zigateConsts.py)
 LEVEL_REPORT_CHANGE = 5
+# A cover settles this long after a recall, in seconds: a shutter takes a minute or more
+COVER_SETTLE_TIME = 120
+# In percent: where a cover stops is not exact to the unit
+COVER_POSITION_MARGIN = 2
 
 STEP_ADD = "Add"
 STEP_STORE = "Store"
@@ -192,6 +203,9 @@ def _cached_value(raw):
 
 def _member_moved(before, now):
     """Has a member left the state it had? A value the plugin never saw says nothing."""
+    for position in COVER_POSITIONS:
+        if None not in (before.get(position), now.get(position)) and abs(before[position] - now[position]) > COVER_POSITION_MARGIN:
+            return True
     if None not in (before["onOff"], now["onOff"]) and before["onOff"] != now["onOff"]:
         return True
     if now["onOff"] == 0 or None in (before["level"], now["level"]):
@@ -235,12 +249,15 @@ class SceneManagement:
         Epv2 and not Ep: Ep mixes input and output clusters, and a remote has the
         Scenes cluster as output.
         """
-        cluster_in = self.plugin.ListOfDevices.get(nwkid, {}).get("Epv2", {}).get(ep, {}).get("ClusterIn", {})
+        cluster_in = self._cluster_in(nwkid, ep)
         if SCENE_CLUSTER in cluster_in:
             return CAPABILITY_NATIVE
-        if ONOFF_CLUSTER in cluster_in or LEVEL_CLUSTER in cluster_in:
+        if ONOFF_CLUSTER in cluster_in or LEVEL_CLUSTER in cluster_in or COVERING_CLUSTER in cluster_in:
             return CAPABILITY_FALLBACK
         return None
+
+    def _cluster_in(self, nwkid, ep):
+        return self.plugin.ListOfDevices.get(nwkid, {}).get("Epv2", {}).get(ep, {}).get("ClusterIn", {})
 
     def _group_members(self, GroupId):
         """The members a scene can reach, keyed as in the store."""
@@ -253,13 +270,18 @@ class SceneManagement:
         return members
 
     def _snapshot(self, nwkid, ep):
-        """On/off and level as the plugin last saw them."""
+        """On/off, level and the position of a cover as the plugin last saw them."""
         ep_data = self.plugin.ListOfDevices.get(nwkid, {}).get("Ep", {}).get(ep, {})
         on_off = _cached_value(ep_data.get(ONOFF_CLUSTER, {}).get("0000"))
-        return {
+        snapshot = {
             "onOff": None if on_off is None else int(on_off != 0),
             "level": _cached_value(ep_data.get(LEVEL_CLUSTER, {}).get("0000")),
         }
+        for position, attribute in COVER_POSITIONS.items():
+            value = _cached_value(ep_data.get(COVERING_CLUSTER, {}).get(attribute))
+            if value is not None:
+                snapshot[position] = value
+        return snapshot
 
     # ── Checks ──────────────────────────────────────────────────────────────
 
@@ -723,6 +745,13 @@ class SceneManagement:
         nwkid, ep = member["nwkid"], member["ep"]
         ack_disabled = is_ack_tobe_disabled(self.plugin, nwkid)
         self.logging("Debug", "_replay_snapshot - %s/%s %s, transition %ss" % (nwkid, ep, snapshot, transition_time), nwkid)
+        lift, tilt = snapshot.get("lift"), snapshot.get("tilt")
+        if lift is not None:
+            zcl_window_covering_percentage(self.plugin, nwkid, ep, "%02x" % lift, ackIsDisabled=ack_disabled)
+        if tilt is not None:
+            zcl_raw_window_covering(self.plugin, nwkid, ZIGATE_EP, ep, "GoToTiltPercentage", percentage="%02x" % tilt, ackIsDisabled=ack_disabled)
+        if lift is not None or tilt is not None:
+            return
         if snapshot["onOff"] == 0:
             zcl_onoff_off_noeffect(self.plugin, nwkid, ep, ackIsDisabled=ack_disabled)
         elif snapshot["level"] is not None:
@@ -807,13 +836,18 @@ class SceneManagement:
         self.selector.sync(GroupId, self._groups[GroupId].get("Name", ""), {scene["selectorLevel"]: scene["name"] for scene in scenes.values()})
         if recalled in scenes:
             self.selector.show(GroupId, scenes[recalled]["selectorLevel"])
-            self._watch_shown_scene(GroupId, recalled, time() + (scenes[recalled]["transitionTime"] or 0) + SCENE_SETTLE_TIME)
+            self._watch_shown_scene(GroupId, recalled, time() + (scenes[recalled]["transitionTime"] or 0) + self._settle_time(GroupId, scenes[recalled]))
         elif GroupId not in self._selector_shown:
             # After a restart: the Selector is what still knows the scene
             level = self.selector.level(GroupId)
             shown = next((SceneId for SceneId, scene in scenes.items() if scene["selectorLevel"] == level), None)
             if shown:
                 self._watch_shown_scene(GroupId, shown, time())
+
+    def _settle_time(self, GroupId, scene):
+        members = self._group_members(GroupId)
+        covers = any(COVERING_CLUSTER in self._cluster_in(members[key]["nwkid"], members[key]["ep"]) for key in scene["members"] if key in members)
+        return COVER_SETTLE_TIME if covers else SCENE_SETTLE_TIME
 
     def _watch_shown_scene(self, GroupId, SceneId, settled):
         self._selector_shown[GroupId] = {"sceneId": SceneId, "settled": settled, "state": None}

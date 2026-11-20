@@ -27,7 +27,7 @@ FULL_OPTIONS = {"LevelNames", "LevelActions", "LevelOffHidden", "SelectorStyle"}
 
 RAW_COMMANDS = (
     "zcl_raw_add_scene", "zcl_raw_get_scene_membership", "zcl_raw_recall_scene",
-    "zcl_raw_remove_all_scenes", "zcl_raw_remove_scene", "zcl_raw_store_scene",
+    "zcl_raw_remove_all_scenes", "zcl_raw_remove_scene", "zcl_raw_store_scene", "zcl_raw_window_covering",
 )
 
 
@@ -114,7 +114,7 @@ def loaded():
     consts.MAX_LOAD_ZIGATE = 5
     consts.ZIGATE_EP = "01"
     zcl_commands = types.ModuleType("Zigbee.zclCommands")
-    for name in ("zcl_move_to_level_with_onoff", "zcl_onoff_off_noeffect", "zcl_onoff_on"):
+    for name in ("zcl_move_to_level_with_onoff", "zcl_onoff_off_noeffect", "zcl_onoff_on", "zcl_window_covering_percentage"):
         setattr(zcl_commands, name, MagicMock(name=name))
     raw_commands = types.ModuleType("Zigbee.zclRawCommands")
     for name in RAW_COMMANDS:
