@@ -108,6 +108,15 @@ class TestSettingsTableConsistency(unittest.TestCase):
                 with self.subTest(param=param):
                     self.assertEqual(definition.get("DependsOn"), "enablegroupmanagement")
 
+    def test_runtime_coordinator_modes_are_not_shown(self):
+        # Set by the plugin at start from the coordinator type (True on zigpy, ZiGate mode
+        # otherwise); a value changed from the WebUI would make the plugin build frames
+        # for the wrong transport until the next restart.
+        shown = {param for _theme, param, _definition in shown_settings()}
+        for param in ("ControllerInRawMode", "ControllerInHybridMode"):
+            with self.subTest(param=param):
+                self.assertNotIn(param, shown)
+
     def test_default_within_range(self):
         for param, definition in ALL.items():
             if definition["type"] not in ("int", "float"):
