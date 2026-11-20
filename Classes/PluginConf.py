@@ -43,6 +43,7 @@ SETTINGS = {
             "pingDevices": { "type": "bool", "default": 1, "current": None, "restart": 1, "hidden": False, "Advanced": True, "Group": "DevicePing", },
             "pingDevicesFeq": { "type": "int", "default": 3600, "current": None, "restart": 0, "hidden": False, "Advanced": True, "Group": "DevicePing", "Unit": "s", "Min": 300, "Max": 86400, "Step": 60, "DependsOn": "pingDevices", },
             "PluginAnalytics": { "type": "bool", "default": -1, "current": None, "restart": 0, "hidden": True, "Advanced": False, },
+            "MatomoOptInReported": { "type": "int", "default": -1, "current": None, "restart": 0, "hidden": True, "Advanced": False, },
             "DomoticzCustomMenu": { "type": "bool", "default": 1, "current": None, "restart": 1, "hidden": False, "Advanced": False, "Group": "Domoticz", },
             "NightShift": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, "Group": "Features", }
         },
