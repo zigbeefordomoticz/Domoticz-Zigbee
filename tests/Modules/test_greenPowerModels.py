@@ -46,7 +46,7 @@ def test_shipped_types_all_load():
 
     models = load_gp_models(p, REPO_CONF)
 
-    assert {"GreenPower-OnOff", "GreenPower-OnOff-Dim"} <= set(models)
+    assert {"GreenPower-OnOff", "GreenPower-OnOff-Dim", "GreenPower-4Buttons"} <= set(models)
     assert len(models) == len(list((REPO_CONF / "ZGPmodel").glob("*.json")))
     assert errors(p) == []
 
@@ -85,6 +85,10 @@ def test_list_follows_order(tmp_path):
     ({"Ep": {"01": {"Type": "Switch"}}, "Commands": {"0x20": ["0006", "00"]}}, "GPMODEL-LOAD-02"),
     ({"Ep": {"01": {"Type": "Switch"}}, "Commands": {"20": ["6", "00"]}}, "GPMODEL-LOAD-02"),
     ({"Ep": {"01": {"Type": "Switch"}}, "Commands": {}}, "GPMODEL-LOAD-02"),
+    ({"Ep": {"01": {"Type": "Switch"}}, "Commands": {"69/4": ["0006", "01"]}}, "GPMODEL-LOAD-02"),
+    ({"Ep": {"01": {"Type": "Switch"}}, "Commands": {"69/": ["0006", "01"]}}, "GPMODEL-LOAD-02"),
+    ({"Ep": {"01": {"Type": "Switch"}}, "Commands": {"69/01": ["0006", "01", "f1"]}}, "GPMODEL-LOAD-02"),
+    ({"Ep": {"01": {"Type": "Switch"}}, "Commands": {"69/01": ["0006", "01", "01", "x"]}}, "GPMODEL-LOAD-02"),
 ])
 def test_broken_file_is_an_error_and_left_out(tmp_path, content, code):
     p = plugin()
@@ -109,7 +113,32 @@ def test_command_mapping():
     p = plugin()
     load_gp_models(p, REPO_CONF)
 
-    assert gp_model_command(p, "GreenPower-OnOff-Dim", 0x35) == ("0008", "moveup")
-    assert gp_model_command(p, "GreenPower-OnOff-Dim", 0x34) == ("0008", "stop")
+    assert gp_model_command(p, "GreenPower-OnOff-Dim", 0x35) == ("0008", "moveup", None)
+    assert gp_model_command(p, "GreenPower-OnOff-Dim", 0x34) == ("0008", "stop", None)
     assert gp_model_command(p, "GreenPower-OnOff-Dim", 0x22) is None
     assert gp_model_command(p, "Unknown", 0x20) is None
+
+
+def test_command_mapping_per_payload_and_endpoint():
+    p = plugin()
+    load_gp_models(p, REPO_CONF)
+
+    # 8-bit vector press: one bit per button; the release (6a/00) is not mapped
+    assert gp_model_command(p, "GreenPower-4Buttons", 0x69, "01") == ("0006", "01", "f1")
+    assert gp_model_command(p, "GreenPower-4Buttons", 0x69, "02") == ("0006", "00", "f1")
+    assert gp_model_command(p, "GreenPower-4Buttons", 0x69, "04") == ("0006", "01", "f2")
+    assert gp_model_command(p, "GreenPower-4Buttons", 0x69, "08") == ("0006", "00", "f2")
+    assert gp_model_command(p, "GreenPower-4Buttons", 0x69, "05") is None  # two buttons at once
+    assert gp_model_command(p, "GreenPower-4Buttons", 0x6A, "00") is None
+    assert gp_model_command(p, "GreenPower-4Buttons", 0x69) is None
+
+
+def test_payload_key_wins_over_the_bare_command(tmp_path):
+    p = plugin()
+    write(tmp_path, "T.json", {"Ep": {"01": {"Type": "Switch"}},
+                               "Commands": {"69": ["0006", "toggle"], "69/01": ["0006", "01"]}})
+    load_gp_models(p, tmp_path)
+
+    assert gp_model_command(p, "T", 0x69, "01") == ("0006", "01", None)
+    assert gp_model_command(p, "T", 0x69, "02") == ("0006", "toggle", None)
+    assert gp_model_command(p, "T", 0x69) == ("0006", "toggle", None)
