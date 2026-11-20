@@ -65,7 +65,7 @@ class DomoticzAPIClient:
         log (logger-like object): Object with `logging(category, level, msg)` method.
     """
 
-    def __init__(self, base_url, pluginconf, log):
+    def __init__(self, base_url, pluginconf, log, hardware_id):
         """
         Initializes the API client.
 
@@ -73,6 +73,8 @@ class DomoticzAPIClient:
             base_url (str): Domoticz server URL (may include user:pass).
             pluginconf (dict): Plugin configuration.
             log (object): Logger for debug/error messages.
+            hardware_id (int|str): Domoticz HardwareID of this plugin instance,
+                used to name the worker thread (several instances may run).
         """
         self.base_url = base_url.rstrip('/')
         self.pluginconf = pluginconf
@@ -94,7 +96,7 @@ class DomoticzAPIClient:
         # Async worker thread
         self._stop_event = threading.Event()
         self._queue = queue.PriorityQueue()
-        self._worker = threading.Thread(target=self._worker_loop, name="DomoticzAPI", daemon=False)
+        self._worker = threading.Thread(target=self._worker_loop, name=f"DomoticzAPI_{hardware_id}", daemon=False)
         self._worker.start()
 
         # Per-device caches — guarded by _device_caches_lock

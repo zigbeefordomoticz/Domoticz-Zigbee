@@ -59,31 +59,49 @@ ZNP_MODEL = {
     "Elelabs, ELU01x": "31",
 }
 
+# Firmware family by "Branch Version" range (see FIRMWARE_BRANCH above).
+FIRMWARE_FAMILY_RANGES = (
+    (0, 20, "Zigate"),
+    (20, 30, "Znp"),
+    (30, 40, "Ezsp"),
+    (40, 50, "deCONZ"),
+    (50, 60, "BLZ"),
+)
+
+# Firmware family from the "Coordinator Model" plugin parameter (Mode1), used
+# when the branch does not name one: the "Unknown deConz / Silicon Labs / ZNP"
+# branches (97, 98, 99) or a branch that cannot be read.
+MODE1_FIRMWARE_FAMILY = {
+    "V1": "Zigate",
+    "V2": "Zigate",
+    "ZigpyZiGate": "Zigate",
+    "ZigpyZNP": "Znp",
+    "ZigpyEZSP": "Ezsp",
+    "ZigpydeCONZ": "deCONZ",
+    "ZigpyBLZ": "BLZ",
+}
+
+
+def firmware_family(branch_version, mode1):
+    """Return the firmware family label ("Znp", "Ezsp", ...) for the coordinator.
+
+    The branch reported by the radio wins. When it names no family, the
+    coordinator model the user selected (Mode1) is used, and "UNK" only when
+    neither is known.
+    """
+    try:
+        branch = int(branch_version)
+    except (TypeError, ValueError):
+        branch = None
+
+    if branch is not None:
+        for low, high, family in FIRMWARE_FAMILY_RANGES:
+            if low <= branch < high:
+                return family
+
+    return MODE1_FIRMWARE_FAMILY.get(mode1, "UNK")
+
+
 def set_display_firmware_version( self ):
-
-    if 0 <= int(self.ControllerData["Branch Version"]) < 20:   
-        self.pluginParameters["DisplayFirmwareVersion"] = "Zigate - %s" % self.ControllerData["Minor Version"] 
-
-    elif 20 <= int(self.ControllerData["Branch Version"]) < 30:
-        # ZNP
-        self.pluginParameters["DisplayFirmwareVersion"] = "Znp - %s" % self.ControllerData["Minor Version"] 
-
-    elif 30 <= int(self.ControllerData["Branch Version"]) < 40:   
-        # Silicon Labs
-        self.pluginParameters["DisplayFirmwareVersion"] = "Ezsp - %s" %self.ControllerData["Minor Version"]
-        
-    elif 40 <= int(self.ControllerData["Branch Version"]) < 50:
-        # deCONZ
-        self.pluginParameters["DisplayFirmwareVersion"] = "deCONZ - %s" %self.ControllerData["Minor Version"]
-
-    elif 50 <= int(self.ControllerData["Branch Version"]) < 60:
-        # deCONZ
-        self.pluginParameters["DisplayFirmwareVersion"] = "BLZ - %s" %self.ControllerData["Minor Version"]
-    
-    elif 50 <= int(self.ControllerData["Branch Version"]) < 60:
-        # deCONZ
-        self.pluginParameters["DisplayFirmwareVersion"] = "BLZ - %s" %self.ControllerData["Minor Version"]
-
-
-    else:
-        self.pluginParameters["DisplayFirmwareVersion"] = "UNK - %s" % self.ControllerData["Minor Version"] 
+    family = firmware_family(self.ControllerData.get("Branch Version"), self.pluginParameters.get("Mode1"))
+    self.pluginParameters["DisplayFirmwareVersion"] = "%s - %s" % (family, self.ControllerData["Minor Version"])

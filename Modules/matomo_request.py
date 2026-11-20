@@ -78,6 +78,17 @@ APIV = 1  # API Version
 SITE_ID = 9
 ACTION_NAME = "PluginInstanceInfos"
 
+# Visit-scope custom dimensions of site 9 (created 2026-11-18): visit key ->
+# the action-scope dimension it copies. Chipset (14) is derived from the
+# firmware label (4), see add_visit_dimensions().
+VISIT_DIMENSIONS = {
+    "dimension13": "dimension3",   # Plugin version
+    "dimension15": "dimension1",   # Domoticz version
+    "dimension16": "dimension6",   # Certified Db
+    "dimension17": "dimension5",   # Network size
+}
+VISIT_CHIPSET_DIMENSION = "dimension14"
+
 RONELABS_MODEL_INFO = "/etc/modelinfo"
 DEVICE_TREE_CONFIGURATION = "/proc/device-tree/model"
 
@@ -145,6 +156,14 @@ def populate_custom_dimensions(self):
         11 – Raspberry Pi model string
         12 – Raw coordinator MAC address (only on RoneLabs hardware, intentional)
 
+    Visit-scope copies (see ``VISIT_DIMENSIONS``), so Matomo can count
+    installs per value:
+        13 – Plugin version (= 3)
+        14 – Chipset: firmware family only, e.g. ``Ezsp`` (prefix of 4)
+        15 – Domoticz version (= 1)
+        16 – Certified device-DB version (= 6)
+        17 – Network size category (= 5)
+
     Returns:
         dict: Mapping of ``"dimensionN"`` keys to sanitised string values.
               Keys for unavailable data are omitted.
@@ -207,7 +226,26 @@ def populate_custom_dimensions(self):
     if pi_model:
         _custom_dimensions[ "dimension11"] = clean_custom_dimension_value(pi_model)
 
+    add_visit_dimensions(_custom_dimensions)
     return _custom_dimensions
+
+
+def add_visit_dimensions(custom_dimensions):
+    """Add the visit-scope copies of the main dimensions (Matomo ids 13-17).
+
+    Action-scope dimensions can only be counted per visit; a visit-scope
+    dimension gives the number of installs (unique visitors) per value.
+    Copies only the values present in *custom_dimensions*.
+    """
+    for visit_key, action_key in VISIT_DIMENSIONS.items():
+        if action_key in custom_dimensions:
+            custom_dimensions[visit_key] = custom_dimensions[action_key]
+
+    firmware = custom_dimensions.get("dimension4")
+    if firmware:
+        chipset = firmware.split(" - ")[0].strip()
+        if chipset:
+            custom_dimensions[VISIT_CHIPSET_DIMENSION] = chipset
 
 
 def matomo_plugin_analytics_infos(self):
@@ -232,6 +270,36 @@ def matomo_opt_in_action(self):
 def matomo_coordinator_initialisation(self):
     """Track a coordinator network-formation event in Matomo."""
     send_matomo_request( self, action_name="Coordinator Action", event_category="Coordinator", event_action="NewNetwork", event_name="Coordinator Formed new network" )
+
+
+def matomo_check_coordinator_change(self):
+    """Report that the coordinator was replaced since the last report.
+
+    The analytics id (``uid``) is the hash of the coordinator IEEE, so a new
+    coordinator shows up as a new install. The hash last reported is kept in
+    the hidden setting ``MatomoCoordinatorReported``:
+
+    * empty (first start with this version): record it, send nothing;
+    * same hash: nothing to do;
+    * different hash: send ``Coordinator/Replaced`` once, under the new id,
+      with the previous hash as event name so both ids can be linked.
+
+    Both hashes are ones the plugin already sends as ``uid``. Called only
+    when analytics are enabled and the internet is reachable.
+    """
+    current = get_clientid(self, mode='hashed')
+    if current is None:
+        return
+
+    reported = self.pluginconf.pluginConf.get("MatomoCoordinatorReported") or ""
+    if reported == current:
+        return
+
+    if reported:
+        send_matomo_request( self, action_name="Coordinator Action", event_category="Coordinator", event_action="Replaced", event_name=reported )
+
+    self.pluginconf.pluginConf["MatomoCoordinatorReported"] = current
+    self.pluginconf.write_Settings()
 
 
 def matomo_plugin_shutdown(self):
@@ -259,6 +327,40 @@ def matomo_plugin_update(self, status):
         send_matomo_request( self, action_name="Plugin Action", event_category="Plugin", event_action="SuccessfullUpdate", event_name="Plugin Update Successfully" )
     else:
         send_matomo_request( self, action_name="Plugin Action", event_category="Plugin", event_action="ErrorUpdate", event_name="Plugin Update with error" )
+
+
+def matomo_reconcile_opt_in_state(self):
+    """Report an opt-in change that was not made from the WebUI.
+
+    The WebUI sends Opt-In / Opt-Out when MatomoOptIn is toggled there. A
+    change made any other way (settings file, Domoticz database, a restored
+    backup) used to go unreported: the install only went silent. The state
+    last reported is kept in the hidden setting ``MatomoOptInReported``
+    (-1 = not known yet) and compared with ``MatomoOptIn`` at start:
+
+    * not known yet: record the current state, send nothing;
+    * same state: nothing to do;
+    * changed: send Opt-In or Opt-Out once, then record the new state.
+
+    Nothing is recorded while the event cannot be sent (no internet, or the
+    coordinator IEEE not known yet), so it is tried again at the next start.
+    """
+    current = 1 if self.pluginconf.pluginConf.get("MatomoOptIn") else 0
+    reported = self.pluginconf.pluginConf.get("MatomoOptInReported", -1)
+
+    if reported == current:
+        return
+
+    if reported in (0, 1):
+        if not self.internet_available or get_clientid(self) is None:
+            return
+        if current:
+            matomo_opt_in_action(self)
+        else:
+            matomo_opt_out_action(self)
+
+    self.pluginconf.pluginConf["MatomoOptInReported"] = current
+    self.pluginconf.write_Settings()
 
 
 def send_matomo_request(self, action_name, custom_variable=None, custom_dimension=None, event_category=None, event_action=None, event_name=None):

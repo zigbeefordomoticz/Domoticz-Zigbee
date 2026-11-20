@@ -18,6 +18,7 @@ from Modules.pluginModels import (check_found_plugin_model,
                                   plugin_self_identifier)
 from Modules.readAttributes import ReadAttributeRequest_0702_multiplier_divisor
 from Modules.tools import get_deviceconf_parameter_value
+from Modules.tools_datastruct import is_attr_unvalid_datastruct
 
 # Common/ helpers
 
@@ -567,6 +568,14 @@ def compute_metering_conso(self, nwk_id, msg_src_ep, msg_cluster_id, msg_attr_id
             multiplier = power_multiplier
             divisor = power_divisor
 
+    # Attributes still to be read from the device: no DeviceConf override for this report,
+    # nothing stored yet, and not already answered as unsupported
+    missing_attributes = [
+        attr_id
+        for attr_id, override in (("0300", unit_metering), ("0301", multiplier), ("0302", divisor))
+        if _metering_attribute_missing(self, nwk_id, msg_src_ep, msg_cluster_id, cluster_data, attr_id, override)
+    ]
+
     # Retrieve default multiplier and divisor if not set
     multiplier = _stored_attribute_to_int(self, nwk_id, msg_cluster_id, "0301", cluster_data.get("0301")) if multiplier is None else multiplier
     divisor = _stored_attribute_to_int(self, nwk_id, msg_cluster_id, "0302", cluster_data.get("0302")) if divisor is None else divisor
@@ -581,14 +590,25 @@ def compute_metering_conso(self, nwk_id, msg_src_ep, msg_cluster_id, msg_attr_id
                      f"compute_metering_conso - {nwk_id}/{msg_src_ep} Unit: {unit}, "
                      f"Multiplier: {multiplier}, Divisor: {divisor}, raw: {raw_value}, result: {conso}", nwk_id)
 
-    if (
-        cluster_data.get("0300") is None and unit_metering is None
-        or cluster_data.get("0301") is None and (power_multiplier is None or sum_multiplier is None)
-        or cluster_data.get("0302") is None and (power_divisor is None or sum_divisor is None)
-    ):
+    if missing_attributes:
+        self.log.logging(["ZclClusters", "Electric"], "Debug",
+                         f"compute_metering_conso - {nwk_id}/{msg_src_ep} attribute {msg_attr_id} missing {missing_attributes}, requesting Unit/Multiplier/Divisor", nwk_id)
         ReadAttributeRequest_0702_multiplier_divisor(self, nwk_id)
 
     return conso
+
+
+def _metering_attribute_missing(self, nwk_id, ep, cluster_id, cluster_data, attr_id, override):
+    """
+    Tell whether a 0x0702 unit/multiplier/divisor attribute must still be read from the device.
+
+    It is not needed when the device configuration overrides it for the attribute being decoded,
+    when a value is already stored, or when the device already answered the read with an error
+    status (0x86 Unsupported Attribute): asking again would get the same answer on every report.
+    """
+    if override is not None or cluster_data.get(attr_id) is not None:
+        return False
+    return not is_attr_unvalid_datastruct(self, "ReadAttributes", nwk_id, ep, cluster_id, attr_id)
 
 
 def compute_electrical_measurement_conso(self, nwk_id, src_ep, cluster_id, attr_id, raw_value):

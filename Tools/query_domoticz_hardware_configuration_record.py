@@ -11,6 +11,9 @@ import zlib
 from datetime import datetime
 from pathlib import Path
 
+# Epoch seconds in the records of the scenes store, which do not say "timestamp"
+EPOCH_KEYS = {"createdAt", "updatedAt", "lastRecalled", "lastCheck"}
+
 
 def decode_b64_payload(value: str, version: int):
     """Decode a single plugin-stored base64 attribute using the given format version."""
@@ -45,14 +48,20 @@ def decode_b64_payload(value: str, version: int):
             f"neither JSON nor Python literal: {e}\nDecoded content was:\n{decoded}") from e
 
 
+def is_encoded_attribute(entry: dict, key: str, value) -> bool:
+    """A PersistedDocument record (PluginStore-*) has one string: its content, whatever its name."""
+    return isinstance(value, str) and (key.startswith("b64-") or "FormatVersion" in entry)
+
+
 def decode_plugin_config_entry(entry: dict) -> dict:
     """
-    Decode all b64-* attributes in a single plugin config entry dict.
+    Decode the encoded attributes in a single plugin config entry dict.
 
-    A plugin config entry has the shape:
+    A plugin config entry has one of these shapes:
         {"Version": 1|2, "TimeStamp": ..., "b64-<attr>": "<encoded>", ...}
+        {"Version": 2, "FormatVersion": n, "TimeStamp": ..., "Records": "<encoded>"}
 
-    Each b64-* key is decoded using the Version stored in the same dict,
+    Each attribute is decoded using the Version stored in the same dict,
     so Version 1 (uncompressed Python repr) and Version 2 (zlib + JSON) are
     both handled correctly without guessing.
     """
@@ -62,7 +71,7 @@ def decode_plugin_config_entry(entry: dict) -> dict:
     version = entry["Version"]
     result = {}
     for key, value in entry.items():
-        if key.startswith("b64-") and isinstance(value, str):
+        if is_encoded_attribute(entry, key, value):
             try:
                 result[key] = decode_b64_payload(value, version)
             except Exception as e:
@@ -77,7 +86,7 @@ def format_timestamps(obj):
     if isinstance(obj, dict):
         new_dict = {}
         for k, v in obj.items():
-            if isinstance(v, (int, float)) and "timestamp" in k.lower():
+            if isinstance(v, (int, float)) and ("timestamp" in k.lower() or k in EPOCH_KEYS):
                 try:
                     formatted = datetime.fromtimestamp(v).strftime("%Y-%m-%d %H:%M:%S")
                     new_dict[k] = f"{v} ({formatted})"
@@ -154,8 +163,8 @@ def main():
     parser = argparse.ArgumentParser(description="Extract Domoticz Hardware Configuration")
     parser.add_argument("--db", required=True, help="Path to Domoticz database (domoticz.db)")
     parser.add_argument("--id", required=True, type=int, help="Hardware ID")
-    parser.add_argument("--entry", help="Specific entry to extract (supports dot-notation, e.g. ListOfDevices.b64-devicelist)")
-    parser.add_argument("--decode-b64", action="store_true", help="Decode Base64-encoded plugin attributes (version-aware)")
+    parser.add_argument("--entry", help="Specific entry to extract (supports dot-notation, e.g. ListOfDevices.b64-devicelist or PluginStore-Z4D_Scenes.Records)")
+    parser.add_argument("--decode-b64", action="store_true", help="Decode the encoded plugin attributes, b64-* and PluginStore records (version-aware)")
 
     args = parser.parse_args()
 

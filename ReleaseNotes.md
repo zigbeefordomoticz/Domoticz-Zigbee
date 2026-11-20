@@ -18,6 +18,37 @@ Release Numbering
 - Odd numbers --> Stable/9.1 (stable branch)
 - Even numbers  --> Beta/9.2 (dev branch)
 
+## November 2026 - stable9 9.1.010 (2026.16)
+
+Pull requests in this release: #2154, #2218, #2220, #2221, #2222, #2223, #2224, #2225, #2226, #2227, #2228, #2229, #2230, #2231, #2232, #2233, #2234, #2237, #2238, #2239, #2240, #2241, #2242, #2243, #2244, #2245, #2247, #2248, #2249, #2250, #2251, #2252, #2253, #2254, #2255, #2256, #2257, #2258, #2259, #2260, #2261, #2262, #2263, #2265, #2266
+
+Contributors: @pipiche38 (86 commits)
+
+- [Feature] - Green Power with zigpy (EZSP, deCONZ): Green Power devices are commissioned by zigpy while `GreenPowerEnable` (Available services → Features, off by default, #2266) is set and the network is open, their frames go to zigpy only, the commissioned devices are kept in a `GreenPowerDevices` store and restored into zigpy at startup, and they get On/Off switch widgets from their certified JSON or a built-in fallback; a device goes with its last widget (#2154)
+- [Feature] - Green Power in the WebUI: devices in Provisioning and in the raw data (#2231); pairing feed for Admin › Provisioning, `GET /zgp-pairing` (#2233); the device type is picked before pairing, from `Conf/ZGPmodel/` (#2234), with a 4-button switch type whose commands are keyed on their payload (#2253) and 3-switch and single-rocker types for the same switches (#2257); set the type of, or remove, a Green Power device without widgets, `/zgp-device` (#2255)
+- [Feature] - Green Power: no Green Power setting, debug category or page on a ZNP coordinator, which cannot receive Green Power frames (zigpy/zigpy#1955); `GET /plugin` gives `GreenPowerSupported` (#2238)
+- [Feature] - Native Zigbee scenes (cluster 0x0005, issue #2194), behind `enableNativeScenes` (off by default, restart needed): ZCL layer and `Scene` debug category (#2221); scene management with a `Z4D_Scenes` store, group scan, chosen scene ID, captured member state (#2222); REST API `/scenes…` (#2223); a Domoticz Selector Switch on unit 2 of the group recalls the scenes and goes back to Off when the devices leave the scene (#2226); scenes per device against its table size, and a scene comment (#2227); a scene on part of its group (#2228); window coverings in scenes (#2230)
+- [Feature] - Group Management: a new group can ask for its group id, `requestedGroupId` (#2225); `/plugin-health` tells a Group Management still starting (`GroupStatus: "Starting"`) from one not enabled (#2229)
+- [Feature] - ZLinky: support the EDF Zen Fixe "H PLEINE-CREUSE" option tarifaire (easydomoticz t=14468) (#2232)
+- [Feature] - Settings: presentation metadata for the redesigned WebUI Settings page (`Group`, `Unit`, `Min`, `Max`, `Step`, `DependsOn`, `Danger`, `OneShot`); `GET /settings` forwards it and `PUT /settings` refuses a number outside `Min`/`Max`. Moved to Advanced: `TradfriKelvinStep`, `pingViaGroup`, `MonitorLoopLatency`, `numDeviceListVersion`, `CheckSSLCertificateValidity`; hidden: `Bug566`, `numEnergyReports`, `reenforcementWiser`; `Ping` not offered on zigpy; `HealthTimeOut` accepts 0 (#2239)
+- [Feature] - Settings: `ReadAttributeChunk` defaults to 3 (was 10) for every install that never set it, so a device with many attributes gets more, smaller Read Attributes requests; `ReadAttributeChunk`, `ReadAttributeChunkWhenPairing` and `ConfigureReportingChunk` accept 1 to 7 (#2241)
+- [Feature] - Last Seen: new `WidgetTouch` debug category tracing each widget touch; a widget with an empty or unreadable LastUpdate, or a device back from TimedOut, is touched instead of keeping a stale Last Seen (#2244)
+- [Feature] - WebUI: the shipped WebUI is refreshed up to Domoticz-Zigbee-UI `beta` `0894ba9` (#2237): native scenes (UI #353), Group Management "starting" (UI #355), Green Power pages, pairing card, device types and device details (UI #358, #360–#365, #381–#383), Admin › Firmware updates (UI #366), small screens (UI #367), the redesigned Settings page (UI #368), last seen and last battery report in Device details (UI #370), Tools › Debug "Restore defaults" (UI #385), fixed wiki links (UI #386)
+- [Issue] - Startup: a device entry with no IEEE is removed at load with an Error (`DATABASE-NOIEEE-01`) instead of stopping `onStart` before the radio starts, seen as "Hard time getting Coordinator Version" on a ZBDongle-E (easydomoticz t=14838) (#2258); while the coordinator does not answer, the plugin restart through the Domoticz API is tried once, then every 300 s instead of every second, and a failed call says why (#2259)
+- [Issue] - Metering: 0702 Unit / Multiplier / Divisor are no longer read again after every metering report when the model overrides only the Summation pair or the device answers 0x86, seen on a TS011F plug (#2245)
+- [Issue] - OTA: image blocks to LEDVANCE (`0x1189`) devices are capped at 40 bytes; the firmware rejects larger blocks with MALFORMED_COMMAND (zigpy/zigpy#1965) (#2247)
+- [Issue] - OTA: a firmware available in the online index is listed once per image type, no longer twice after a restart (#2242); `GET /ota-firmware-available` traces at Debug, not Status (#2243)
+- [Issue] - Database: `resetOTAUpdate` switches itself off after one start, like `resetReadAttributes` and `resetConfigureReporting` (#2240)
+- [Issue] - The transport statistics written at each stop go to `Reports/Transport-stats.json`, no longer to `ReportsTransport-stats.json` in the plugin folder; an existing one can be deleted (#2249)
+- [Issue] - Logging: `DomoticzDB_Stats` and `ZigpyTransport_Stats` default to 0, so the `DomoticzDB stats` / `ZigpyTransport stats` lines are no longer written every 5 minutes; they can be turned back on (Advanced, no restart) (#2260)
+- [Issue] - Settings: "Use the coordinator in raw mode" (`ControllerInRawMode`) is no longer offered under Experimental parameters: the plugin sets it at each start from the coordinator type, and switching it off on a zigpy coordinator made the plugin build ZiGate frames until the next restart (#2265)
+- [Issue] - Threads: `DomoticzAPI_<HardwareID>`, `VersionCheck_<HardwareID>` (#2261) and `ZigbeeWebUIClient_<HardwareID>` (#2263), so several plugin instances can be told apart; the `ThreadCommunication` / `ThreadForwarder` debug filters match the threads the plugin really starts, before they dropped every debug line (#2262)
+- [Technical] - Bump zigpy 2.3.0 → 2.4.1, bellows 1.1.0 → 1.2.1, zigpy-deconz 1.0.0 → 1.1.1 (#2218)
+- [Technical] - Group Management logs carry the group id, and its Errors a code and a context (#2224)
+- [Technical] - Plugin analytics: the coordinator firmware family falls back to the Coordinator Model (Mode1) instead of `UNK` (#2250); an opt-in change made outside the WebUI is reported once at the next start, switching off sends one last `Opt-Out` event (#2251); a replaced coordinator is reported once (#2252); visit-scope copies of the main dimensions, no new data (#2254)
+- [Technical] - `.gitignore`: the Green Power and scene store files in `Data/` (#2248)
+- [Technical] - `CLAUDE.md` imports `AGENTS.md` instead of restating it (#2220)
+
 ## November 2026 - stable9 9.1.009 (2026.15)
 
 Pull requests in this release: #2163, #2166, #2168, #2170, #2171, #2172, #2173, #2174, #2175, #2176, #2177, #2178, #2179, #2180, #2181, #2182, #2183, #2184, #2185, #2186, #2187, #2188, #2189, #2190, #2191, #2192, #2193, #2195, #2196, #2197, #2199, #2200, #2201, #2202, #2203, #2204, #2205, #2206, #2207, #2208, #2209, #2210, #2211, #2214, #2215, #2216, #2217

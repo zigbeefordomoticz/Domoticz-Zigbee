@@ -24,6 +24,7 @@ from DevicesModules.custom_Chameleon import erl_z3_master_info
 from Modules.basicOutputs import getListofAttribute
 from Modules.casaia import pollingCasaia
 from Modules.danfoss import danfoss_room_sensor_polling
+from Modules.greenPowerWidgets import process_gp_widget_creation_requests
 from Modules.domoCreate import (process_widget_creation_requests,
                                 retry_failed_widget_creation)
 from Modules.domoticzAbstractLayer import (find_widget_unit_from_WidgetID,
@@ -889,6 +890,9 @@ def processListOfDevices(self, Devices):
     # thread and so cannot call the Domoticz API themselves; this is the first point
     # in the heartbeat where we are back on the thread Domoticz calls us on.
     process_widget_creation_requests(self, Devices)
+
+    # Same for Green Power devices, whose commissioning (9e00) is decoded on the forwarder thread
+    process_gp_widget_creation_requests(self, Devices)
 
     # Admin widgets (Z4D Status, Z4D Notifications) Domoticz refused to create at
     # startup. They are created from AdminWidgets.__init__ and nowhere else, so

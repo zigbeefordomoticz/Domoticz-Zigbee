@@ -53,6 +53,10 @@ def stub_external_modules():
             {"Decode004D": MagicMock()}),
         ("Z4D_decoders.z4d_decoder_Discovery_Rsp",
             {"Decode804B": MagicMock()}),
+        ("Z4D_decoders.z4d_decoder_Green_Power",
+            {"Decode9E00": MagicMock(name="Decode9E00"), "Decode9E01": MagicMock(name="Decode9E01"),
+             "Decode9E02": MagicMock(name="Decode9E02"), "Decode9E03": MagicMock(name="Decode9E03"),
+             "Decode9E04": MagicMock(name="Decode9E04")}),
         ("Z4D_decoders.z4d_decoder_groups",
             {"Decode8060": MagicMock(), "Decode8061": MagicMock(),
              "Decode8062": MagicMock(), "Decode8063": MagicMock()}),
@@ -102,7 +106,9 @@ def stub_external_modules():
         ("Z4D_decoders.z4d_decoder_Rte_Discovery_Performed",
             {"Decode8701": MagicMock()}),
         ("Z4D_decoders.z4d_decoder_Scenes",
-            {"Decode80A5": MagicMock(), "Decode80A6": MagicMock()}),
+            {"Decode80A1": MagicMock(), "Decode80A2": MagicMock(),
+             "Decode80A3": MagicMock(), "Decode80A4": MagicMock(),
+             "Decode80A5": MagicMock(), "Decode80A6": MagicMock()}),
         ("Z4D_decoders.z4d_decoder_Simple_Descriptor_Rsp",
             {"Decode8043": MagicMock()}),
         ("Z4D_decoders.z4d_decoder_User_Desc_Notify",
@@ -212,6 +218,30 @@ def test_invalid_frame_logs_error(input_module, plugin, data):
     input_module.zigbee_receive_message(plugin, {}, data)
     plugin.log.logging.assert_called_once()
     assert "Error" in plugin.log.logging.call_args.args
+
+
+def _logged_text(plugin):
+    return " ".join(str(a) for c in plugin.log.logging.call_args_list for a in c.args)
+
+
+def test_green_power_record_payload_is_masked(input_module, plugin, monkeypatch):
+    # 9e00 carries a Green Power device security key
+    input_module.extract_message_infos.return_value = ("9e00", "5345435245544b4559", "ff")
+    monkeypatch.setattr(input_module, "_decode_message", MagicMock())
+
+    input_module.zigbee_receive_message(plugin, {}, VALID_DATA)
+
+    assert "5345435245544b4559" not in _logged_text(plugin)
+    assert "<masked>" in _logged_text(plugin)
+
+
+def test_other_payload_is_logged(input_module, plugin, monkeypatch):
+    input_module.extract_message_infos.return_value = ("9e01", "0102030405", "ff")
+    monkeypatch.setattr(input_module, "_decode_message", MagicMock())
+
+    input_module.zigbee_receive_message(plugin, {}, VALID_DATA)
+
+    assert "0102030405" in _logged_text(plugin)
 
 
 def test_valid_frame_resets_ping(input_module, plugin, monkeypatch):
@@ -338,6 +368,14 @@ def test_decoder_values_callable(input_module):
         assert callable(decoder)
 
 
+def test_green_power_types_in_decoders(input_module):
+    assert input_module.DECODERS["9e00"] is input_module.Decode9E00
+    assert input_module.DECODERS["9e01"] is input_module.Decode9E01
+    assert input_module.DECODERS["9e02"] is input_module.Decode9E02
+    assert input_module.DECODERS["9e03"] is input_module.Decode9E03
+    assert input_module.DECODERS["9e04"] is input_module.Decode9E04
+
+
 def test_8139_alias(input_module):
     assert input_module.DECODERS["8139"] is input_module.DECODERS["8140"]
 
@@ -407,6 +445,10 @@ def test_decoder_exception_type_without_address_offset(input_module, plugin):
     ("8085", "1a" + "01" + "0008" + "00" + "cbc4"),
     ("8095", "1a" + "01" + "0006" + "00" + "cbc4"),
     ("80a5", "1a" + "01" + "0005" + "00" + "cbc4"),
+    ("80a1", "1a" + "01" + "0005" + "00" + "1001" + "03" + "cbc4"),
+    ("80a2", "1a" + "01" + "0005" + "00" + "1001" + "03" + "cbc4"),
+    ("80a3", "1a" + "01" + "0005" + "00" + "1001" + "cbc4"),
+    ("80a4", "1a" + "01" + "0005" + "00" + "1001" + "03" + "cbc4"),
 ])
 def test_source_nwkid_offsets(input_module, plugin, msg_type, msg_data):
     plugin.ListOfDevices = {"cbc4": {}}

@@ -148,6 +148,16 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         Classes.ZigpyTransport.AppGeneric.handle_relays(self, nwk, relays)
 
 
+    async def permit_gp(self, time_s: int) -> None:
+        await Classes.ZigpyTransport.AppGeneric.permit_gp(self, time_s)
+
+    def gp_packet_received(self, packet) -> None:
+        Classes.ZigpyTransport.AppGeneric.gp_packet_received(self, packet)
+
+    async def open_gp_commissioning(self, time_s: int) -> None:
+        await Classes.ZigpyTransport.AppGeneric.open_gp_commissioning(self, time_s)
+
+
     def get_zigpy_version(self):
         return Classes.ZigpyTransport.AppGeneric.get_zigpy_version(self)
 

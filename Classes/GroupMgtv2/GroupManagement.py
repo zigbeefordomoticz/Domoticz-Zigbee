@@ -57,7 +57,8 @@
 #
 
 
-from Classes.GroupMgtv2.GrpServices import scan_device_for_grp_membership
+from Classes.GroupMgtv2.GrpServices import (remove_empty_group,
+                                            scan_device_for_grp_membership)
 from Modules.zigateConsts import MAX_LOAD_ZIGATE
 
 
@@ -66,7 +67,12 @@ class GroupsManagement(object):
     from Classes.GroupMgtv2.GrpDatabase import (load_groups_list_from_json,
                                                 update_due_to_nwk_id_change,
                                                 write_groups_list)
-    from Classes.GroupMgtv2.GrpDomoticz import (processCommand,
+    from Classes.GroupMgtv2.GrpDomoticz import (create_scene_selector,
+                                                group_widget_unit,
+                                                is_scene_selector,
+                                                processCommand,
+                                                restore_group_widgets,
+                                                scene_selector_unit,
                                                 update_domoticz_group_device)
     from Classes.GroupMgtv2.GrpIkeaRemote import \
         manageIkeaTradfriRemoteLeftRight
@@ -78,7 +84,7 @@ class GroupsManagement(object):
         FullRemoveOfGroup, RemoveNwkIdFromAllGroups,
         add_group_member_ship_from_remote, addGroupMemberShip,
         checkAndTriggerIfMajGroupNeeded, get_available_grp_id,
-        recover_legrand_groups_from_devices)
+        is_group_widget, recover_legrand_groups_from_devices)
     from Classes.GroupMgtv2.GrpWebServices import (
         ScanAllDevicesForGroupMemberShip, ScanDevicesForGroupMemberShip,
         process_web_request)
@@ -116,6 +122,10 @@ class GroupsManagement(object):
         self.IEEE2NWK = IEEE2NWK  # Point to the List of IEEE to NWKID
         self.DeviceConf = DeviceConf
         self.ListOfGroups = {}  # Data structutre to store all groups
+        self.scenemgt = None  # Set when native scenes are enabled
+        self.GroupWidgetsRemoved = set()  # Removed by the user with a Selector left: not created again until the next start or scan
+        self.RestoreWidgets = False  # A scan asked for it, the heartbeat does it: REST cannot call Domoticz
+        self.EmptyGroupsToRemove = set()  # Same for an empty group deleted from the WebUI
         self.log = log
         self.GroupListFileName = None  # Filename of Group caching file
         self.last_written_groups_list = None  # Serialized ListOfGroups as last written, to skip redundant dumps
@@ -136,6 +146,7 @@ class GroupsManagement(object):
         self.GroupListFileName = self.pluginconf.pluginConf["pluginData"] + "/GroupsList-%02d.json" % hardwareID
         self.load_groups_list_from_json()
         self.recover_legrand_groups_from_devices()
+        self.restore_group_widgets()
         self.GroupStatus = "ready"
 
     def update_firmware(self, firmwareversion):
@@ -144,9 +155,21 @@ class GroupsManagement(object):
     def updateZigateIEEE(self, ZigateIEEE):
         self.ControllerIEEE = ZigateIEEE
 
+    def request_widgets_restore(self):
+        self.RestoreWidgets = True
+
     def hearbeat_group_mgt(self):
 
         self.HB += 1
+
+        if self.RestoreWidgets:
+            self.RestoreWidgets = False
+            self.restore_group_widgets()
+
+        for GroupId in list(self.EmptyGroupsToRemove):
+            self.EmptyGroupsToRemove.discard(GroupId)
+            if GroupId in self.ListOfGroups:
+                remove_empty_group(self, GroupId)
 
         # self.logging( 'Debug', 'hearbeat_group_mgt -    ScanDevicesToBeDone: %s' %( self.ScanDevicesToBeDone))
 
@@ -165,5 +188,10 @@ class GroupsManagement(object):
             for GroupId in self.ListOfGroups:
                 self.update_domoticz_group_device(GroupId)
 
-    def logging(self, logType, message):
-        self.log.logging("Groups", logType, message)
+    def logging(self, logType, message, nwkid=None, context=None):
+        """
+        nwkid is the group id, or the device address when the line is about no group
+        in particular: MatchingNwkId takes either. An Error passes a context with its
+        code, see GrpErrorCodes. An empty id would be dropped by the debug filter.
+        """
+        self.log.logging("Groups", logType, message, nwkid or None, context)

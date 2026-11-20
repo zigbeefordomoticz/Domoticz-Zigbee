@@ -1,0 +1,22 @@
+{
+    "Description": "On/Off switch with dimming (Dim +, Dim -, release)",
+    "Order": 2,
+    "Ep": {
+        "01": {
+            "Type": "GenericLvlControl"
+        }
+    },
+    "Commands": {
+        "20": ["0008", "off"],
+        "21": ["0008", "on"],
+        "30": ["0008", "moveup"],
+        "35": ["0008", "moveup"],
+        "32": ["0008", "moveup"],
+        "37": ["0008", "moveup"],
+        "31": ["0008", "movedown"],
+        "36": ["0008", "movedown"],
+        "33": ["0008", "movedown"],
+        "38": ["0008", "movedown"],
+        "34": ["0008", "stop"]
+    }
+}

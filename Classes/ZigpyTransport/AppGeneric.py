@@ -44,6 +44,7 @@ The functions here override the following ControllerApplication methods:
     handle_join()               — adds NWK sync and invalid IEEE filtering
     handle_leave()              — adds plugin 0x8048 frame delivery
     handle_relays()             — adds debug logging
+    permit_gp()                 — Green Power commissioning only when enabled
     packet_received()           — full routing override for plugin frame delivery
 
 The following are plugin-only additions with no upstream equivalent:
@@ -70,6 +71,7 @@ The central function in this module is packet_received(), which intercepts
 every incoming Zigbee frame before (and sometimes instead of) passing it to
 the upstream zigpy stack. The routing logic separates:
 
+    - Green Power tunnels / GPD alias Device_annce → upstream zigpy only
     - ZDO frames (coordinator or ZDO endpoint) → upstream zigpy
     - Mgmt_Permit_Join_rsp (0x8036)            → plugin frame 0x8014
     - Mgmt_Leave_rsp (0x8034)                  → plugin frame 0x8047
@@ -175,8 +177,21 @@ import zigpy.exceptions
 import zigpy.types as zigpy_t
 import zigpy.zdo
 import zigpy.zdo.types as zdo_types
+
+try:
+    import zigpy.zgp.tunneling as zgp_tunneling
+except ImportError:
+    # zigpy without Green Power tunneling: a plugin update without the
+    # requirements upgrade must still start
+    zgp_tunneling = None
 from zigpy.backups import NetworkBackup
 
+from Classes.ZigpyTransport.greenPower import (
+    is_green_power_device, register_green_power_listener, report_gp_packet,
+    report_gp_window, restore_green_power_devices)
+from Classes.ZigpyTransport.plugin_encoders import (GP_WINDOW_CLOSED,
+                                                    GP_WINDOW_DISABLED,
+                                                    GP_WINDOW_OPENED)
 from Classes.ZigpyTransport.instrumentation import write_capture_rx_frames
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8002_frame_content, build_plugin_8014_frame_content,
@@ -196,6 +211,7 @@ CLUSTER_MGMT_PERMIT_JOIN_RSP = 0x8036
 CLUSTER_MGMT_LEAVE_RSP       = 0x8034
 PROFILE_ZHA                  = 0x0104
 COORDINATOR_NWK              = "0000"
+GP_ALIAS_ANNCE_IEEE          = b"\xff" * 8  # IEEE in the Device_annce of a Green Power alias
 
 # ---------------------------------------------------------------------------
 # NWK frame counter margin when restoring a backup
@@ -227,8 +243,9 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     """
     Start the Zigbee network on the connected radio.
 
-    Overrides ControllerApplication.initialize() (reference: zigpy 2.3.0,
-    unchanged since 2.2.0). Sequence, with the deltas to upstream:
+    Overrides ControllerApplication.initialize() (reference: zigpy 2.4.1;
+    2.4.0 added green_power.startup(), see below). Sequence, with the deltas
+    to upstream:
 
     1. Feed the firmware watchdog and start the watchdog loop, if enabled
        in config (radioStart.py always enables it). The period is the radio
@@ -252,9 +269,15 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     7. Clamp and apply the TX power to the regulatory domain maximum.
        Plugin only: state.network_info.tx_power follows the applied value (_apply_tx_power()).
        Plugin only: with no TX power to apply, _repair_tx_power_left_at_0dbm().
-    8. Plugin only: _preload_devices_from_plugin_db().
-    9. _persist_coordinator_model_strings_in_db().
-    10. Start periodic topology scans if CONF_TOPO_SCAN_ENABLED.
+    8. Plugin only: register the Green Power listener (greenPower.py) when
+       zigpy supports Green Power, so GPD events reach the plugin.
+    9. Plugin only: _preload_devices_from_plugin_db().
+    10. Plugin only: restore_green_power_devices() (greenPower.py): the GPDs
+        of the plugin's Green Power device store are rebuilt as zigpy's
+        database load does (zigpy runs with an in-memory database), then
+        await self.green_power.startup() as upstream does.
+    11. _persist_coordinator_model_strings_in_db().
+    12. Start periodic topology scans if CONF_TOPO_SCAN_ENABLED.
 
     Steps of upstream initialize() that are NOT performed here:
 
@@ -272,7 +295,8 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
       enabled. Not needed: radioStart.py forces zigpy OTA off (the plugin
       runs its own OTA).
 
-    Re-check this list against upstream on every zigpy version bump.
+    Re-check this list against upstream on every zigpy version bump, and
+    greenPower.gp_device_from_record() against zigpy's appdb _load_gp_devices().
 
     Args:
         auto_form:  If True, automatically form a new network when none is
@@ -375,8 +399,13 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     else:
         await _repair_tx_power_left_at_0dbm(self)
 
+    register_green_power_listener(self)
+
     # Preload devices from plugin DB before registering specific endpoints, so that the plugin device list is available during endpoint registration if needed (e.g. for deConz group membership restoration)
     _preload_devices_from_plugin_db(self)
+
+    # Plugin only: Green Power devices from the plugin store, then green_power.startup()
+    await restore_green_power_devices(self)
 
     self._persist_coordinator_model_strings_in_db()
 
@@ -727,10 +756,13 @@ def _dump_zigpy_devices(self):
     devices = list(self.devices.values())
     LOGGER.info("zigpy device table (%d entries):", len(devices))
     for dev in devices:
+        # A Green Power device has no node descriptor at all (restored ones are
+        # in the table when initialize() runs again on a startup retry)
+        node_desc = getattr(dev, "node_desc", None)
         LOGGER.info(
             "  ieee=%-20s  nwk=0x%04x  logical_type=%s",
             dev.ieee, dev.nwk,
-            "none" if dev.node_desc is None else dev.node_desc.logical_type.name,
+            "green_power" if is_green_power_device(dev) else "none" if node_desc is None else node_desc.logical_type.name,
         )
 
 
@@ -1188,6 +1220,80 @@ def handle_relays(self, nwk, relays) -> None:
     super(type(self),self).handle_relays(nwk, relays)
 
 
+async def permit_gp(self, time_s: int) -> None:
+    """
+    Open or close (time_s=0) the Green Power commissioning window.
+
+    Overrides ControllerApplication.permit_gp() (zigpy > 2.3.0) to make Green
+    Power opt-in. Upstream permit() calls permit_gp() first on every permit
+    join, network-wide even when node= targets one router; permit_ncp() does
+    not, so deCONZ calls it explicitly (workerLoop.py PERMIT-TO-JOIN).
+
+    - 'GreenPowerEnable' set: delegates to the upstream implementation.
+    - Not set: opening is dropped, so no proxy commissioning broadcast is
+      sent. Closing is passed on only while a window is open (the setting
+      changed while it was open), so the startup permit(0) stays silent.
+
+    Args:
+        time_s: Window duration in seconds, 0 to close it.
+    """
+    green_power = getattr(self, "green_power", None)
+    if green_power is None:
+        # zigpy without Green Power support
+        return
+
+    if not self.pluginconf.pluginConf.get("GreenPowerEnable") and (time_s or not green_power.is_commissioning):
+        self.log.logging("TransportZigpy", "Debug", "permit_gp(%s) skipped, Green Power not enabled" % time_s)
+        if time_s:
+            # Shown on Admin → Provisioning: pairing is open, Green Power commissioning is not
+            report_gp_window(self, GP_WINDOW_DISABLED, time_s)
+        return
+
+    if time_s:
+        self.log.logging("TransportZigpy", "Status", "++ opening Green Power commissioning for %s seconds" % time_s)
+    else:
+        self.log.logging("TransportZigpy", "Status", "++ closing Green Power commissioning")
+
+    await super(type(self),self).permit_gp(time_s)
+    report_gp_window(self, GP_WINDOW_OPENED if time_s else GP_WINDOW_CLOSED, time_s)
+
+
+async def open_gp_commissioning(self, time_s: int) -> None:
+    """
+    Open or close (time_s=0) Green Power commissioning only, from the Green
+    Power page of Admin > Provisionning (PERMIT-GP, workerLoop.py).
+
+    Unlike permit_gp(), which zigpy's permit() calls on every Zigbee permit
+    join, this is an explicit request: 'GreenPowerEnable' does not gate it,
+    and the Zigbee network is not opened.
+    """
+    green_power = getattr(self, "green_power", None)
+    if green_power is None:
+        self.log.logging("TransportZigpy", "Error", "Green Power commissioning not available: zigpy without Green Power support",
+                         None, {"Error code": "GPWINDOW-OPEN-01"})
+        return
+
+    if time_s:
+        self.log.logging("TransportZigpy", "Status", "++ opening Green Power commissioning only for %s seconds" % time_s)
+    else:
+        self.log.logging("TransportZigpy", "Status", "++ closing Green Power commissioning")
+
+    await super(type(self), self).permit_gp(time_s)
+    report_gp_window(self, GP_WINDOW_OPENED if time_s else GP_WINDOW_CLOSED, time_s)
+
+
+def gp_packet_received(self, packet) -> None:
+    """
+    A Green Power frame (GPDF), received by the coordinator or tunneled by a proxy.
+
+    Overrides ControllerApplication.gp_packet_received() (zigpy > 2.3.0),
+    where every GPDF converges, to report it to the Green Power pairing feed
+    (greenPower.report_gp_packet(), which never raises) before zigpy handles it.
+    """
+    report_gp_packet(self, packet)
+    super(type(self), self).gp_packet_received(packet)
+
+
 def measure_execution_time(func):
     def wrapper(self, packet):
         t_start = None
@@ -1284,6 +1390,31 @@ def _refresh_device_rssi(self, packet):
     dev.rssi = packet.rssi
 
 
+# ---------------------------------------------------------------------------
+# Helper: Green Power frames only zigpy must see
+# ---------------------------------------------------------------------------
+def _is_green_power_for_zigpy_only(packet):
+    """
+    True for the Green Power frames that must not reach the plugin decoder:
+
+    - GPDFs tunneled by a proxy (GP Notification / Commissioning Notification,
+      profile a1e0, cluster 0x0021, ep 242). zigpy decrypts them, drops
+      duplicates and checks the frame counter. The plugin would take them as
+      raw frames from the GPD alias or from the proxy NWK.
+    - A sink's Device_annce of a GPD alias, whose IEEE is ff:ff:ff:ff:ff:ff:ff:ff
+      (GP spec A.3.6.3.4.2). The plugin would record a device with that IEEE
+      and start interviewing the alias.
+    """
+    if zgp_tunneling is not None and zgp_tunneling.is_gp_tunnel_packet(packet):
+        return True
+
+    if packet.dst_ep != zigpy.zdo.ZDO_ENDPOINT or packet.cluster_id != zdo_types.ZDOCmd.Device_annce:
+        return False
+
+    # TSN (1) + NWKAddr (2) + IEEEAddr (8) + Capability (1)
+    return packet.data.serialize()[3:11] == GP_ALIAS_ANNCE_IEEE
+
+
 @measure_execution_time
 def packet_received(self, packet: zigpy_t.ZigbeePacket) -> None:
     """
@@ -1296,6 +1427,8 @@ def packet_received(self, packet: zigpy_t.ZigbeePacket) -> None:
     Routing (in order):
 
     1. Always write to capture log.
+    1b. Green Power tunnels and GPD alias Device_annce → upstream only,
+        return (see _is_green_power_for_zigpy_only()).
     2. ZDO / coordinator packets → upstream only, then return.
     3. Mgmt_Permit_Join_rsp (0x8036) → plugin 0x8014 + upstream, return.
     4. Mgmt_Leave_rsp       (0x8034) → plugin 0x8047 + upstream, return.
@@ -1345,6 +1478,12 @@ def packet_received(self, packet: zigpy_t.ZigbeePacket) -> None:
     )
 
     write_capture_rx_frames( self, packet.src, f["profile"], f["cluster"], f["src_ep"], f["dst_ep"], message, hex_msg, f["dst_addressing"], )
+
+    # ── 1b. Green Power → upstream only
+    if _is_green_power_for_zigpy_only(packet):
+        self.log.logging( "TransportZigpy", "Debug", f"packet_received Green Power, zigpy only: {_pkt_summary(f, hex_msg)}" )
+        super(type(self), self).packet_received(packet)
+        return
 
     upstream_called = False
 

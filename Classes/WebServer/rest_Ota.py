@@ -551,6 +551,11 @@ def rest_ota_firmware_available(self, verb, data, parameters):
             if ota_update is None:
                 continue
 
+            # One entry per image type. Older plugins stored the image type as an int, so
+            # after a restart the same firmware could sit under both 1249 and "1249"; the key
+            # written last comes last, and wins.
+            ota_update = {str(fwtype): update_info for fwtype, update_info in ota_update.items()}
+
             # Retrieve device-level information
             zdevice_name = device_data.get("ZDeviceName")
             model = device_data.get("Model", "Unknown")
@@ -577,11 +582,11 @@ def rest_ota_firmware_available(self, verb, data, parameters):
                     'url': url,
                 }
 
-                self.logging("Status", f"Processing OTA update for {zdevice_name}: {device}")
+                self.logging("Debug", f"Processing OTA update for {zdevice_name}: {device}")
                 _fwAvail.append(device)
 
         # Log collected firmware availability information
-        self.logging("Status", f"Collected OTA firmware availability: {_fwAvail}")
+        self.logging("Debug", f"Collected OTA firmware availability: {_fwAvail}")
 
         # Include firmware data in the response
         _response["Data"] = json.dumps(_fwAvail, sort_keys=True)

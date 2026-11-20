@@ -1,0 +1,170 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Unit tests for AppGeneric.permit_gp(), the 'GreenPowerEnable' gate on Green
+Power commissioning.
+
+Driven against a fake app whose base class records permit_gp() calls, so
+that `super(type(self), self).permit_gp()` resolves to it as it resolves to
+zigpy's ControllerApplication.permit_gp() with the real radio libraries. The
+fake base also stands in for zigpy releases without Green Power support
+(no `green_power` attribute), so these tests do not depend on the installed
+zigpy version.
+
+Importing AppGeneric pulls in Classes.ZigpyTransport.Transport and
+Classes.ZigateTransport.sqnMgmt, which tests/conftest.py stubs for the rest
+of the session. Each scenario therefore runs in a subprocess, as in
+test_appGeneric_initialize.py.
+"""
+
+import importlib.util
+import json
+import subprocess  # nosec B404
+import sys
+import textwrap
+from pathlib import Path
+
+import pytest
+
+pytestmark = pytest.mark.skipif(
+    importlib.util.find_spec("zigpy") is None, reason="requires the real zigpy package"
+)
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+HARNESS = textwrap.dedent(
+    """
+    import asyncio, json, sys, types
+    from unittest.mock import MagicMock
+
+    domoticz = types.ModuleType("DomoticzEx")
+    for _name in ("Unit", "Connection", "Log", "Debug", "Error", "Status"):
+        setattr(domoticz, _name, MagicMock(name=_name))
+    sys.modules["DomoticzEx"] = domoticz
+
+    import Classes.ZigpyTransport.AppGeneric as AG
+
+    sc = json.loads(sys.argv[1])
+
+    class Log:
+        def __init__(self):
+            self.records = []
+        def logging(self, category, level, message, *args, **kwargs):
+            self.records.append([level, str(message)])
+
+    class RadioControllerApplication:
+        # Stands in for zigpy.application.ControllerApplication.permit_gp()
+        async def permit_gp(self, time_s):
+            self.calls.append(time_s)
+
+    class FakeApp(RadioControllerApplication):
+        def __init__(self):
+            self.calls = []
+            self.frames = []
+            self.callBackFunction = self.frames.append
+            self.log = Log()
+            self.pluginconf = types.SimpleNamespace(pluginConf={})
+            if "enabled" in sc:
+                self.pluginconf.pluginConf["GreenPowerEnable"] = sc["enabled"]
+            if sc.get("green_power", True):
+                self.green_power = types.SimpleNamespace(is_commissioning=sc.get("commissioning", False))
+
+    app = FakeApp()
+    asyncio.run(getattr(AG, sc.get("call", "permit_gp"))(app, sc["time_s"]))
+    print("RESULT=" + json.dumps({"calls": app.calls, "logs": app.log.records, "frames": app.frames}))
+    """
+)
+
+
+def _run(**scenario):
+    proc = subprocess.run(  # nosec B603
+        [sys.executable, "-c", HARNESS, json.dumps(scenario)],
+        cwd=REPO_ROOT, capture_output=True, text=True, timeout=60,
+    )
+    assert proc.returncode == 0, proc.stderr
+    line = next(ln for ln in proc.stdout.splitlines() if ln.startswith("RESULT="))
+    return json.loads(line[len("RESULT="):])
+
+
+def _status(result):
+    return [msg for level, msg in result["logs"] if level == "Status"]
+
+
+def _windows(result):
+    """(state, seconds) of the 9e04 frames sent to the pairing feed."""
+    # 01 | 9e04 | length(4) | ff | state(2) seconds(4) | lqi(2) | 03
+    return [(int(f[12:14], 16), int(f[14:18], 16)) for f in result["frames"] if f[2:6] == "9e04"]
+
+
+class TestGreenPowerDisabled:
+
+    def test_setting_absent_does_not_open(self):
+        result = _run(time_s=60)
+        assert result["calls"] == []
+        assert _status(result) == []
+
+    def test_setting_off_does_not_open(self):
+        result = _run(time_s=60, enabled=0)
+        assert result["calls"] == []
+
+    def test_close_without_open_window_is_silent(self):
+        # The startup permit(0) must not broadcast to proxies
+        result = _run(time_s=0, enabled=0, commissioning=False)
+        assert result["calls"] == []
+
+    def test_close_of_open_window_is_passed_on(self):
+        # Setting switched off while a window was open
+        result = _run(time_s=0, enabled=0, commissioning=True)
+        assert result["calls"] == [0]
+        assert _windows(result) == [(0x00, 0)]
+
+    def test_pairing_feed_is_told_green_power_was_not_opened(self):
+        # Admin → Provisioning warns that GreenPowerEnable is off
+        result = _run(time_s=240, enabled=0)
+        assert _windows(result) == [(0x02, 240)]
+
+    def test_silent_close_tells_the_feed_nothing(self):
+        result = _run(time_s=0, enabled=0, commissioning=False)
+        assert _windows(result) == []
+
+
+class TestGreenPowerEnabled:
+
+    def test_open_is_passed_on(self):
+        result = _run(time_s=60, enabled=1)
+        assert result["calls"] == [60]
+        assert any("opening Green Power commissioning for 60" in msg for msg in _status(result))
+        assert _windows(result) == [(0x01, 60)]
+
+    def test_close_is_passed_on(self):
+        result = _run(time_s=0, enabled=1)
+        assert result["calls"] == [0]
+        assert any("closing Green Power commissioning" in msg for msg in _status(result))
+        assert _windows(result) == [(0x00, 0)]
+
+
+class TestZigpyWithoutGreenPower:
+
+    def test_nothing_called(self):
+        result = _run(time_s=60, enabled=1, green_power=False)
+        assert result["calls"] == []
+
+
+class TestGreenPowerPageOpen:
+    # open_gp_commissioning(): PERMIT-GP from the Green Power page, not gated by GreenPowerEnable
+
+    def test_opens_with_the_setting_off(self):
+        result = _run(call="open_gp_commissioning", time_s=240, enabled=0)
+        assert result["calls"] == [240]
+        assert any("opening Green Power commissioning only for 240" in msg for msg in _status(result))
+        assert _windows(result) == [(0x01, 240)]
+
+    def test_closes(self):
+        result = _run(call="open_gp_commissioning", time_s=0, enabled=0, commissioning=True)
+        assert result["calls"] == [0]
+        assert _windows(result) == [(0x00, 0)]
+
+    def test_zigpy_without_green_power_is_an_error(self):
+        result = _run(call="open_gp_commissioning", time_s=240, green_power=False)
+        assert result["calls"] == []
+        assert any(level == "Error" for level, _ in result["logs"])

@@ -134,6 +134,35 @@ def test_last_block_is_shorter(ota, radio, notified):
     assert block["data"] == notified["OtaImage"][240:]
 
 
+LEDVANCE_MANUF = 0x1189
+LEDVANCE_TYPE = 0x006F
+
+
+@pytest.fixture
+def ledvance_notified(ota_module, ota, install_image):
+    """A LEDVANCE image (manufacturer 0x1189) offered to the device; no block requested yet."""
+    image = install_image("Ledvance", "bulb.ota", make_ota_image(manuf_code=LEDVANCE_MANUF, image_type=LEDVANCE_TYPE, version=IMAGE_VERSION))
+    assert ota_module.firmware_update(ota, "Ledvance", "bulb.ota", DEVICE_NWKID, DEVICE_EP)["Status"] == "Queued"
+    return image
+
+
+def test_ledvance_block_is_capped_at_40_bytes_when_63_are_requested(ota, radio, ledvance_notified):
+    """zigpy/zigpy#1965: LEDVANCE asks for 63 bytes but rejects anything above 40 with MALFORMED_COMMAND."""
+    ota.ota_image_block_request(block_request(max_size=63, image_type=LEDVANCE_TYPE, manuf_code=LEDVANCE_MANUF))
+
+    block = _blocks(radio)[0]
+    assert block["size"] == 40
+    assert block["data"] == ledvance_notified["OtaImage"][:40]
+
+
+def test_ledvance_page_request_blocks_are_capped_at_40_bytes(ota, radio, ledvance_notified):
+    ota.ota_image_page_request(page_request(max_size=63, page_size=0x80, image_type=LEDVANCE_TYPE, manuf_code=LEDVANCE_MANUF))
+
+    blocks = _blocks(radio)
+    assert [block["size"] for block in blocks] == [40, 40, 40, 8]
+    assert b"".join(block["data"] for block in blocks) == ledvance_notified["OtaImage"][:0x80]
+
+
 def test_requested_block_delay_is_honoured_when_above_the_vendor_minimum(ota, radio, notified):
     ota.ota_image_block_request(block_request(delay=1500))
 

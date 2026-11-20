@@ -52,7 +52,8 @@ _GRP_DOMO_DEPS = {
         domo_update_api=MagicMock(),
         domo_update_name=MagicMock(),
         domo_update_SwitchType_SubType_Type=MagicMock(),
-        find_first_unit_widget_from_deviceID=MagicMock(return_value=1),
+        domo_check_unit=MagicMock(return_value=False),
+        domo_units=MagicMock(return_value=[1]),
         is_domoticz_latest_typename=MagicMock(return_value=False),
     ),
     "Modules.tools": dict(

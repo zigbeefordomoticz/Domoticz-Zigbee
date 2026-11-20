@@ -40,6 +40,9 @@ from Z4D_decoders.z4d_decoder_Default_Req import Decode7000
 from Z4D_decoders.z4d_decoder_Default_Rsp import Decode8101
 from Z4D_decoders.z4d_decoder_Device_Annoucement import Decode004D
 from Z4D_decoders.z4d_decoder_Discovery_Rsp import Decode804B
+from Z4D_decoders.z4d_decoder_Green_Power import (Decode9E00, Decode9E01,
+                                                  Decode9E02, Decode9E03,
+                                                  Decode9E04)
 from Z4D_decoders.z4d_decoder_groups import (Decode8060, Decode8061,
                                              Decode8062, Decode8063)
 from Z4D_decoders.z4d_decoder_helpers import extract_message_infos
@@ -64,7 +67,8 @@ from Z4D_decoders.z4d_decoder_Read_Attribute_Rsp import Decode8100
 from Z4D_decoders.z4d_decoder_Read_Report_Attribute_Rsp import Decode8102
 from Z4D_decoders.z4d_decoder_Remotes import Decode80A7, Decode8085, Decode8095
 from Z4D_decoders.z4d_decoder_Rte_Discovery_Performed import Decode8701
-from Z4D_decoders.z4d_decoder_Scenes import Decode80A5, Decode80A6
+from Z4D_decoders.z4d_decoder_Scenes import (Decode80A1, Decode80A2, Decode80A3,
+                                             Decode80A4, Decode80A5, Decode80A6)
 from Z4D_decoders.z4d_decoder_Simple_Descriptor_Rsp import Decode8043
 from Z4D_decoders.z4d_decoder_User_Desc_Notify import Decode802B, Decode802C
 from Z4D_decoders.z4d_decoder_Write_Attribute_Request import Decode0110
@@ -81,6 +85,7 @@ from Z4D_decoders.z4d_decoder_Zigate_PDM import (Decode0302, Decode8006,
                                                  Decode8007)
 from Z4D_decoders.z4d_decoder_Zigate_Time_Srv import Decode8017
 from Zigbee.decode8002 import decode8002_and_process
+from Zigbee.encoder_tools import SENSITIVE_FRAME_TYPES, loggable_plugin_frame
 
 # ---------------------------------------------------------------------------
 # Decoder dispatch table
@@ -148,6 +153,10 @@ DECODERS: dict = {
     "8063": Decode8063,
     "8085": Decode8085,
     "8095": Decode8095,
+    "80a1": Decode80A1,
+    "80a2": Decode80A2,
+    "80a3": Decode80A3,
+    "80a4": Decode80A4,
     "80a5": Decode80A5,
     "80a6": Decode80A6,
     "80a7": Decode80A7,
@@ -168,6 +177,11 @@ DECODERS: dict = {
     "8701": Decode8701,
     "8806": Decode8806,
     "8807": Decode8807,
+    "9e00": Decode9E00,
+    "9e01": Decode9E01,
+    "9e02": Decode9E02,
+    "9e03": Decode9E03,
+    "9e04": Decode9E04,
     "7000": Decode7000,
 }
 
@@ -183,6 +197,10 @@ SRC_NWKID_SLICE = {
     "8120": (2, 6),
     "8085": (10, 14),
     "8095": (10, 14),
+    "80a1": (16, 20),
+    "80a2": (16, 20),
+    "80a3": (14, 18),
+    "80a4": (16, 20),
     "80a5": (10, 14),
 }
 
@@ -224,7 +242,7 @@ def zigbee_receive_message(self, Devices, Data):
         self.log.logging(
             "Input", "Error",
             f"zigbee_receive_message - received a non-zigate frame "
-            f"Data: {Data} FS/FE = {FrameStart}/{FrameStop}",
+            f"Data: {loggable_plugin_frame(Data)} FS/FE = {FrameStart}/{FrameStop}",
         )
         return
 
@@ -233,7 +251,7 @@ def zigbee_receive_message(self, Devices, Data):
 
     self.log.logging(
         "Input", "Debug",
-        f"zigbee_receive_message - MsgType: {MsgType}, Data: {MsgData}, "
+        f"zigbee_receive_message - MsgType: {MsgType}, Data: {'<masked>' if MsgType in SENSITIVE_FRAME_TYPES else MsgData}, "
         f"LQI: {int(MsgLQI, 16)}",
     )
 

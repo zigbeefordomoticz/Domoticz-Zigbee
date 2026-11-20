@@ -1,0 +1,23 @@
+{
+    "Description": "4-button switch (8-bit vector): three On/Off switches, Switch 1 Up / Down, Switch 2 Up / Down, both buttons together Up / Down",
+    "Order": 4,
+    "Ep": {
+        "f1": {
+            "Type": "Switch"
+        },
+        "f2": {
+            "Type": "Switch"
+        },
+        "f3": {
+            "Type": "Switch"
+        }
+    },
+    "Commands": {
+        "69/01": ["0006", "01", "f1"],
+        "69/02": ["0006", "00", "f1"],
+        "69/04": ["0006", "01", "f2"],
+        "69/08": ["0006", "00", "f2"],
+        "69/05": ["0006", "01", "f3"],
+        "69/0a": ["0006", "00", "f3"]
+    }
+}

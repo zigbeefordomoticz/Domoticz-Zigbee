@@ -79,6 +79,48 @@ def plugin():
 
 
 # ---------------------------------------------------------------------------
+# add_visit_dimensions / visit-scope copies in populate_custom_dimensions
+# ---------------------------------------------------------------------------
+
+class TestVisitDimensions:
+    """Visit-scope dimensions 13-17 mirror the main action-scope ones."""
+
+    def test_copies_and_chipset(self, matomo):
+        dims = {"dimension1": "2026.4", "dimension3": "9.1.009", "dimension4": "Ezsp - 7.4.4.0 build 0",
+                "dimension5": "Medium", "dimension6": "11.623"}
+        matomo.add_visit_dimensions(dims)
+        assert dims["dimension13"] == "9.1.009"
+        assert dims["dimension14"] == "Ezsp"
+        assert dims["dimension15"] == "2026.4"
+        assert dims["dimension16"] == "11.623"
+        assert dims["dimension17"] == "Medium"
+
+    def test_missing_values_are_not_invented(self, matomo):
+        dims = {"dimension3": "9.1.009"}
+        matomo.add_visit_dimensions(dims)
+        assert dims == {"dimension3": "9.1.009", "dimension13": "9.1.009"}
+
+    def test_chipset_without_version_part(self, matomo):
+        dims = {"dimension4": "Znp"}
+        matomo.add_visit_dimensions(dims)
+        assert dims["dimension14"] == "Znp"
+
+    def test_snapshot_carries_visit_dimensions(self, matomo, plugin):
+        plugin.pluginParameters["DisplayFirmwareVersion"] = "Znp - 20220219"
+        with patch.object(matomo, "get_distribution", return_value=None), \
+             patch.object(matomo, "get_architecture_model", return_value=None), \
+             patch.object(matomo, "get_ronelabs_model_custom_definition", return_value=None), \
+             patch.object(matomo, "get_raspberry_pi_model", return_value=None), \
+             patch.object(matomo, "get_network_size_items", return_value="Small"):
+            dims = matomo.populate_custom_dimensions(plugin)
+        assert dims["dimension13"] == dims["dimension3"]
+        assert dims["dimension14"] == "Znp"
+        assert dims["dimension15"] == dims["dimension1"]
+        assert dims["dimension16"] == dims["dimension6"]
+        assert dims["dimension17"] == "Small"
+
+
+# ---------------------------------------------------------------------------
 # get_clientid
 # ---------------------------------------------------------------------------
 
@@ -290,6 +332,49 @@ class TestGetDistribution:
 
 
 # ---------------------------------------------------------------------------
+# matomo_check_coordinator_change
+# ---------------------------------------------------------------------------
+
+class TestCheckCoordinatorChange:
+    """A replaced coordinator is reported once, linking the old and new ids."""
+
+    def run(self, matomo, plugin, reported):
+        plugin.pluginconf.pluginConf = {}
+        if reported is not None:
+            plugin.pluginconf.pluginConf["MatomoCoordinatorReported"] = reported
+        plugin.pluginconf.write_Settings.reset_mock()
+        with patch.object(matomo, "fetch_data_with_timeout") as mock_fetch:
+            matomo.matomo_check_coordinator_change(plugin)
+        return [c.args[2] for c in mock_fetch.call_args_list]
+
+    def test_first_start_records_without_sending(self, matomo, plugin):
+        for reported in (None, ""):
+            assert self.run(matomo, plugin, reported) == []
+            assert plugin.pluginconf.pluginConf["MatomoCoordinatorReported"] == matomo.get_clientid(plugin)
+            plugin.pluginconf.write_Settings.assert_called_once()
+
+    def test_same_coordinator_does_nothing(self, matomo, plugin):
+        assert self.run(matomo, plugin, matomo.get_clientid(plugin)) == []
+        plugin.pluginconf.write_Settings.assert_not_called()
+
+    def test_replaced_coordinator_sends_one_event(self, matomo, plugin):
+        old = hashlib.sha256("0011223344556677".encode()).hexdigest()
+        sent = self.run(matomo, plugin, old)
+        assert len(sent) == 1
+        assert sent[0]["e_c"] == "Coordinator"
+        assert sent[0]["e_a"] == "Replaced"
+        assert sent[0]["e_n"] == old
+        assert sent[0]["uid"] == matomo.get_clientid(plugin)
+        assert plugin.pluginconf.pluginConf["MatomoCoordinatorReported"] == matomo.get_clientid(plugin)
+
+    def test_unknown_coordinator_does_nothing(self, matomo, plugin):
+        plugin.ListOfDevices = {}
+        assert self.run(matomo, plugin, "abc") == []
+        assert plugin.pluginconf.pluginConf["MatomoCoordinatorReported"] == "abc"
+        plugin.pluginconf.write_Settings.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
 # fetch_data_with_timeout
 # ---------------------------------------------------------------------------
 
@@ -426,3 +511,55 @@ class TestPopulateCustomDimensions:
              patch.object(matomo, "get_network_size_items", return_value="Small"):
             dims = matomo.populate_custom_dimensions(plugin)
         assert "dimension11" in dims
+
+
+# ---------------------------------------------------------------------------
+# matomo_reconcile_opt_in_state
+# ---------------------------------------------------------------------------
+
+class TestReconcileOptInState:
+    """An opt-in change made outside the WebUI is reported once at start."""
+
+    def run(self, matomo, plugin, opt_in, reported, internet=True):
+        plugin.pluginconf.pluginConf = {"MatomoOptIn": opt_in}
+        if reported is not None:
+            plugin.pluginconf.pluginConf["MatomoOptInReported"] = reported
+        plugin.internet_available = internet
+        with patch.object(matomo, "fetch_data_with_timeout") as mock_fetch:
+            matomo.matomo_reconcile_opt_in_state(plugin)
+        return [c.args[2].get("e_a") for c in mock_fetch.call_args_list]
+
+    def test_first_start_records_without_sending(self, matomo, plugin):
+        for opt_in in (1, 0):
+            sent = self.run(matomo, plugin, opt_in, -1)
+            assert sent == []
+            assert plugin.pluginconf.pluginConf["MatomoOptInReported"] == opt_in
+
+    def test_missing_setting_counts_as_unknown(self, matomo, plugin):
+        sent = self.run(matomo, plugin, 1, None)
+        assert sent == []
+        assert plugin.pluginconf.pluginConf["MatomoOptInReported"] == 1
+
+    def test_unchanged_does_nothing(self, matomo, plugin):
+        plugin.pluginconf.write_Settings.reset_mock()
+        assert self.run(matomo, plugin, 1, 1) == []
+        assert self.run(matomo, plugin, 0, 0) == []
+        plugin.pluginconf.write_Settings.assert_not_called()
+
+    def test_switched_off_outside_webui_sends_opt_out_once(self, matomo, plugin):
+        assert self.run(matomo, plugin, 0, 1) == ["Opt-Out"]
+        assert plugin.pluginconf.pluginConf["MatomoOptInReported"] == 0
+        plugin.pluginconf.write_Settings.assert_called()
+
+    def test_switched_on_outside_webui_sends_opt_in(self, matomo, plugin):
+        assert self.run(matomo, plugin, True, 0) == ["Opt-In"]
+        assert plugin.pluginconf.pluginConf["MatomoOptInReported"] == 1
+
+    def test_no_internet_keeps_it_for_next_start(self, matomo, plugin):
+        assert self.run(matomo, plugin, 0, 1, internet=False) == []
+        assert plugin.pluginconf.pluginConf["MatomoOptInReported"] == 1
+
+    def test_unknown_coordinator_keeps_it_for_next_start(self, matomo, plugin):
+        plugin.ListOfDevices = {}
+        assert self.run(matomo, plugin, 0, 1) == []
+        assert plugin.pluginconf.pluginConf["MatomoOptInReported"] == 1
