@@ -234,6 +234,8 @@ def LoadDeviceList(self):
     self.log.logging("Database", "Status", "Z4D creates a versioned backup of %s" % device_list_txt_filename)
     Modules.tools.rotate_file_versions(device_list_txt_filename, self.pluginconf.pluginConf["numDeviceListVersion"])
 
+    drop_entries_without_ieee(self, "Domoticz" if can_use_domoticz_db else str(device_list_txt_filename))
+
     cleanup_table_entries( self)
 
     if self.pluginconf.pluginConf["ZigpyTopologyReport"]:
@@ -745,6 +747,35 @@ def import_local_device_conf(self):
     self.log.logging("Database", "Debug", "--> Config loaded: %s" % self.DeviceConf.keys())
     self.log.logging("Database", "Debug", "Local-Device ModelManufMapping loaded - %s" %self.ModelManufMapping.keys())
     self.log.logging("Database", "Status", "Z4D loads %s configuration from the local certified Db." %( len(self.DeviceConf) - legacy_config_loaded))
+
+
+def drop_entries_without_ieee(self, source):
+    """Remove the ListOfDevices entries that have no IEEE.
+
+    Every device path (Domoticz widgets, zigpy, IEEE2NWK) is keyed on the IEEE,
+    so such an entry cannot be used, and reading it made onStart fail with
+    KeyError: 'IEEE' before the radio was started. The coordinator entry
+    "0000" is rebuilt with its IEEE once the radio reports it.
+
+    Args:
+        source: where the device list was loaded from, for the log
+    """
+    for nwkid in [x for x in self.ListOfDevices if not self.ListOfDevices[x].get("IEEE")]:
+        entry = self.ListOfDevices[nwkid]
+        self.log.logging(
+            "Database",
+            "Error",
+            f"Z4D drops device entry {nwkid} from the plugin database: it has no IEEE address. If it was a real device, pair it again.",
+            nwkid,
+            {
+                "Error code": "DATABASE-NOIEEE-01",
+                "Source": source,
+                "Status": entry.get("Status"),
+                "Model": entry.get("Model"),
+                "Keys": sorted(entry.keys()),
+            },
+        )
+        del self.ListOfDevices[nwkid]
 
 
 def checkDevices2LOD(self, Devices):
