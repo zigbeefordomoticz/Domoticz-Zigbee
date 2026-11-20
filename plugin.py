@@ -188,7 +188,8 @@ from Modules.pluginHelpers import (check_firmware_level,
                                    update_DB_device_status_to_reinit)
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.readZclClusters import load_zcl_cluster
-from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
+from Modules.restartPlugin import (restart_attempt_due,
+                                   restartPluginViaDomoticzJsonApi)
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
 from Modules.tools import (build_list_of_device_model,
                            reconcile_ieee_nwkid, lookupForIEEE,
@@ -2101,9 +2102,11 @@ def _coordinator_ready(self):
         self.log.logging("Plugin", "Error", "[%3s] Hard time getting Coordinator Version — likely a communication issue" % self.internalHB)
 
     if self.internalHB > stop_threshold:
-        debuging_information(self, "Log")
-        # (#1371) Cannot stop plugin (would disable hardware), so retry indefinitely
-        restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=Parameters["Mode5"])
+        # (#1371) Cannot stop plugin (would disable hardware), so retry indefinitely,
+        # but not on every heartbeat when the restart through the API fails
+        if restart_attempt_due(self.internalHB, stop_threshold):
+            debuging_information(self, "Log")
+            restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=Parameters["Mode5"])
         return False  # ← explicit, avoids falling into the poll below
 
     if (self.internalHB % 10) == 0:
