@@ -234,6 +234,36 @@ def matomo_coordinator_initialisation(self):
     send_matomo_request( self, action_name="Coordinator Action", event_category="Coordinator", event_action="NewNetwork", event_name="Coordinator Formed new network" )
 
 
+def matomo_check_coordinator_change(self):
+    """Report that the coordinator was replaced since the last report.
+
+    The analytics id (``uid``) is the hash of the coordinator IEEE, so a new
+    coordinator shows up as a new install. The hash last reported is kept in
+    the hidden setting ``MatomoCoordinatorReported``:
+
+    * empty (first start with this version): record it, send nothing;
+    * same hash: nothing to do;
+    * different hash: send ``Coordinator/Replaced`` once, under the new id,
+      with the previous hash as event name so both ids can be linked.
+
+    Both hashes are ones the plugin already sends as ``uid``. Called only
+    when analytics are enabled and the internet is reachable.
+    """
+    current = get_clientid(self, mode='hashed')
+    if current is None:
+        return
+
+    reported = self.pluginconf.pluginConf.get("MatomoCoordinatorReported") or ""
+    if reported == current:
+        return
+
+    if reported:
+        send_matomo_request( self, action_name="Coordinator Action", event_category="Coordinator", event_action="Replaced", event_name=reported )
+
+    self.pluginconf.pluginConf["MatomoCoordinatorReported"] = current
+    self.pluginconf.write_Settings()
+
+
 def matomo_plugin_shutdown(self):
     """Track a plugin shutdown event in Matomo."""
     send_matomo_request( self, action_name="Plugin Action", event_category="Plugin", event_action="Shutdown", event_name="Plugin Shutdown" )
