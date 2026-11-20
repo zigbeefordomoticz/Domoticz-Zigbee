@@ -195,6 +195,7 @@ def rest_rescan_group(self, verb, data, parameters):
         return _response
     if self.groupmgt:
         self.groupmgt.ScanAllDevicesForGroupMemberShip()
+        self.groupmgt.request_widgets_restore()
     else:
         domoticz_error_api("rest_rescan_group Group not enabled!!!")
     action = {"Name": "Full Scan", "TimeStamp": int(time())}
@@ -227,6 +228,7 @@ def rest_scan_devices_for_group(self, verb, data, parameter):
     data = json.loads(data)
     self.logging("Debug", "rest_scan_devices_for_group - Trigger GroupMemberShip scan for devices: %s " % (data))
     self.groupmgt.ScanDevicesForGroupMemberShip(data)
+    self.groupmgt.request_widgets_restore()
     action = {"Name": "Scan of device requested.", "TimeStamp": int(time())}
     _response["Data"] = json.dumps(action, sort_keys=True)
     return _response

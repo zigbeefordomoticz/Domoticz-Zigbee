@@ -182,7 +182,8 @@ def remove_group(self, GrpId):
     del self.ListOfGroups[GrpId]
 
 
-def remove_nwkid_from_all_groups(self, NwkIdToRemove):
+def remove_nwkid_from_all_groups(self, NwkIdToRemove, keep=()):
+    """keep: the groups that stay, even with no device left."""
 
     for GrpId in list(self.ListOfGroups.keys()):
         for NwkId, Ep, Ieee in list(self.ListOfGroups[GrpId]["Devices"]):
@@ -193,7 +194,7 @@ def remove_nwkid_from_all_groups(self, NwkIdToRemove):
                 self.logging(
                     "Debug", "remove_nwkid_from_all_groups Request removal of [ %s, %s, %s] " % (NwkId, Ep, Ieee)
                 )
-                remove_device_from_group(self, [NwkId, Ep, Ieee], GrpId)
+                remove_device_from_group(self, [NwkId, Ep, Ieee], GrpId, keep)
 
 
 def add_device_to_group(self, device, GrpId):
@@ -209,7 +210,7 @@ def add_device_to_group(self, device, GrpId):
         self.ListOfGroups[GrpId]["Devices"].append(device)
 
 
-def remove_device_from_group(self, device, GrpId):
+def remove_device_from_group(self, device, GrpId, keep=()):
     """
     remove a device from a group
     """
@@ -219,7 +220,7 @@ def remove_device_from_group(self, device, GrpId):
         return
 
     self.ListOfGroups[GrpId]["Devices"].remove(device)
-    if len(self.ListOfGroups[GrpId]["Devices"]) == 0:
+    if len(self.ListOfGroups[GrpId]["Devices"]) == 0 and GrpId not in keep:
         # No devices attached to that Group.
         remove_group(self, GrpId)
 

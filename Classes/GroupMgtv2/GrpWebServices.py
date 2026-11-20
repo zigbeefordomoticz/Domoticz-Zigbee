@@ -208,6 +208,10 @@ def delGroup(self, GrpId):
     if GrpId not in self.ListOfGroups:
         return
     TobeRemovedDevices = self.ListOfGroups[GrpId]["Devices"]
+    if not TobeRemovedDevices:
+        # No device to answer. Called from REST: the heartbeat removes it, with its widget
+        self.EmptyGroupsToRemove.add(GrpId)
+        return
     update_group_and_remove_devices(self, GrpId, TobeRemovedDevices)
     SendGroupIdentifyEffect(self, GrpId)
 

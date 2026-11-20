@@ -53,6 +53,9 @@ def _deps():
         "Classes.GroupMgtv2.GrpDomoticz": dict(
             LookForGroupAndCreateIfNeeded=MagicMock(),
             create_domoticz_group_device=MagicMock(),
+            group_widget_unit=MagicMock(return_value=1),
+            is_scene_selector=MagicMock(return_value=False),
+            scene_selector_unit=MagicMock(return_value=None),
             remove_domoticz_group_device=MagicMock(),
             update_domoticz_group_name=MagicMock(),
         ),
@@ -60,7 +63,7 @@ def _deps():
             checkIfIkeaRound5BToBeAdded=MagicMock(return_value=False),
             checkIfIkeaRound5BToBeRemoved=MagicMock(return_value=False),
         ),
-        "Modules.domoticzAbstractLayer": dict(find_first_unit_widget_from_deviceID=MagicMock(return_value=1)),
+        "Modules.domoticzAbstractLayer": dict(domo_units=MagicMock(return_value=[1])),
         "Modules.tools": dict(mainPoweredDevice=MagicMock(return_value=True)),
             "Modules.zigateConsts": dict(LEGRAND_REMOTES=("Double gangs remote switch",)),
     }
@@ -104,11 +107,11 @@ def reset_stub_mocks(grp):
     mocks = (
         grp.checkToCreateOrUpdateGroup,
         grp.LookForGroupAndCreateIfNeeded,
-        grp.find_first_unit_widget_from_deviceID,
+        grp.group_widget_unit,
     )
     for mock in mocks:
         mock.reset_mock()
-    grp.find_first_unit_widget_from_deviceID.return_value = 1
+    grp.group_widget_unit.return_value = 1
     yield
 
 
@@ -163,7 +166,7 @@ class TestRecoverLegrandGroups:
 
     def test_a_group_without_its_domoticz_widget_is_recreated(self, grp):
         plugin = _FakeSelf({NWKID: _remote({"01": "fefe"})}, {"fefe": _group_with(IEEE, "01")})
-        grp.find_first_unit_widget_from_deviceID.return_value = None
+        grp.group_widget_unit.return_value = None
 
         grp.recover_legrand_groups_from_devices(plugin)
 

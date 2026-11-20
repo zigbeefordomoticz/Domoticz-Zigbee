@@ -55,18 +55,14 @@ class _FakeUnit:
         self._updated = False
         self._touched = False
         self._last_update_kwargs = None
-        # Back-reference set by _make_devices so Delete() can remove itself
-        self._parent_device: "_FakeDevice | None" = None
 
     def Create(self):
         self._created = True
         return self
 
     def Delete(self):
-        """Mirror real Domoticz: mark deleted and remove from parent Units dict."""
+        """As CUnitEx_delete: the row goes, and the entry in Units stays."""
         self._deleted = True
-        if self._parent_device is not None and self.Unit in self._parent_device.Units:
-            del self._parent_device.Units[self.Unit]
 
     def Update(self, Log=True, TypeName=None, SuppressTriggers=False, UpdateProperties=False, UpdateOptions=False):
         self._updated = True
@@ -91,10 +87,6 @@ class _FakeDevice:
         self.DeviceID = DeviceID
         self.Units: dict[int, _FakeUnit] = {}
         self.TimedOut = 0
-        self._deleted = False
-
-    def Delete(self):
-        self._deleted = True
 
 
 def _make_fake_domoticz_module():
@@ -155,7 +147,6 @@ def _make_devices(*device_specs):
         dev = _FakeDevice(DeviceID=ieee)
         for unit_id, kwargs in unit_list:
             u = _FakeUnit(DeviceID=ieee, Unit=unit_id, **kwargs)
-            u._parent_device = dev          # enables Delete() to remove itself
             dev.Units[unit_id] = u
         devices[ieee] = dev
     return devices
@@ -600,32 +591,43 @@ class TestDomoCreateApi(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
+# domo_units
+# ---------------------------------------------------------------------------
+
+class TestDomoUnits(unittest.TestCase):
+
+    def test_in_order(self):
+        devices = _make_devices(("ieee-1", [(3, {}), (1, {}), (2, {})]))
+        self.assertEqual(domo.domo_units(_make_self(), devices, "ieee-1"), [1, 2, 3])
+
+    def test_an_unknown_device_has_none(self):
+        self.assertEqual(domo.domo_units(_make_self(), {}, "ghost"), [])
+
+
+# ---------------------------------------------------------------------------
 # 8. domo_delete_widget
 # ---------------------------------------------------------------------------
 
 class TestDomoDeleteWidget(unittest.TestCase):
 
-    def test_deletes_unit_and_device_when_last_unit(self):
+    def test_a_deleted_unit_leaves_units(self):
+        # Domoticz only does it after onDeviceRemoved, which it does not call for this
         obj = _make_self()
         devices = _make_devices(("ieee-1", [(1, {})]))
         unit_ref = devices["ieee-1"].Units[1]   # hold ref before deletion removes it
-        dev_ref  = devices["ieee-1"]
         domo.domo_delete_widget(obj, devices, "ieee-1", 1)
-        # Unit.Delete() was called and it removed itself from Units
         self.assertTrue(unit_ref._deleted)
-        # Device now has no units → Device.Delete() was called
-        self.assertTrue(dev_ref._deleted)
+        self.assertEqual(devices["ieee-1"].Units, {})
+        obj.log.logging.assert_called()
+        self.assertFalse([c for c in obj.log.logging.call_args_list if c.args[1] == "Error"])
 
-    def test_deletes_unit_only_when_more_units_remain(self):
+    def test_the_other_units_stay(self):
         obj = _make_self()
         devices = _make_devices(("ieee-1", [(1, {}), (2, {})]))
         unit_ref = devices["ieee-1"].Units[1]   # hold ref before deletion removes it
         domo.domo_delete_widget(obj, devices, "ieee-1", 1)
-        # Unit.Delete() was called and the unit was removed from the dict
         self.assertTrue(unit_ref._deleted)
         self.assertNotIn(1, devices["ieee-1"].Units)
-        # Unit 2 still exists, so the device itself must NOT be deleted
-        self.assertFalse(devices["ieee-1"]._deleted)
         self.assertIn(2, devices["ieee-1"].Units)
 
     def test_missing_device_does_not_raise(self):

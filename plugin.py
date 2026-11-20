@@ -146,6 +146,7 @@ from Classes.NetworkMap import NetworkMap
 from Classes.OTA import OTAManagement
 from Classes.PluginConf import PluginConf
 from Classes.SceneManagement import SceneManagement
+from Classes.SceneSelector import SceneSelector
 from Classes.ThreadSafeDeviceDict import ThreadSafeDeviceDict
 from Classes.TransportStats import TransportStatistics
 from Classes.WebServer.WebServer import WebServer
@@ -811,7 +812,7 @@ class BasePlugin:
         elif is_green_power_device_id(self, DeviceID):
             green_power_widget_removed(self, Devices, DeviceID, Unit)
 
-        elif self.groupmgt and DeviceID in self.groupmgt.ListOfGroups:
+        elif self.groupmgt and self.groupmgt.is_group_widget(DeviceID, Unit):
             self.log.logging("Plugin", "Status", f"Request device {DeviceID} to be removed from Group(s)")
             self.groupmgt.FullRemoveOfGroup(Unit, DeviceID)
 
@@ -977,6 +978,12 @@ class BasePlugin:
         if DeviceID in self.IEEE2NWK:
             # Command belongs to a end node
             domoticz_command(self, Devices, DeviceID, Unit, self.IEEE2NWK[ DeviceID], Command, Level, Color)
+
+        elif self.groupmgt and self.groupmgt.is_scene_selector(DeviceID, Unit):
+            # On the DeviceID of a group, and never a command for the group: left in Domoticz, it does nothing
+            self.log.logging("Command", "Log", "Command: %s/%s to Scene Selector: %s" % (Command, Level, DeviceID))
+            if self.scenemgt:
+                self.scenemgt.selector_command(DeviceID, Command, Level)
 
         elif self.groupmgt and DeviceID in self.groupmgt.ListOfGroups:
             # Command belongs to a Zigate group
@@ -1687,7 +1694,7 @@ def start_SceneManagement(self):
         return
 
     self.log.logging("Plugin", "Status", "Z4D starts native Zigbee scenes")
-    self.scenemgt = SceneManagement(self, self.PluginStores[SCENES_STORE])
+    self.scenemgt = SceneManagement(self, self.PluginStores[SCENES_STORE], SceneSelector(self))
     self.groupmgt.scenemgt = self.scenemgt
     if self.webserver:
         self.webserver.update_sceneManagement(self.scenemgt)

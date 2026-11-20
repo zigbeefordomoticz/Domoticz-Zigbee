@@ -103,7 +103,7 @@ def plugin():
         REMOTE: lamp(REMOTE_IEEE, "01", ("0000",), cluster_out=("0005", "0006")),
     }
     p.IEEE2NWK = {device["IEEE"]: nwkid for nwkid, device in p.ListOfDevices.items()}
-    p.groupmgt = types.SimpleNamespace(ListOfGroups={
+    p.groupmgt = types.SimpleNamespace(request_widgets_restore=MagicMock(name="request_widgets_restore"), ListOfGroups={
         GROUP: {"Name": "Living room", "Devices": [
             ["0000", "01", "00124b0000000000"],
             [CEILING, "0b", CEILING_IEEE],

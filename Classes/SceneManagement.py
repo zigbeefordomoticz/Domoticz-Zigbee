@@ -17,7 +17,8 @@ A scene belongs to a group, and is identified on a device by (GroupId, SceneId).
 A store record is one group, keyed by its GroupId:
 
     {"scenes": {SceneId: {"name", "transitionTime", "createdAt", "updatedAt",
-                          "lastRecalled", "members": {"<ieee>-<ep>": member}}}}
+                          "lastRecalled", "selectorLevel",
+                          "members": {"<ieee>-<ep>": member}}}}
 
 GroupId and SceneId are hex strings, as in ListOfGroups ("1001", "03"). A member
 is keyed by IEEE, which survives a re-pairing, and by endpoint, as two endpoints
@@ -57,12 +58,34 @@ through the plugin is dropped, after Remove All Scenes. Otherwise the store is
 left alone: the views and Recall only use the members still in the group, so a
 group list that could not be read costs no scene.
 
+Each group with scenes has a Selector Switch in Domoticz (Classes/SceneSelector.py),
+a scene being a level, Off being the group switched off. A scene takes the lowest free
+level and keeps it for life. The Selector is only touched from the Domoticz thread: a
+change marks the group, and the heartbeat brings its Selector up to date. A group with
+no scene left has no Selector. One the user deleted comes back with the next new scene
+of the group, the next scan or the next start: as long as there are scenes it is
+expected, and a scene scan rebuilds it after a store was lost. The members only leave
+a group with the last of its two widgets (GrpServices.FullRemoveOfGroup).
+
+A Selector showing a scene goes back to Off when the devices of that scene leave it.
+As for the widget of a group, this comes from the state of its devices, recomputed at
+each heartbeat, but device by device: a plug going off beside a lamp that stays on
+does not change the status of a group. It is compared with the state once a recall
+has settled, not with the snapshot, which a device may have stored differently.
+A recall settles after its transition and SCENE_SETTLE_TIME, as the fade sends reports
+of its own, and a level has to move by more than LEVEL_REPORT_CHANGE, as that is what
+a dimmer holds back until its next periodic report. On/off and level only, like the
+snapshot: a colour or a shutter leaving a scene is not seen. Going to Off is an event
+with the action of the Off level, as Domoticz writes no value without its triggers, but
+it does not reach onCommand: the group is not switched off.
+
 The decoders (forwarder thread), the REST calls (a thread per client) and the
 heartbeat all change the records, hence the lock around each read-modify-write.
 """
 
 import re
 import threading
+from itertools import count
 from time import time
 
 from Modules.tools import is_ack_tobe_disabled, is_hex
@@ -94,6 +117,11 @@ DEFAULT_TRANSITION_TIME = 1
 # Each response has this long to come back, in seconds
 SCENE_RESPONSE_TIMEOUT = 30
 
+# A recall settles this long after its transition, in seconds: reports are 5 s apart
+SCENE_SETTLE_TIME = 10
+# The Change of the default reporting of the level (0x0008/0x0000, Modules/zigateConsts.py)
+LEVEL_REPORT_CHANGE = 5
+
 STEP_ADD = "Add"
 STEP_STORE = "Store"
 
@@ -101,6 +129,8 @@ STATUS_PENDING = "pending"
 STATUS_SYNCED = "synced"
 STATUS_FAILED = "failed"
 STATUS_NOT_APPLICABLE = "n/a"
+
+SELECTOR_LEVEL_STEP = 10
 
 CAPABILITY_NATIVE = "native"
 CAPABILITY_FALLBACK = "fallback"
@@ -137,16 +167,33 @@ def _cached_value(raw):
     return int(str(raw), 16) if is_hex(str(raw)) else None
 
 
+def _member_moved(before, now):
+    """Has a member left the state it had? A value the plugin never saw says nothing."""
+    if None not in (before["onOff"], now["onOff"]) and before["onOff"] != now["onOff"]:
+        return True
+    if now["onOff"] == 0 or None in (before["level"], now["level"]):
+        return False
+    return abs(before["level"] - now["level"]) > LEVEL_REPORT_CHANGE
+
+
 class SceneManagement:
 
-    def __init__(self, plugin, store):
+    def __init__(self, plugin, store, selector=None):
         self.plugin = plugin
         self.store = store
+        self.selector = selector
         self._lock = threading.RLock()
         # (GroupId, SceneId, member key) -> {"step", "nwkid", "deadline"}
         self._waiting = {}
         # GroupId -> the last scan of this group, kept for the views until the next one
         self._scans = {}
+        # The groups whose Selector is behind, and the scene each last recalled
+        self._selector_behind = set(store.keys()) if selector else set()
+        self._selector_recalled = {}
+        # GroupId -> the scene its Selector shows: {"sceneId", "settled", "state"}
+        self._selector_shown = {}
+        # The Selectors the user deleted, until the next start, scan or new scene
+        self._selector_removed = set()
         self._fail_interrupted_captures()
 
     def logging(self, logType, message, nwkid=None, module=SCENE_LOG):
@@ -280,6 +327,7 @@ class SceneManagement:
     def _add_scene(self, GroupId, record, SceneId, name, transition_time, members):
         self.logging("Debug", "create_scene - group %s scene %s %s, transition %ss" % (GroupId, SceneId, name, transition_time))
         now = int(time())
+        self._selector_removed.discard(GroupId)
         record["scenes"][SceneId] = {
             "name": name,
             "transitionTime": transition_time,
@@ -289,6 +337,7 @@ class SceneManagement:
             "members": {},
         }
         self._capture(GroupId, SceneId, record, members)
+        self._selector_changed(GroupId)
 
     def _capture_after_scan(self, GroupId, SceneId, name, transition_time, members):
         self.logging("Debug", "create_scene - group %s scene %s %s: scan first" % (GroupId, SceneId, name))
@@ -344,6 +393,7 @@ class SceneManagement:
             scene["name"] = new_name
             scene["updatedAt"] = int(time())
             self.store.set(GroupId, record)
+            self._selector_changed(GroupId)
             return self._scene_view(GroupId, SceneId, scene)
 
     def recall_scene(self, GroupId, SceneId):
@@ -365,6 +415,8 @@ class SceneManagement:
 
             scene["lastRecalled"] = int(time())
             self.store.set(GroupId, record)
+            self._selector_recalled[GroupId] = SceneId
+            self._selector_changed(GroupId)
             self.logging("Log", "Scene %s recalled on group %s" % (scene["name"], GroupId))
             return self._scene_view(GroupId, SceneId, scene)
 
@@ -385,6 +437,7 @@ class SceneManagement:
         """Ask each member which scenes of the group it holds. The answers come through the views."""
         with self._lock:
             members = self._check_group_for_capture(GroupId)
+            self.plugin.groupmgt.request_widgets_restore()
             if self._scan_running(GroupId):
                 return self.group_view(GroupId)
             self._check_load()
@@ -601,6 +654,10 @@ class SceneManagement:
                     scan["noAnswer"].extend(scan["waiting"].values())
                     scan["waiting"] = {}
                     self._scan_finished(GroupId, scan)
+            for GroupId in list(self._selector_behind):
+                self._sync_selector(GroupId)
+            for GroupId in list(self._selector_shown):
+                self._check_shown_scene(GroupId)
         self.store.flush(self.plugin)
 
     def _fail_interrupted_captures(self):
@@ -623,6 +680,119 @@ class SceneManagement:
             self.store.set(GroupId, record)
         else:
             self.store.delete(GroupId)
+        self._selector_changed(GroupId)
+
+    # ── Selector widget ─────────────────────────────────────────────────────
+
+    def _selector_changed(self, GroupId):
+        if self.selector:
+            self._selector_behind.add(GroupId)
+
+    def _assign_levels(self, record):
+        """Each scene without a level takes the lowest free one. Returns True when one did."""
+        taken = {scene["selectorLevel"] for scene in record["scenes"].values() if "selectorLevel" in scene}
+        free = (level for level in count(SELECTOR_LEVEL_STEP, SELECTOR_LEVEL_STEP) if level not in taken)
+        waiting = [scene for _, scene in sorted(record["scenes"].items()) if "selectorLevel" not in scene]
+        for scene in waiting:
+            scene["selectorLevel"] = next(free)
+        return bool(waiting)
+
+    def _sync_selector(self, GroupId):
+        self._selector_behind.discard(GroupId)
+        recalled = self._selector_recalled.pop(GroupId, None)
+        record = self.store.get(GroupId)
+        if record is None:
+            self.selector.remove(GroupId)
+            return
+        if GroupId not in self._groups:
+            # As for the store: a group list that could not be read costs nothing
+            return
+        if self._assign_levels(record):
+            self.store.set(GroupId, record)
+        if GroupId in self._selector_removed:
+            return
+        scenes = record["scenes"]
+        self.selector.sync(GroupId, self._groups[GroupId].get("Name", ""), {scene["selectorLevel"]: scene["name"] for scene in scenes.values()})
+        if recalled in scenes:
+            self.selector.show(GroupId, scenes[recalled]["selectorLevel"])
+            self._watch_shown_scene(GroupId, recalled, time() + (scenes[recalled]["transitionTime"] or 0) + SCENE_SETTLE_TIME)
+        elif GroupId not in self._selector_shown:
+            # After a restart: the Selector is what still knows the scene
+            level = self.selector.level(GroupId)
+            shown = next((SceneId for SceneId, scene in scenes.items() if scene["selectorLevel"] == level), None)
+            if shown:
+                self._watch_shown_scene(GroupId, shown, time())
+
+    def _watch_shown_scene(self, GroupId, SceneId, settled):
+        self._selector_shown[GroupId] = {"sceneId": SceneId, "settled": settled, "state": None}
+
+    def _scene_state(self, GroupId, scene):
+        """Where the devices of a scene are now, by member: the group has others, which it does not hold."""
+        members = self._group_members(GroupId)
+        return {key: self._snapshot(members[key]["nwkid"], members[key]["ep"]) for key in scene["members"] if key in members}
+
+    def _check_shown_scene(self, GroupId):
+        shown = self._selector_shown[GroupId]
+        if time() < shown["settled"]:
+            return
+        scene = self.store.get(GroupId, {"scenes": {}})["scenes"].get(shown["sceneId"])
+        if scene is None:
+            del self._selector_shown[GroupId]
+            return
+        state = self._scene_state(GroupId, scene)
+        if shown["state"] is None:
+            shown["state"] = state
+            return
+        moved = [key for key in shown["state"] if key in state and _member_moved(shown["state"][key], state[key])]
+        if moved:
+            self.logging("Debug", "Scene %s of group %s left by %s: Selector to Off" % (shown["sceneId"], GroupId, moved), GroupId)
+            del self._selector_shown[GroupId]
+            self.selector.show(GroupId, 0)
+
+    def selector_command(self, GroupId, Command, Level):
+        """A level chosen on a Selector, from onCommand."""
+        with self._lock:
+            if GroupId not in self._groups:
+                self.logging("Log", "Selector of group %s: the group is not known" % GroupId, GroupId)
+            elif Command == "Off":
+                self._selector_shown.pop(GroupId, None)
+                self.selector.group_off(GroupId)
+                self.selector.show(GroupId, 0)
+            elif Command == "Set Level":
+                self._selector_recall(GroupId, Level)
+            else:
+                self.logging("Debug", "selector_command - group %s: %s ignored" % (GroupId, Command), GroupId)
+
+    def _selector_recall(self, GroupId, Level):
+        scenes = self.store.get(GroupId, {"scenes": {}})["scenes"]
+        SceneId = next((SceneId for SceneId, scene in scenes.items() if scene.get("selectorLevel") == Level), None)
+        if SceneId is None:
+            self.logging("Log", "Selector of group %s: no scene at level %s" % (GroupId, Level), GroupId)
+            return
+        self.recall_scene(GroupId, SceneId)
+        self._sync_selector(GroupId)
+
+    def selector_removed(self, GroupId):
+        """The user deleted the Selector. The scenes are still there, on the devices and in the WebUI."""
+        with self._lock:
+            record = self.store.get(GroupId)
+            if record is not None:
+                self.logging("Log", "Selector of group %s removed: it comes back with the next new scene, scan or start" % GroupId, GroupId)
+                self._selector_removed.add(GroupId)
+                self._selector_shown.pop(GroupId, None)
+
+    def restore_selectors(self):
+        """From GrpDomoticz.restore_group_widgets, on the Domoticz thread."""
+        with self._lock:
+            self._selector_removed.clear()
+            if self.selector:
+                self._selector_behind.update(self.store.keys())
+
+    def group_removed(self, GroupId):
+        """The group is gone, and no member was there to take its scenes with it."""
+        with self._lock:
+            self.store.delete(GroupId)
+            self._selector_changed(GroupId)
 
     # ── Views, for REST ─────────────────────────────────────────────────────
 
