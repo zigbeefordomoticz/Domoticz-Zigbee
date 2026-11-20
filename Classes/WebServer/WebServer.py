@@ -16,6 +16,7 @@ import mimetypes
 import os
 import os.path
 import platform
+import re
 import time
 from collections import deque
 
@@ -1293,6 +1294,8 @@ class WebServer(object):
                 for item in self.ListOfDevices:
                     entry = dict(self.ListOfDevices[item])
                     entry["NwkID"] = item
+                    # The ZDeviceID / ProfileID the model's configuration declares, beside the reported ones
+                    entry["DeviceConfIdentity"] = device_conf_identity(self.DeviceConf, entry.get("Model"))
                     zdev_lst.append(entry)
                 #_response["Data"] = json.dumps(zdev_lst, sort_keys=False)
                 _response["Data"] = json.dumps(zdev_lst, sort_keys=False, cls=ZigbeeJSONEncoder)
@@ -1310,6 +1313,8 @@ class WebServer(object):
                 # The model configuration's notes (_comment, _description...), for the WebUI device details
                 if "Device" in device_infos:
                     device_infos["DeviceConfInfo"] = device_conf_info(self.DeviceConf, device_infos["Device"].get("Model"))
+                    # The ZDeviceID / ProfileID the configuration declares; "Device" keeps the reported ones
+                    device_infos["DeviceConfIdentity"] = device_conf_identity(self.DeviceConf, device_infos["Device"].get("Model"))
 
                 _response["Data"] = json.dumps(device_infos, sort_keys=False, cls=ZigbeeJSONEncoder)
 
@@ -1756,6 +1761,32 @@ def device_conf_info(device_conf, model):
     if not isinstance(model_conf, dict):
         return {}
     return {key: value for key, value in model_conf.items() if isinstance(key, str) and key.startswith("_")}
+
+
+DEVICE_CONF_IDENTITY_KEYS = ("ZDeviceID", "ProfileID")
+_RE_DEVICE_CONF_ID = re.compile(r"[0-9a-fA-F]{4}")
+
+
+def device_conf_identity(device_conf, model):
+    """ The ZDeviceID / ProfileID a model's configuration declares, for the WebUI.
+
+    A device may report a manufacturer-private ZDeviceID (the CASAIA CPR412-E reports c412),
+    and its configuration then states what the device is to be taken for ("ZDeviceID": "0202").
+    The reported value stays as it is in ListOfDevices: this only serves the configured one.
+
+    Values are 4 hex digits, returned lowercase as the plugin stores ids; anything else is left out.
+    {} for an unknown model or a configuration declaring neither key. """
+    if not isinstance(model, str) or not isinstance(device_conf, dict):
+        return {}
+    model_conf = device_conf.get(model)
+    if not isinstance(model_conf, dict):
+        return {}
+    identity = {}
+    for key in DEVICE_CONF_IDENTITY_KEYS:
+        value = model_conf.get(key)
+        if isinstance(value, str) and _RE_DEVICE_CONF_ID.fullmatch(value):
+            identity[key] = value.lower()
+    return identity
 
 
 def replace_single_quotes_with_double(json_string):
