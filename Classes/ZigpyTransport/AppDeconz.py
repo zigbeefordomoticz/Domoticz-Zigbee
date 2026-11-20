@@ -145,6 +145,10 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         Classes.ZigpyTransport.AppGeneric.handle_relays(self, nwk, relays)
 
 
+    async def permit_gp(self, time_s: int) -> None:
+        await Classes.ZigpyTransport.AppGeneric.permit_gp(self, time_s)
+
+
     def packet_received(self, packet: t.ZigbeePacket) -> None:
         return Classes.ZigpyTransport.AppGeneric.packet_received(self,packet)
 

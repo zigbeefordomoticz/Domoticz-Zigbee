@@ -147,6 +147,10 @@ class App_blz(zigpy_blz.zigbee.application.ControllerApplication):
         Classes.ZigpyTransport.AppGeneric.handle_relays(self, nwk, relays)
 
 
+    async def permit_gp(self, time_s: int) -> None:
+        await Classes.ZigpyTransport.AppGeneric.permit_gp(self, time_s)
+
+
     def get_zigpy_version(self):
         return Classes.ZigpyTransport.AppGeneric.get_zigpy_version(self)
 
