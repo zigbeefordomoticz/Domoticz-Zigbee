@@ -42,6 +42,7 @@ from Modules.domoticzAbstractLayer import (domo_create_api,
                                            domo_read_nValue_sValue,
                                            find_widget_unit_from_WidgetID,
                                            retreive_free_unit_for_widget)
+from Modules.greenPowerFeed import gp_feed, gp_src_id
 from Modules.greenPowerStore import (GP_WIDGET_CREATION_REQUESTS, gp_store,
                                      request_gp_store_flush)
 
@@ -144,6 +145,7 @@ def create_gp_widgets(self, Devices, ieee):
     if conf is None:
         self.log.logging("GreenPower", "Status", "Green Power device %s: unknown model, no widget (device_id %s, manufacturer_id %s, model_id %s, commands %s)" % (
             ieee, record.get("device_id"), record.get("manufacturer_id"), record.get("model_id"), record.get("commands")), nwk)
+        gp_feed(self).add("no-widget", IEEE=ieee, SrcId=gp_src_id(ieee), NwkId=nwk, DeviceId=record.get("device_id"))
         return
 
     nick_name = conf.get("NickName") or model_name
@@ -159,8 +161,9 @@ def create_gp_widgets(self, Devices, ieee):
 
     store.update(ieee, {"Model": model_name, "Ep": ep_records})
     request_gp_store_flush(self)
-    self.log.logging("GreenPower", "Status", "Green Power device %s: %s widget(s) created as %s" % (
-        ieee, sum(len(e["ClusterType"]) for e in ep_records.values()), model_name), nwk)
+    created = sum(len(e["ClusterType"]) for e in ep_records.values())
+    self.log.logging("GreenPower", "Status", "Green Power device %s: %s widget(s) created as %s" % (ieee, created, model_name), nwk)
+    gp_feed(self).add("widgets", IEEE=ieee, SrcId=gp_src_id(ieee), NwkId=nwk, Model=model_name, Widgets=created)
 
 
 def _create_gp_widget(self, Devices, ieee, nwk, ep, widget_type, nick_name):

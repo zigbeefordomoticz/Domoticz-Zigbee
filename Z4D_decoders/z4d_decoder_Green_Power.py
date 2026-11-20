@@ -7,6 +7,12 @@ from zigpy Green Power events (Classes/ZigpyTransport/greenPower.py).
     9e01  GPD command        ieee(16) nwk(4) endpoint(2) command(2)
                              frame counter(8) payload(rest)
     9e02  GPD removed        ieee(16) nwk(4)
+    9e03  GPDF heard         ieee(16) command(2) flags(2) proxy nwk(4)
+                             rssi(2), for the pairing feed
+    9e04  GP window          state(2) seconds(4), for the pairing feed
+
+The pairing feed (Modules/greenPowerFeed.py) shows these steps on Admin →
+Provisioning.
 
 The GPDs are kept in the Green Power device store (Modules/greenPowerStore.py),
 not in ListOfDevices. Their widgets: Modules/greenPowerWidgets.py.
@@ -15,6 +21,7 @@ not in ListOfDevices. Their widgets: Modules/greenPowerWidgets.py.
 import json
 import time
 
+from Modules.greenPowerFeed import WINDOW_STATES, gp_feed, gp_src_id
 from Modules.greenPowerStore import (gp_command_fields, gp_device_record,
                                      gp_store, request_gp_store_flush,
                                      request_gp_widget_creation)
@@ -73,6 +80,9 @@ def Decode9E00(self, Devices, MsgData, MsgLQI):
     webserver = getattr(self, "webserver", None)
     if webserver:
         webserver.add_green_power_device_in_pairing_mode(ieee, record.get("nwk"))
+    # A unidirectional GPD gets no answer: the user takes it out of its commissioning mode
+    gp_feed(self).add("commissioned", IEEE=ieee, SrcId=gp_src_id(ieee), NwkId=record.get("nwk"),
+                      DeviceId=record.get("device_id"), Again=bool(record.get("recommissioned")), Hint="leave-pairing")
 
 
 def Decode9E01(self, Devices, MsgData, MsgLQI):
@@ -101,3 +111,24 @@ def Decode9E02(self, Devices, MsgData, MsgLQI):
 
     store.delete(ieee)
     request_gp_store_flush(self)
+    gp_feed(self).add("removed", IEEE=ieee, SrcId=gp_src_id(ieee), NwkId=MsgData[16:20])
+
+
+def Decode9E03(self, Devices, MsgData, MsgLQI):
+    ieee = MsgData[:16]
+    command_id = int(MsgData[16:18], 16)
+    flags = int(MsgData[18:20], 16)
+    proxy = MsgData[20:24]
+    rssi = int(MsgData[24:26], 16)
+    rssi = rssi - 256 if rssi > 127 else rssi
+    entry = gp_feed(self).heard(ieee, command_id, flags, None if proxy == "ffff" else proxy, rssi, int(MsgLQI, 16))
+    self.log.logging("GreenPower", "Debug", "Decode9E03 - Green Power frame heard %s" % entry)
+
+
+def Decode9E04(self, Devices, MsgData, MsgLQI):
+    state = WINDOW_STATES.get(int(MsgData[:2], 16))
+    if state is None:
+        self.log.logging("GreenPower", "Error", "Decode9E04 - unknown Green Power window state %s" % MsgData[:2])
+        return
+    gp_feed(self).window(state, int(MsgData[2:6], 16))
+

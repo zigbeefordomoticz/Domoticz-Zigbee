@@ -41,7 +41,8 @@ from Z4D_decoders.z4d_decoder_Default_Rsp import Decode8101
 from Z4D_decoders.z4d_decoder_Device_Annoucement import Decode004D
 from Z4D_decoders.z4d_decoder_Discovery_Rsp import Decode804B
 from Z4D_decoders.z4d_decoder_Green_Power import (Decode9E00, Decode9E01,
-                                                  Decode9E02)
+                                                  Decode9E02, Decode9E03,
+                                                  Decode9E04)
 from Z4D_decoders.z4d_decoder_groups import (Decode8060, Decode8061,
                                              Decode8062, Decode8063)
 from Z4D_decoders.z4d_decoder_helpers import extract_message_infos
@@ -174,6 +175,8 @@ DECODERS: dict = {
     "9e00": Decode9E00,
     "9e01": Decode9E01,
     "9e02": Decode9E02,
+    "9e03": Decode9E03,
+    "9e04": Decode9E04,
     "7000": Decode7000,
 }
 

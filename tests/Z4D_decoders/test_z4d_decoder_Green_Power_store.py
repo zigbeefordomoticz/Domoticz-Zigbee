@@ -106,6 +106,10 @@ def gp_store_module():
     return importlib.import_module("Modules.greenPowerStore")
 
 
+def gp_feed_module():
+    return importlib.import_module("Modules.greenPowerFeed")
+
+
 @pytest.fixture
 def plugin(gp_store_module):
     store = FakeStore()
@@ -299,6 +303,9 @@ class TestWidgets:
         decode_last(helpers, decoder, plugin, transport)
 
         plugin.webserver.add_green_power_device_in_pairing_mode.assert_called_once_with(IEEE_HEX, IEEE_HEX[-4:])
+        # The pairing feed tells the user to take the GPD out of its commissioning mode
+        (event,) = gp_feed_module().gp_feed(plugin).snapshot()["Events"]
+        assert (event["Event"], event["Hint"]) == ("commissioned", "leave-pairing")
 
     def test_commissioned_again_keeps_its_widgets(self, decoder, helpers, plugin, transport, gp_types):
         listener = GreenPowerListener(transport)

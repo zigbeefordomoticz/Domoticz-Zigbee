@@ -60,6 +60,8 @@ HARNESS = textwrap.dedent(
     class FakeApp(RadioControllerApplication):
         def __init__(self):
             self.calls = []
+            self.frames = []
+            self.callBackFunction = self.frames.append
             self.log = Log()
             self.pluginconf = types.SimpleNamespace(pluginConf={})
             if "enabled" in sc:
@@ -69,7 +71,7 @@ HARNESS = textwrap.dedent(
 
     app = FakeApp()
     asyncio.run(AG.permit_gp(app, sc["time_s"]))
-    print("RESULT=" + json.dumps({"calls": app.calls, "logs": app.log.records}))
+    print("RESULT=" + json.dumps({"calls": app.calls, "logs": app.log.records, "frames": app.frames}))
     """
 )
 
@@ -86,6 +88,12 @@ def _run(**scenario):
 
 def _status(result):
     return [msg for level, msg in result["logs"] if level == "Status"]
+
+
+def _windows(result):
+    """(state, seconds) of the 9e04 frames sent to the pairing feed."""
+    # 01 | 9e04 | length(4) | ff | state(2) seconds(4) | lqi(2) | 03
+    return [(int(f[12:14], 16), int(f[14:18], 16)) for f in result["frames"] if f[2:6] == "9e04"]
 
 
 class TestGreenPowerDisabled:
@@ -108,6 +116,16 @@ class TestGreenPowerDisabled:
         # Setting switched off while a window was open
         result = _run(time_s=0, enabled=0, commissioning=True)
         assert result["calls"] == [0]
+        assert _windows(result) == [(0x00, 0)]
+
+    def test_pairing_feed_is_told_green_power_was_not_opened(self):
+        # Admin → Provisioning warns that GreenPowerEnable is off
+        result = _run(time_s=240, enabled=0)
+        assert _windows(result) == [(0x02, 240)]
+
+    def test_silent_close_tells_the_feed_nothing(self):
+        result = _run(time_s=0, enabled=0, commissioning=False)
+        assert _windows(result) == []
 
 
 class TestGreenPowerEnabled:
@@ -116,11 +134,13 @@ class TestGreenPowerEnabled:
         result = _run(time_s=60, enabled=1)
         assert result["calls"] == [60]
         assert any("opening Green Power commissioning for 60" in msg for msg in _status(result))
+        assert _windows(result) == [(0x01, 60)]
 
     def test_close_is_passed_on(self):
         result = _run(time_s=0, enabled=1)
         assert result["calls"] == [0]
         assert any("closing Green Power commissioning" in msg for msg in _status(result))
+        assert _windows(result) == [(0x00, 0)]
 
 
 class TestZigpyWithoutGreenPower:

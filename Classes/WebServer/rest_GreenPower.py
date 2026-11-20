@@ -17,6 +17,8 @@ not in ListOfDevices, so the routes built on ListOfDevices never show them:
                       entries built here for the GPDs commissioned since the
                       page opened pairing
     /zgp-device-raw   Tools → Data: the store content
+    /zgp-pairing      Admin → Provisioning: the pairing feed, what happens
+                      while a GPD is being paired (Modules/greenPowerFeed.py)
 
 The store record holds the GPD security key: it never leaves the plugin
 (SECRET_FIELDS are dropped from every answer).
@@ -176,4 +178,26 @@ def rest_zgp_device_raw(self, verb, data, parameters):
     elif len(parameters) == 1:
         ieee = parameters[0].lower()
         _response["Data"] = json.dumps(entry(ieee, records[ieee]) if ieee in records else {}, sort_keys=False)
+    return _response
+
+
+def rest_zgp_pairing(self, verb, data, parameters):
+    """
+    GET /zgp-pairing            the Green Power pairing feed (Modules/greenPowerFeed.py)
+    GET /zgp-pairing/<seq>      only the events after <seq>, for polling
+
+    {"GreenPowerEnable", "Channel", "Window": {"State", "Until"}, "Seq", "Events"}
+    """
+    _response = prepResponseMessage(self, setupHeadersResponse())
+    _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+    if verb != "GET":
+        return _response
+
+    since = int(parameters[0]) if len(parameters) == 1 and parameters[0].isdigit() else 0
+    feed = getattr(self, "GreenPowerFeed", None)
+    answer = feed.snapshot(since) if feed is not None else {"Window": {"State": None, "Until": None}, "Seq": 0, "Events": []}
+    controller = getattr(self, "ControllerData", None) or {}
+    answer["GreenPowerEnable"] = bool(self.pluginconf.pluginConf.get("GreenPowerEnable"))
+    answer["Channel"] = controller.get("Channel")
+    _response["Data"] = json.dumps(answer, sort_keys=False)
     return _response

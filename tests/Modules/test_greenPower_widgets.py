@@ -197,6 +197,10 @@ def test_switch_created_from_the_heartbeat_with_the_zigbee_definition():
         assert p.flush_list_of_devices is True
         assert p.ListOfDevices == {} and p.log.errors() == []
         assert not getattr(p, "gp_widget_creation_requests")
+        # Shown on Admin → Provisioning
+        from Modules.greenPowerFeed import gp_feed
+        (event,) = gp_feed(p).snapshot()["Events"]
+        assert (event["Event"], event["Model"], event["Widgets"]) == ("widgets", "GreenPower-OnOff", 1)
         """
     )
 
@@ -238,6 +242,8 @@ def test_unknown_gpd_gets_no_widget():
         assert GP_IEEE not in DEVICES
         assert "unknown model" in p.log.text()
         assert p.log.errors() == []
+        from Modules.greenPowerFeed import gp_feed
+        assert [e["Event"] for e in gp_feed(p).snapshot()["Events"]] == ["no-widget"]
         """
     )
 

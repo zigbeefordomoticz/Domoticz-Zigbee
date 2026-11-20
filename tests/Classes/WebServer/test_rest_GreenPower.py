@@ -245,3 +245,41 @@ def test_rcv_nw_hrdwr_answers_a_gpd_when_no_zigbee_device_joined(rest_provisioni
     assert entry["IEEE"] == IEEE
     assert entry["ProvisionStatus"] == "inDB"
     assert KEY not in response["Data"]
+
+
+# ─── /zgp-pairing ───────────────────────────────────────────────────────────
+
+def get_pairing(webserver, parameters=()):
+    from Classes.WebServer.rest_GreenPower import rest_zgp_pairing
+
+    response = rest_zgp_pairing(webserver, "GET", None, list(parameters))
+    return json.loads(response["Data"])
+
+
+def test_pairing_feed_with_setting_channel_and_events():
+    from Modules.greenPowerFeed import HEARD_WINDOW_OPEN, GreenPowerFeed
+
+    webserver = FakeWebServer({})
+    webserver.pluginconf.pluginConf["GreenPowerEnable"] = 1
+    webserver.ControllerData = {"Channel": 11}
+    webserver.GreenPowerFeed = GreenPowerFeed()
+    webserver.GreenPowerFeed.window("opened", 240)
+    webserver.GreenPowerFeed.heard(IEEE, 0xE0, HEARD_WINDOW_OPEN, None, -64, 212)
+
+    payload = get_pairing(webserver)
+
+    assert payload["GreenPowerEnable"] is True
+    assert payload["Channel"] == 11
+    assert payload["Window"]["State"] == "opened"
+    assert payload["Seq"] == 2
+    assert [e["Event"] for e in payload["Events"]] == ["window", "heard"]
+    assert [e["Event"] for e in get_pairing(webserver, ["1"])["Events"]] == ["heard"]
+
+
+def test_pairing_feed_without_feed_or_controller():
+    webserver = FakeWebServer({})
+
+    payload = get_pairing(webserver, ["not-a-number"])
+
+    assert payload == {"Window": {"State": None, "Until": None}, "Seq": 0, "Events": [],
+                       "GreenPowerEnable": False, "Channel": None}
