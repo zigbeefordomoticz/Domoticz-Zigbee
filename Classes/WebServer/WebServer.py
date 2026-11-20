@@ -104,7 +104,8 @@ class WebServer(object):
     from Classes.WebServer.rest_Energy import (rest_req_nwk_full,
                                                rest_req_nwk_inter)
     from Classes.WebServer.rest_Gammatroniques import rest_TICMeter
-    from Classes.WebServer.rest_Groups import (rest_rescan_group,
+    from Classes.WebServer.rest_Groups import (group_management_status,
+                                               rest_rescan_group,
                                                rest_scan_devices_for_group,
                                                rest_zGroup,
                                                rest_zGroup_lst_avlble_dev)
@@ -333,9 +334,10 @@ class WebServer(object):
                 # The plugin's clock, which StartTime / EndTime are read against: the browser's may differ
                 health["OTAupdateTime"] = int(time.time())
 
-            if self.groupmgt:
-                health["GroupStatus"] = self.groupmgt.GroupStatus
-                
+            group_status = self.group_management_status()
+            if group_status:
+                health["GroupStatus"] = group_status
+
             if a_topology_scan_is_running(self):
                 health["Topology"] = "In Progress"
 
