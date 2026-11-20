@@ -44,15 +44,15 @@ def test_window_opened_then_expired():
     feed = GreenPowerFeed()
     feed.window("opened", 240, now=NOW)
 
-    assert feed.snapshot(now=NOW + 10)["Window"] == {"State": "opened", "Until": NOW + 240}
-    assert feed.snapshot(now=NOW + 240)["Window"] == {"State": "closed", "Until": None}
+    assert feed.snapshot(now=NOW + 10)["Window"] == {"State": "opened", "Until": NOW + 240, "Remaining": 230}
+    assert feed.snapshot(now=NOW + 240)["Window"] == {"State": "closed", "Until": None, "Remaining": 0}
 
 
 def test_window_disabled_has_no_end():
     feed = GreenPowerFeed()
     feed.window("disabled", 240, now=NOW)
 
-    assert feed.snapshot(now=NOW)["Window"] == {"State": "disabled", "Until": None}
+    assert feed.snapshot(now=NOW)["Window"] == {"State": "disabled", "Until": None, "Remaining": 0}
 
 
 def test_snapshot_after_a_seq():
@@ -98,3 +98,23 @@ def test_one_feed_per_plugin():
     plugin = SimpleNamespace()
 
     assert gp_feed(plugin) is gp_feed(plugin)
+
+
+def test_picked_type_lasts_while_the_window_is_open():
+    feed = GreenPowerFeed()
+    feed.set_pairing_model("GreenPower-OnOff-Dim")
+    feed.window("opened", 240, now=NOW)
+
+    assert feed.pairing_model(now=NOW + 10) == "GreenPower-OnOff-Dim"
+    assert feed.snapshot(now=NOW + 10)["Model"] == "GreenPower-OnOff-Dim"
+    assert feed.pairing_model(now=NOW + 240) is None
+
+
+def test_picked_type_is_dropped_when_the_window_closes():
+    feed = GreenPowerFeed()
+    feed.set_pairing_model("GreenPower-OnOff-Dim")
+    feed.window("opened", 240, now=NOW)
+
+    feed.window("closed", 0, now=NOW + 5)
+
+    assert feed.pairing_model(now=NOW + 6) is None

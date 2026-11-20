@@ -122,6 +122,7 @@ class WebServer(object):
         certified_devices_update, rest_certified_devices_update,
         rest_plugin_upgrade, rest_reload_device_conf)
     from Classes.WebServer.rest_GreenPower import (rest_zgp_device_raw,
+                                                   rest_zgp_models,
                                                    rest_zgp_pairing)
     from Classes.WebServer.rest_Provisioning import (rest_full_reprovisionning,
                                                      rest_new_hrdwr,
@@ -284,6 +285,10 @@ class WebServer(object):
 
     def update_green_power_feed(self, feed):
         self.GreenPowerFeed = feed
+
+    def update_green_power_models(self, models):
+        # Green Power device types (Modules/greenPowerModels.py), read by gp_models()
+        self.GreenPowerModels = models or {}
         
     def update_groupManagement(self, groupmanagement):
         self.groupmgt = groupmanagement if groupmanagement else None

@@ -20,6 +20,7 @@ import copy
 import importlib
 import json
 import sys
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
@@ -281,5 +282,94 @@ def test_pairing_feed_without_feed_or_controller():
 
     payload = get_pairing(webserver, ["not-a-number"])
 
-    assert payload == {"Window": {"State": None, "Until": None}, "Seq": 0, "Events": [],
+    assert payload == {"Window": {"State": None, "Until": None, "Remaining": 0}, "Model": None, "Seq": 0, "Events": [],
                        "GreenPowerEnable": False, "Channel": None}
+
+
+# ─── PUT /zgp-pairing, GET /zgp-models ──────────────────────────────────────
+
+REPO_CONF = Path(__file__).resolve().parents[3] / "Conf"
+
+
+@pytest.fixture
+def gp_webserver():
+    from Modules.greenPowerFeed import GreenPowerFeed
+    from Modules.greenPowerModels import load_gp_models
+
+    webserver = FakeWebServer({})
+    webserver.log = MagicMock()
+    webserver.zigbee_communication = "zigpy"
+    webserver.ControllerLink = MagicMock()
+    webserver.GreenPowerFeed = GreenPowerFeed()
+    load_gp_models(webserver, REPO_CONF)
+    return webserver
+
+
+def put_pairing(webserver, body):
+    from Classes.WebServer.rest_GreenPower import rest_zgp_pairing
+
+    raw = body if isinstance(body, bytes) else json.dumps(body).encode("utf-8")
+    response = rest_zgp_pairing(webserver, "PUT", raw, [])
+    return response, json.loads(response["Data"])
+
+
+def test_put_opens_green_power_only_with_the_picked_type(gp_webserver):
+    response, payload = put_pairing(gp_webserver, {"Duration": 240, "Model": "GreenPower-OnOff-Dim"})
+
+    assert response["Status"] == "200 OK"
+    assert payload == {"Duration": 240, "Model": "GreenPower-OnOff-Dim"}
+    gp_webserver.ControllerLink.sendData.assert_called_once_with("PERMIT-GP", {"Duration": 240})
+    gp_webserver.GreenPowerFeed.window("opened", 240)
+    assert gp_webserver.GreenPowerFeed.pairing_model() == "GreenPower-OnOff-Dim"
+
+
+def test_put_without_type_is_automatic(gp_webserver):
+    _, payload = put_pairing(gp_webserver, {"Duration": 240, "Model": None})
+
+    assert payload["Model"] is None
+    assert gp_webserver.GreenPowerFeed.pairing_model() is None
+
+
+def test_put_zero_closes_and_forgets_the_type(gp_webserver):
+    put_pairing(gp_webserver, {"Duration": 240, "Model": "GreenPower-OnOff"})
+
+    put_pairing(gp_webserver, {"Duration": 0, "Model": "GreenPower-OnOff"})
+
+    gp_webserver.ControllerLink.sendData.assert_called_with("PERMIT-GP", {"Duration": 0})
+    assert gp_webserver.GreenPowerFeed.pairing_model() is None
+
+
+@pytest.mark.parametrize("body", [
+    b"{not json",
+    [240],
+    {"Model": "GreenPower-OnOff"},
+    {"Duration": "240"},
+    {"Duration": True},
+    {"Duration": 255},
+    {"Duration": -1},
+    {"Duration": 240, "Model": "No-Such-Type"},
+])
+def test_put_refuses_a_bad_request(gp_webserver, body):
+    response, payload = put_pairing(gp_webserver, body)
+
+    assert response["Status"] == "400 BAD REQUEST"
+    assert "BE_Error" in payload
+    gp_webserver.ControllerLink.sendData.assert_not_called()
+
+
+def test_put_needs_zigpy(gp_webserver):
+    gp_webserver.zigbee_communication = "native"
+
+    response, _ = put_pairing(gp_webserver, {"Duration": 240})
+
+    assert response["Status"] == "400 BAD REQUEST"
+    gp_webserver.ControllerLink.sendData.assert_not_called()
+
+
+def test_models_list(gp_webserver):
+    from Classes.WebServer.rest_GreenPower import rest_zgp_models
+
+    payload = json.loads(rest_zgp_models(gp_webserver, "GET", None, [])["Data"])
+
+    assert [m["Name"] for m in payload][:2] == ["GreenPower-OnOff", "GreenPower-OnOff-Dim"]
+    assert payload[1]["Widgets"] == ["GenericLvlControl"]

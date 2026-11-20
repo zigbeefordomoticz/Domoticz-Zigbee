@@ -97,7 +97,7 @@ PREAMBLE = textwrap.dedent(
         p = types.SimpleNamespace()
         p.log = Log()
         p.pluginParameters = {"Name": "Zigbee"}
-        p.pluginconf = types.SimpleNamespace(pluginConf={"forceSwitchSelectorPushButton": 0, "logDeviceUpdate": 0})
+        p.pluginconf = types.SimpleNamespace(pluginConf={"forceSwitchSelectorPushButton": 0, "logDeviceUpdate": 0, "Lang": "en-US"})
         p.IEEE2NWK = {}
         p.ListOfDevices = {}
         p.ListOfDomoticzWidget = {}
@@ -315,5 +315,81 @@ def test_command_without_translation_or_widget_does_nothing():
 
         assert (the_unit().nValue, the_unit().updates) == (0, 0)
         assert p.log.errors() == []
+        """
+    )
+
+
+# ─── Device types picked before pairing (Conf/ZGPmodel) ─────────────────────
+
+def test_picked_dimmer_type_creates_the_level_selector():
+    _run(
+        """
+        from Modules.greenPowerModels import load_gp_models
+        p = make_plugin(gp_record(commands=[], RequestedModel="GreenPower-OnOff-Dim"))
+        load_gp_models(p, "Conf")
+
+        commission(p)
+
+        unit = the_unit()
+        assert (unit.Type, unit.Subtype, unit.Switchtype) == (244, 62, 18)
+        assert unit.Options["LevelNames"] == "Off|Off|On|Dim +|Dim -|Stop"
+        assert unit.Options["LevelOffHidden"] == "true"
+        record = stored(p)
+        assert record["Model"] == "GreenPower-OnOff-Dim"
+        assert record["Ep"] == {"01": {"ClusterType": {str(unit.ID): "GenericLvlControl"}}}
+        assert p.log.errors() == []
+        """
+    )
+
+
+def test_dimmer_type_commands_move_the_selector():
+    _run(
+        """
+        from Modules.greenPowerModels import load_gp_models
+        p = make_plugin(gp_record(commands=[], RequestedModel="GreenPower-OnOff-Dim"))
+        load_gp_models(p, "Conf")
+        commission(p)
+        unit = the_unit()
+
+        for command_id, level in ((0x21, "20"), (0x35, "30"), (0x34, "50"), (0x36, "40"), (0x20, "10")):
+            gpw.update_gp_widgets(p, DEVICES, GP_IEEE, command_id)
+            assert unit.sValue == level, (hex(command_id), unit.sValue)
+
+        # A command the type does not map changes nothing
+        gpw.update_gp_widgets(p, DEVICES, GP_IEEE, 0x22)
+        assert unit.sValue == "10"
+        assert p.log.errors() == []
+        """
+    )
+
+
+def test_picked_on_off_type_matches_the_builtin_switch():
+    _run(
+        """
+        from Modules.greenPowerModels import load_gp_models
+        p = make_plugin(gp_record(commands=[], RequestedModel="GreenPower-OnOff"))
+        load_gp_models(p, "Conf")
+        commission(p)
+        unit = the_unit()
+
+        assert stored(p)["Model"] == "GreenPower-OnOff"
+        gpw.update_gp_widgets(p, DEVICES, GP_IEEE, 0x21)
+        assert (unit.nValue, unit.sValue) == (1, "On")
+        gpw.update_gp_widgets(p, DEVICES, GP_IEEE, 0x22)
+        assert (unit.nValue, unit.sValue) == (0, "Off")
+        """
+    )
+
+
+def test_unknown_picked_type_falls_back_to_the_device_id():
+    _run(
+        """
+        from Modules.greenPowerModels import load_gp_models
+        p = make_plugin(gp_record(RequestedModel="Removed-Type"))
+        load_gp_models(p, "Conf")
+
+        commission(p)
+
+        assert stored(p)["Model"] == "GreenPower-OnOff"
         """
     )
