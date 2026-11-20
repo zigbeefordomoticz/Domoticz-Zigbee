@@ -131,8 +131,8 @@ class TestDecode80A6:
 
     def test_the_scenes_reach_the_scene_manager(self, mod, plugin):
         plugin.scenemgt = MagicMock()
-        mod.Decode80A6(plugin, {}, self._make_msg(scene_count="02", scene_list="0307"), LQI)
-        plugin.scenemgt.membership_response.assert_called_once_with(ADDR, "01", "00", "0001", ["03", "07"])
+        mod.Decode80A6(plugin, {}, self._make_msg(capacity="0e", scene_count="02", scene_list="0307"), LQI)
+        plugin.scenemgt.membership_response.assert_called_once_with(ADDR, "01", "00", "0001", ["03", "07"], 14)
 
     def test_a_refusal_reaches_the_scene_manager(self, mod, plugin):
         plugin.scenemgt = MagicMock()

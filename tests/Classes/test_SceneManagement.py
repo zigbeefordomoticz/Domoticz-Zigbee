@@ -440,6 +440,69 @@ class TestRename:
         assert error_code(scenes.rename_scene, GROUP, "02", "Reading") == "NAME_DUPLICATE"
 
 
+class TestComment:
+
+    def test_none_by_default(self, scenes, store):
+        assert scenes.create_scene(GROUP, "Reading")["comment"] == ""
+        assert stored(store)["comment"] == ""
+
+    def test_kept_and_trimmed(self, scenes, store):
+        view = scenes.create_scene(GROUP, "Reading", comment="  Lights for the sofa ")
+        assert view["comment"] == "Lights for the sofa"
+        assert stored(store)["comment"] == "Lights for the sofa"
+
+    def test_a_scene_from_before_the_comments(self, scenes, store):
+        scenes.create_scene(GROUP, "Reading")
+        record = store.get(GROUP)
+        del record["scenes"]["01"]["comment"]
+        store.set(GROUP, record)
+        assert scenes.group_view(GROUP)["scenes"][0]["comment"] == ""
+        assert scenes.rename_scene(GROUP, "01", "Evening")["comment"] == ""
+
+    @pytest.mark.parametrize("comment", ["x" * 201, 12, ["a"]])
+    def test_refused(self, scenes, comment):
+        assert error_code(scenes.create_scene, GROUP, "Reading", comment=comment) == "COMMENT_INVALID"
+
+    def test_the_longest(self, scenes):
+        assert scenes.create_scene(GROUP, "Reading", comment="x" * 200)["comment"] == "x" * 200
+
+    def test_a_rename_without_a_comment_leaves_it(self, scenes, store):
+        scenes.create_scene(GROUP, "Reading", comment="Sofa")
+        scenes.rename_scene(GROUP, "01", "Evening")
+        assert stored(store)["comment"] == "Sofa"
+
+    def test_it_can_change_and_be_emptied(self, mod, scenes, store):
+        scenes.create_scene(GROUP, "Reading", comment="Sofa")
+        mod.zcl_raw_add_scene.reset_mock()
+        scenes.rename_scene(GROUP, "01", "Reading", "Table")
+        assert stored(store)["comment"] == "Table"
+        scenes.rename_scene(GROUP, "01", "Reading", "")
+        assert stored(store)["comment"] == ""
+        for name in COMMANDS:
+            getattr(mod, name).assert_not_called()
+
+    def test_a_refused_rename_changes_nothing(self, scenes, store):
+        scenes.create_scene(GROUP, "Reading", comment="Sofa")
+        assert error_code(scenes.rename_scene, GROUP, "01", "Evening", "x" * 201) == "COMMENT_INVALID"
+        assert stored(store)["name"] == "Reading"
+
+    def test_a_recapture_keeps_it(self, scenes, store):
+        scenes.create_scene(GROUP, "Reading", comment="Sofa")
+        scenes.capture_scene(GROUP, "01")
+        assert stored(store)["comment"] == "Sofa"
+
+    def test_it_waits_with_a_chosen_scene_id(self, scenes, store):
+        scenes.create_scene(GROUP, "Reading", SceneId="2a", comment="Sofa")
+        scan_answers = (CEILING, "0b"), (SOFA, "01")
+        for nwkid, ep in scan_answers:
+            scenes.membership_response(nwkid, ep, "00", GROUP, [])
+        assert stored(store, "2a")["comment"] == "Sofa"
+
+    def test_the_view_of_a_capture_does_not_show_it_twice(self, scenes):
+        view = scenes.create_scene(GROUP, "Reading", SceneId="2a", comment="Sofa")
+        assert "comment" not in view["scan"]["capture"]
+
+
 # ─── Recall ──────────────────────────────────────────────────────────────────
 
 class TestRecall:
@@ -691,6 +754,75 @@ class TestScan:
         assert error_code(scenes.scan_group, "9999") == "GROUP_NOT_FOUND"
         plugin.ControllerLink.loadTransmit.return_value = 99
         assert error_code(scenes.scan_group, GROUP) == "COORDINATOR_BUSY"
+
+
+class TestSceneTable:
+    """The ZCL only gives what a device has left: the total is that and what it holds."""
+
+    def slots(self, scenes, nwkid=CEILING):
+        member = next(m for m in scenes.group_view(GROUP)["members"] if m["nwkId"] == nwkid)
+        return member["sceneSlots"]
+
+    def scan(self, scenes, held, capacity, nwkid=CEILING, ep="0b", group=GROUP):
+        scenes.scan_group(group)
+        scenes.membership_response(nwkid, ep, "00", group, held, capacity)
+        if group == GROUP:
+            # The other lamp, or the next scan would find this one still running
+            scenes.membership_response(SOFA, "01", "85", group, [])
+
+    def test_unknown_before_a_scan(self, scenes):
+        assert self.slots(scenes) == {"used": 0, "total": None}
+
+    def test_a_scan_gives_the_total(self, scenes, plugin):
+        self.scan(scenes, ["01", "02"], 14)
+        assert self.slots(scenes) == {"used": 2, "total": 16}
+        assert plugin.ListOfDevices[CEILING]["SceneTable"] == {"0b": 16}
+
+    def test_the_total_stays_as_scenes_come_and_go(self, mod, scenes):
+        self.scan(scenes, [], 16)
+        scenes.create_scene(GROUP, "Reading")
+        complete_capture(mod, scenes, CEILING, "0b")
+        assert self.slots(scenes) == {"used": 1, "total": 16}
+        scenes.delete_scene(GROUP, "01")
+        assert self.slots(scenes) == {"used": 0, "total": 16}
+
+    def test_a_scene_not_stored_yet_does_not_count(self, scenes):
+        self.scan(scenes, [], 16)
+        scenes.create_scene(GROUP, "Reading")
+        assert self.slots(scenes) == {"used": 0, "total": 16}
+
+    def test_the_table_is_shared_by_the_groups(self, scenes, plugin):
+        plugin.groupmgt.ListOfGroups["2002"]["Devices"].append([CEILING, "0b", CEILING_IEEE])
+        self.scan(scenes, ["01"], 10, group="2002")
+        self.scan(scenes, ["01", "02"], 10)
+        assert self.slots(scenes) == {"used": 3, "total": 13}
+
+    @pytest.mark.parametrize("capacity", [0xfe, 0xff])
+    def test_a_device_that_cannot_tell(self, scenes, plugin, capacity):
+        self.scan(scenes, [], 16)
+        self.scan(scenes, ["01"], capacity)
+        assert self.slots(scenes) == {"used": 1, "total": None}
+        assert plugin.ListOfDevices[CEILING]["SceneTable"] == {}
+
+    def test_a_refusal_leaves_the_total(self, scenes):
+        self.scan(scenes, [], 16)
+        scenes.scan_group(GROUP)
+        scenes.membership_response(CEILING, "0b", "85", GROUP, [])
+        assert self.slots(scenes)["total"] == 16
+
+    def test_no_table_without_the_scenes_cluster(self, scenes):
+        assert self.slots(scenes, STRIP) is None
+
+    def test_a_scene_shows_the_table_of_its_members(self, mod, scenes):
+        self.scan(scenes, [], 16)
+        view = scenes.create_scene(GROUP, "Reading")
+        slots = {member["nwkId"]: member["sceneSlots"] for member in view["members"]}
+        assert slots[CEILING] == {"used": 0, "total": 16}
+        assert slots[STRIP] is None
+
+    def test_the_endpoints_of_a_device_are_apart(self, scenes, plugin):
+        plugin.ListOfDevices[CEILING]["SceneTable"] = {"0c": 16}
+        assert self.slots(scenes)["total"] is None
 
 
 def asked_ids(mod):

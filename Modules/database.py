@@ -87,6 +87,7 @@ MANDATORY_ATTRIBUTES = (
     "ColorInfos",
     "ClusterType",
     "ConfigSource",
+    "SceneTable",
     "DeviceType",
     "Ep",
     "Epv2",
