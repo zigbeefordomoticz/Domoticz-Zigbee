@@ -228,7 +228,7 @@ class TestLevels:
 
     def test_a_rename_changes_the_name_at_its_level(self, scenes, domoticz):
         add(scenes, "Movie", "Reading")
-        scenes.rename_scene(GROUP, scene_id(scenes, "Movie"), "Cinema")
+        scenes.edit_scene(GROUP, scene_id(scenes, "Movie"), "Cinema")
         scenes.heartbeat()
         assert domoticz.names() == ["Off", "Cinema", "Reading"]
 
@@ -500,7 +500,7 @@ class TestRemoval:
         add(scenes, "Movie")
         domoticz.user_deletes_selector()
         scenes.selector_removed(GROUP)
-        scenes.rename_scene(GROUP, scene_id(scenes, "Movie"), "Cinema")
+        scenes.edit_scene(GROUP, scene_id(scenes, "Movie"), "Cinema")
         scenes.heartbeat()
         assert not domoticz.has_selector()
 

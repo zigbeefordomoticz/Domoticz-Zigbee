@@ -45,7 +45,7 @@ def server():
     s.log = MagicMock()
     s.pluginconf = types.SimpleNamespace(pluginConf={})
     s.scenemgt = MagicMock()
-    for name in ("groups_view", "group_view", "create_scene", "rename_scene", "capture_scene", "recall_scene", "retry_scene"):
+    for name in ("groups_view", "group_view", "create_scene", "edit_scene", "capture_scene", "recall_scene", "retry_scene"):
         getattr(s.scenemgt, name).return_value = {"from": name}
     return s
 
@@ -53,12 +53,15 @@ def server():
 @pytest.mark.parametrize("verb, parameters, body, method, expected", [
     ("GET", [], None, "groups_view", ()),
     ("GET", ["1001"], None, "group_view", ("1001",)),
-    ("PUT", ["1001"], b'{"name": "Reading", "transitionTime": 3}', "create_scene", ("1001", "Reading", 3, None, None)),
-    ("PUT", ["1001"], b'{"name": "Reading", "transitionTime": 3, "sceneId": "2a"}', "create_scene", ("1001", "Reading", 3, "2a", None)),
-    ("PUT", ["1001"], b'{"name": "Reading"}', "create_scene", ("1001", "Reading", 1, None, None)),
-    ("PUT", ["1001", "03"], b'{"name": "Evening"}', "rename_scene", ("1001", "03", "Evening", None)),
-    ("PUT", ["1001", "03", "capture"], None, "capture_scene", ("1001", "03", None)),
-    ("PUT", ["1001", "03", "capture"], b'{"transitionTime": 5}', "capture_scene", ("1001", "03", 5)),
+    ("PUT", ["1001"], b'{"name": "Reading", "transitionTime": 3}', "create_scene", ("1001", "Reading", 3, None, None, None)),
+    ("PUT", ["1001"], b'{"name": "Reading", "transitionTime": 3, "sceneId": "2a"}', "create_scene", ("1001", "Reading", 3, "2a", None, None)),
+    ("PUT", ["1001"], b'{"name": "Reading"}', "create_scene", ("1001", "Reading", 1, None, None, None)),
+    ("PUT", ["1001"], b'{"name": "Reading", "members": ["a-01"]}', "create_scene", ("1001", "Reading", 1, None, None, ["a-01"])),
+    ("PUT", ["1001", "03"], b'{"name": "Evening"}', "edit_scene", ("1001", "03", "Evening", None, None)),
+    ("PUT", ["1001", "03"], b'{"name": "Evening", "members": ["a-01"]}', "edit_scene", ("1001", "03", "Evening", None, ["a-01"])),
+    ("PUT", ["1001", "03", "capture"], None, "capture_scene", ("1001", "03", None, None)),
+    ("PUT", ["1001", "03", "capture"], b'{"transitionTime": 5}', "capture_scene", ("1001", "03", 5, None)),
+    ("PUT", ["1001", "03", "capture"], b'{"members": ["a-01"]}', "capture_scene", ("1001", "03", None, ["a-01"])),
     ("PUT", ["1001", "03", "recall"], None, "recall_scene", ("1001", "03")),
     ("PUT", ["1001", "03", "retry"], b"{}", "retry_scene", ("1001", "03")),
 ])
@@ -77,22 +80,22 @@ def test_delete(rest, server):
 
 def test_a_create_without_a_name_is_left_to_the_scene_manager(rest, server):
     rest.rest_scenes(server, "PUT", None, ["1001"])
-    server.scenemgt.create_scene.assert_called_once_with("1001", None, 1, None, None)
+    server.scenemgt.create_scene.assert_called_once_with("1001", None, 1, None, None, None)
 
 
 def test_a_comment_reaches_the_scene_manager(rest, server):
     server.scenemgt.create_scene.return_value = {}
-    server.scenemgt.rename_scene.return_value = {}
+    server.scenemgt.edit_scene.return_value = {}
     rest.rest_scenes(server, "PUT", json.dumps({"name": "Movie", "comment": "Sofa"}).encode(), ["1001"])
-    server.scenemgt.create_scene.assert_called_once_with("1001", "Movie", 1, None, "Sofa")
+    server.scenemgt.create_scene.assert_called_once_with("1001", "Movie", 1, None, "Sofa", None)
     rest.rest_scenes(server, "PUT", json.dumps({"name": "Movie", "comment": "Table"}).encode(), ["1001", "03"])
-    server.scenemgt.rename_scene.assert_called_once_with("1001", "03", "Movie", "Table")
+    server.scenemgt.edit_scene.assert_called_once_with("1001", "03", "Movie", "Table", None)
 
 
 def test_a_rename_without_a_comment(rest, server):
-    server.scenemgt.rename_scene.return_value = {}
+    server.scenemgt.edit_scene.return_value = {}
     rest.rest_scenes(server, "PUT", json.dumps({"name": "Movie"}).encode(), ["1001", "03"])
-    server.scenemgt.rename_scene.assert_called_once_with("1001", "03", "Movie", None)
+    server.scenemgt.edit_scene.assert_called_once_with("1001", "03", "Movie", None, None)
 
 
 @pytest.mark.parametrize("verb, parameters, body", [
@@ -138,7 +141,7 @@ def test_scan_is_not_a_rename(rest, server):
     server.scenemgt.scan_group.return_value = {"groupId": "1001", "scan": {"running": True}}
     response = rest.rest_scenes(server, "PUT", None, ["1001", "scan"])
     server.scenemgt.scan_group.assert_called_once_with("1001")
-    server.scenemgt.rename_scene.assert_not_called()
+    server.scenemgt.edit_scene.assert_not_called()
     assert json.loads(response["Data"])["scan"] == {"running": True}
 
 

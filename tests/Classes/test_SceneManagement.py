@@ -339,7 +339,7 @@ class TestRefused:
         assert error_code(getattr(scenes, request_name), GROUP, "07") == "SCENE_NOT_FOUND"
 
     def test_rename_unknown_scene(self, scenes):
-        assert error_code(scenes.rename_scene, GROUP, "07", "New") == "SCENE_NOT_FOUND"
+        assert error_code(scenes.edit_scene, GROUP, "07", "New") == "SCENE_NOT_FOUND"
 
     def test_unknown_group_view(self, scenes):
         assert error_code(scenes.group_view, "dead") == "GROUP_NOT_FOUND"
@@ -378,15 +378,203 @@ class TestRecapture:
         assert {c.args[6] for c in mod.zcl_raw_add_scene.call_args_list} == {7}
         assert stored(store)["transitionTime"] == 7
 
-    def test_brings_in_a_member_added_since(self, mod, scenes, plugin):
+    def test_brings_in_a_member_added_since_when_asked(self, mod, scenes, plugin):
         self._synced_scene(mod, scenes)
         plugin.ListOfDevices["c003"] = lamp("3132333435363738", "01", ("0005",))
         plugin.IEEE2NWK["3132333435363738"] = "c003"
         plugin.groupmgt.ListOfGroups[GROUP]["Devices"].append(["c003", "01", "3132333435363738"])
         assert [m["ieee"] for m in scenes.group_view(GROUP)["scenes"][0]["missing"]] == ["3132333435363738"]
-        view = scenes.capture_scene(GROUP, "01")
+        assert scenes.capture_scene(GROUP, "01")["native"] == 2
+        view = scenes.capture_scene(GROUP, "01", members=[CEILING_IEEE + "-0b", SOFA_IEEE + "-01", STRIP_IEEE + "-01", "3132333435363738-01"])
         assert view["missing"] == []
         assert view["native"] == 3
+
+
+class TestPartOfTheGroup:
+
+    CEILING_KEY = CEILING_IEEE + "-0b"
+    SOFA_KEY = SOFA_IEEE + "-01"
+    STRIP_KEY = STRIP_IEEE + "-01"
+
+    def _whole_group(self, mod, scenes):
+        scenes.create_scene(GROUP, "Reading", 2)
+        complete_capture(mod, scenes, CEILING, "0b")
+        complete_capture(mod, scenes, SOFA, "01")
+        mod.zcl_raw_add_scene.reset_mock()
+        mod.zcl_raw_store_scene.reset_mock()
+
+    def _on_ceiling(self, mod, scenes):
+        scenes.create_scene(GROUP, "Reading", 2, members=[self.CEILING_KEY])
+        complete_capture(mod, scenes, CEILING, "0b")
+        mod.zcl_raw_add_scene.reset_mock()
+        mod.zcl_raw_store_scene.reset_mock()
+
+    def test_a_new_scene_is_only_on_the_members_chosen(self, mod, scenes, store):
+        view = scenes.create_scene(GROUP, "Reading", 2, members=[self.CEILING_KEY])
+        assert [c.args[1] for c in mod.zcl_raw_add_scene.call_args_list] == [CEILING]
+        assert list(stored(store)["members"]) == [self.CEILING_KEY]
+        assert (view["synced"], view["native"]) == (0, 1)
+        assert sorted(member["ieee"] for member in view["missing"]) == sorted([SOFA_IEEE, STRIP_IEEE])
+
+    def test_a_direct_member_can_be_chosen_beside_a_native_one(self, mod, scenes, store):
+        scenes.create_scene(GROUP, "Reading", members=[self.CEILING_KEY, self.STRIP_KEY])
+        assert stored(store)["members"][self.STRIP_KEY]["capability"] == "fallback"
+        assert [c.args[1] for c in mod.zcl_raw_add_scene.call_args_list] == [CEILING]
+
+    @pytest.mark.parametrize("members", [
+        [], "a1b2c3d4e5f60708-0b", [1], ["0102030405060708-09"], [STRIP_IEEE + "-01"], [REMOTE_IEEE + "-01"], [["x"]],
+    ])
+    def test_a_list_that_gives_no_scene_is_refused(self, mod, scenes, store, members):
+        assert error_code(scenes.create_scene, GROUP, "Reading", members=members) == "MEMBERS_INVALID"
+        mod.zcl_raw_add_scene.assert_not_called()
+        assert store.get(GROUP) is None
+
+    def test_a_chosen_id_is_checked_on_the_whole_group(self, mod, scenes):
+        scenes.create_scene(GROUP, "Reading", 2, "2a", members=[self.CEILING_KEY])
+        assert sorted(c.args[1] for c in mod.zcl_raw_get_scene_membership.call_args_list) == sorted([CEILING, SOFA])
+        scenes.membership_response(CEILING, "0b", "00", GROUP, [])
+        scenes.membership_response(SOFA, "01", "00", GROUP, [])
+        assert [c.args[1] for c in mod.zcl_raw_add_scene.call_args_list] == [CEILING]
+
+    def test_a_chosen_id_on_a_member_left_out_is_refused(self, mod, scenes):
+        scenes.create_scene(GROUP, "Reading", 2, "2a", members=[self.CEILING_KEY])
+        scenes.membership_response(CEILING, "0b", "00", GROUP, [])
+        scenes.membership_response(SOFA, "01", "00", GROUP, ["2a"])
+        assert scenes.group_view(GROUP)["scan"]["capture"]["error"] == "SCENE_ID_IN_USE"
+        mod.zcl_raw_add_scene.assert_not_called()
+
+    def test_a_chosen_member_gone_during_the_scan_stops_the_capture(self, mod, scenes, plugin):
+        scenes.create_scene(GROUP, "Reading", 2, "2a", members=[self.CEILING_KEY])
+        devices = plugin.groupmgt.ListOfGroups[GROUP]["Devices"]
+        devices[:] = [device for device in devices if device[0] != CEILING]
+        scenes.membership_response(SOFA, "01", "00", GROUP, [])
+        with patch.object(mod, "time", lambda: 10 ** 11):
+            scenes.heartbeat()
+        assert scenes.group_view(GROUP)["scan"]["capture"]["error"] == "MEMBERS_INVALID"
+        mod.zcl_raw_add_scene.assert_not_called()
+
+    def test_a_recall_leaves_alone_a_direct_member_left_out(self, mod, scenes):
+        self._on_ceiling(mod, scenes)
+        scenes.recall_scene(GROUP, "01")
+        mod.zcl_raw_recall_scene.assert_called_once()
+        mod.zcl_move_to_level_with_onoff.assert_not_called()
+        mod.zcl_onoff_on.assert_not_called()
+
+    def test_a_capture_stays_on_the_members_of_the_scene(self, mod, scenes, store):
+        self._on_ceiling(mod, scenes)
+        view = scenes.capture_scene(GROUP, "01")
+        assert [c.args[1] for c in mod.zcl_raw_add_scene.call_args_list] == [CEILING]
+        assert list(stored(store)["members"]) == [self.CEILING_KEY]
+        assert len(view["missing"]) == 2
+
+    def test_a_capture_can_bring_a_device_in(self, mod, scenes, store):
+        self._on_ceiling(mod, scenes)
+        scenes.capture_scene(GROUP, "01", members=[self.CEILING_KEY, self.SOFA_KEY])
+        assert sorted(c.args[1] for c in mod.zcl_raw_add_scene.call_args_list) == sorted([CEILING, SOFA])
+        assert sorted(stored(store)["members"]) == sorted([self.CEILING_KEY, self.SOFA_KEY])
+        mod.zcl_raw_remove_scene.assert_not_called()
+
+    def test_a_capture_can_take_a_device_out(self, mod, scenes, store):
+        self._whole_group(mod, scenes)
+        scenes.capture_scene(GROUP, "01", members=[self.CEILING_KEY])
+        assert [c.args[1] for c in mod.zcl_raw_add_scene.call_args_list] == [CEILING]
+        mod.zcl_raw_remove_scene.assert_called_once()
+        assert mod.zcl_raw_remove_scene.call_args.args[1:6] == (SOFA, mod.ZIGATE_EP, "01", GROUP, "01")
+        assert list(stored(store)["members"]) == [self.CEILING_KEY]
+
+    def test_a_refused_capture_changes_nothing(self, mod, scenes, store):
+        self._whole_group(mod, scenes)
+        assert error_code(scenes.capture_scene, GROUP, "01", 9, [self.STRIP_KEY]) == "MEMBERS_INVALID"
+        assert stored(store)["transitionTime"] == 2
+        assert len(stored(store)["members"]) == 3
+        mod.zcl_raw_remove_scene.assert_not_called()
+        mod.zcl_raw_add_scene.assert_not_called()
+
+    def test_an_edit_takes_a_member_out(self, mod, scenes, store, plugin):
+        self._whole_group(mod, scenes)
+        view = scenes.edit_scene(GROUP, "01", "Reading", members=[self.CEILING_KEY, self.STRIP_KEY])
+        mod.zcl_raw_remove_scene.assert_called_once()
+        assert mod.zcl_raw_remove_scene.call_args.args[1:6] == (SOFA, mod.ZIGATE_EP, "01", GROUP, "01")
+        assert sorted(stored(store)["members"]) == sorted([self.CEILING_KEY, self.STRIP_KEY])
+        assert [member["ieee"] for member in view["missing"]] == [SOFA_IEEE]
+        assert [SOFA, "01", SOFA_IEEE] in plugin.groupmgt.ListOfGroups[GROUP]["Devices"]
+        mod.zcl_raw_remove_all_scenes.assert_not_called()
+
+    def test_a_direct_member_taken_out_sends_nothing(self, mod, scenes, store):
+        self._whole_group(mod, scenes)
+        scenes.edit_scene(GROUP, "01", "Reading", members=[self.CEILING_KEY, self.SOFA_KEY])
+        mod.zcl_raw_remove_scene.assert_not_called()
+        assert self.STRIP_KEY not in stored(store)["members"]
+
+    def test_the_slot_is_free_again(self, mod, scenes):
+        self._whole_group(mod, scenes)
+        assert next(m for m in scenes.group_view(GROUP)["members"] if m["ieee"] == SOFA_IEEE)["sceneSlots"]["used"] == 1
+        scenes.edit_scene(GROUP, "01", "Reading", members=[self.CEILING_KEY])
+        assert next(m for m in scenes.group_view(GROUP)["members"] if m["ieee"] == SOFA_IEEE)["sceneSlots"]["used"] == 0
+
+    def test_an_edit_cannot_bring_a_device_in(self, mod, scenes, store):
+        self._on_ceiling(mod, scenes)
+        assert error_code(scenes.edit_scene, GROUP, "01", "Evening", members=[self.CEILING_KEY, self.SOFA_KEY]) == "MEMBERS_INVALID"
+        assert stored(store)["name"] == "Reading"
+
+    def test_the_last_native_member_stays(self, mod, scenes, store):
+        self._whole_group(mod, scenes)
+        assert error_code(scenes.edit_scene, GROUP, "01", "Reading", members=[self.STRIP_KEY]) == "MEMBERS_INVALID"
+        assert error_code(scenes.edit_scene, GROUP, "01", "Reading", members=[]) == "MEMBERS_INVALID"
+        assert len(stored(store)["members"]) == 3
+        mod.zcl_raw_remove_scene.assert_not_called()
+
+    def test_an_edit_that_keeps_every_member_sends_nothing(self, mod, scenes, plugin):
+        self._whole_group(mod, scenes)
+        plugin.ControllerLink.loadTransmit.return_value = mod.MAX_LOAD_ZIGATE + 1
+        view = scenes.edit_scene(GROUP, "01", "Evening", members=[self.CEILING_KEY, self.SOFA_KEY, self.STRIP_KEY])
+        assert view["name"] == "Evening"
+        mod.zcl_raw_remove_scene.assert_not_called()
+
+    def test_a_busy_coordinator_refuses_a_member_taken_out(self, mod, scenes, plugin, store):
+        self._whole_group(mod, scenes)
+        plugin.ControllerLink.loadTransmit.return_value = mod.MAX_LOAD_ZIGATE + 1
+        assert error_code(scenes.edit_scene, GROUP, "01", "Evening", members=[self.CEILING_KEY]) == "COORDINATOR_BUSY"
+        assert stored(store)["name"] == "Reading"
+        assert len(stored(store)["members"]) == 3
+
+    def test_a_member_out_of_the_group_list_is_not_lost(self, mod, scenes, plugin, store):
+        self._whole_group(mod, scenes)
+        devices = plugin.groupmgt.ListOfGroups[GROUP]["Devices"]
+        devices[:] = [device for device in devices if device[0] != SOFA]
+        scenes.edit_scene(GROUP, "01", "Reading", members=[self.CEILING_KEY])
+        assert self.SOFA_KEY in stored(store)["members"]
+        mod.zcl_raw_remove_scene.assert_not_called()
+
+    def test_a_member_taken_out_during_its_capture_gets_no_store(self, mod, scenes):
+        scenes.create_scene(GROUP, "Reading", 2)
+        scenes.edit_scene(GROUP, "01", "Reading", members=[self.CEILING_KEY])
+        scenes.scene_response("Add", SOFA, "01", "00", GROUP, "01")
+        assert [c.args[1] for c in mod.zcl_raw_store_scene.call_args_list] == []
+        mod.zcl_raw_remove_scene.assert_called_once()
+
+    def test_a_deleted_scene_only_tells_the_members_still_in_the_group(self, mod, scenes, plugin):
+        self._whole_group(mod, scenes)
+        devices = plugin.groupmgt.ListOfGroups[GROUP]["Devices"]
+        devices[:] = [device for device in devices if device[0] != SOFA]
+        scenes.delete_scene(GROUP, "01")
+        assert [c.args[1] for c in mod.zcl_raw_remove_scene.call_args_list] == [CEILING]
+
+    def test_a_scan_shows_a_member_that_did_not_hear_it(self, mod, scenes, store):
+        self._whole_group(mod, scenes)
+        scenes.edit_scene(GROUP, "01", "Reading", members=[self.CEILING_KEY])
+        scenes.scan_group(GROUP)
+        scenes.membership_response(CEILING, "0b", "00", GROUP, ["01"])
+        scenes.membership_response(SOFA, "01", "00", GROUP, ["01"])
+        assert stored(store)["members"][self.SOFA_KEY]["status"] == "synced"
+
+    def test_a_scan_does_not_fail_a_member_left_out(self, mod, scenes, store):
+        self._on_ceiling(mod, scenes)
+        scenes.scan_group(GROUP)
+        scenes.membership_response(CEILING, "0b", "00", GROUP, ["01"])
+        scenes.membership_response(SOFA, "01", "00", GROUP, [])
+        assert list(stored(store)["members"]) == [self.CEILING_KEY]
+        assert stored(store)["members"][self.CEILING_KEY]["status"] == "synced"
 
 
 class TestRetry:
@@ -425,19 +613,19 @@ class TestRename:
     def test_nothing_goes_to_the_devices(self, mod, scenes, store):
         scenes.create_scene(GROUP, "Reading")
         mod.zcl_raw_add_scene.reset_mock()
-        scenes.rename_scene(GROUP, "01", "Evening")
+        scenes.edit_scene(GROUP, "01", "Evening")
         assert stored(store)["name"] == "Evening"
         for name in COMMANDS:
             getattr(mod, name).assert_not_called()
 
     def test_a_scene_can_keep_its_name(self, scenes):
         scenes.create_scene(GROUP, "Reading")
-        assert scenes.rename_scene(GROUP, "01", "READING")["name"] == "READING"
+        assert scenes.edit_scene(GROUP, "01", "READING")["name"] == "READING"
 
     def test_another_scene_name_is_refused(self, scenes):
         scenes.create_scene(GROUP, "Reading")
         scenes.create_scene(GROUP, "Dinner")
-        assert error_code(scenes.rename_scene, GROUP, "02", "Reading") == "NAME_DUPLICATE"
+        assert error_code(scenes.edit_scene, GROUP, "02", "Reading") == "NAME_DUPLICATE"
 
 
 class TestComment:
@@ -457,7 +645,7 @@ class TestComment:
         del record["scenes"]["01"]["comment"]
         store.set(GROUP, record)
         assert scenes.group_view(GROUP)["scenes"][0]["comment"] == ""
-        assert scenes.rename_scene(GROUP, "01", "Evening")["comment"] == ""
+        assert scenes.edit_scene(GROUP, "01", "Evening")["comment"] == ""
 
     @pytest.mark.parametrize("comment", ["x" * 201, 12, ["a"]])
     def test_refused(self, scenes, comment):
@@ -468,22 +656,22 @@ class TestComment:
 
     def test_a_rename_without_a_comment_leaves_it(self, scenes, store):
         scenes.create_scene(GROUP, "Reading", comment="Sofa")
-        scenes.rename_scene(GROUP, "01", "Evening")
+        scenes.edit_scene(GROUP, "01", "Evening")
         assert stored(store)["comment"] == "Sofa"
 
     def test_it_can_change_and_be_emptied(self, mod, scenes, store):
         scenes.create_scene(GROUP, "Reading", comment="Sofa")
         mod.zcl_raw_add_scene.reset_mock()
-        scenes.rename_scene(GROUP, "01", "Reading", "Table")
+        scenes.edit_scene(GROUP, "01", "Reading", "Table")
         assert stored(store)["comment"] == "Table"
-        scenes.rename_scene(GROUP, "01", "Reading", "")
+        scenes.edit_scene(GROUP, "01", "Reading", "")
         assert stored(store)["comment"] == ""
         for name in COMMANDS:
             getattr(mod, name).assert_not_called()
 
     def test_a_refused_rename_changes_nothing(self, scenes, store):
         scenes.create_scene(GROUP, "Reading", comment="Sofa")
-        assert error_code(scenes.rename_scene, GROUP, "01", "Evening", "x" * 201) == "COMMENT_INVALID"
+        assert error_code(scenes.edit_scene, GROUP, "01", "Evening", "x" * 201) == "COMMENT_INVALID"
         assert stored(store)["name"] == "Reading"
 
     def test_a_recapture_keeps_it(self, scenes, store):
@@ -926,7 +1114,7 @@ class TestChosenSceneId:
     def test_a_name_taken_meanwhile_stops_the_capture(self, mod, plugin, scenes):
         scenes.create_scene(GROUP, "Remote", 2, "2a")
         scenes.membership_response(CEILING, "0b", "00", GROUP, ["03"])
-        scenes.rename_scene(GROUP, "03", "Remote")
+        scenes.edit_scene(GROUP, "03", "Remote")
         scenes.membership_response(SOFA, "01", "00", GROUP, [])
         mod.zcl_raw_add_scene.assert_not_called()
         assert scenes.group_view(GROUP)["scan"]["capture"]["error"] == "NAME_DUPLICATE"
@@ -962,7 +1150,7 @@ class TestDiscoveredScene:
         assert mod.zcl_raw_recall_scene.call_args.args[4:6] == (GROUP, "03")
 
     def test_can_be_renamed(self, found, store):
-        found.rename_scene(GROUP, "03", "Movie")
+        found.edit_scene(GROUP, "03", "Movie")
         assert stored(store, "03")["name"] == "Movie"
 
     def test_a_capture_makes_it_a_scene_of_the_plugin(self, mod, found, store):
@@ -997,12 +1185,12 @@ class TestLogging:
 
     def test_scene_actions_log_under_scene(self, scenes, plugin):
         scenes.create_scene(GROUP, "Reading")
-        scenes.rename_scene(GROUP, "01", "Evening")
+        scenes.edit_scene(GROUP, "01", "Evening")
         scenes.recall_scene(GROUP, "01")
         scenes.delete_scene(GROUP, "01")
         debug = logged(plugin, "Debug")
         assert {module for module, _ in debug} == {"Scene"}
-        for action in ("create_scene", "_capture", "rename_scene", "recall_scene", "delete_scene"):
+        for action in ("create_scene", "_capture", "edit_scene", "recall_scene", "delete_scene"):
             assert any(message.startswith(action) for _, message in debug), action
 
     def test_the_outcome_of_a_capture_is_followed(self, mod, scenes, plugin):
@@ -1018,8 +1206,8 @@ class TestLogging:
 
     def test_a_refused_rename_does_not_log_as_done(self, scenes, plugin):
         scenes.create_scene(GROUP, "Reading")
-        error_code(scenes.rename_scene, GROUP, "01", "a|b")
-        assert not any(message.startswith("rename_scene") for _, message in logged(plugin, "Debug"))
+        error_code(scenes.edit_scene, GROUP, "01", "a|b")
+        assert not any(message.startswith("edit_scene") for _, message in logged(plugin, "Debug"))
 
     def test_a_member_leaving_logs_under_groups_and_scene(self, scenes, plugin):
         scenes.create_scene(GROUP, "Reading")

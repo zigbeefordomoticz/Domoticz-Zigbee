@@ -67,6 +67,16 @@ through the plugin is dropped, after Remove All Scenes. Otherwise the store is
 left alone: the views and Recall only use the members still in the group, so a
 group list that could not be read costs no scene.
 
+A scene is on all of its group or on part of it: the members of the record are that
+part, chosen at the capture. A device of the group outside them is nothing more, be
+it left out on purpose or come later, and a recall leaves it alone: the group-cast is
+ignored by a device without the scene. So a capture stays on the members of the scene
+unless it is told otherwise, or it would bring back one that was taken out. A member
+taken out, by an edit or a capture, stays in the group and is sent Remove Scene, with
+no wait for the response, as for a deleted scene: one that did not hear it still
+answers a recall, and the next scan shows it in the scene again. At least one native
+member stays, as a scene with none is not on any device.
+
 Each group with scenes has a Selector Switch in Domoticz (Classes/SceneSelector.py),
 a scene being a level, Off being the group switched off. A scene takes the lowest free
 level and keeps it for life. The Selector is only touched from the Domoticz thread: a
@@ -266,6 +276,15 @@ class SceneManagement:
             raise SceneError("NO_CAPABLE_MEMBER")
         return members
 
+    def _chosen_members(self, available, keys):
+        """The members of this list, as keyed in the store, out of those available."""
+        if not isinstance(keys, list) or not all(isinstance(key, str) and key in available for key in keys):
+            raise SceneError("MEMBERS_INVALID")
+        chosen = {key: available[key] for key in keys}
+        if not any(member["capability"] == CAPABILITY_NATIVE for member in chosen.values()):
+            raise SceneError("MEMBERS_INVALID")
+        return chosen
+
     def _check_load(self):
         if self.plugin.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
             raise SceneError("COORDINATOR_BUSY")
@@ -321,17 +340,20 @@ class SceneManagement:
 
     # ── Requests ────────────────────────────────────────────────────────────
 
-    def create_scene(self, GroupId, name, transition_time=DEFAULT_TRANSITION_TIME, SceneId=None, comment=None):
+    def create_scene(self, GroupId, name, transition_time=DEFAULT_TRANSITION_TIME, SceneId=None, comment=None, members=None):
         """
-        Capture the current state of a group as a new scene. With a SceneId, the capture
-        only starts after a scan: the answer is then the view of the group, not a scene.
+        Capture the current state of a group as a new scene, or of these members of it.
+        With a SceneId, the capture only starts after a scan: the answer is then the view
+        of the group, not a scene. The scan is on the whole group: a member left out still
+        answers a recall of an ID it holds.
         """
         with self._lock:
-            members = self._check_group_for_capture(GroupId)
+            group = self._check_group_for_capture(GroupId)
             record = self.store.get(GroupId, {"scenes": {}})
             name = self._check_name(record, name)
             self._check_transition(transition_time)
             comment = self._check_comment(comment)
+            chosen = group if members is None else self._chosen_members(group, members)
             if SceneId is not None:
                 SceneId = self._check_scene_id(record, SceneId)
             if self._capture_waiting(GroupId):
@@ -339,10 +361,10 @@ class SceneManagement:
             self._check_load()
 
             if SceneId is not None:
-                return self._capture_after_scan(GroupId, SceneId, name, transition_time, members, comment)
+                return self._capture_after_scan(GroupId, SceneId, name, transition_time, group, chosen, comment)
 
             SceneId = self._allocate_scene_id(record)
-            self._add_scene(GroupId, record, SceneId, name, transition_time, members, comment)
+            self._add_scene(GroupId, record, SceneId, name, transition_time, chosen, comment)
             return self._scene_view(GroupId, SceneId, record["scenes"][SceneId])
 
     def _add_scene(self, GroupId, record, SceneId, name, transition_time, members, comment=""):
@@ -361,22 +383,29 @@ class SceneManagement:
         self._capture(GroupId, SceneId, record, members)
         self._selector_changed(GroupId)
 
-    def _capture_after_scan(self, GroupId, SceneId, name, transition_time, members, comment=""):
+    def _capture_after_scan(self, GroupId, SceneId, name, transition_time, group, chosen, comment=""):
         self.logging("Debug", "create_scene - group %s scene %s %s: scan first" % (GroupId, SceneId, name))
-        capture = {"sceneId": SceneId, "name": name, "transitionTime": transition_time, "comment": comment, "state": CAPTURE_WAITING, "error": None}
+        capture = {
+            "sceneId": SceneId, "name": name, "transitionTime": transition_time, "comment": comment,
+            "members": list(chosen), "state": CAPTURE_WAITING, "error": None,
+        }
         if self._scan_running(GroupId):
             self._scans[GroupId]["capture"] = capture
         else:
-            self._start_scan(GroupId, members, capture)
+            self._start_scan(GroupId, group, capture)
         return self.group_view(GroupId)
 
-    def capture_scene(self, GroupId, SceneId, transition_time=None):
-        """Overwrite a scene with the current state of the group, members added since included."""
+    def capture_scene(self, GroupId, SceneId, transition_time=None, members=None):
+        """
+        Overwrite a scene with the current state of its members, or of these members of
+        the group: a device comes in or goes out this way.
+        """
         with self._lock:
             record = self._scene_record(GroupId, SceneId)
-            members = self._check_group_for_capture(GroupId)
-            self._check_load()
+            group = self._check_group_for_capture(GroupId)
             scene = record["scenes"][SceneId]
+            chosen = self._chosen_members(group, [key for key in scene["members"] if key in group] if members is None else members)
+            self._check_load()
             if transition_time is not None:
                 scene["transitionTime"] = self._check_transition(transition_time)
             elif scene["transitionTime"] is None:
@@ -384,7 +413,8 @@ class SceneManagement:
             scene.pop("discovered", None)
             scene["updatedAt"] = int(time())
             self.logging("Debug", "capture_scene - group %s scene %s %s, transition %ss" % (GroupId, SceneId, scene["name"], scene["transitionTime"]))
-            self._capture(GroupId, SceneId, record, members)
+            self._drop_members(GroupId, SceneId, scene, group, self._leaving(scene, group, chosen))
+            self._capture(GroupId, SceneId, record, chosen)
             return self._scene_view(GroupId, SceneId, scene)
 
     def retry_scene(self, GroupId, SceneId):
@@ -405,14 +435,26 @@ class SceneManagement:
                 self._send_add(GroupId, SceneId, key, members[key], scene["transitionTime"])
             return self._scene_view(GroupId, SceneId, scene)
 
-    def rename_scene(self, GroupId, SceneId, name, comment=None):
-        """Nothing goes to the devices. Without a comment, the one it has stays."""
+    def edit_scene(self, GroupId, SceneId, name, comment=None, members=None):
+        """
+        The name, the comment and the members a scene keeps: a list can only take some
+        out, as a device coming in has to capture. Without a comment or a list, what the
+        scene has stays, and only a member taken out sends anything to the devices.
+        """
         with self._lock:
             record = self._scene_record(GroupId, SceneId)
             scene = record["scenes"][SceneId]
             new_name = self._check_name(record, name, SceneId)
             new_comment = scene.get("comment", "") if comment is None else self._check_comment(comment)
-            self.logging("Debug", "rename_scene - group %s scene %s from %s to %s" % (GroupId, SceneId, scene["name"], new_name))
+            group = self._group_members(GroupId)
+            leaving = []
+            if members is not None:
+                held = {key: group[key] for key in scene["members"] if key in group}
+                leaving = self._leaving(scene, group, self._chosen_members(held, members))
+            if leaving:
+                self._check_load()
+            self.logging("Debug", "edit_scene - group %s scene %s from %s to %s, leaving %s" % (GroupId, SceneId, scene["name"], new_name, leaving))
+            self._drop_members(GroupId, SceneId, scene, group, leaving)
             scene["name"] = new_name
             scene["comment"] = new_comment
             scene["updatedAt"] = int(time())
@@ -449,12 +491,7 @@ class SceneManagement:
             record = self._scene_record(GroupId, SceneId)
             scene = record["scenes"].pop(SceneId)
             self.logging("Debug", "delete_scene - group %s scene %s %s" % (GroupId, SceneId, scene["name"]))
-            members = self._group_members(GroupId)
-            for key, member in scene["members"].items():
-                self._waiting.pop((GroupId, SceneId, key), None)
-                if key in members and member["capability"] == CAPABILITY_NATIVE:
-                    nwkid, ep = members[key]["nwkid"], members[key]["ep"]
-                    zcl_raw_remove_scene(self.plugin, nwkid, ZIGATE_EP, ep, GroupId, SceneId, ackIsDisabled=is_ack_tobe_disabled(self.plugin, nwkid))
+            self._drop_members(GroupId, SceneId, scene, self._group_members(GroupId), list(scene["members"]))
             self._save(GroupId, record)
 
     def scan_group(self, GroupId):
@@ -509,6 +546,18 @@ class SceneManagement:
             self._save(GroupId, record)
 
     # ── Device exchanges ────────────────────────────────────────────────────
+
+    def _leaving(self, scene, group, kept):
+        """The members of a scene to take out. One no longer in the group stays: it may be the list that is wrong."""
+        return [key for key in scene["members"] if key in group and key not in kept]
+
+    def _drop_members(self, GroupId, SceneId, scene, group, keys):
+        """Out of the scene. Only a member still in the group can be told: a scene command is refused otherwise."""
+        for key in keys:
+            self._waiting.pop((GroupId, SceneId, key), None)
+            if scene["members"].pop(key)["capability"] == CAPABILITY_NATIVE and key in group:
+                nwkid, ep = group[key]["nwkid"], group[key]["ep"]
+                zcl_raw_remove_scene(self.plugin, nwkid, ZIGATE_EP, ep, GroupId, SceneId, ackIsDisabled=is_ack_tobe_disabled(self.plugin, nwkid))
 
     def _capture(self, GroupId, SceneId, record, members):
         """Rebuild the members of a scene and start the capture of the native ones."""
@@ -634,7 +683,7 @@ class SceneManagement:
         if capture is None or capture["state"] != CAPTURE_WAITING:
             return
         try:
-            members = self._check_group_for_capture(GroupId)
+            members = self._chosen_members(self._check_group_for_capture(GroupId), capture["members"])
             record = self.store.get(GroupId, {"scenes": {}})
             self._check_name(record, capture["name"])
             self._check_scene_id(record, capture["sceneId"])
@@ -871,7 +920,7 @@ class SceneManagement:
             "updatedAt": scene["updatedAt"],
             "lastRecalled": scene["lastRecalled"],
             "members": views,
-            # In the group but not in the scene: a capture brings them in
+            # In the group but not in the scene: left out, or come since. A capture can take them
             "missing": [
                 {"ieee": member["ieee"], "endpoint": member["ep"], "name": self._device_name(member["nwkid"]), "capability": member["capability"]}
                 for key, member in members.items() if key not in held
