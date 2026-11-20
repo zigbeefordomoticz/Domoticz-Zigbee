@@ -444,6 +444,34 @@ def test_four_button_type_two_switches_on_f1_f2():
     )
 
 
+def test_six_button_type_three_switches_on_f1_f2_f3():
+    _run(
+        """
+        from Modules.greenPowerModels import load_gp_models
+        p = make_plugin(gp_record(device_id=0x07, commands=[], RequestedModel="GreenPower-6Buttons"))
+        load_gp_models(p, "Conf")
+        commission(p)
+
+        units = DEVICES[GP_IEEE].Units
+        assert len(units) == 3, units
+        record = stored(p)
+        assert set(record["Ep"]) == {"f1", "f2", "f3"}
+        by_ep = {ep: next(u for u in units.values() if str(u.ID) in r["ClusterType"]) for ep, r in record["Ep"].items()}
+
+        def states():
+            return tuple(by_ep[ep].nValue for ep in ("f1", "f2", "f3"))
+
+        gpw.update_gp_widgets(p, DEVICES, GP_IEEE, 0x69, "05")  # both buttons Up: the third switch only
+        assert states() == (0, 0, 1)
+        gpw.update_gp_widgets(p, DEVICES, GP_IEEE, 0x69, "01")
+        assert states() == (1, 0, 1)
+        gpw.update_gp_widgets(p, DEVICES, GP_IEEE, 0x69, "0a")  # both buttons Down
+        assert states() == (1, 0, 0)
+        assert p.log.errors() == []
+        """
+    )
+
+
 def test_unknown_picked_type_falls_back_to_the_device_id():
     _run(
         """
