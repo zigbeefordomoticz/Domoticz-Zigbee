@@ -126,7 +126,8 @@ class WebServer(object):
     from Classes.WebServer.rest_PluginUpgrade import (
         certified_devices_update, rest_certified_devices_update,
         rest_plugin_upgrade, rest_reload_device_conf)
-    from Classes.WebServer.rest_GreenPower import (rest_zgp_device_raw,
+    from Classes.WebServer.rest_GreenPower import (rest_zgp_device,
+                                                   rest_zgp_device_raw,
                                                    rest_zgp_models,
                                                    rest_zgp_pairing)
     from Classes.WebServer.rest_Provisioning import (rest_full_reprovisionning,
