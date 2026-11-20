@@ -90,6 +90,18 @@ check_and_activate_venv() {
 
 # Function to update git configuration
 update_git_config() {
+    # A plugin installed from a release archive (PyPluginStore release delivery, or a
+    # downloaded zip) has no .git: there is nothing to pull, and its code is updated
+    # by whoever installed it. The Python modules are still upgraded further down.
+    if [ ! -e .git ]; then
+        if [ -f .pypluginstore.json ]; then
+            echo "Plugin installed by PyPluginStore from a release: skipping git pull, update the plugin code from PyPluginStore."
+        else
+            echo "Plugin folder is not a git checkout: skipping git pull."
+        fi
+        return 0
+    fi
+
     echo "(1) git config --global --add safe.directory"
     # Define the directory you want to add
     directory_to_add=$(pwd)
