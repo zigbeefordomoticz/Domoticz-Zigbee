@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Unit tests for AppGeneric.permit_gp(), which keeps Green Power commissioning
-closed until the plugin hands Green Power devices to zigpy.
+Unit tests for AppGeneric.permit_gp(), the 'GreenPowerEnable' gate on Green
+Power commissioning.
 
 Driven against a fake app whose base class records permit_gp() calls, so
-a call reaching zigpy's ControllerApplication.permit_gp() would show up.
-These tests do not depend on the installed zigpy version.
+that `super(type(self), self).permit_gp()` resolves to it as it resolves to
+zigpy's ControllerApplication.permit_gp() with the real radio libraries. The
+fake base also stands in for zigpy releases without Green Power support
+(no `green_power` attribute), so these tests do not depend on the installed
+zigpy version.
 
 Importing AppGeneric pulls in Classes.ZigpyTransport.Transport and
 Classes.ZigateTransport.sqnMgmt, which tests/conftest.py stubs for the rest
@@ -59,7 +62,10 @@ HARNESS = textwrap.dedent(
             self.calls = []
             self.log = Log()
             self.pluginconf = types.SimpleNamespace(pluginConf={})
-            self.green_power = types.SimpleNamespace(is_commissioning=False)
+            if "enabled" in sc:
+                self.pluginconf.pluginConf["GreenPowerEnable"] = sc["enabled"]
+            if sc.get("green_power", True):
+                self.green_power = types.SimpleNamespace(is_commissioning=sc.get("commissioning", False))
 
     app = FakeApp()
     asyncio.run(AG.permit_gp(app, sc["time_s"]))
@@ -78,17 +84,47 @@ def _run(**scenario):
     return json.loads(line[len("RESULT="):])
 
 
-class TestGreenPowerCommissioningStaysClosed:
+def _status(result):
+    return [msg for level, msg in result["logs"] if level == "Status"]
 
-    def test_permit_join_does_not_open(self):
+
+class TestGreenPowerDisabled:
+
+    def test_setting_absent_does_not_open(self):
         result = _run(time_s=60)
         assert result["calls"] == []
+        assert _status(result) == []
 
-    def test_startup_close_sends_nothing(self):
+    def test_setting_off_does_not_open(self):
+        result = _run(time_s=60, enabled=0)
+        assert result["calls"] == []
+
+    def test_close_without_open_window_is_silent(self):
         # The startup permit(0) must not broadcast to proxies
-        result = _run(time_s=0)
+        result = _run(time_s=0, enabled=0, commissioning=False)
         assert result["calls"] == []
 
-    def test_skip_is_logged_at_debug_only(self):
-        result = _run(time_s=60)
-        assert [level for level, _ in result["logs"]] == ["Debug"]
+    def test_close_of_open_window_is_passed_on(self):
+        # Setting switched off while a window was open
+        result = _run(time_s=0, enabled=0, commissioning=True)
+        assert result["calls"] == [0]
+
+
+class TestGreenPowerEnabled:
+
+    def test_open_is_passed_on(self):
+        result = _run(time_s=60, enabled=1)
+        assert result["calls"] == [60]
+        assert any("opening Green Power commissioning for 60" in msg for msg in _status(result))
+
+    def test_close_is_passed_on(self):
+        result = _run(time_s=0, enabled=1)
+        assert result["calls"] == [0]
+        assert any("closing Green Power commissioning" in msg for msg in _status(result))
+
+
+class TestZigpyWithoutGreenPower:
+
+    def test_nothing_called(self):
+        result = _run(time_s=60, enabled=1, green_power=False)
+        assert result["calls"] == []

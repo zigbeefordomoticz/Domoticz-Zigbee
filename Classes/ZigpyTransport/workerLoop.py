@@ -228,7 +228,8 @@ async def _permit_to_joint(self, data):
     Handles the PERMIT-TO-JOIN command to open the network for device joining.
 
     Sets the permit timer and calls the app's permit method, with special
-    handling for deCONZ which uses permit_ncp instead.
+    handling for deCONZ which uses permit_ncp instead, plus permit_gp for
+    Green Power commissioning (included in permit on the other radios).
     """
     log = self.log
     radiomodule = self._radiomodule
@@ -249,6 +250,9 @@ async def _permit_to_joint(self, data):
                 f"++ opening zigbee network for {duration} secondes on specific router {target_router}")
 
     if radiomodule == "deCONZ":
+        # permit_ncp() does not open Green Power commissioning, permit() does.
+        # AppGeneric.permit_gp() decides whether it is enabled.
+        await app.permit_gp(time_s=duration)
         return await app.permit_ncp(time_s=duration)
 
     log.logging("TransportZigpy", "Debug",

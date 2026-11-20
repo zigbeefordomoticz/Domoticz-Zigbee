@@ -78,3 +78,15 @@ def encapsulate_plugin_frame(msgtype, payload, lqi):
     newFrame += lqi  # LQI
     newFrame += "03"
     return newFrame
+
+
+# Plugin frames whose payload must never be logged: 9e00 carries a Green Power
+# device security key
+SENSITIVE_FRAME_TYPES = {"9e00"}
+
+
+def loggable_plugin_frame(frame):
+    """Return the frame as it may appear in a log line, payload masked if sensitive."""
+    if isinstance(frame, str) and frame[2:6].lower() in SENSITIVE_FRAME_TYPES:
+        return frame[:12] + "<masked>"
+    return frame

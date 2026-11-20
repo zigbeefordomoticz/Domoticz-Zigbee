@@ -442,6 +442,10 @@ async def _radio_startup(
                          "Error at startup - self.app not initialized")
         return
 
+    # Read by initialize() (restore_green_power_devices), set here rather than
+    # through the startup() signature of every radio class
+    self.app.callBackGetAllGpDevices = self.ZigpyGetAllGpDevices
+
     for attempt in range(1, MAX_STARTUP_RETRIES + 1):
         try:
             self.log.logging("TransportZigpy", "Debug", "Startup attempt %d/%d" % (attempt, MAX_STARTUP_RETRIES))

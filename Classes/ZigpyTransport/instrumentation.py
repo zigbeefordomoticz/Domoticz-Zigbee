@@ -14,6 +14,8 @@ import os.path
 import time
 from pathlib import Path
 
+from Zigbee.encoder_tools import loggable_plugin_frame
+
 instrument_time = True
 
 
@@ -32,7 +34,7 @@ def time_spent_forwarder():
                     self.log.logging(
                         "debugTiming",
                         "Log",
-                        "forward_message (F_out) spend more than 1s (%s ms) frame: %s" % (t_elapse, message),
+                        "forward_message (F_out) spend more than 1s (%s ms) frame: %s" % (t_elapse, loggable_plugin_frame(message)),
                     )
             else:
                 result = f_in(self, message)
