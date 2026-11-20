@@ -268,3 +268,19 @@ def test_device_list_carries_the_files_the_device_never_gets(rest_ota, webserver
     assert [device["Nwkid"] for device in devices] == ["1234"]
     assert devices[0]["ExcludedFiles"] == ["EH_LAC_R_04_01_02.zigbee"]
     webserver.OTA.restapi_excluded_files.assert_called_once_with("1234", "105e")
+
+
+# ─── firmware available ──────────────────────────────────────────────────────
+
+def test_firmware_available_lists_an_image_type_once(rest_ota, webserver):
+    """An older plugin left the same image type under both an int and its decimal string."""
+    webserver.ListOfDevices["1234"]["OTAUpdate"] = {
+        "1249": {"currentversion": "42002", "newestversion": "65003", "url": "old"},
+        1249: {"currentversion": "42002", "newestversion": "65004", "url": "new"},
+        "4204": {"currentversion": "1", "newestversion": "2", "url": "other"},
+    }
+
+    response = rest_ota.rest_ota_firmware_available(webserver, "GET", None, [])
+
+    firmwares = json.loads(response["Data"])
+    assert [(fw["fwtype"], fw["url"]) for fw in firmwares] == [("1249", "new"), ("4204", "other")]

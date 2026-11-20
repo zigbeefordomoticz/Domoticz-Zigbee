@@ -73,8 +73,26 @@ def test_notify_records_the_update_on_the_device(ota_module, ota):
     ota_module.notify_ota_firmware_available(ota, DEVICE_NWKID, 0x117C, 0x2203, 0x01000000, _entry(0x02000000))
 
     assert ota.ListOfDevices[DEVICE_NWKID]["OTAUpdate"] == {
-        0x2203: {"currentversion": str(0x01000000), "newestversion": str(0x02000000), "url": "https://example.invalid/02000000"}
+        str(0x2203): {"currentversion": str(0x01000000), "newestversion": str(0x02000000), "url": "https://example.invalid/02000000"}
     }
+
+
+def test_notify_after_a_reload_keeps_one_entry_per_image_type(ota_module, ota):
+    """After a restart the key is a decimal string; a new notification must replace it, not sit next to it."""
+    ota.ListOfDevices[DEVICE_NWKID]["OTAUpdate"] = {str(0x2203): {"currentversion": "1", "newestversion": "2", "url": "old"}}
+
+    ota_module.notify_ota_firmware_available(ota, DEVICE_NWKID, 0x117C, 0x2203, 0x01000000, _entry(0x02000000))
+
+    assert list(ota.ListOfDevices[DEVICE_NWKID]["OTAUpdate"]) == [str(0x2203)]
+    assert ota.ListOfDevices[DEVICE_NWKID]["OTAUpdate"][str(0x2203)]["url"] == "https://example.invalid/02000000"
+
+
+def test_notify_replaces_an_int_key_left_by_an_older_plugin(ota_module, ota):
+    ota.ListOfDevices[DEVICE_NWKID]["OTAUpdate"] = {0x2203: {"currentversion": "1", "newestversion": "2", "url": "old"}}
+
+    ota_module.notify_ota_firmware_available(ota, DEVICE_NWKID, 0x117C, 0x2203, 0x01000000, _entry(0x02000000))
+
+    assert list(ota.ListOfDevices[DEVICE_NWKID]["OTAUpdate"]) == [str(0x2203)]
 
 
 def test_notify_for_an_unknown_device_only_logs(ota_module, ota):
