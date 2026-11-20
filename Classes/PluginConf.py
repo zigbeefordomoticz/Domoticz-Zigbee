@@ -429,7 +429,7 @@ SETTINGS = {
             "reconnectonNWKaddr": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "disableZCLDefaultResponse": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "ControllerInHybridMode": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
-            "ControllerInRawMode": { "type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True, "Group": "Experimental", },
+            "ControllerInRawMode": { "type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": True, "Group": "Experimental", },
             "nPDUaPDUThreshold": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": True,"ZigpyRadio": ""},
             "forceAckOnZCL": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "DropBadAnnoucement": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
