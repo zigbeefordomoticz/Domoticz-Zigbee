@@ -144,6 +144,13 @@ def RemoveNwkIdFromAllGroups(self, Nwkid):
     self.write_groups_list()
 
 
+def scenes_member_removed(self, GroupId, NwkId, Ep, IEEE):
+    # Before Remove Group: a device refuses scene commands for a group it has left
+    if self.scenemgt:
+        self.log.logging(["Groups", "Scene"], "Debug", "scenes_member_removed %s/%s from group %s" % (NwkId, Ep, GroupId), NwkId)
+        self.scenemgt.member_removed(GroupId, NwkId, Ep, IEEE)
+
+
 def FullRemoveOfGroup(self, unit, GroupId):
     # Call by onRemove call from Domoticz
     # The widget has been removed by Domoticz, we have to cleanup
@@ -153,6 +160,7 @@ def FullRemoveOfGroup(self, unit, GroupId):
     for NwkId, Ep, IEEE in self.ListOfGroups[GroupId]["Devices"]:
         NwkId = checkNwkIdAndUpdateIfAny(self, NwkId, IEEE)
         if NwkId:
+            scenes_member_removed(self, GroupId, NwkId, Ep, IEEE)
             remove_group_member_ship(self, NwkId, Ep, GroupId)
     self.write_groups_list()
 
@@ -261,6 +269,7 @@ def update_group_and_remove_devices(self, GrpId, ToBeRemoveDevices):
             self.logging(
                 "Debug", "-- --  --  --  --  --  -- > Calling Remove_group_membership [%s %s %s]" % (NwkId, ep, ieee)
             )
+            scenes_member_removed(self, GrpId, NwkId, ep, ieee)
             remove_group_member_ship(self, NwkId, ep, GrpId)
         # if 'Model' in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]['Model'] in LEGRAND_REMOTES:
         #    from Classes.GroupMgtv2.GrpCallBackResponses import  checkToRemoveGroup

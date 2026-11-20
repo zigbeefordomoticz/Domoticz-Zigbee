@@ -116,6 +116,7 @@ class GroupsManagement(object):
         self.IEEE2NWK = IEEE2NWK  # Point to the List of IEEE to NWKID
         self.DeviceConf = DeviceConf
         self.ListOfGroups = {}  # Data structutre to store all groups
+        self.scenemgt = None  # Set when native scenes are enabled
         self.log = log
         self.GroupListFileName = None  # Filename of Group caching file
         self.last_written_groups_list = None  # Serialized ListOfGroups as last written, to skip redundant dumps
