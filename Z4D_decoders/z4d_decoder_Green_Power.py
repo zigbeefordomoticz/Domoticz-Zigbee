@@ -69,6 +69,10 @@ def Decode9E00(self, Devices, MsgData, MsgLQI):
     request_gp_store_flush(self)
     # Created from the heartbeat (Domoticz thread)
     request_gp_widget_creation(self, ieee)
+    # Shown on Admin → Provisioning (/rcv-nw-hrdwr)
+    webserver = getattr(self, "webserver", None)
+    if webserver:
+        webserver.add_green_power_device_in_pairing_mode(ieee, record.get("nwk"))
 
 
 def Decode9E01(self, Devices, MsgData, MsgLQI):

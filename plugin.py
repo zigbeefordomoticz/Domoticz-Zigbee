@@ -1759,6 +1759,7 @@ def start_web_server(self, webserver_port, webserver_homefolder):
     )
     if self.FirmwareVersion:
         self.webserver.update_firmware(self.FirmwareVersion)
+    self.webserver.update_plugin_stores(self.PluginStores)
 
 
 def pingZigate(self):

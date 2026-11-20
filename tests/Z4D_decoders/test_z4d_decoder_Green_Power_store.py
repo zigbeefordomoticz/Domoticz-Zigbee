@@ -292,6 +292,14 @@ class TestWidgets:
 
         assert plugin.gp_widget_creation_requests == {IEEE_HEX}
 
+    def test_commissioning_is_shown_on_the_provisioning_page(self, decoder, helpers, plugin, transport, gp_types):
+        plugin.webserver = MagicMock()
+        GreenPowerListener(transport).device_initialized(make_gpd(transport, gp_types))
+
+        decode_last(helpers, decoder, plugin, transport)
+
+        plugin.webserver.add_green_power_device_in_pairing_mode.assert_called_once_with(IEEE_HEX, IEEE_HEX[-4:])
+
     def test_commissioned_again_keeps_its_widgets(self, decoder, helpers, plugin, transport, gp_types):
         listener = GreenPowerListener(transport)
         listener.device_initialized(make_gpd(transport, gp_types))
