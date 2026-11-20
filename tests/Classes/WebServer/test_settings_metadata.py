@@ -108,6 +108,16 @@ class TestSettingsTableConsistency(unittest.TestCase):
                 with self.subTest(param=param):
                     self.assertEqual(definition.get("DependsOn"), "enablegroupmanagement")
 
+    def test_green_power_is_an_available_service(self):
+        # A feature switch, next to Group Management and native scenes; still dropped
+        # by rest_Settings on a coordinator that cannot pair Green Power devices.
+        definition = SETTINGS["Services"]["param"]["GreenPowerEnable"]
+        self.assertEqual(definition.get("Group"), "Features")
+        self.assertFalse(definition["Advanced"])
+        self.assertTrue(definition.get("GreenPowerOnly"))
+        others = [theme for theme, content in SETTINGS.items() if theme != "Services" and "GreenPowerEnable" in content["param"]]
+        self.assertEqual(others, [])
+
     def test_default_within_range(self):
         for param, definition in ALL.items():
             if definition["type"] not in ("int", "float"):
