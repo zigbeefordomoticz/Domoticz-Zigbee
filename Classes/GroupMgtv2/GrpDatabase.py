@@ -188,11 +188,11 @@ def remove_nwkid_from_all_groups(self, NwkIdToRemove, keep=()):
     for GrpId in list(self.ListOfGroups.keys()):
         for NwkId, Ep, Ieee in list(self.ListOfGroups[GrpId]["Devices"]):
             self.logging(
-                "Debug", "remove_nwkid_from_all_groups Looking for NwkId: %s found %s" % (NwkIdToRemove, NwkId)
+                "Debug", "remove_nwkid_from_all_groups Looking for NwkId: %s found %s" % (NwkIdToRemove, NwkId), GrpId
             )
             if NwkId == NwkIdToRemove:
                 self.logging(
-                    "Debug", "remove_nwkid_from_all_groups Request removal of [ %s, %s, %s] " % (NwkId, Ep, Ieee)
+                    "Debug", "remove_nwkid_from_all_groups Request removal of [ %s, %s, %s] " % (NwkId, Ep, Ieee), GrpId
                 )
                 remove_device_from_group(self, [NwkId, Ep, Ieee], GrpId, keep)
 

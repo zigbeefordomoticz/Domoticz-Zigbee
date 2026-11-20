@@ -30,7 +30,7 @@ def migrateIfTradfriRemote(self, GrpId):
         if NwkId in self.ListOfDevices:
             self.ListOfGroups[GrpId]["Tradfri Remote"]["IEEE"] = self.ListOfDevices[NwkId]["IEEE"]
         else:
-            self.logging("Error", "Cannot migrate Tradfri Remote . don't find Nwkid %s" % NwkId)
+            self.logging("Error", "Cannot migrate Tradfri Remote . don't find Nwkid %s" % NwkId, GrpId, {"Error code": "GRP0401", "GroupId": GrpId, "NwkId": NwkId})
             del self.ListOfGroups[GrpId]["Tradfri Remote"]
 
 
@@ -38,13 +38,13 @@ def migrateTupleToList(self, GrpId, tupleItem):
 
     lenItem = len(tupleItem)
     if lenItem not in [2, 3]:
-        self.logging("Error", "For Group: %s unexpected Group Device %s droping" % (GrpId, str(tupleItem)))
+        self.logging("Error", "For Group: %s unexpected Group Device %s droping" % (GrpId, str(tupleItem)), GrpId, {"Error code": "GRP0402", "GroupId": GrpId, "Device": str(tupleItem)})
         return
 
     if lenItem == 2:
         NwkId, Ep = tupleItem
         if NwkId not in self.ListOfDevices or "IEEE" not in self.ListOfDevices[NwkId]:
-            self.logging("Error", "For Group: %s unexpected Group Device %s droping" % (GrpId, str(tupleItem)))
+            self.logging("Error", "For Group: %s unexpected Group Device %s droping" % (GrpId, str(tupleItem)), GrpId, {"Error code": "GRP0403", "GroupId": GrpId, "Device": str(tupleItem)})
             return
         Ieee = self.ListOfDevices[NwkId]["IEEE"]
         # Migrate from Tuple to List
@@ -59,7 +59,7 @@ def migrateTupleToList(self, GrpId, tupleItem):
 
     domoticz_status_api("--- --- NwkId: %s Ep: %s Ieee: %s" % (NwkId, Ep, Ieee))
     if NwkId not in self.ListOfDevices:
-        self.logging("Error", "migrateTupleToList - NwkId: %s not found in current database" % NwkId)
+        self.logging("Error", "migrateTupleToList - NwkId: %s not found in current database" % NwkId, GrpId, {"Error code": "GRP0404", "GroupId": GrpId, "NwkId": NwkId, "Ep": Ep, "Ieee": Ieee})
         if Ieee not in self.IEEE2NWK:
             return
         NwkId = self.IEEE2NWK[Ieee]

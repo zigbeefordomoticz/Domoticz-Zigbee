@@ -48,7 +48,7 @@ def add_group_member_ship_response(self, MsgData):
     self.logging("Debug", "add_group_member_ship_response - MsgData: %s (%s)" % (MsgData, len(MsgData)))
     # search for the Group/dev
     if len(MsgData) not in [14, 18]:
-        self.logging("Error", "add_group_member_ship_response - uncomplete message %s" % MsgData)
+        self.logging("Error", "add_group_member_ship_response - uncomplete message %s" % MsgData, None, {"Error code": "GRP0201", "MsgData": MsgData, "Length": len(MsgData)})
         return
     if len(MsgData) == 14:  # Firmware < 030f
         MsgSrcAddr = None
@@ -60,7 +60,7 @@ def add_group_member_ship_response(self, MsgData):
         self.logging(
             "Debug",
             "add_group_member_ship_response < 3.0f- [%s] GroupID: %s Status: %s "
-            % (MsgSequenceNumber, MsgGroupID, MsgStatus),
+            % (MsgSequenceNumber, MsgGroupID, MsgStatus), MsgGroupID,
         )
     elif len(MsgData) == 18:  # Firmware >= 030f
         MsgSequenceNumber = MsgData[:2]
@@ -73,14 +73,14 @@ def add_group_member_ship_response(self, MsgData):
         self.logging(
             "Debug",
             "add_group_member_ship_response - [%s] GroupID: %s adding: %s with Status: %s "
-            % (MsgSequenceNumber, MsgGroupID, MsgSrcAddr, MsgStatus),
+            % (MsgSequenceNumber, MsgGroupID, MsgSrcAddr, MsgStatus), MsgGroupID,
         )
 
     if MsgSrcAddr not in self.ListOfDevices:
         self.logging(
             "Error",
             "add_group_member_ship_response Requesting to add group %s membership on non existing device %s response %s MsgData: %s"
-            % (MsgGroupID, MsgSrcAddr, MsgStatus, MsgData),
+            % (MsgGroupID, MsgSrcAddr, MsgStatus, MsgData), MsgGroupID, {"Error code": "GRP0202", "GroupId": MsgGroupID, "NwkId": MsgSrcAddr, "Ep": MsgEP, "Status": MsgStatus, "MsgData": MsgData},
         )
         return
 
@@ -121,14 +121,14 @@ def check_group_member_ship_response(self, MsgData):
     self.logging(
         "Debug",
         "check_group_member_ship_response - SEQ: %s, Source: %s EP: %s, ClusterID: %s, GroupID: %s, Status: %s"
-        % (MsgSequenceNumber, MsgSrcAddr, MsgEP, MsgClusterID, MsgGroupID, MsgStatus),
+        % (MsgSequenceNumber, MsgSrcAddr, MsgEP, MsgClusterID, MsgGroupID, MsgStatus), MsgGroupID,
     )
 
     if MsgSrcAddr not in self.ListOfDevices:
         self.logging(
             "Error",
             "check_group_member_ship_response status: %s Requesting to add group %s membership on non existing device %s"
-            % (MsgStatus, MsgGroupID, MsgSrcAddr),
+            % (MsgStatus, MsgGroupID, MsgSrcAddr), MsgGroupID, {"Error code": "GRP0203", "GroupId": MsgGroupID, "NwkId": MsgSrcAddr, "Ep": MsgEP, "Status": MsgStatus, "MsgData": MsgData},
         )
         return
 
@@ -178,12 +178,12 @@ def look_for_group_member_ship_response(self, MsgData):
     self.logging(
         "Debug",
         "look_for_group_member_ship_response - SEQ: %s, EP: %s, ClusterID: %s, sAddr: %s, Capacity: %s, Count: %s"
-        % (MsgSequenceNumber, MsgEP, MsgClusterID, MsgSrcAddr, MsgCapacity, MsgGroupCount),
+        % (MsgSequenceNumber, MsgEP, MsgClusterID, MsgSrcAddr, MsgCapacity, MsgGroupCount), MsgSrcAddr,
     )
 
     if MsgSrcAddr not in self.ListOfDevices:
         self.logging(
-            "Error", "look_for_group_member_ship_response %s membership on non existing device" % (MsgSrcAddr)
+            "Error", "look_for_group_member_ship_response %s membership on non existing device" % (MsgSrcAddr), MsgSrcAddr, {"Error code": "GRP0204", "NwkId": MsgSrcAddr, "Ep": MsgEP, "MsgData": MsgData}
         )
         return
 
@@ -202,7 +202,7 @@ def look_for_group_member_ship_response(self, MsgData):
             # We are in the situation of GrpId 0x0000 and the Coordinator is member
             #it looks like Zigate is sending 0x0000 when it has an empty slot
             self.logging( 
-                "Log", "look_for_group_member_ship_response %s membership to %s takes only the 1st" % (MsgSrcAddr,GrpId )
+                "Log", "look_for_group_member_ship_response %s membership to %s takes only the 1st" % (MsgSrcAddr,GrpId ), GrpId
             )
 
             break
@@ -222,7 +222,7 @@ def remove_group_member_ship_response(self, MsgData):
     " Decode 0x8063"
 
     if len(MsgData) not in [14, 18]:
-        self.logging("Error", "removeGroupMemberShipResponse - uncomplete message %s" % MsgData)
+        self.logging("Error", "removeGroupMemberShipResponse - uncomplete message %s" % MsgData, None, {"Error code": "GRP0205", "MsgData": MsgData, "Length": len(MsgData)})
         return
 
     if len(MsgData) == 14:  # Firmware < 030f
@@ -235,7 +235,7 @@ def remove_group_member_ship_response(self, MsgData):
         self.logging(
             "Debug",
             "removeGroupMemberShipResponse < 3.0f - [%s] GroupID: %s Status: %s "
-            % (MsgSequenceNumber, MsgGroupID, MsgStatus),
+            % (MsgSequenceNumber, MsgGroupID, MsgStatus), MsgGroupID,
         )
 
     elif len(MsgData) == 18:  # Firmware >= 030f
@@ -248,18 +248,18 @@ def remove_group_member_ship_response(self, MsgData):
         self.logging(
             "Debug",
             "removeGroupMemberShipResponse - [%s] GroupID: %s adding: %s with Status: %s "
-            % (MsgSequenceNumber, MsgGroupID, MsgSrcAddr, MsgStatus),
+            % (MsgSequenceNumber, MsgGroupID, MsgSrcAddr, MsgStatus), MsgGroupID,
         )
 
     self.logging(
         "Debug",
         "removeGroupMemberShipResponse - SEQ: %s, EP: %s, ClusterID: %s, GroupID: %s, Status: %s"
-        % (MsgSequenceNumber, MsgEP, MsgClusterID, MsgGroupID, MsgStatus),
+        % (MsgSequenceNumber, MsgEP, MsgClusterID, MsgGroupID, MsgStatus), MsgGroupID,
     )
 
     if MsgSrcAddr not in self.ListOfDevices:
         self.logging(
-            "Error", "removeGroupMemberShipResponse %s membership on non existing device %s" % (MsgGroupID, MsgSrcAddr)
+            "Error", "removeGroupMemberShipResponse %s membership on non existing device %s" % (MsgGroupID, MsgSrcAddr), MsgGroupID, {"Error code": "GRP0206", "GroupId": MsgGroupID, "NwkId": MsgSrcAddr, "Ep": MsgEP, "Status": MsgStatus, "MsgData": MsgData}
         )
         checkToRemoveGroup(self, MsgSrcAddr, MsgEP, MsgGroupID)
         return

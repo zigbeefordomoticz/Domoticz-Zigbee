@@ -35,14 +35,14 @@ def ScanDevicesForGroupMemberShip(self, DevicesToScan):
             submitForGroupMemberShipScaner(self, NwkId, "01")
             continue
         if NwkId not in self.ListOfDevices:
-            self.logging("Debug", "ScanDevicesForGroupMemberShip : Skipping %s not existing" % NwkId)
+            self.logging("Debug", "ScanDevicesForGroupMemberShip : Skipping %s not existing" % NwkId, NwkId)
             continue
         if not mainPoweredDevice(self, NwkId):
-            self.logging("Debug", "ScanDevicesForGroupMemberShip : Skipping %s not main powered" % NwkId)
+            self.logging("Debug", "ScanDevicesForGroupMemberShip : Skipping %s not main powered" % NwkId, NwkId)
             continue
 
         ListEp = getListOfEpForCluster(self, NwkId, "0004")
-        self.logging("Debug", "ScanDevicesForGroupMemberShip : List of Ep %s for  %s" % (str(ListEp), NwkId))
+        self.logging("Debug", "ScanDevicesForGroupMemberShip : List of Ep %s for  %s" % (str(ListEp), NwkId), NwkId)
 
         for Ep in ListEp:
             if [NwkId, Ep] not in self.ScanDevicesToBeDone:
@@ -94,7 +94,7 @@ def process_web_request(self, webInput):
         # Check if we have to update the Group Name
         if GrpId in self.ListOfGroups and GrpName != self.ListOfGroups[GrpId]["Name"]:
             self.logging(
-                "Debug", " -- - > Require Group Name update from %s to %s" % (self.ListOfGroups[GrpId]["Name"], GrpName)
+                "Debug", " -- - > Require Group Name update from %s to %s" % (self.ListOfGroups[GrpId]["Name"], GrpName), GrpId
             )
             updateGroupName(self, GrpId, GrpName)
 
@@ -153,10 +153,10 @@ def newGroup(self, GrpName, item):
     # New Group to be added
     GrpId = get_group_id(self)
     if GrpId is None:
-        self.logging("Error", " --  --  -- - > No available Group Id, cannot create Group: %s " % GrpName)
+        self.logging("Error", " --  --  -- - > No available Group Id, cannot create Group: %s " % GrpName, None, {"Error code": "GRP0501", "GroupName": GrpName})
         return
-    self.logging("Debug", " --  --  -- - > GroupId: %s " % GrpId)
-    self.logging("Debug", " --  --  -- - > DevicesSelected: %s " % item["devicesSelected"])
+    self.logging("Debug", " --  --  -- - > GroupId: %s " % GrpId, GrpId)
+    self.logging("Debug", " --  --  -- - > DevicesSelected: %s " % item["devicesSelected"], GrpId)
     DevicesList = []
     IEEE = ""
     for dev in item["devicesSelected"]:
@@ -171,19 +171,19 @@ def newGroup(self, GrpName, item):
         # Add Device ( NwkID, Ep, IEEE) to Group GrpId
         if [NwkId, Ep, IEEE] not in DevicesList:
             DevicesList.append( [NwkId, Ep, IEEE] )
-        self.logging("Debug", " --  --  --  -- - > Tuple to add: %s " % str([NwkId, Ep, IEEE]))
-    self.logging("Debug", " --  --  -- - > GroupCreation")
+        self.logging("Debug", " --  --  --  -- - > Tuple to add: %s " % str([NwkId, Ep, IEEE]), GrpId)
+    self.logging("Debug", " --  --  -- - > GroupCreation", GrpId)
     create_new_group_and_attach_devices(self, GrpId, GrpName, DevicesList)
     SendGroupIdentifyEffect(self, GrpId)
 
 
 def updateGroup(self, GrpId, item):
 
-    self.logging("Debug", " --  -- - > Update GrpId: %s " % GrpId)
-    self.logging("Debug", " --  -- - > DeviceList from Web: %s " % item["devicesSelected"])
+    self.logging("Debug", " --  -- - > Update GrpId: %s " % GrpId, GrpId)
+    self.logging("Debug", " --  -- - > DeviceList from Web: %s " % item["devicesSelected"], GrpId)
 
     TargetedDevices = transform_web_to_group_devices_list(self, item["devicesSelected"])
-    self.logging("Debug", " --  -- - > Target DeviceList: %s " % TargetedDevices)
+    self.logging("Debug", " --  -- - > Target DeviceList: %s " % TargetedDevices, GrpId)
 
     ExistingDevices = self.ListOfGroups[GrpId]["Devices"]
     # Let's check if we have also Tradfri Remote 5 to be added
@@ -191,14 +191,14 @@ def updateGroup(self, GrpId, item):
     ikea5b = Ikea5BToBeAddedToListIfExist(self, GrpId)
     if ikea5b and ikea5b not in self.ListOfGroups[GrpId]["Devices"]:
         self.ListOfGroups[GrpId]["Devices"].append(ikea5b)
-    self.logging("Debug", " --  -- - > Existing DeviceList: %s " % ExistingDevices)
+    self.logging("Debug", " --  -- - > Existing DeviceList: %s " % ExistingDevices, GrpId)
 
     WhatToDo = compare_exitsing_with_new_list(self, ExistingDevices, TargetedDevices)
     sendIdentify = len(WhatToDo["ToBeAdded"]) + len(WhatToDo["ToBeRemoved"])
-    self.logging("Debug", " --  -- - > Devices to be added: %s " % WhatToDo["ToBeAdded"])
+    self.logging("Debug", " --  -- - > Devices to be added: %s " % WhatToDo["ToBeAdded"], GrpId)
     update_group_and_add_devices(self, GrpId, WhatToDo["ToBeAdded"])
 
-    self.logging("Debug", " --  -- - > Devices to be removed: %s " % WhatToDo["ToBeRemoved"])
+    self.logging("Debug", " --  -- - > Devices to be removed: %s " % WhatToDo["ToBeRemoved"], GrpId)
     update_group_and_remove_devices(self, GrpId, WhatToDo["ToBeRemoved"])
     if sendIdentify > 0:
         SendGroupIdentifyEffect(self, GrpId)
