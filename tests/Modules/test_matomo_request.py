@@ -288,10 +288,32 @@ class TestGetNetworkSizeItems:
             result = matomo.get_network_size_items(plugin)
         assert result == "Large"
 
-    def test_zero_devices_returns_unknown(self, matomo, plugin):
+    def test_coordinator_only_returns_empty(self, matomo, plugin):
+        plugin.ListOfDevices = {"0000": {"IEEE": "00124b0000000001", "LogicalType": "Coordinator"}}
         with patch.object(matomo, "how_many_devices", return_value=(0, 0)):
-            result = matomo.get_network_size_items(plugin)
-        assert result == "unknown"
+            assert matomo.get_network_size_items(plugin) == "Empty"
+
+    def test_no_entry_at_all_returns_empty(self, matomo, plugin):
+        plugin.ListOfDevices = {}
+        with patch.object(matomo, "how_many_devices", return_value=(0, 0)):
+            assert matomo.get_network_size_items(plugin) == "Empty"
+
+    def test_unclassified_devices_return_unknown(self, matomo, plugin):
+        # Entries besides the coordinator, none of them a router or end device
+        plugin.ListOfDevices = {
+            "0000": {"IEEE": "00124b0000000001", "LogicalType": "Coordinator"},
+            "1a2b": {"IEEE": "00124b0000000002", "MacCapa": "00"},
+        }
+        with patch.object(matomo, "how_many_devices", return_value=(0, 0)):
+            assert matomo.get_network_size_items(plugin) == "unknown"
+
+    def test_classified_device_is_counted(self, matomo, plugin):
+        plugin.ListOfDevices = {
+            "0000": {"IEEE": "00124b0000000001", "LogicalType": "Coordinator"},
+            "1a2b": {"IEEE": "00124b0000000002", "MacCapa": "80"},
+        }
+        with patch.object(matomo, "how_many_devices", return_value=(0, 1)):
+            assert matomo.get_network_size_items(plugin) == "Micro"
 
 
 # ---------------------------------------------------------------------------

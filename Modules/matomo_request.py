@@ -43,7 +43,8 @@ Custom dimensions (Matomo site ID 9)
 2   Coordinator model            ``pluginParameters["CoordinatorModel"]``
 3   Plugin version               ``pluginParameters["PluginVersion"]``
 4   Coordinator firmware         ``pluginParameters["DisplayFirmwareVersion"]``
-5   Network size                 Router + end-device count (bucketed)
+5   Network size                 Router + end-device count (bucketed);
+                                 ``Empty`` = coordinator only
 6   Certified DB version         ``pluginParameters["CertifiedDbVersion"]``
 7   OS distribution              ``distro.name() + distro.version()``
 8   Python / CPU architecture    ``platform`` module
@@ -502,13 +503,20 @@ def get_network_size_items(self):
     """Return the network-size category label for the current Zigbee network.
 
     Counts routers and end-devices then delegates to :func:`classify_nwk_size`.
+    With no device counted, tells an empty network (``"Empty"``: the device
+    list holds the coordinator ``0000`` only) from a list whose entries could
+    not be classified as router or end device (``"unknown"``).
 
     Returns:
-        str: Size category such as ``"Small"``, ``"Large"``, or ``"unknown"``.
+        str: Size category such as ``"Small"``, ``"Large"``, ``"Empty"`` or
+        ``"unknown"``.
     """
     routers, end_devices = how_many_devices(self)
     networkTotalsize = routers + end_devices
-    
+
+    if networkTotalsize == 0 and all(nwkid == "0000" for nwkid in self.ListOfDevices):
+        return "Empty"
+
     return classify_nwk_size(networkTotalsize)
 
 
