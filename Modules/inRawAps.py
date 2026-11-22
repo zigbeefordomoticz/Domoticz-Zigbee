@@ -65,6 +65,15 @@ CALLBACK_TABLE2 = {
 }
 
 
+def _log_default_response(self, srcnwkid, srcep, cluster, data):
+    """ZCL Default Response (general command 0x0b). Payload: command identifier (1 byte), status (1 byte)."""
+    command_id = data[:2]
+    status = data[2:4]
+    log_level = "Debug" if status == "00" else "Log"
+    self.log.logging( "inRawAPS", log_level, "inRawAps %s/%s Cluster %s Default Response to command 0x%s, status 0x%s" % (
+        srcnwkid, srcep, cluster, command_id, status), srcnwkid, )
+
+
 def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, GlobalCommand, ManufacturerCode, Command, Data, payload, ):
 
     """
@@ -235,6 +244,11 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
 
     elif tuya_manufacturer_device(self, srcnwkid):
         func = tuyaReadRawAPS
+
+    elif GlobalCommand and Command == "0b":
+        # Default Response from a device with no manufacturer handler (e.g. Profalux answering a Move to Level):
+        # nothing to process, only a failure status is worth reporting.
+        _log_default_response(self, srcnwkid, srcep, cluster, Data)
 
     else:
         self.log.logging( "inRawAPS", "Log", "inRawAps %s/%s Cluster %s Manuf: %s/%s Command: %s Data: %s Payload: %s not processed !!!" % (
