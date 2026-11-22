@@ -231,28 +231,41 @@ def load_list_of_domoticz_widget(self, Devices):
     Build (or rebuild) the in-memory index of Domoticz Widgets.
 
     Called at plugin start, after widget removal, and after new device pairing.
+
+    The WebUI threads read this index while the Domoticz thread rebuilds it. The new
+    index is built aside and swapped in under the index lock, so a reader never sees it
+    empty or half built.
     """
-    self.ListOfDomoticzWidget.clear()
+    new_index = {}
 
     if Devices is None:
         domoticz_error_api("load_list_of_domoticz_widget - Devices is None")
-        return
+        Devices = {}
 
     for device_ieee in Devices:
         try:
             for unit_key, unit_data in Devices[device_ieee].Units.items():
-                widget_info = {
+                new_index[unit_data.ID] = {
                     "Name": unit_data.Name,
                     "Unit": unit_key,
                     "DeviceID": device_ieee,
                     "Switchtype": unit_data.SwitchType,
                     "Subtype": unit_data.SubType,
                 }
-                self.ListOfDomoticzWidget[unit_data.ID] = widget_info
         except Exception as e:
             domoticz_error_api(
                 f"load_list_of_domoticz_widget - Failed to index device {device_ieee}: {e}"
             )
+
+    _replace_widget_index(self.ListOfDomoticzWidget, new_index)
+
+
+def _replace_widget_index(widget_index, new_index):
+    """Replace the content of widget_index with new_index in one step for other threads."""
+    lock = getattr(widget_index, "lock", None)
+    with lock() if callable(lock) else contextlib.nullcontext():
+        widget_index.clear()
+        widget_index.update(new_index)
 
 
 def find_widget_unit_from_WidgetID(self, Widget_Idx):
@@ -285,13 +298,12 @@ def retrieve_widgetid_from_deviceId_unit(self, Devices, DeviceId, Unit):
     self.log.logging("AbstractDz", "Debug",
                      f"retrieve_widgetid_from_deviceId_unit: DeviceId: {DeviceId} Unit: {Unit}")
 
+    # items() is one snapshot of (idx, widget) pairs: indexing the keys one by one
+    # raises KeyError when the Domoticz thread rebuilds the index in between.
     result = next(
         (
-            x for x in self.ListOfDomoticzWidget
-            if (
-                self.ListOfDomoticzWidget[x]["DeviceID"] == DeviceId
-                and self.ListOfDomoticzWidget[x]["Unit"] == Unit
-            )
+            widget_idx for widget_idx, widget_info in self.ListOfDomoticzWidget.items()
+            if widget_info["DeviceID"] == DeviceId and widget_info["Unit"] == Unit
         ),
         None,
     )
