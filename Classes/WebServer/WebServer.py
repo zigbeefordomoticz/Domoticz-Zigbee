@@ -876,9 +876,9 @@ class WebServer(object):
 
     def rest_Device(self, verb, data, parameters):
 
-        def getDeviceInfos(self, widget_idx):
-            device_id = self.ListOfDomoticzWidget[widget_idx]["DeviceID"]
-            unit = self.ListOfDomoticzWidget[widget_idx]["Unit"]
+        def getDeviceInfos(self, widget_idx, widget_info):
+            device_id = widget_info["DeviceID"]
+            unit = widget_info["Unit"]
             nValue, sValue = domo_read_nValue_sValue(self, self.Devices, device_id, unit)
             SignalLevel = domo_read_SignalLevel(self, self.Devices, device_id, unit)
             BatteryLevel = domo_read_BatteryLevel(self, self.Devices, device_id, unit)
@@ -904,31 +904,31 @@ class WebServer(object):
         if not self.ListOfDomoticzWidget or len(self.ListOfDomoticzWidget) == 0:
             return _response
 
+        # One snapshot of (idx, widget) pairs: indexing the keys one by one raises
+        # KeyError when the Domoticz thread rebuilds the index in between.
+        widgets = [
+            (widget_idx, widget_info)
+            for widget_idx, widget_info in self.ListOfDomoticzWidget.items()
+            if len(widget_info["DeviceID"]) == 16
+        ]
+
         if len(parameters) == 0:
             # Return the Full List of ZiGate Domoticz Widget
-            device_lst = [
-                getDeviceInfos(self, widget_idx)
-                for widget_idx in self.ListOfDomoticzWidget
-                if len(self.ListOfDomoticzWidget[widget_idx]["DeviceID"]) == 16
-            ]
+            device_lst = [getDeviceInfos(self, widget_idx, widget_info) for widget_idx, widget_info in widgets]
             _response["Data"] = json.dumps(device_lst, sort_keys=True)
 
         elif len(parameters) == 1:
-            for widget_idx in self.ListOfDomoticzWidget:
-                if (
-                    len(self.ListOfDomoticzWidget[widget_idx]["DeviceID"]) == 16
-                    and parameters[0] == self.ListOfDomoticzWidget[widget_idx]["DeviceID"]
-                ):
-                    _response["Data"] = json.dumps(getDeviceInfos(self, widget_idx), sort_keys=True)
+            for widget_idx, widget_info in widgets:
+                if parameters[0] == widget_info["DeviceID"]:
+                    _response["Data"] = json.dumps(getDeviceInfos(self, widget_idx, widget_info), sort_keys=True)
                     break
 
         else:
             device_lst = [
-                getDeviceInfos(self, widget_idx)
+                getDeviceInfos(self, widget_idx, widget_info)
                 for parm in parameters
-                for widget_idx in self.ListOfDomoticzWidget
-                if len(self.ListOfDomoticzWidget[widget_idx]["DeviceID"]) == 16
-                and parm == self.ListOfDomoticzWidget[widget_idx]["DeviceID"]
+                for widget_idx, widget_info in widgets
+                if parm == widget_info["DeviceID"]
             ]
             _response["Data"] = json.dumps(device_lst, sort_keys=True)
 
