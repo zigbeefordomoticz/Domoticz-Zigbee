@@ -54,6 +54,10 @@ Custom dimensions (Matomo site ID 9)
 12  Raw coordinator MAC          Formatted IEEE string (RoneLabs only)
 ==  ===========================  ====================================
 
+Visit scope (13-22): copies of 3, 4 (chipset family only), 1, 6, 5, 2, the
+Python version and CPU architecture parts of 8, 7, and 11 without the board
+revision. See ``populate_custom_dimensions``.
+
 Dependencies
 ------------
 - ``distro`` (third-party) — OS distribution detection.
@@ -79,16 +83,25 @@ APIV = 1  # API Version
 SITE_ID = 9
 ACTION_NAME = "PluginInstanceInfos"
 
-# Visit-scope custom dimensions of site 9 (created 2026-11-18): visit key ->
-# the action-scope dimension it copies. Chipset (14) is derived from the
-# firmware label (4), see add_visit_dimensions().
+# Visit-scope custom dimensions of site 9 (13-17 created 2026-11-18, 18-22
+# 2026-11-22): visit key -> the action-scope dimension it copies. Chipset (14)
+# and hardware platform (22) are derived from 4 and 11, see
+# add_visit_dimensions(); Python version (19) and CPU architecture (20) are
+# the two parts of 8 that matter, see get_python_and_machine().
 VISIT_DIMENSIONS = {
     "dimension13": "dimension3",   # Plugin version
     "dimension15": "dimension1",   # Domoticz version
     "dimension16": "dimension6",   # Certified Db
     "dimension17": "dimension5",   # Network size
+    "dimension18": "dimension2",   # Coordinator model
+    "dimension21": "dimension7",   # OS distribution
 }
 VISIT_CHIPSET_DIMENSION = "dimension14"
+VISIT_PYTHON_DIMENSION = "dimension19"
+VISIT_MACHINE_DIMENSION = "dimension20"
+VISIT_HARDWARE_DIMENSION = "dimension22"
+
+_BOARD_REVISION_RE = re.compile(r'\s+Rev\s+\S+$')
 
 RONELABS_MODEL_INFO = "/etc/modelinfo"
 DEVICE_TREE_CONFIGURATION = "/proc/device-tree/model"
@@ -164,6 +177,11 @@ def populate_custom_dimensions(self):
         15 – Domoticz version (= 1)
         16 – Certified device-DB version (= 6)
         17 – Network size category (= 5)
+        18 – Coordinator model (= 2)
+        19 – Python version, major.minor only, e.g. ``3.11`` (part of 8)
+        20 – CPU architecture, ``platform.machine()``, e.g. ``aarch64`` (part of 8)
+        21 – OS distribution (= 7)
+        22 – Hardware platform: 11 without the board revision
 
     Returns:
         dict: Mapping of ``"dimensionN"`` keys to sanitised string values.
@@ -209,6 +227,13 @@ def populate_custom_dimensions(self):
     if _archi:
         _custom_dimensions[ "dimension8"] = clean_custom_dimension_value( _archi)
 
+    # Python version and CPU architecture on their own (visit scope only)
+    _python, _machine = get_python_and_machine()
+    if _python:
+        _custom_dimensions[ VISIT_PYTHON_DIMENSION] = clean_custom_dimension_value( _python)
+    if _machine:
+        _custom_dimensions[ VISIT_MACHINE_DIMENSION] = clean_custom_dimension_value( _machine)
+
     # Uptime
     if self.statistics:
         _uptime = get_uptime_category(self.statistics._start)
@@ -232,7 +257,7 @@ def populate_custom_dimensions(self):
 
 
 def add_visit_dimensions(custom_dimensions):
-    """Add the visit-scope copies of the main dimensions (Matomo ids 13-17).
+    """Add the visit-scope copies of the main dimensions (Matomo ids 13-18, 21, 22).
 
     Action-scope dimensions can only be counted per visit; a visit-scope
     dimension gives the number of installs (unique visitors) per value.
@@ -247,6 +272,13 @@ def add_visit_dimensions(custom_dimensions):
         chipset = firmware.split(" - ")[0].strip()
         if chipset:
             custom_dimensions[VISIT_CHIPSET_DIMENSION] = chipset
+
+    # 'Raspberry Pi 4 Model B Rev 1.5' -> 'Raspberry Pi 4 Model B'
+    board = custom_dimensions.get("dimension11")
+    if board:
+        board = _BOARD_REVISION_RE.sub("", board).strip()
+        if board:
+            custom_dimensions[VISIT_HARDWARE_DIMENSION] = board
 
 
 def matomo_plugin_analytics_infos(self):
@@ -451,6 +483,20 @@ def get_architecture_model(self):
         if self.log:
             self.log.logging("Matomo", "Error", f"get_architecture_model error {e}")
     return None
+
+
+def get_python_and_machine():
+    """Return the Python version (major.minor) and the CPU architecture.
+
+    The two parts of the architecture string (dimension 8) that the reports
+    count, each kept short so the visit dimensions 19 and 20 stay readable.
+
+    Returns:
+        tuple[str, str]: e.g. ``("3.11", "aarch64")``; an empty string for a
+        part the platform module cannot tell.
+    """
+    major, minor, _ = platform.python_version_tuple()
+    return f"{major}.{minor}", platform.machine()
 
 
 def get_ronelabs_model_custom_definition():
