@@ -674,7 +674,9 @@ def zcl_raw_ota_image_notify(self, nwkid, EPIn, EPout, PayloadType, QueryJitter,
     self.log.logging("zclCommand", "Debug", "zcl_raw_ota_image_notify %s %s %s %s %s %s %s %s" % (nwkid, EPIn, EPout, PayloadType, QueryJitter, ManufCode, Imagetype, FileVersion), nwkid)
     zcl_command_formated_logging( self, "OTA_Image_Notify (Raw)", nwkid, EPout, "0019", PayloadType, QueryJitter, ManufCode, Imagetype, FileVersion)
 
-    cluster_frame = 0b00001001    # Cluster Specific / Server to Client / disable Default Response
+    # Cluster Specific / Server to Client. Disable Default Response is NOT set (bit 4 = 0):
+    # the client answers with a Default Response, whose status shows whether it took the notify.
+    cluster_frame = 0b00001001
     Command = "00"
     ManufCode = "%04x" % (struct.unpack(">H", struct.pack("H", int(ManufCode, 16)))[0])
     Imagetype = "%04x" % (struct.unpack(">H", struct.pack("H", int(Imagetype, 16)))[0])
