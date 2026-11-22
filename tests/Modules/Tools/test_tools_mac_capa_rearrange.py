@@ -74,6 +74,14 @@ def test_announced_full_function_device_stays_a_router():
     assert p.ListOfDevices[NWKID]["DeviceType"] == "FFD"
 
 
+def test_without_capability_the_node_descriptor_mac_capability_is_used():
+    # paired before Capability was recorded, already rewritten to 8e
+    p = _plugin({"MacCapa": "8e", "macapa": "80", "LogicalType": "Router", "DeviceType": "FFD"})
+
+    assert ReArrangeMacCapaBasedOnModel(p, NWKID, "8e") == "84"
+    assert p.ListOfDevices[NWKID]["LogicalType"] == "End Device"
+
+
 def test_without_announced_capability_the_previous_rewrite_is_kept():
     p = _plugin({"MacCapa": "80", "PowerSource": "Battery"})
 

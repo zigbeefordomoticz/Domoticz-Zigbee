@@ -252,17 +252,20 @@ MAC_CAPABILITY_MAIN_POWERED = 0b00000100
 def _announced_mac_capability(device_record):
     """The MAC capability byte the device announced, or 0 when it is not known.
 
-    Read from "Capability" only: MacCapa may already hold an earlier per-model
-    rewrite ("8e"), which would make an end device look full-function.
+    Read from "Capability" (the device announcement), else from "macapa" (the
+    Node Descriptor response). Never from MacCapa: it may already hold an
+    earlier per-model rewrite ("8e"), which would make an end device look
+    full-function.
     """
     capability = device_record.get("Capability")
-    if not isinstance(capability, (list, tuple, set)):
-        return 0
-    flags = 0
-    for name, bit in CAPABILITY_TO_MAC_CAPABILITY_BIT.items():
-        if name in capability:
-            flags |= bit
-    return flags
+    if isinstance(capability, (list, tuple, set)) and capability:
+        flags = 0
+        for name, bit in CAPABILITY_TO_MAC_CAPABILITY_BIT.items():
+            if name in capability:
+                flags |= bit
+        return flags
+
+    return _node_descriptor_int(device_record.get("macapa"), 0xFF)
 
 
 def node_descriptor_fields(nwkid, device_record):
