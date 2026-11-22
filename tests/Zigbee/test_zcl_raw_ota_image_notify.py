@@ -8,7 +8,7 @@ Coverage:
   - the payload type decides which optional fields follow the query jitter
     (ZCL 07-5123 rev 8 - 11.13.3.1): type 0 carries the query jitter only,
     type 3 adds manufacturer code, image type and file version, little endian
-  - the frame is cluster specific, Server→Client, Disable Default Response set
+  - the frame is cluster specific, Server→Client, Disable Default Response not set
 
 Zigbee.zclRawCommands imports the real Modules.* package, which conflicts with
 the stubs tests/conftest.py installs for the rest of the session. The checks
