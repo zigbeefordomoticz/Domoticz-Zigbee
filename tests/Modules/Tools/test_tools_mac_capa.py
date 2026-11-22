@@ -107,6 +107,14 @@ class TestMainPoweredDevice:
         p = _plugin({"1234": {"MacCapa": "80", "Model": model}})
         assert mainPoweredDevice(p, "1234") is True
 
+    def test_main_powered_flag_leaves_the_record_alone(self):
+        # it answers; ReArrangeMacCapaBasedOnModel() is what corrects the record
+        device = {"MacCapa": "8e", "Model": "flagged", "LogicalType": "Router", "DeviceType": "FFD"}
+        p = _plugin({"1234": device}, device_conf={"flagged": {"MainPoweredDevice": True}})
+        before = dict(device)
+        assert mainPoweredDevice(p, "1234") is True
+        assert device == before
+
 
 # ---------------------------------------------------------------------------
 # full_function_device

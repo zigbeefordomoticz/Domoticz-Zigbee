@@ -139,15 +139,12 @@ def mainPoweredDevice(self, nwkid):
         mainPower = False
 
     # These are device annouced as Battery, but are Main Powered ( some time without neutral)
+    # Only the answer changes: the record itself is corrected by ReArrangeMacCapaBasedOnModel().
     if (
         get_deviceconf_parameter_value(self, model_name, "MainPoweredDevice")
         or model_name in ("TI0001", "TS0011", "TS0601-switch", "TS0601-2Gangs-switch", "ZBMINI-L",)
     ):
         mainPower = True
-        self.ListOfDevices[nwkid]["LogicalType"] = "End Device"
-    # Not DevideType but DeviceType    
-    #    self.ListOfDevices[nwkid]["DevideType"] = "RFD"
-        self.ListOfDevices[nwkid]["DeviceType"] = "RFD"
 
     if not mainPower and "PowerSource" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["PowerSource"] != {}:
         mainPower = self.ListOfDevices[nwkid]["PowerSource"] == "Main"
