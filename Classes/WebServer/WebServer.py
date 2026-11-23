@@ -25,6 +25,7 @@ from Classes.TransportStats import TREND_REST_FIELDS
 from Classes.WebServer.rest_GreenPower import green_power_supported
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
+from Classes.WebServer.rest_DeviceRemoval import remove_device
 from Classes.WebServer.settings_metadata import (check_numeric_setting,
                                                  setting_metadata)
 from Modules.actuators import actuators
@@ -943,36 +944,7 @@ class WebServer(object):
 
         if verb == "DELETE":
             if len(parameters) == 1:
-                ieee = nwkid = None
-                deviceId = parameters[0]
-                if len(deviceId) == 4:  # Short Network Addr
-                    if deviceId not in self.ListOfDevices:
-                        domoticz_error_api("rest_zDevice - Device: %s to be DELETED unknown LOD" % (deviceId))
-                        domoticz_error_api("Device %s to be removed unknown" % deviceId)
-                        _response["Data"] = json.dumps([], sort_keys=True)
-                        return _response
-                    nwkid = deviceId
-                    ieee = self.ListOfDevices[deviceId]["IEEE"]
-                else:
-                    if deviceId not in self.IEEE2NWK:
-                        domoticz_error_api("rest_zDevice - Device: %s to be DELETED unknown in IEEE22NWK" % (deviceId))
-                        domoticz_error_api("Device %s to be removed unknown" % deviceId)
-                        _response["Data"] = json.dumps([], sort_keys=True)
-                        return _response
-                    ieee = deviceId
-                    nwkid = self.IEEE2NWK[ieee]
-                if nwkid:
-                    del self.ListOfDevices[nwkid]
-                if ieee:
-                    del self.IEEE2NWK[ieee]
-
-                # for a remove in case device didn't send the leave
-                if ieee and "IEEE" in self.ControllerData and self.zigbee_communication == "native":
-                    # uParrentAddress + uChildAddress (uint64)
-                    sendZigateCmd(self, "0026", self.ControllerData["IEEE"] + ieee)
-
-                action = {"Name": "Device %s/%s removed" % (nwkid, ieee)}
-                _response["Data"] = json.dumps(action, sort_keys=True)
+                return remove_device(self, parameters[0], _response)
 
         elif verb == "GET":
             _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
