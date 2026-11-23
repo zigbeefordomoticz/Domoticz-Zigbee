@@ -31,6 +31,7 @@ RADIOS = [
     # (radio library, plugin module, application class)
     ("zigpy_znp", "AppZnp", "App_znp"),
     ("bellows", "AppBellows", "App_bellows"),
+    ("zigpy_deconz", "AppDeconz", "App_deconz"),
     ("zigpy_blz", "AppBlz", "App_blz"),
 ]
 

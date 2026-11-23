@@ -223,7 +223,8 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         await self.move_network_to_channel(channel)
 
     async def remove_ieee(self, ieee):
-        await self.remove( ieee )
+        # zigpy's default also asks a router's children to leave: they stay, and find another parent
+        await self.remove(ieee, remove_children=False)
 
 
     async def coordinator_backup( self ):
