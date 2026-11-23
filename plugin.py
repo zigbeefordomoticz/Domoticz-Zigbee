@@ -259,6 +259,7 @@ class BasePlugin:
 
         self.ListOfDomoticzWidget = ThreadSafeDeviceDict()
         self.ListOfDevices = ThreadSafeDeviceDict()
+        self.tuya_sampling_requests = {}  # Last SamplingInterval sent, per NwkId (Modules/tuyaTS0601.py)
         self.IEEE2NWK = ThreadSafeDeviceDict()
 
         self.DiscoveryDevices = {}  # Used to collect pairing information
