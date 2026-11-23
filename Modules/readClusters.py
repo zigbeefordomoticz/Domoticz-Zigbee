@@ -18,6 +18,7 @@
 """
 
 import binascii
+import re
 import struct
 from time import time
 
@@ -951,6 +952,25 @@ def Cluster0101(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
 
+def _stored_heating_setpoint(self, stored):
+    """Return a stored 0x0201/0x0012 heating setpoint in °C, or None when it cannot be read.
+
+    For the Eurotronic SPZB0001, earlier versions left the raw ZCL int16 hex string
+    in "0012" (e.g. "04b0" for 12.0 °C), and a saved device list may still hold one.
+    The value is now stored in °C. Both forms are accepted.
+    """
+    if isinstance(stored, str):
+        if re.fullmatch(r"[0-9a-fA-F]{4}", stored):
+            return round(int(decodeAttribute(self, "29", stored)) / 100, 2)
+        try:
+            return float(stored)
+        except ValueError:
+            return None
+    if isinstance(stored, (int, float)):
+        return float(stored)
+    return None
+
+
 def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
     # Thermostat cluster
@@ -1097,7 +1117,9 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             receiving_heatingpoint_attribute( self, Devices, MsgSrcAddr, MsgSrcEp, ValueTemp, value, MsgClusterId, MsgAttrID)
 
         elif model_name == "SPZB0001":
-            pass
+            # Eurotronic: the widget follows 0x4003, not 0x0012. Keep the value in °C,
+            # the unit the 0x4003 handler compares against (Cluster0201 stored the raw hex above).
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, ValueTemp)
 
         else:
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, int(value))
@@ -1210,12 +1232,12 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         elif MsgAttrID == "4003":  # Current Temperature Set point for EUROTRONICS
             setPoint = ValueTemp = round(int(value) / 100, 2)
             if "0012" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
-                setPoint = self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["0012"]
+                setPoint = _stored_heating_setpoint(self, self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["0012"])
 
             self.log.logging( ["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - %s/%s Current Temp Set point: %s versus %s " % (
                 MsgSrcAddr, MsgSrcEp, ValueTemp, setPoint), MsgSrcAddr, )
 
-            if ValueTemp != float(setPoint):
+            if ValueTemp != setPoint:
                 # Seems that there is a local setpoint
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0201", ValueTemp, Attribute_=MsgAttrID)
                 checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, ValueTemp)
