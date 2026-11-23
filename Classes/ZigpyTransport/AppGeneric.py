@@ -1415,6 +1415,44 @@ def _is_green_power_for_zigpy_only(packet):
     return packet.data.serialize()[3:11] == GP_ALIAS_ANNCE_IEEE
 
 
+# ---------------------------------------------------------------------------
+# Helper: give the plugin a NWK source address, never an IEEE one
+# ---------------------------------------------------------------------------
+def _with_nwk_source(self, packet):
+    """
+    Return the packet with its IEEE source address replaced by the device's NWK address.
+
+    The plugin keys every device by its NWK address: decode8002 takes a
+    16-hex-digit IEEE source for an unknown NwkId and drops the frame, and the
+    ZDO request decoders put it where a NWK address belongs. Some radios report
+    an IEEE source: zigpy-deconz maps the firmware's IEEE and NWK_AND_IEEE
+    modes to AddrMode.IEEE (seen with a ConBee III and an ESP32 ZBOSS end
+    device, espressif/arduino-esp32#12520).
+
+    The NWK address comes from zigpy, then from the plugin database. A device
+    neither knows keeps its IEEE source, as before.
+    """
+    if packet.src is None or packet.src.addr_mode != zigpy_t.AddrMode.IEEE:
+        return packet
+
+    ieee = packet.src.address
+    nwk = None
+    try:
+        nwk = super(type(self), self).get_device(ieee=ieee).nwk
+    except KeyError:
+        if self.callBackGetDevice:
+            found = self.callBackGetDevice("%016x" % zigpy_t.uint64_t.deserialize(ieee.serialize())[0], None)
+            if found is not None:
+                nwk = zigpy_t.NWK(found[0])
+
+    if nwk is None:
+        self.log.logging("TransportZigpy", "Debug", f"packet_received IEEE source {ieee} unknown, kept as is")
+        return packet
+
+    self.log.logging("TransportZigpy", "Debug", f"packet_received IEEE source {ieee} → NWK {nwk}")
+    return packet.replace(src=zigpy_t.AddrModeAddress(addr_mode=zigpy_t.AddrMode.NWK, address=nwk))
+
+
 @measure_execution_time
 def packet_received(self, packet: zigpy_t.ZigbeePacket) -> None:
     """
@@ -1449,7 +1487,10 @@ def packet_received(self, packet: zigpy_t.ZigbeePacket) -> None:
         _transport._last_heartbeat = now
     else:
         self.log.logging("TransportZigpyStack", "Debug", "packet_received: zigpy_running_ref not set — heartbeat skipped")
-        
+
+    # The plugin works with NWK addresses only
+    packet = _with_nwk_source(self, packet)
+
             
     sender = packet.src.address.serialize()[::-1].hex()
     addr_mode = int(packet.src.addr_mode) if packet.src.addr_mode is not None else None
