@@ -192,7 +192,7 @@ class DomoticzAPIClient:
                 f"{self.username}:{self.password}".encode()
             ).decode()
 
-        self.url_ready = f"{parsed.scheme}://{netloc}/json.htm?"
+        self.url_ready = f"{parsed.scheme}://{netloc}{parsed.path}/json.htm?"
 
     def _normalize_query(self, query):
         """
