@@ -1097,7 +1097,9 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             receiving_heatingpoint_attribute( self, Devices, MsgSrcAddr, MsgSrcEp, ValueTemp, value, MsgClusterId, MsgAttrID)
 
         elif model_name == "SPZB0001":
-            pass
+            # Eurotronic: the widget follows 0x4003, not 0x0012. Keep the value in °C, the unit
+            # the 0x4003 handler stores it in (Cluster0201 stored the raw hex above).
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, ValueTemp)
 
         else:
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, int(value))
@@ -1208,18 +1210,15 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
         elif MsgAttrID == "4003":  # Current Temperature Set point for EUROTRONICS
-            setPoint = ValueTemp = round(int(value) / 100, 2)
-            if "0012" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
-                setPoint = self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["0012"]
+            ValueTemp = round(int(value) / 100, 2)
+            self.log.logging( ["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - %s/%s Current Temp Set point: %s" % (
+                MsgSrcAddr, MsgSrcEp, ValueTemp), MsgSrcAddr, )
 
-            self.log.logging( ["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - %s/%s Current Temp Set point: %s versus %s " % (
-                MsgSrcAddr, MsgSrcEp, ValueTemp, setPoint), MsgSrcAddr, )
-
-            if ValueTemp != float(setPoint):
-                # Seems that there is a local setpoint
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0201", ValueTemp, Attribute_=MsgAttrID)
-                checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, ValueTemp)
-                checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, "0012", ValueTemp)
+            # Always update: the head reports 0x0012 just before 0x4003, with the same value, so comparing
+            # with the stored 0x0012 hides a setpoint set on the head. An unchanged widget is not updated anyway.
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0201", ValueTemp, Attribute_=MsgAttrID)
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, ValueTemp)
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, "0012", ValueTemp)
 
         elif MsgAttrID == "4008":  # Host Flags for EUROTRONICS
 
