@@ -76,7 +76,8 @@ def actuators(self, action, nwkid, epout, DeviceType, cmd=None, value=None, colo
     )
 
     if nwkid not in self.ListOfDevices:
-        self.log.logging("Command", "Error", "actuators - Unknown device: %s" % (nwkid), nwkid, self.ListOfDevices)
+        self.log.logging("Command", "Error", "actuators - Unknown device: %s" % (nwkid), nwkid, {
+            "Error code": "CMND0001", "Action": action, "Ep": epout, "Known devices": len(self.ListOfDevices)})
         return
     if epout not in self.ListOfDevices[nwkid]["Ep"]:
         self.log.logging(
@@ -84,7 +85,7 @@ def actuators(self, action, nwkid, epout, DeviceType, cmd=None, value=None, colo
             "Error",
             "actuators - Unknown Ep: %s for device: %s" % (epout, nwkid),
             nwkid,
-            self.ListOfDevices[nwkid]["Ep"],
+            {"Error code": "CMND0002", "Action": action, "Ep": epout, "Known Ep": list(self.ListOfDevices[nwkid]["Ep"])},
         )
         return
 

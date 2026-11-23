@@ -365,8 +365,14 @@ def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, 
     if IEEEExist(self, MsgIEEE) and not DeviceExist(
         self, Devices, NwkId, MsgIEEE
     ):
-        self.log.logging( [ "DeviceAnnoucement", "Pairing"], "Error", "Decode004d - Paranoia .... NwkID: %s, IEEE: %s -> %s " % (
-            NwkId, MsgIEEE, str(self.ListOfDevices[NwkId])), )
+        known_nwkid = self.IEEE2NWK.get(MsgIEEE)
+        self.log.logging( [ "DeviceAnnoucement", "Pairing"], "Error", "Decode004d - Paranoia .... NwkID: %s, IEEE: %s" % (
+            NwkId, MsgIEEE), NwkId, {
+                "Error code": "PAIR0001",
+                "IEEE": MsgIEEE,
+                "IEEE2NWK": known_nwkid,
+                "Status": self.ListOfDevices.get(known_nwkid, {}).get("Status"),
+            })
         return
 
     # 2- Create the Data Structutre

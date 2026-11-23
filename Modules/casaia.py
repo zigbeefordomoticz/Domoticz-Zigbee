@@ -95,7 +95,13 @@ def casaiaReadRawAPS(self, Devices, NwkId, srcEp, ClusterId, dstNWKID, dstEP, Ms
             "Error",
             "%s not found in Database" % NwkId,
             NwkId,
-            {"Error code": "CASAIA-READRAW-01", "ListOfDevices": self.ListOfDevices},
+            {
+                "Error code": "CASAIA-READRAW-01",
+                "Ep": srcEp,
+                "Cluster": ClusterId,
+                "Payload": MsgPayload,
+                "Known devices": len(self.ListOfDevices),
+            },
         )
         return
 

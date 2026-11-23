@@ -171,7 +171,7 @@ def sendZigateCmd(self, cmd, datas, ackIsDisabled=False):
                 "Error",
                 "sendZigateCmd - Decoding error %s %s" % (cmd, datas),
                 NwkId,
-                {"Error code": "BOUTPUTS-CMD-02", "ListOfDevices": self.ListOfDevices},
+                {"Error code": "BOUTPUTS-CMD-02", "Cmd": cmd, "datas": datas, "Known devices": len(self.ListOfDevices)},
             )
             return None
         if AddrMod == "01":
