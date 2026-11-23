@@ -28,7 +28,7 @@ DEPENDENCIES = {
     "Modules.domoTools": ("Update_Battery_Device",),
     "Modules.tools": (
         "checkAndStoreAttributeValue", "get_and_inc_ZCL_SQN", "get_device_config_param",
-        "get_deviceconf_parameter_value", "getAttributeValue", "twos_complement"),
+        "get_deviceconf_parameter_value", "getAttributeValue", "mainPoweredDevice", "twos_complement"),
     "Modules.tuyaTools": ("get_tuya_attribute", "store_tuya_attribute", "tuya_cmd"),
 }
 
@@ -51,6 +51,7 @@ def ts0601(monkeypatch):
 @pytest.fixture
 def plugin():
     obj = MagicMock()
+    obj.tuya_sampling_requests = {}
     obj.ListOfDevices = {NWKID: {"Model": MODEL, "Param": {}}}
     obj.DeviceConf = {MODEL: {"TS0601_DP": {
         "65": {"store_tuya_attribute": "sampling_interval", "action_type": "SamplingInterval"}}}}
@@ -105,3 +106,142 @@ def test_through_the_device_parameter(ts0601, plugin):
     mapping = plugin.DeviceConf[MODEL]["TS0601_DP"]
     ts0601.ts0601_settings(plugin, NWKID, mapping, "SamplingInterval", 5000)
     assert _sent(ts0601) == [("6502", "000004b0")]
+
+
+# ── ts0601_resend_sampling_interval ───────────────────────────────────────────
+#
+# Field case: the parameter was changed to 120, 300 then 5 s, the device kept 60 s,
+# and 600 s after each rejoin: the only command sent was lost.
+
+class _Clock:
+    def __init__(self):
+        self.now = 1_795_452_390.0
+
+    def time(self):
+        return self.now
+
+
+@pytest.fixture
+def clock(ts0601, monkeypatch):
+    clock = _Clock()
+    monkeypatch.setattr(ts0601, "time", clock)
+    return clock
+
+
+@pytest.fixture
+def awake(ts0601, plugin, clock):
+    """ The device sends a frame, after `elapsed` seconds. Returns the number of commands sent since then """
+    ts0601.mainPoweredDevice.return_value = False
+    ts0601.get_tuya_attribute.side_effect = lambda self, nwkid, name: self.ListOfDevices[nwkid].get("Tuya", {}).get(name)
+
+    def _awake(elapsed=60):
+        clock.now += elapsed
+        before = len(_sent(ts0601))
+        ts0601.ts0601_resend_sampling_interval(plugin, NWKID)
+        return len(_sent(ts0601)) - before
+
+    return _awake
+
+
+def _device(plugin, wanted=None, reported=None, **extra):
+    device = plugin.ListOfDevices[NWKID]
+    if wanted is not None:
+        device["Param"]["SamplingInterval"] = wanted
+    if reported is not None:
+        device["Tuya"] = {"sampling_interval": "%08x" % reported}
+    device.update(extra)
+    return device
+
+
+def test_resent_until_the_device_reports_it(ts0601, plugin, awake):
+    _device(plugin, wanted=300, reported=600)
+    assert [awake(), awake(), awake()] == [1, 1, 1]
+    assert set(_sent(ts0601)) == {("6502", "0000012c")}
+
+    _device(plugin, reported=300)
+    assert [awake(), awake()] == [0, 0]
+    assert plugin.tuya_sampling_requests == {}
+
+
+def test_sent_once_per_burst_of_reports(plugin, awake):
+    _device(plugin, wanted=300, reported=600)
+    assert [awake(0.1) for _ in range(11)] == [1] + [0] * 10
+
+
+def test_not_resent_right_after_the_parameter_was_sent(ts0601, plugin, awake):
+    _device(plugin, wanted=300, reported=600)
+    ts0601.ts0601_sampling_interval(plugin, NWKID, "01", DP_SAMPLING, 300)
+    assert awake(1) == 0
+    assert awake(60) == 1
+
+
+def test_compared_with_the_value_really_sent(plugin, awake):
+    # 5000 is sent as 1200: the device reporting 1200 has applied it
+    _device(plugin, wanted=5000, reported=1200)
+    assert awake() == 0
+
+
+def test_gives_up_and_says_so_once(ts0601, plugin, awake):
+    _device(plugin, wanted=300, reported=600)
+    sent = sum(awake() for _ in range(ts0601.SAMPLING_RESEND_ATTEMPTS + 20))
+    assert sent == ts0601.SAMPLING_RESEND_ATTEMPTS
+    assert len(_logged(plugin, "Log")) == 1
+    assert _logged(plugin, "Error") == []
+
+
+def test_starts_again_when_the_parameter_changes(ts0601, plugin, awake):
+    _device(plugin, wanted=300, reported=600)
+    for _ in range(ts0601.SAMPLING_RESEND_ATTEMPTS + 1):
+        awake()
+    assert awake() == 0
+
+    _device(plugin, wanted=120)
+    assert awake() == 1
+    assert _sent(ts0601)[-1] == ("6502", "00000078")
+
+
+def test_starts_again_when_the_same_value_is_saved_again(ts0601, plugin, awake):
+    _device(plugin, wanted=300, reported=600)
+    for _ in range(ts0601.SAMPLING_RESEND_ATTEMPTS + 1):
+        awake()
+    ts0601.ts0601_sampling_interval(plugin, NWKID, "01", DP_SAMPLING, 300)
+    assert awake() == 1
+
+
+def test_rejoin_puts_the_device_back_to_its_own_interval(plugin, awake):
+    _device(plugin, wanted=60, reported=60)
+    assert awake() == 0
+    _device(plugin, reported=600)
+    assert awake() == 1
+
+
+@pytest.mark.parametrize("setup", [
+    dict(reported=600),                                         # no parameter
+    dict(wanted=300),                                           # the device never reported it
+    dict(wanted="abc", reported=600),                           # unusable parameter
+    dict(wanted=300, reported=600, Health="Disabled"),
+    dict(wanted=300, reported=600, Model="another model"),
+    dict(wanted=300, reported=600, Param=None),
+    dict(wanted=300, reported=600, Tuya={"sampling_interval": ""}),
+])
+def test_nothing_to_resend(plugin, awake, setup):
+    _device(plugin, **setup)
+    assert awake() == 0
+    assert _logged(plugin, "Error") == []
+
+
+def test_main_powered_device_is_left_alone(ts0601, plugin, awake):
+    _device(plugin, wanted=300, reported=600)
+    ts0601.mainPoweredDevice.return_value = True
+    assert awake() == 0
+
+
+def test_unknown_device(ts0601, plugin):
+    ts0601.ts0601_resend_sampling_interval(plugin, "ffff")
+    assert _sent(ts0601) == []
+
+
+def test_a_device_without_the_datapoint(plugin, awake):
+    _device(plugin, wanted=300, reported=600)
+    plugin.DeviceConf[MODEL]["TS0601_DP"] = {"05": {"sensor_type": "temperature"}}
+    assert awake() == 0

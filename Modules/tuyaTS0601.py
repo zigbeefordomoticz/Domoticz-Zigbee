@@ -20,13 +20,14 @@
 import ast
 import math
 import struct
+import time
 
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
 from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_ZCL_SQN,
                            get_device_config_param,
                            get_deviceconf_parameter_value, getAttributeValue,
-                           twos_complement)
+                           mainPoweredDevice, twos_complement)
 from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
                                tuya_cmd)
 
@@ -1592,6 +1593,8 @@ def ts0601_action_liquid_level_percent(self, nwkid, ep, dp, value=None):
 SAMPLING_STEP = 5
 SAMPLING_MIN_VAL = 5
 SAMPLING_MAX_VAL = 1200
+SAMPLING_RESEND_DELAY = 10      # seconds between two attempts: one per burst of reports
+SAMPLING_RESEND_ATTEMPTS = 30
 
 def normalize_sampling_interval(value):
     """ Return the sampling interval (seconds) as accepted by the device: a multiple of 5, between 5 and 1200 """
@@ -1625,6 +1628,53 @@ def ts0601_sampling_interval(self, nwkid, ep, dp, value=None):
     action = "%02x02" %dp   # DataType 0x02
     data = "%08x" % interval
     ts0601_tuya_cmd(self, nwkid, ep, action, data)
+    self.tuya_sampling_requests[ nwkid ] = {"interval": interval, "attempts": 0, "last": time.time()}
+
+
+def ts0601_resend_sampling_interval(self, nwkid):
+    """ Called on each Tuya frame received from a device, before anything is sent back to it.
+
+    A battery device only listens for a fraction of a second after it has reported, and the
+    SamplingInterval parameter is sent once, when it is changed: that command is usually lost.
+    The device also goes back to its own interval when it rejoins. As long as the interval it
+    reported is not the one of the parameter, send it again while the device is awake.
+    """
+    device = self.ListOfDevices.get(nwkid)
+    if not device or device.get("Health") == "Disabled" or "SamplingInterval" not in (device.get("Param") or {}):
+        return
+
+    dps_mapping = ts0601_extract_data_point_infos( self, device.get("Model"))
+    str_dp = ts0601_actuator_dp( "SamplingInterval", dps_mapping) if dps_mapping else None
+    if str_dp is None or mainPoweredDevice(self, nwkid):
+        return
+
+    try:
+        wanted = normalize_sampling_interval(device["Param"]["SamplingInterval"])
+        reported = int(get_tuya_attribute(self, nwkid, dps_mapping[ str_dp ].get("store_tuya_attribute")), 16)
+    except (TypeError, ValueError, OverflowError):
+        # Not reported yet, or a parameter which is not usable (reported when it is sent)
+        return
+
+    if reported == wanted:
+        self.tuya_sampling_requests.pop(nwkid, None)
+        return
+
+    request = self.tuya_sampling_requests.get(nwkid)
+    attempts = 0
+    if request and request["interval"] == wanted:
+        attempts = request["attempts"]
+        if attempts >= SAMPLING_RESEND_ATTEMPTS or time.time() < request["last"] + SAMPLING_RESEND_DELAY:
+            return
+
+    attempts += 1
+    self.log.logging("Tuya0601", "Debug", "ts0601_resend_sampling_interval - %s reported %s seconds, expected %s, attempt %s" % (
+        nwkid, reported, wanted, attempts), nwkid)
+    ts0601_settings(self, nwkid, dps_mapping, "SamplingInterval", wanted)
+    self.tuya_sampling_requests[ nwkid ] = {"interval": wanted, "attempts": attempts, "last": time.time()}
+
+    if attempts == SAMPLING_RESEND_ATTEMPTS:
+        self.log.logging("Tuya0601", "Log", "ts0601_resend_sampling_interval - %s still reports %s seconds instead of %s after %s attempts, giving up" % (
+            nwkid, reported, wanted, attempts), nwkid)
 
 
 TS0601_COMMANDS = {

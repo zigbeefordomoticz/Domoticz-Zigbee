@@ -106,6 +106,15 @@ def send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpo
         zcl_raw_default_response(self, src_nwk_id, ZIGATE_EP, src_endpoint, cluster_id, command, sqn, command_status="00", manufcode=manufcode, orig_fcf=fcf)
 
 
+def resend_tuya_settings(self, nwkid):
+    if self.zigbee_communication != "zigpy":
+        return
+
+    # Not at module level: Modules.tuyaTS0601 ends up importing this module (circular import)
+    from Modules.tuyaTS0601 import ts0601_resend_sampling_interval
+    ts0601_resend_sampling_interval(self, nwkid)
+
+
 def zcl_decoders(self, src_nwk_id, src_endpoint, target_ep, cluster_id, payload, frame):
     """
     Decodes ZCL messages, checks for duplicates, and processes specific cluster commands.
@@ -211,6 +220,9 @@ def zcl_decoders(self, src_nwk_id, src_endpoint, target_ep, cluster_id, payload,
         or (cluster_id == "ffac" and manufacturer_code == "113c")
         or cluster_id == "e001"  # TS011F Plug does this every 24 hours
     ):
+        if cluster_id == "ef00":
+            # Before the Default Response: a sleepy device often gets only the first frame sent back to it
+            resend_tuya_settings(self, src_nwk_id)
         send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
         return frame
 
