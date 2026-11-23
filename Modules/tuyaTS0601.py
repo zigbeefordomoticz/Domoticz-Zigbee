@@ -1593,16 +1593,37 @@ SAMPLING_STEP = 5
 SAMPLING_MIN_VAL = 5
 SAMPLING_MAX_VAL = 1200
 
+def normalize_sampling_interval(value):
+    """ Return the sampling interval (seconds) as accepted by the device: a multiple of 5, between 5 and 1200 """
+    seconds = int(value)
+    if seconds <= 0:
+        raise ValueError("sampling interval must be positive")
+
+    stepped = round(seconds / SAMPLING_STEP) * SAMPLING_STEP
+    return max(SAMPLING_MIN_VAL, min(SAMPLING_MAX_VAL, stepped))
+
+
 def ts0601_sampling_interval(self, nwkid, ep, dp, value=None):
-    self.log.logging("Tuya0601", "Debug", "ts0601_sampling_interval - Nwkid: %s/%s interval: %s" % (nwkid, ep, value))
+    self.log.logging("Tuya0601", "Debug", "ts0601_sampling_interval - Nwkid: %s/%s interval: %s" % (nwkid, ep, value), nwkid)
 
     if value is None:
         return
-    stepped = round(value / SAMPLING_STEP) * SAMPLING_STEP   # snap to 5s grid
-    max(SAMPLING_MIN_VAL, min(SAMPLING_MAX_VAL, stepped))    # clamp 5..1200
+
+    try:
+        interval = normalize_sampling_interval(value)
+    except (TypeError, ValueError, OverflowError):
+        self.log.logging(
+            "Tuya0601", "Error", "ts0601_sampling_interval - %s: SamplingInterval %r is not a positive number of seconds, not sent" % (nwkid, value),
+            nwkid, {"Error code": "TS0601-SAMPLING-01", "value": repr(value)})
+        return
+
+    if interval != int(value):
+        self.log.logging(
+            "Tuya0601", "Log", "ts0601_sampling_interval - %s: SamplingInterval %s sent as %s seconds (%s to %s, step %s)" % (
+                nwkid, value, interval, SAMPLING_MIN_VAL, SAMPLING_MAX_VAL, SAMPLING_STEP), nwkid)
 
     action = "%02x02" %dp   # DataType 0x02
-    data = "%08x" % value
+    data = "%08x" % interval
     ts0601_tuya_cmd(self, nwkid, ep, action, data)
 
 
