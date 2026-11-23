@@ -38,15 +38,18 @@ def rest_change_model_name(self, verb, data, parameters):
         return _response
     self.logging( "Log", "rest_change_model_name - Data: %s" % data)
 
-    if "Model" not in data and "NWKID" not in data:
-        self.logging( "Error", "rest_change_model_name - unexpected parameter: %s" % data)
-        _response["Data"] = {"unexpected parameter %s " % parameters}
+    # Both keys are required, each a non-empty string: a missing one raised a
+    # KeyError, an empty Model erased the device's model, and a list or a dict as
+    # NWKID raised a TypeError on the lookup below.
+    if not isinstance(data, dict) or not all(isinstance(data.get(key), str) and data[key].strip() for key in ("NWKID", "Model")):
+        self.logging( "Error", "rest_change_model_name - NWKID and Model are both required: %s" % data)
+        _response["Data"] = {"NWKID and Model are both required"}
         return _response
 
     nwkid = data["NWKID"]
     new_model = data["Model"]
     if nwkid not in self.ListOfDevices:
-        self.logging( "Error", "rest_recreate_widgets - Unknown device %s " % nwkid)
+        self.logging( "Error", "rest_change_model_name - Unknown device %s " % nwkid)
         return _response
     old_model = self.ListOfDevices[ nwkid ]["Model"] if "Model" in self.ListOfDevices[ nwkid ] else ""
     _response["Data"] = {"NwkId %s set Model from: %s to %s, widgets will be re-created on the next heartbeat" % (nwkid, old_model, new_model)}
