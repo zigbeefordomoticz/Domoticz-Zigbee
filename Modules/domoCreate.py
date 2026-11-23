@@ -229,33 +229,74 @@ def _resolve_widget_trio(widgetType, Type_, Subtype_, Switchtype_, widgetOptions
     return None
 
 
-def _find_reusable_widget_unit(self, target_trio, target_fullname):
+def _widget_bindings(self, nwkid):
+    """Map each widget IDX the device already holds to the endpoints it is bound on.
+
+    Returns ``{str(idx): {ep: cluster_type}}``, read from the per-endpoint
+    ``ClusterType``. A device record still carrying the legacy device-level
+    ``ClusterType`` (v3.0.x) gives no endpoint, so its widgets are left out and
+    stay reusable anywhere, as before.
+    """
+    bindings = {}
+    endpoints = self.ListOfDevices.get(nwkid, {}).get("Ep") or {}
+    for ep, ep_data in endpoints.items():
+        if not isinstance(ep_data, dict):
+            continue
+        for idx, cluster_type in (ep_data.get("ClusterType") or {}).items():
+            bindings.setdefault(str(idx), {})[ep] = cluster_type
+    return bindings
+
+
+def _find_reusable_widget_unit(self, target_trio, target_fullname, ep=None, cluster_type=None, bindings=None):
     """Find an existing, not-yet-claimed Domoticz unit matching the target widget.
+
+    A unit already bound to an endpoint of this device is only a candidate for
+    that same endpoint. Otherwise a 'recreate widgets' on a device whose widgets
+    partly exist links a widget of one endpoint to another one (the probe
+    temperature of a two-sensor device becoming the ambient one too), and the
+    widget then shows the values of both. A unit bound to no endpoint - the
+    re-pairing case, where the device record is new - is a candidate anywhere.
 
     Matching policy (conservative, to avoid mis-linking ambiguous widgets such as
     several 'Custom' or selector widgets sharing the same Type/Subtype/Switchtype):
-      1. Same (Type, Subtype, Switchtype) AND same widget name  -> strongest.
-      2. Same (Type, Subtype, Switchtype) only when there is exactly one candidate.
+      1. Same signature, already bound on this endpoint as this cluster type
+         -> it is that widget, whatever the user renamed it to.
+      2. Same (Type, Subtype, Switchtype) AND same widget name.
+      3. Same (Type, Subtype, Switchtype) only when there is exactly one candidate.
     Otherwise no reuse (a new widget is created).
     """
     pool = getattr(self, "widget_reuse_pool", None)
     if not pool or target_trio is None:
         return None
 
+    bindings = bindings or {}
     t_type, t_sub, t_switch = target_trio
 
     def _matches(info):
         return info["Type"] == t_type and info["SubType"] == t_sub and info["SwitchType"] == t_switch
 
-    # 1) Same signature AND same name (same physical device / endpoint being re-paired)
-    for unit, info in pool.items():
-        if info["Name"] == target_fullname and _matches(info):
+    def _bound_eps(info):
+        return bindings.get(str(info["ID"]), {})
+
+    eligible = {
+        unit: info for unit, info in pool.items()
+        if _matches(info) and (not _bound_eps(info) or ep in _bound_eps(info))
+    }
+
+    # 1) Already bound on this endpoint as this cluster type
+    if cluster_type is not None:
+        for unit, info in eligible.items():
+            if _bound_eps(info).get(ep) == cluster_type:
+                return unit
+
+    # 2) Same signature AND same name (same physical device / endpoint being re-paired)
+    for unit, info in eligible.items():
+        if info["Name"] == target_fullname:
             return unit
 
-    # 2) Same signature, only when unambiguous
-    candidates = [unit for unit, info in pool.items() if _matches(info)]
-    if len(candidates) == 1:
-        return candidates[0]
+    # 3) Same signature, only when unambiguous
+    if len(eligible) == 1:
+        return next(iter(eligible))
 
     return None
 
@@ -275,7 +316,9 @@ def _try_reuse_widget(self, Devices, nwkid, ieee, ep, cType, widgetName, widgetT
         return None
 
     target_fullname = f"{self.pluginParameters['Name']} - {widgetName}"
-    unit = _find_reusable_widget_unit(self, target_trio, target_fullname)
+    unit = _find_reusable_widget_unit(
+        self, target_trio, target_fullname,
+        ep=ep, cluster_type=ForceClusterType or cType, bindings=_widget_bindings(self, nwkid))
     if unit is None:
         return None
 
