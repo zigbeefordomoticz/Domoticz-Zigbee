@@ -4,20 +4,20 @@
 Tests for Modules/readClusters.py:Cluster0201, Eurotronic Spirit (SPZB0001) setpoints.
 
 The widget of a Spirit follows the manufacturer attribute 0x4003 (current heating
-setpoint). Its handler compares the reported value with the stored 0x0012 to decide
-whether the setpoint changed on the head.
+setpoint). Every 0x4003 report goes to the widget.
 
-Field bug: for SPZB0001 the 0x0012 branch left the raw ZCL hex string in "0012"
-(e.g. "04b0" for 12.0 °C), and the 0x4003 handler ran float() on it:
-  - "04b0", "07d0", "01f4" ... -> ValueError, the report was dropped;
-  - "0514" -> 514.0, compared against 13.0 by accident.
+Field bugs:
+  - 9.1.010: the 0x4003 handler ran float() on the stored 0x0012, which was the raw
+    ZCL hex string: "04b0" -> ValueError, the report was dropped; "0514" -> 514.0,
+    always different, so the widget was updated by accident.
+  - The head reports 0x0012 and then 0x4003 with the same value when the setpoint is
+    changed on the head, so comparing the two never shows a change.
 
 Coverage:
   - a 0x0012 report from a SPZB0001 is stored in °C, no widget update;
-  - the 0x4003 handler accepts a stored raw hex string (saved device lists),
-    a number, and an unreadable value, without raising;
-  - the widget is updated only when 0x4003 differs from the stored setpoint,
-    and not at all when no 0x0012 was ever stored (unchanged behaviour).
+  - the field sequence 0x0012 -> 0x4003 -> 0x0012 updates the widget once;
+  - a 0x4003 report updates the widget whatever is stored in "0012" (raw hex from a
+    saved device list, number, unreadable, nothing).
 """
 
 import importlib
@@ -143,29 +143,35 @@ def test_0012_report_is_stored_in_celsius(rc, spirit):
     maj_domo.assert_not_called()
 
 
-def test_0012_then_4003_same_value_does_not_raise(rc, spirit):
-    """Field sequence (7c53, 2026-11-22): 0x0012 = 12.0 report, then 0x4003 = 12.0."""
+def test_setpoint_changed_on_the_head_updates_widget(rc, spirit):
+    """Field sequence (4d43, 2026-11-23): 0x0012 = 11.0, 0x4003 = 11.0, 0x0012 = 11.0."""
     p, maj_domo = spirit
-    _report(rc, p, "0012", "04b0")
-    _report(rc, p, "4003", "04b0")
+    _store(p, NWKID, EP, CLUSTER, "0012", 12.0)
+    _store(p, NWKID, EP, CLUSTER, "4003", 12.0)
+    _report(rc, p, "0012", "044c")
+    _report(rc, p, "4003", "044c")
+    _report(rc, p, "0012", "044c")
 
-    maj_domo.assert_not_called()
+    maj_domo.assert_called_once_with(p, {}, NWKID, EP, "0201", 11.0, Attribute_="4003")
+    assert _stored(p, "0012") == 11.0
+    assert _stored(p, "4003") == 11.0
 
 
-@pytest.mark.parametrize("raw", ["04b0", "07d0", "01f4", "05DC"])
-def test_4003_with_legacy_raw_hex_equal_does_not_raise(rc, spirit, raw):
-    """A device list saved by an earlier version holds the raw hex string."""
+@pytest.mark.parametrize("raw, expected", [("04b0", 12.0), ("07d0", 20.0), ("01f4", 5.0), ("0514", 13.0)])
+def test_0012_then_4003_for_each_setpoint(rc, spirit, raw, expected):
+    """Values that raised ValueError on 9.1.010, and one that did not."""
     p, maj_domo = spirit
-    _store(p, NWKID, EP, CLUSTER, "0012", raw)
-    _report(rc, p, "4003", raw.lower())
+    _report(rc, p, "0012", raw)
+    _report(rc, p, "4003", raw)
 
-    maj_domo.assert_not_called()
+    maj_domo.assert_called_once_with(p, {}, NWKID, EP, "0201", expected, Attribute_="4003")
 
 
-def test_4003_with_legacy_raw_hex_different_updates_widget(rc, spirit):
-    """Stored 13.0 °C as raw hex, head now at 12.0 °C: the widget follows 0x4003."""
+@pytest.mark.parametrize("stored", ["04b0", "05DC", "0514", 12.0, 13.0, 1200, "12.0", "", "not-a-setpoint", {}, None])
+def test_4003_updates_widget_whatever_is_stored(rc, spirit, stored):
+    """Including the raw hex string a device list saved by an earlier version holds."""
     p, maj_domo = spirit
-    _store(p, NWKID, EP, CLUSTER, "0012", "0514")
+    _store(p, NWKID, EP, CLUSTER, "0012", stored)
     _report(rc, p, "4003", "04b0")
 
     maj_domo.assert_called_once_with(p, {}, NWKID, EP, "0201", 12.0, Attribute_="4003")
@@ -173,33 +179,8 @@ def test_4003_with_legacy_raw_hex_different_updates_widget(rc, spirit):
     assert _stored(p, "4003") == 12.0
 
 
-def test_4003_with_celsius_different_updates_widget(rc, spirit):
+def test_4003_without_stored_0012_updates_widget(rc, spirit):
     p, maj_domo = spirit
-    _store(p, NWKID, EP, CLUSTER, "0012", 13.0)
-    _report(rc, p, "4003", "04b0")
-
-    maj_domo.assert_called_once_with(p, {}, NWKID, EP, "0201", 12.0, Attribute_="4003")
-
-
-def test_4003_with_celsius_equal_no_update(rc, spirit):
-    p, maj_domo = spirit
-    _store(p, NWKID, EP, CLUSTER, "0012", 12.0)
-    _report(rc, p, "4003", "04b0")
-
-    maj_domo.assert_not_called()
-
-
-def test_4003_without_stored_0012_no_update(rc, spirit):
-    """Unchanged behaviour: nothing to compare against, no widget update."""
-    p, maj_domo = spirit
-    _report(rc, p, "4003", "04b0")
-
-    maj_domo.assert_not_called()
-
-
-def test_4003_with_unreadable_stored_value_updates_widget(rc, spirit):
-    p, maj_domo = spirit
-    _store(p, NWKID, EP, CLUSTER, "0012", "not-a-setpoint")
     _report(rc, p, "4003", "04b0")
 
     maj_domo.assert_called_once_with(p, {}, NWKID, EP, "0201", 12.0, Attribute_="4003")
