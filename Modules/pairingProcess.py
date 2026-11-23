@@ -306,11 +306,13 @@ def request_next_Ep(self, Nwkid):
 def interview_timeout(self, Devices, NWKID, RIA, status):
     self.log.logging( "Pairing", "Debug", "interview_timeout - NWKID: %s, Status: %s, RIA: %s," % ( NWKID, status, RIA, ), )
 
-    self.log.logging("Pairing", "Error", "[%s] NEW OBJECT: %s Not able to get all needed attributes on time" % (RIA, NWKID))
+    self.log.logging("Pairing", "Error", "[%s] NEW OBJECT: %s Not able to get all needed attributes on time" % (RIA, NWKID), NWKID,
+                     {"Error code": "PAIR0002", "RIA": RIA, "Status": status})
     self.ListOfDevices[NWKID]["Status"] = "UNKNOW"
     self.ListOfDevices[NWKID]["ConsistencyCheck"] = "Bad Pairing"
-    self.log.logging("Pairing", "Error", "processNotinDB - not able to find response from " + str(NWKID) + " stop process at " + str(status))
-    self.log.logging("Pairing", "Error", "processNotinDB - Collected Infos are : %s" % (str(self.ListOfDevices[NWKID])))
+    self.log.logging("Pairing", "Error", "processNotinDB - not able to find response from " + str(NWKID) + " stop process at " + str(status), NWKID,
+                     {"Error code": "PAIR0003", "RIA": RIA, "Status": status})
+    self.log.logging("Pairing", "Log", "processNotinDB - Collected Infos are : %s" % (str(self.ListOfDevices[NWKID])), NWKID)
     self.adminWidgets.updateNotificationWidget(Devices, "Unable to collect all informations for enrollment of this devices. See Logs")
     self.pairing_in_progress = False
     if "ReqEpv2" in self.ListOfDevices[NWKID]:

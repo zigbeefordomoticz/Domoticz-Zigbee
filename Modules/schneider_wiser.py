@@ -356,7 +356,7 @@ def schneider_wiser_registration(self, Devices, key):
     EPout = WISER_LEGACY_BASE_EP
 
     if "Model" not in self.ListOfDevices[key]:
-        _context = {"Error code": "SCHN0001", "Device": self.ListOfDevices[key]}
+        _context = {"Error code": "SCHN0001", "Attributes": sorted(self.ListOfDevices[key].keys())}
         self.log.logging("Schneider", "Error", "Undefined Model, registration !!!", key, _context)
         return
 

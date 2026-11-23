@@ -448,7 +448,7 @@ def leaveRequest(self, ShortAddr=None, IEEE=None, RemoveChild=0x00, Rejoin=0x00)
                 "Error",
                 "leaveRequest - Unable to determine IEEE address for %s %s" % (ShortAddr, IEEE),
                 ShortAddr,
-                {"Error code": "BOUTPUTS-LEAVE-01", "ListOfDevices": self.ListOfDevices},
+                {"Error code": "BOUTPUTS-LEAVE-01", "Known device": ShortAddr in self.ListOfDevices, "Known devices": len(self.ListOfDevices)},
             )
             return None
 
