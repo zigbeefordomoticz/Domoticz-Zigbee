@@ -42,6 +42,7 @@ Constants:
     THREAD_GROUP            Mapping of logical thread group names to thread name patterns
 """
 
+import contextlib
 import itertools
 import inspect
 import json
@@ -136,6 +137,7 @@ class LoggingManagement:
         self.logging_thread = None
         self._startTime = int(time.time())
         self._log_counter = itertools.count(1)  # Ordering Queue
+        self._logging_failures = set()  # Causes already reported by _catch_error_event()
 
         self.debugZigpy = None
         self.debugZNP = None
@@ -636,7 +638,12 @@ def logging_thread(self):
                 break
 
         elif len(logging_tuple) == 8:  # 8 expected
-            process_logging_event( self, logging_tuple)
+            try:
+                process_logging_event( self, logging_tuple)
+            except Exception as e:
+                # An exception leaving this loop ends the thread: every later line, of any
+                # level, would then be queued and never written until the plugin restarts.
+                _catch_error_event(self, logging_tuple, e)
 
         else:
             domoticz_error_api("logging_thread unexpected tuple %s" % (str(logging_tuple)))
@@ -675,10 +682,26 @@ def _should_log_debug(self, thread_name):
     return not self._thread_filter or thread_name in self._thread_filter
 
 
-def _catch_error_event(self, context,logging_tuple, err ):
-    domoticz_error_api("Something went wrong and catch: context: %s" % str(context))
-    domoticz_error_api("      logging_thread unexpected tuple %s" % (str(logging_tuple)))
-    domoticz_error_api("      Error %s" % (str(err)))
+def _catch_error_event(self, logging_tuple, err):
+    """
+    A line could not be processed. Report why, once per cause - the same one usually fails
+    on every line - and give the line itself to Domoticz, so that it is not lost.
+
+    Runs in the logging thread and must not raise.
+    """
+    with contextlib.suppress(Exception):
+        _, thread_name, _, module, logType, message, _, _ = logging_tuple
+
+        last_frame = traceback.extract_tb(err.__traceback__)[-1]
+        cause = (type(err).__name__, last_frame.filename, last_frame.lineno)
+        if cause not in self._logging_failures:
+            self._logging_failures.add(cause)
+            domoticz_error_api("Z4D logging failed on a %s line of %s (thread %s): %s: %s at %s:%s" % (
+                logType, module, thread_name, type(err).__name__, err, os.path.basename(last_frame.filename), last_frame.lineno))
+
+        # loggingError() gives the message to Domoticz before anything can fail; a Debug line is only for the plugin log
+        if logType not in ("Error", "Debug"):
+            domoticz_log_api(message)
 
 
 def configure_loggers(self, logger_names, mode):
