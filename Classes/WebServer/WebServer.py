@@ -1114,32 +1114,6 @@ class WebServer(object):
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
-        if verb == "DELETE":
-            if len(parameters) == 1:
-                deviceId = parameters[0]
-                if len(deviceId) == 4:  # Short Network Addr
-                    if deviceId not in self.ListOfDevices:
-                        domoticz_error_api("rest_zDevice - Device: %s to be DELETED unknown LOD" % (deviceId))
-                        domoticz_error_api("Device %s to be removed unknown" % deviceId)
-                        _response["Data"] = json.dumps([], sort_keys=True)
-                        return _response
-                    nwkid = deviceId
-                    ieee = self.ListOfDevice[deviceId]["IEEE"]
-                else:
-                    if deviceId not in self.IEEE2NWK:
-                        domoticz_error_api("rest_zDevice - Device: %s to be DELETED unknown in IEEE22NWK" % (deviceId))
-                        domoticz_error_api("Device %s to be removed unknown" % deviceId)
-                        _response["Data"] = json.dumps([], sort_keys=True)
-                        return _response
-                    ieee = deviceId
-                    nwkid = self.IEEE2NWK[ieee]
-
-                del self.ListOfDevice[nwkid]
-                del self.IEEE2NWK[ieee]
-                action = {"Name": "Device %s/%s removed" % (nwkid, ieee)}
-                _response["Data"] = json.dumps(action, sort_keys=True)
-            return _response
-
         if verb == "GET":
             if self.Devices is None or len(self.Devices) == 0:
                 return _response
