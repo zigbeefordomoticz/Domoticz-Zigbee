@@ -34,12 +34,31 @@ UNOCCUPIED_COOLING_SETPOINT = "0013"
 UNOCCUPIED_HEATING_SETPOINT = "0014"
 
 
-def thermostat_Setpoint_SPZB(self, NwkId, setpoint):
+EUROTRONIC_MANUF_ID = "1037"
+EUROTRONIC_CURRENT_HEATING_SETPOINT = "4003"
 
-    manuf_id = "1037"
-    manuf_spec = "01"
-    cluster_id = "%04x" % 0x0201
-    Hattribute = "%04x" % 0x4003
+
+def thermostat_Setpoint_SPZB(self, NwkId, setpoint):
+    """Write the heating setpoint of a Eurotronic Spirit (SPZB0001).
+
+    The standard Occupied Heating Setpoint 0x0012 is written, as ZHA and Zigbee2MQTT
+    do: the head applies it and reports the manufacturer attribute 0x4003 to match.
+    Some heads answer INVALID_VALUE to a write of 0x4003 (manufacturer 0x1037), even
+    with the same firmware as heads that accept it.
+
+    Device Param "EurotronicSetpointAttribute" = "4003" keeps the earlier
+    manufacturer-specific 0x4003 write.
+    """
+    params = self.ListOfDevices[NwkId].get("Param", {})
+    if str(params.get("EurotronicSetpointAttribute", OCCUPIED_HEATING_SETPOINT)).lower().zfill(4) == EUROTRONIC_CURRENT_HEATING_SETPOINT:
+        manuf_id = EUROTRONIC_MANUF_ID
+        manuf_spec = "01"
+        Hattribute = EUROTRONIC_CURRENT_HEATING_SETPOINT
+    else:
+        manuf_id = "0000"
+        manuf_spec = "00"
+        Hattribute = OCCUPIED_HEATING_SETPOINT
+    cluster_id = THERMOSTAT_CLUSTER
     data_type = "29"  # Int16
     self.log.logging("Thermostats", "Debug", "setpoint: %s" % setpoint, nwkid=NwkId)
     setpoint = int((setpoint * 2) / 2)  # Round to 0.5 degrees

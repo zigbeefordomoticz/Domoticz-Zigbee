@@ -375,8 +375,13 @@ def foundation_cluster_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEn
 def foundation_cluster_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     self.log.logging("zclDecoder", "Debug", "foundation_cluster_write_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data), SrcNwkId)
 
-    # This is based on assumption that we only Write 1 attribute at a time
-    buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId + "0000" + Data
+    # Data is "00" when every attribute was written, otherwise one record per rejected
+    # attribute: status (1 byte) + attribute id (2 bytes, little endian).
+    # Decode8110 reads the status right after the cluster id (payload length != 24),
+    # so the first record's status goes there, followed by its attribute id.
+    status = Data[:2] if len(Data) >= 2 else "00"
+    attribute = decode_endian_data(Data[2:6], "21") if len(Data) >= 6 else ""
+    buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId + status + attribute
     return encapsulate_plugin_frame("8110", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
