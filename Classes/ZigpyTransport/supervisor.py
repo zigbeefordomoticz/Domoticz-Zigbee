@@ -45,7 +45,7 @@ DEAD_STACK_THRESHOLD       = 240   # seconds without heartbeat → stack DEAD
 STARTUP_TIMEOUT            = 120   # seconds to receive the first heartbeat
 WATCH_DG_HEARTBEAT_INTERVAL = 30   # poll interval inside _watchdog
 MAX_RESTARTS_PER_HOUR      = 5     # circuit-breaker threshold
-CLEANUP_TASKS_TIMEOUT      = 5.0   # seconds _cleanup waits for cancelled tasks to finish
+CLEANUP_TASKS_TIMEOUT = 5.0   # seconds _cleanup waits for cancelled tasks to finish
 
 
 # ---------------------------------------------------------------------------
