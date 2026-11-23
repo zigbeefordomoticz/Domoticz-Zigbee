@@ -790,7 +790,7 @@ def do_rebind_if_needed(self, nwkid, Ep, batchMode, cluster):
                 unbindDevice(self, self.ListOfDevices[nwkid]["IEEE"], Ep, cluster)
             bindDevice(self, self.ListOfDevices[nwkid]["IEEE"], Ep, cluster)
         else:
-            self.logging("Error", f"configureReporting - inconsitency on {nwkid} no IEEE found : {str(self.ListOfDevices[nwkid])} ")
+            self.logging("Error", f"configureReporting - inconsitency on {nwkid} no IEEE found", nwkid, {"Error code": "CFGR0001", "Ep": Ep, "Cluster": cluster})
 
 def read_report_configure_response_zigpy(self, MsgData, MsgLQI):  # Read Configure Report response
     self.logging( "Debug", f"Read Configure Reporting response - {MsgData}", )
