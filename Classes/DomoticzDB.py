@@ -76,7 +76,7 @@ class DomoticzAPIClient:
             hardware_id (int|str): Domoticz HardwareID of this plugin instance,
                 used to name the worker thread (several instances may run).
         """
-        self.base_url = base_url.rstrip('/')
+        self.base_url = base_url.strip().rstrip('/')
         self.pluginconf = pluginconf
         self.log = log
 
@@ -192,7 +192,7 @@ class DomoticzAPIClient:
                 f"{self.username}:{self.password}".encode()
             ).decode()
 
-        self.url_ready = f"{parsed.scheme}://{netloc}{parsed.path}/json.htm?"
+        self.url_ready = f"{parsed.scheme}://{netloc}{parsed.path.rstrip('/')}/json.htm?"
 
     def _normalize_query(self, query):
         """
