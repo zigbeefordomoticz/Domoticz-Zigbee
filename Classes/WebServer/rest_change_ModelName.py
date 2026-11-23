@@ -14,6 +14,7 @@ from time import time
 
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
+from Classes.WebServer.tools import request_json_object
 from Modules.domoCreate import request_widget_creation
 from Modules.domoTools import update_model_name
 
@@ -31,8 +32,10 @@ def rest_change_model_name(self, verb, data, parameters):
     if verb != "PUT":
         return _response
 
-    data = data.decode("utf8")
-    data = eval(data)  # nosec B307
+    data = request_json_object(self, data, "change-model")
+    if data is None:
+        _response["Data"] = {"request body is not a JSON object"}
+        return _response
     self.logging( "Log", "rest_change_model_name - Data: %s" % data)
 
     if "Model" not in data and "NWKID" not in data:

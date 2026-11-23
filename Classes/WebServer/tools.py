@@ -10,6 +10,7 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
+import json
 import re
 
 from Modules.domoticzAbstractLayer import (domoticz_error_api,
@@ -55,3 +56,30 @@ def redact_headers(headers):
 def redact_raw_request(raw_request):
     """Return the raw request text with the credential headers redacted, safe to log."""
     return SENSITIVE_HEADER_LINE.sub(r"\1\2 <redacted>", raw_request)
+
+
+def parse_json_object(body):
+    """Decode a REST request body that must be a JSON object.
+
+    Return the dict, or None when the body is not UTF-8 JSON or is not an object.
+    The body is only ever parsed as data, never evaluated.
+    """
+    if isinstance(body, (bytes, bytearray)):
+        try:
+            body = body.decode("utf8")
+        except UnicodeDecodeError:
+            return None
+    try:
+        value = json.loads(body)
+    except (TypeError, ValueError):
+        return None
+    return value if isinstance(value, dict) else None
+
+
+def request_json_object(self, body, route):
+    """parse_json_object() for a route handler: log an Error REST0001 when the body is refused."""
+    value = parse_json_object(body)
+    if value is None and self.log:
+        context = {"Error code": "REST0001", "Route": route}
+        self.log.logging("WebServer", "Error", "%s - request body is not a JSON object, request refused" % route, None, context)
+    return value

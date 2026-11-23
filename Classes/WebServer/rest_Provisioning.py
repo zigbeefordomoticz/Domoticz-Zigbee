@@ -16,6 +16,7 @@ from time import time
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
 from Classes.WebServer.rest_GreenPower import gp_provisioning_entries
+from Classes.WebServer.tools import request_json_object
 from Modules.basicOutputs import (ZigatePermitToJoin, setExtendedPANID,
                                   start_Zigate, zigateBlueLed)
 from Modules.domoticzAbstractLayer import (domoticz_error_api,
@@ -255,8 +256,10 @@ def rest_full_reprovisionning(self, verb, data, parameters):
     if verb != "PUT":
         return _response
 
-    data = data.decode("utf8")
-    data = eval(data)  # nosec B307
+    data = request_json_object(self, data, "full-reprovisionning")
+    if data is None:
+        _response["Data"] = {"BE_status": "request body is not a JSON object"}
+        return _response
     self.logging("Log", "Data: %s" % data)
 
     if "IEEE" not in data and "NWKID" not in data:
