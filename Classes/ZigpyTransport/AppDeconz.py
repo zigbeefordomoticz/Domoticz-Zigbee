@@ -223,7 +223,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         await self.move_network_to_channel(channel)
 
     async def remove_ieee(self, ieee):
-        pass
+        await self.remove( ieee )
 
 
     async def coordinator_backup( self ):
