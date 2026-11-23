@@ -53,6 +53,7 @@ import threading
 import time
 import traceback
 from collections import deque
+from collections.abc import Mapping
 from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
 from pathlib import Path
 from queue import PriorityQueue
@@ -68,6 +69,15 @@ LOG_MAX_ERRORS_PER_SESSION = 20
 LOG_MAX_SESSIONS = 5
 LOG_RETENTION_SECONDS = 7 * 24 * 3600  # 7 days
 JSON_SAFE_MAX_DEPTH = 12  # Recursion guard for json_safe(); device entries are far shallower
+
+# What an error says about its device. Named one by one: a device entry also holds what must not
+# reach a history attached to public issues (IAS_KEYPAD has the PIN codes of an alarm keypad).
+DEVICE_INFOS_ATTRIBUTES = (
+    "IEEE", "ZDeviceName", "Model", "Manufacturer", "Manufacturer Name", "ZDeviceID", "ProfileID",
+    "DeviceType", "LogicalType", "MacCapa", "PowerSource", "Type", "Version", "CertifiedDevice", "ConfigSource",
+    "App Version", "Stack Version", "HW Version", "ZCL Version", "SWBUILD_1", "SWBUILD_2", "SWBUILD_3",
+    "Status", "Health", "Battery", "LQI", "RSSI", "RIA", "Param",
+)
 
 # Names must match the Thread(name=...) of each thread exactly: a ThreadXxx filter
 # turned on with a name no thread carries silences every debug line.
@@ -95,6 +105,7 @@ class LoggingManagement:
         PluginHealth:           Dict tracking the current health status text of the plugin.
         HardwareID:             Domoticz hardware ID, used to namespace log files and threads.
         ListOfDevices:          Reference to the active device registry, used to enrich error context.
+                                See loggingUpdateListOfDevices().
         permitTojoin:           Current permit-to-join state, included in error context snapshots.
         FirmwareVersion:        Coordinator firmware version, recorded in error history.
         FirmwareMajorVersion:   Coordinator firmware major version, recorded in error history.
@@ -281,6 +292,11 @@ class LoggingManagement:
             except Exception as e:
                 loggingWriteErrorHistory(self)  # flush the file to avoid the error next startup
                 domoticz_error_api("load Json LogErrorHistory Error %s, not JSON: %s" % (jsonLogHistory, e))
+
+
+    def loggingUpdateListOfDevices(self, ListOfDevices):
+        """The device registry, once loaded: LoadDeviceList() replaces the one given at creation."""
+        self.ListOfDevices = ListOfDevices
 
 
     def closeLogFile(self):
@@ -546,16 +562,17 @@ def json_safe(obj, _depth=0):
         # or pathological structure. Keep the error, drop the recursion.
         return repr(obj)
 
-    if isinstance(obj, dict):
+    if isinstance(obj, Mapping):
         # json.dump() only accepts str/int/float/bool/None keys; normalise the rest.
+        # list() first: the other threads may add or remove keys meanwhile.
         return {
             (k if isinstance(k, (str, int, float, bool)) or k is None else str(k)):
                 json_safe(v, _depth + 1)
-            for k, v in obj.items()
+            for k, v in list(obj.items())
         }
 
     if isinstance(obj, (list, tuple, set, frozenset, deque)):
-        return [json_safe(v, _depth + 1) for v in obj]
+        return [json_safe(v, _depth + 1) for v in list(obj)]
 
     if isinstance(obj, (bytes, bytearray)):
         return obj.hex()
@@ -564,6 +581,21 @@ def json_safe(obj, _depth=0):
         return "%s: %s" % (type(obj).__name__, obj)
 
     return repr(obj)
+
+
+def device_infos(device):
+    """What an error records of its device: DEVICE_INFOS_ATTRIBUTES, and per endpoint the clusters and the widgets."""
+    infos = {attribute: device.get(attribute) for attribute in DEVICE_INFOS_ATTRIBUTES if attribute in device}
+
+    endpoints = device.get("Ep")
+    if isinstance(endpoints, Mapping):
+        infos["Ep"] = {
+            ep: {"Clusters": sorted(str(key) for key in list(clusters) if key not in ("Type", "ClusterType")),
+                 "Type": clusters.get("Type"),
+                 "ClusterType": clusters.get("ClusterType")}
+            for ep, clusters in list(endpoints.items()) if isinstance(clusters, Mapping)
+        }
+    return json_safe(infos)
 
 
 def loggingBuildContext(self, thread_name, module, message, nwkid, context=None):
@@ -580,8 +612,9 @@ def loggingBuildContext(self, thread_name, module, message, nwkid, context=None)
         "message": message,
     }
 
-    if nwkid in self.ListOfDevices:
-        _context["DeviceInfos"] = json_safe(self.ListOfDevices.get(nwkid, {}))
+    device = self.ListOfDevices.get(nwkid)
+    if isinstance(device, Mapping):
+        _context["DeviceInfos"] = device_infos(device)
 
     if context is not None:
         _context["context"] = json_safe(context) if isinstance(context, dict) else str(context)

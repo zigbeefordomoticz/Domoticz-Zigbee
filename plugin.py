@@ -618,6 +618,9 @@ class BasePlugin:
             self.onStop()
             return
 
+        # LoadDeviceList() has replaced self.ListOfDevices
+        self.log.loggingUpdateListOfDevices(self.ListOfDevices)
+
         load_plugin_stores(self)
 
         # Log ListOfDevices dictionary

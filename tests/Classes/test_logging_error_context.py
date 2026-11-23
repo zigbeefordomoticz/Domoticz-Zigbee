@@ -3,8 +3,8 @@
 """
 test_logging_error_context.py
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Unit tests for the JSON sanitation of the error-history context
-(Classes/LoggingManagement.py: json_safe / loggingBuildContext).
+Unit tests for the JSON sanitation of the error-history context, and of the device record it holds
+(Classes/LoggingManagement.py: json_safe / device_infos / loggingBuildContext).
 
 The error history is persisted with json.dumps(); a value it cannot serialize
 aborts the write and used to cost the whole history. Device entries legitimately
@@ -15,15 +15,20 @@ Run with:
     pytest tests/Classes/test_logging_error_context.py -v
 """
 
+import ast
 import json
+import sys
+import threading
 import unittest
 from collections import deque
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 # Classes.LoggingManagement imports Modules.domoticzAbstractLayer, which does
 # `import DomoticzEx as Domoticz`. tests/conftest.py installs the DomoticzEx fake at
 # import time, before collection, so it is already in place here.
 import Classes.LoggingManagement as lm  # noqa: E402
+from Classes.ThreadSafeDeviceDict import ThreadSafeDeviceDict  # noqa: E402
 
 
 def _make_log(list_of_devices=None):
@@ -122,31 +127,110 @@ class TestJsonSafeGuards(unittest.TestCase):
         self.assertEqual(lm.json_safe(source), source)
 
 
+class TestJsonSafeLiveContainers(unittest.TestCase):
+    """The context is built in the logging thread, from containers the other threads write to."""
+
+    def test_a_key_added_meanwhile_does_not_raise(self):
+        class Growing:
+            # repr() is called while the dict is walked: what another thread could do then
+            def __repr__(self):
+                source["added"] = 1
+                return "<growing>"
+
+        source = {"first": Growing(), "second": 2}
+        self.assertEqual(lm.json_safe(source), {"first": "<growing>", "second": 2})
+
+    def test_an_item_added_meanwhile_does_not_raise(self):
+        class Growing:
+            def __repr__(self):
+                source.append(1)
+                return "<growing>"
+
+        source = deque([Growing(), 2], maxlen=10)
+        self.assertEqual(lm.json_safe(source), ["<growing>", 2])
+
+    def test_thread_safe_dict_is_rendered_as_a_dict(self):
+        self.assertEqual(lm.json_safe(ThreadSafeDeviceDict({"Ep": {"01": {}}})), {"Ep": {"01": {}}})
+
+    def test_a_dict_written_by_another_thread(self):
+        source = {str(n): n for n in range(500)}
+        stop = threading.Event()
+
+        def writer():
+            n = 0
+            while not stop.is_set():
+                source["k%s" % n] = n
+                source.pop("k%s" % (n - 20), None)
+                n += 1
+
+        interval = sys.getswitchinterval()
+        sys.setswitchinterval(1e-6)
+        thread = threading.Thread(target=writer, daemon=True)
+        thread.start()
+        try:
+            for _ in range(50):
+                lm.json_safe(source)
+        finally:
+            stop.set()
+            thread.join(5)
+            sys.setswitchinterval(interval)
+
+
 # ---------------------------------------------------------------------------
 # loggingBuildContext
 # ---------------------------------------------------------------------------
 
 class TestLoggingBuildContext(unittest.TestCase):
 
-    def test_device_infos_with_rolling_lqi_stays_serializable(self):
-        # Reproduces the field case: tools_sqn.py puts a deque in the device entry,
-        # the widget-creation error passes nwkid, and the history write used to die.
-        devices = {
-            "abcd": {
-                "IEEE": "a4c138e090a23a63",
-                "Model": "TS0041",
-                "RollingLQI": deque([250, 248], maxlen=10),
-            }
-        }
-        obj = _make_log(devices)
-
+    def _device_infos(self, device):
         context = lm.loggingBuildContext(
-            obj, "MainThread 1040", "WidgetCreation",
+            _make_log({"abcd": device}), "MainThread 1040", "WidgetCreation",
             "Domoticz widget creation failed.", "abcd")
+        return _assert_json_round_trip(self, context)["DeviceInfos"]
 
-        restored = _assert_json_round_trip(self, context)
-        self.assertEqual(restored["DeviceInfos"]["RollingLQI"], [250, 248])
-        self.assertEqual(restored["DeviceInfos"]["Model"], "TS0041")
+    def test_device_infos_identify_the_device(self):
+        # ZDeviceName, Model and Manufacturer are what the WebUI error page reads
+        infos = self._device_infos({
+            "IEEE": "a4c138e090a23a63", "ZDeviceName": "Hall button", "Model": "TS0041",
+            "Manufacturer": "1002", "Status": "inDB", "Battery": 87, "Param": {"Disabled": 0},
+        })
+        self.assertEqual(infos, {
+            "IEEE": "a4c138e090a23a63", "ZDeviceName": "Hall button", "Model": "TS0041",
+            "Manufacturer": "1002", "Status": "inDB", "Battery": 87, "Param": {"Disabled": 0},
+        })
+
+    def test_device_infos_list_the_clusters_and_widgets_of_each_endpoint(self):
+        infos = self._device_infos({"Ep": {"01": {
+            "Type": "Button/Temp", "ClusterType": {"1234": "Button"},
+            "0402": {"0000": "2150"}, "0006": {"0000": "01"},
+        }}})
+        self.assertEqual(infos["Ep"], {"01": {
+            "Clusters": ["0006", "0402"], "Type": "Button/Temp", "ClusterType": {"1234": "Button"}}})
+
+    def test_device_infos_hold_nothing_that_is_not_named(self):
+        # IAS_KEYPAD has the PIN codes of an alarm keypad
+        infos = self._device_infos({
+            "Model": "keypad", "IAS_KEYPAD": {"Last": {"PIN": "fake-pin"}},
+            "RollingLQI": deque([250], maxlen=10), "Neighbours": [{"_NwkId": "1234"}],
+        })
+        self.assertEqual(infos, {"Model": "keypad"})
+
+    def test_device_infos_of_a_thread_safe_registry_are_a_dict(self):
+        registry = ThreadSafeDeviceDict({"abcd": {"Model": "TS0041", "Ep": {"01": {"0006": {}}}}})
+        context = lm.loggingBuildContext(
+            _make_log(registry), "MainThread 1040", "WidgetCreation", "failed", "abcd")
+        self.assertEqual(context["DeviceInfos"]["Model"], "TS0041")
+        self.assertEqual(context["DeviceInfos"]["Ep"]["01"]["Clusters"], ["0006"])
+
+    def test_device_infos_of_a_damaged_entry_do_not_raise(self):
+        for device in ({"Ep": {}}, {"Ep": "text"}, {"Ep": {"01": None}}, {"Ep": {"01": {}}}, {}):
+            with self.subTest(device=device):
+                self.assertIsInstance(self._device_infos(device), dict)
+
+    def test_no_device_infos_when_the_entry_is_not_a_record(self):
+        context = lm.loggingBuildContext(
+            _make_log({"abcd": None}), "MainThread 1040", "WidgetCreation", "failed", "abcd")
+        self.assertNotIn("DeviceInfos", context)
 
     def test_device_infos_snapshot_is_detached_from_live_entry(self):
         devices = {"abcd": {"Ep": {"01": {"ClusterType": {}}}}}
@@ -201,6 +285,35 @@ class TestLoggingBuildContext(unittest.TestCase):
             self.assertIn(key, context)
         self.assertEqual(context["PluginHealth"], "Ready")
         self.assertEqual(context["Thread"], "MainThread 1040")
+
+
+# ---------------------------------------------------------------------------
+# The registry the logger reads
+# ---------------------------------------------------------------------------
+
+class TestListOfDevicesOfTheLogger(unittest.TestCase):
+    """
+    LoadDeviceList() replaces the registry the logger was given when it was created: without
+    an update it looks the devices up in an empty one, and no error has its DeviceInfos.
+    """
+
+    def test_the_updated_registry_is_the_one_read(self):
+        obj = _make_log({})
+        lm.LoggingManagement.loggingUpdateListOfDevices(obj, {"abcd": {"Model": "TS0041"}})
+        context = lm.loggingBuildContext(obj, "MainThread 1040", "Input", "failed", "abcd")
+        self.assertEqual(context["DeviceInfos"], {"Model": "TS0041"})
+
+    def test_on_start_updates_it_right_after_the_load(self):
+        # Importing plugin.py would pull the whole plugin in: checked on the source
+        source = (Path(__file__).resolve().parents[2] / "plugin.py").read_text(encoding="utf-8")
+        plugin_class = next(node for node in ast.parse(source).body if isinstance(node, ast.ClassDef))
+        on_start = next(node for node in plugin_class.body if getattr(node, "name", None) == "onStart")
+        calls = [(node.lineno, ast.unparse(node)) for node in ast.walk(on_start) if isinstance(node, ast.Call)]
+        loaded = [line for line, call in calls if call == "LoadDeviceList(self)"]
+        updated = [line for line, call in calls if call == "self.log.loggingUpdateListOfDevices(self.ListOfDevices)"]
+        next_step = [line for line, call in calls if call == "load_plugin_stores(self)"]
+        self.assertEqual((len(loaded), len(updated), len(next_step)), (1, 1, 1))
+        self.assertTrue(loaded[0] < updated[0] < next_step[0])
 
 
 # ---------------------------------------------------------------------------
