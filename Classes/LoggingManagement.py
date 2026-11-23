@@ -193,13 +193,9 @@ class LoggingManagement:
 
     def loggingUpdatePluginVersion(self, Version):
         self.PluginVersion = Version
-        if (
-            self.LogErrorHistory
-            and self.LogErrorHistory["LastLog"]
-            and "StartTime" in self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]
-            and self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["StartTime"] == self._startTime
-        ):
-            self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["PluginVersion"] = Version
+        session = _current_error_session(self)
+        if session is not None:
+            session["PluginVersion"] = Version
 
 
     def loggingUpdateFirmware(self, FirmwareVersion, FirmwareMajorVersion):
@@ -207,14 +203,10 @@ class LoggingManagement:
             return
         self.FirmwareVersion = FirmwareVersion
         self.FirmwareMajorVersion = FirmwareMajorVersion
-        if (
-            self.LogErrorHistory
-            and self.LogErrorHistory["LastLog"]
-            and "StartTime" in self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]
-            and self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["StartTime"] == self._startTime
-        ):
-            self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["FirmwareVersion"] = FirmwareVersion
-            self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["FirmwareMajorVersion"] = FirmwareMajorVersion
+        session = _current_error_session(self)
+        if session is not None:
+            session["FirmwareVersion"] = FirmwareVersion
+            session["FirmwareMajorVersion"] = FirmwareMajorVersion
 
 
     def openLogFile(self):
@@ -272,7 +264,10 @@ class LoggingManagement:
     
         with handle:
             try:
-                self.LogErrorHistory = json.load(handle)
+                history = json.load(handle)
+                if not _is_error_history(history):
+                    raise ValueError("unexpected content")
+                self.LogErrorHistory = history
 
             except json.decoder.JSONDecodeError as e:
                 loggingWriteErrorHistory(self)  # flush the file to avoid the error next startup
@@ -308,20 +303,24 @@ class LoggingManagement:
 
 
     def loggingCleaningErrorHistory(self):
-        if len(self.LogErrorHistory) > 1:
-            idx = list(self.LogErrorHistory.keys())[1]
-            if "Time" in self.LogErrorHistory[str(idx)]:
-                if time.time() - self.LogErrorHistory[str(idx)]["Time"] > LOG_RETENTION_SECONDS:  # 7 days for old structure
-                    self.LogErrorHistory.pop(idx)
-            elif len(self.LogErrorHistory[str(idx)]) > 4:
-                idx2 = list(self.LogErrorHistory[str(idx)].keys())[4]
-                if "Time" in self.LogErrorHistory[str(idx)][str(idx2)] and (
-                    time.time() - self.LogErrorHistory[str(idx)][str(idx2)]["Time"] > LOG_RETENTION_SECONDS
-                ):  # 7 days
-                    self.LogErrorHistory[idx].pop(idx2)
-            else:
-                self.LogErrorHistory.pop(idx)
-        if len(self.LogErrorHistory) == 1:
+        """Forget the errors older than LOG_RETENTION_SECONDS, and the sessions left with none."""
+        limit = time.time() - LOG_RETENTION_SECONDS
+
+        for index in _numbered_keys(self.LogErrorHistory):
+            session = self.LogErrorHistory[index]
+            if "Time" in session:
+                # old structure: the error itself, not a session of errors
+                if _is_older_than(session, limit):
+                    self.LogErrorHistory.pop(index)
+                continue
+
+            for entry in _numbered_keys(session):
+                if _is_older_than(session[entry], limit):
+                    session.pop(entry)
+            if not _numbered_keys(session):
+                self.LogErrorHistory.pop(index)
+
+        if not _numbered_keys(self.LogErrorHistory):
             self.LogErrorHistory.clear()
 
 
@@ -459,54 +458,69 @@ def loggingError(self, thread_name, message, module, nwkid, context):
     if self.pluginconf.pluginConf["enablePluginLogging"]:
         self._plugin_file_logger.error(" [%17s] " % thread_name + "[%17s] " %module + message)
 
-    # Log empty
-    if not self.LogErrorHistory or "LastLog" not in self.LogErrorHistory:
-        self.LogErrorHistory["LastLog"] = 0
-        self.LogErrorHistory["0"] = {
-            "LastLog": 0,
-            "StartTime": self._startTime,
-            "FirmwareVersion": self.FirmwareVersion,
-            "FirmwareMajorVersion": self.FirmwareMajorVersion,
-            "PluginVersion": self.PluginVersion,
-        }
-
-        self.LogErrorHistory["0"]["0"] = loggingBuildContext(self, thread_name, module, message, nwkid, context)
-        loggingWriteErrorHistory(self)
-        return  # log created, leaving
-
-    # check if existing log contains plugin launch time
-    if "StartTime" in self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]:
-        index = self.LogErrorHistory["LastLog"]
-        # check if launch time if the same, otherwise, create a new entry
-        if self.LogErrorHistory[str(index)]["StartTime"] != self._startTime:
-            index += 1
-    else:  # compatibility with older version
-        index = self.LogErrorHistory["LastLog"] + 1
-
-    # check if it's a new entry
-    if str(index) not in self.LogErrorHistory:
-        self.LogErrorHistory["LastLog"] += 1
-        self.LogErrorHistory[str(index)] = {"LastLog": 0}
-        self.LogErrorHistory[str(index)]["StartTime"] = self._startTime
-        self.LogErrorHistory[str(index)]["FirmwareVersion"] = self.FirmwareVersion
-        self.LogErrorHistory[str(index)]["FirmwareMajorVersion"] = self.FirmwareMajorVersion
-        self.LogErrorHistory[str(index)]["PluginVersion"] = (self.PluginVersion)
-        self.LogErrorHistory[str(index)]["0"] = loggingBuildContext(self, thread_name, module, message, nwkid, context)
+    session = _current_error_session(self)
+    if session is None:
+        session = _open_error_session(self)
     else:
-        self.LogErrorHistory[str(index)]["LastLog"] += 1
-        self.LogErrorHistory[str(index)][str(self.LogErrorHistory[str(index)]["LastLog"])] = loggingBuildContext(
-            self, thread_name, module, message, nwkid, context
-        )
+        session["LastLog"] += 1
+    session[str(session["LastLog"])] = loggingBuildContext(self, thread_name, module, message, nwkid, context)
 
-        if len(self.LogErrorHistory[str(index)]) > LOG_MAX_ERRORS_PER_SESSION + 4:  # log full for this launch time, remove oldest
-            idx = list(self.LogErrorHistory[str(index)].keys())[4]
-            self.LogErrorHistory[str(index)].pop(idx)
-
-    if len(self.LogErrorHistory) > LOG_MAX_SESSIONS + 1:  # log full, remove oldest
-        idx = list(self.LogErrorHistory.keys())[1]
-        self.LogErrorHistory.pop(idx)
+    # Too many errors for this plugin start, or too many plugin starts: the oldest go
+    _keep_newest(session, LOG_MAX_ERRORS_PER_SESSION)
+    _keep_newest(self.LogErrorHistory, LOG_MAX_SESSIONS)
 
     loggingWriteErrorHistory(self)
+
+
+def _numbered_keys(entries):
+    """
+    The keys of the sessions of the error history, or of the errors of a session, oldest first.
+
+    Both dicts also hold named keys ("LastLog", "StartTime", "PluginVersion"...): an entry
+    is told by its key being a number, never by its position.
+    """
+    return sorted((key for key in list(entries) if key.isdigit()), key=int)
+
+
+def _is_error_history(history):
+    """Is it what loggingError() and loggingCleaningErrorHistory() can work on?"""
+    if not isinstance(history, dict) or not isinstance(history.get("LastLog", 0), int):
+        return False
+    sessions = [history[index] for index in _numbered_keys(history)]
+    return all(isinstance(session, dict) for session in sessions) and all(
+        isinstance(session[entry], dict) for session in sessions for entry in _numbered_keys(session))
+
+
+def _keep_newest(entries, count):
+    for key in _numbered_keys(entries)[:-count]:
+        entries.pop(key)
+
+
+def _is_older_than(entry, limit):
+    entry_time = entry.get("Time")
+    return isinstance(entry_time, (int, float)) and entry_time < limit
+
+
+def _current_error_session(self):
+    """The session of the error history opened by this plugin start, None if it has none yet."""
+    session = self.LogErrorHistory.get(str(self.LogErrorHistory.get("LastLog")))
+    # A session of an older version of the plugin has no StartTime
+    if session is not None and session.get("StartTime") == self._startTime:
+        return session
+    return None
+
+
+def _open_error_session(self):
+    index = self.LogErrorHistory["LastLog"] + 1 if "LastLog" in self.LogErrorHistory else 0
+    self.LogErrorHistory["LastLog"] = index
+    self.LogErrorHistory[str(index)] = {
+        "LastLog": 0,
+        "StartTime": self._startTime,
+        "FirmwareVersion": self.FirmwareVersion,
+        "FirmwareMajorVersion": self.FirmwareMajorVersion,
+        "PluginVersion": self.PluginVersion,
+    }
+    return self.LogErrorHistory[str(index)]
 
 
 def get_stack_trace():
