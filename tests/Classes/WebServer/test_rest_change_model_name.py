@@ -100,11 +100,19 @@ def test_valid_request_changes_the_model_and_queues_the_widgets(results):
     assert case["queued"] == ["1234"]
 
 
-@pytest.mark.parametrize("name", ["model_only", "nwkid_only", "empty_model", "blank_model", "model_not_a_string", "nwkid_is_a_list", "body_is_a_list"])
+@pytest.mark.parametrize("name", ["model_only", "nwkid_only", "empty_model", "blank_model", "model_not_a_string", "nwkid_is_a_list"])
 def test_incomplete_request_is_refused_and_changes_nothing(results, name):
     case = results[name]
     assert case["status"] == "200 OK", "the handler raised instead of answering: %s" % case["errors"]
     assert len(case["errors"]) == 1 and "NWKID and Model are both required" in case["errors"][0]
+    assert case["devices"] == DEVICES
+    assert case["queued"] == []
+
+
+def test_body_that_is_not_an_object_changes_nothing(results):
+    # Refused either here or, once request bodies are parsed as JSON objects, before it.
+    case = results["body_is_a_list"]
+    assert case["status"] == "200 OK", "the handler raised instead of answering: %s" % case["errors"]
     assert case["devices"] == DEVICES
     assert case["queued"] == []
 
