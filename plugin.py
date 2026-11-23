@@ -164,6 +164,7 @@ from Modules.database import (LoadDeviceList, flush_plugin_listofdevice,
                               checkDevices2LOD, checkListOfDevice2Devices,
                               SCENES_STORE, import_local_device_conf,
                               load_plugin_stores)
+from Modules.domoticzCustomMenu import custom_menu_html
 from Modules.domoticzAbstractLayer import (
     domo_read_Name, load_list_of_domoticz_widget,
     retrieve_widgetid_from_deviceId_unit)
@@ -2002,25 +2003,12 @@ def DumpHTTPResponseToLog(httpDict):
 
 def install_Z4D_to_domoticz_custom_ui():
 
-    line1 = '<iframe id="%s"' %Parameters['Name'] + 'style="width:100%;height:800px;overflow:scroll;">\n'
-    line2 = '</iframe>\n'
-    line3 = '\n'
-    line4 = '<script>\n'
-    line5 = 'document.getElementById(\'%s\').src' %Parameters['Name'] + ' = "http://" + location.hostname + ":%s/z4d/";\n' %Parameters['Mode4']
-    #line5 = 'document.getElementById(\'%s\').src' %Parameters['Name'] + ' = location.protocol + "/z4d/";\n' 
-    line6 = '</script>\n'
-
     _startupfolder = pathlib.Path( Parameters['StartupFolder'] )
     custom_file = _startupfolder / 'www/templates' / f"{Parameters['Name']}.html"
 
     try:
         with open( custom_file, "wt") as z4d_html_file:
-            z4d_html_file.write( line1 )
-            z4d_html_file.write( line2 )
-            z4d_html_file.write( line3 )
-            z4d_html_file.write( line4 )
-            z4d_html_file.write( line5 )
-            z4d_html_file.write( line6 )
+            z4d_html_file.write( custom_menu_html( Parameters['Name'], Parameters['Mode4'] ) )
     except Exception as e:
         Domoticz.Error('Error during installing plugin custom page')
         Domoticz.Error(repr(e))
