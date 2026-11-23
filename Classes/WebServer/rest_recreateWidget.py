@@ -15,6 +15,7 @@ from time import time
 
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
+from Classes.WebServer.tools import request_json_object
 from Modules.domoCreate import request_widget_creation
 from Modules.domoticzAbstractLayer import (domoticz_error_api,
                                            domoticz_log_api,
@@ -32,8 +33,10 @@ def rest_recreate_widgets(self, verb, data, parameters):
     if verb != "PUT":
         return _response
 
-    data = data.decode("utf8")
-    data = eval(data)  # nosec B307
+    data = request_json_object(self, data, "recreate-widgets")
+    if data is None:
+        _response["Data"] = json.dumps({"Status": "Error", "Description": "request body is not a JSON object"})
+        return _response
     self.logging("Log", "rest_recreate_widgets - Data: %s" % data)
 
     if "IEEE" not in data and "NWKID" not in data:
