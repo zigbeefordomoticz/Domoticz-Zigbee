@@ -85,7 +85,7 @@ def setup_list_rest_commands( self ):
         {"Name": "upgrade-certified-devices", "Verbs": {"GET"}, "function": self.rest_certified_devices_update},
         {"Name": "zdevice-name", "Verbs": {"GET", "PUT", "DELETE"}, "function": self.rest_zDevice_name},
         {"Name": "zdevice-raw", "Verbs": {"GET", "PUT"}, "function": self.rest_zDevice_raw},
-        {"Name": "zdevice", "Verbs": {"GET", "DELETE"}, "function": self.rest_zDevice},
+        {"Name": "zdevice", "Verbs": {"GET"}, "function": self.rest_zDevice},
         {"Name": "zgp-device-raw", "Verbs": {"GET"}, "function": self.rest_zgp_device_raw},
         {"Name": "zgp-pairing", "Verbs": {"GET", "PUT"}, "function": self.rest_zgp_pairing},
         {"Name": "zgp-models", "Verbs": {"GET"}, "function": self.rest_zgp_models},
