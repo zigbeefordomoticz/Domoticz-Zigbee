@@ -165,3 +165,21 @@ class TestGitPullOutcome:
         assert "not a git checkout" in result.stdout
         assert NOT_UPDATED not in result.stdout
         assert sandbox.modules_upgraded
+
+
+@pytest.mark.parametrize("script", SCRIPTS)
+@pytest.mark.parametrize("in_docker", [True, False])
+def test_pull_rebase_is_set_in_docker_only(sandbox, script, in_docker):
+    # Replace what is_docker() looks for by a file the test controls
+    marker = sandbox.tmp / "dockerenv"
+    if in_docker:
+        marker.touch()
+    path = sandbox.plugin / "Tools" / script
+    content = path.read_text()
+    assert "/.dockerenv" in content and "/.dockerinit" in content
+    path.write_text(content.replace("/.dockerenv", str(marker)).replace("/.dockerinit", str(marker)))
+
+    sandbox.upgrade(script)
+
+    gitconfig = (Path(sandbox.env["HOME"]) / ".gitconfig").read_text()
+    assert ("rebase = false" in gitconfig) is in_docker
