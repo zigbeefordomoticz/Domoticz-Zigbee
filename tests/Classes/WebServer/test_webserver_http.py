@@ -26,6 +26,7 @@ import pytest
 from Classes.WebServer import dispatcher, rest_logging
 from Classes.WebServer.com import (decode_http_data, handle_client,
                                    parse_http_request)
+from Classes.WebServer.compressedFiles import CompressedFiles
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
 from Classes.WebServer.onMessage import onMessage
@@ -80,6 +81,7 @@ class FakeWebServer:
             "pluginLogs": str(home / "Logs"),
             **conf,
         })
+        self.compressed_files = CompressedFiles()
         self.logs = []
 
     def logging(self, level, message):

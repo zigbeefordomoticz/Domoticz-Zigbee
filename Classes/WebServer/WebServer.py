@@ -21,6 +21,7 @@ from collections import deque
 
 from Classes.PluginConf import SETTINGS
 from Classes.TransportStats import TREND_REST_FIELDS
+from Classes.WebServer.compressedFiles import CompressedFiles
 from Classes.WebServer.rest_GreenPower import green_power_supported
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
@@ -240,6 +241,7 @@ class WebServer(object):
         self.client_threads = []
         self.webui_running = None
         self.clients = {}
+        self.compressed_files = CompressedFiles()
         
 
         # httpPort could have 2 formats. port number only or IP:port

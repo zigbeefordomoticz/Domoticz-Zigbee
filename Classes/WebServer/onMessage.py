@@ -21,6 +21,7 @@ from pathlib import Path
 from time import gmtime, strftime
 from urllib.parse import urlparse
 
+from Classes.WebServer.compressedFiles import compress, is_compressible
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
 from Classes.WebServer.tools import DumpHTTPResponseToLog, redact_headers
@@ -126,7 +127,7 @@ def onMessage(self, Connection, Data):
     if get_from_cache_or_send(self, Connection, webFilename, Data, _last_modified, _response):
         return
 
-    send_file(self, Connection, webFilename, Data, _last_modified, _response)
+    send_file(self, Connection, webFilename, Data, _last_modified, _response, download)
 
 def handle_rest_api(self, Connection, Data, parsed_query):
     if len(parsed_query) < 3 or parsed_query[0] not in ["rest-z4d","rest-zigate",]:
@@ -245,12 +246,10 @@ def check_header( Data):
     return "200 OK"
 
 
-def send_file(self, Connection, webFilename, Data, _lastmodified, _response):
+def send_file(self, Connection, webFilename, Data, _lastmodified, _response, download=False):
     self.logging( "Debug", "send_file %s %s" %(webFilename, _response))
 
     _response["Headers"]["Last-Modified"] = _lastmodified
-    with open(webFilename, mode="rb") as webFile:
-        _response["Data"] = webFile.read()
 
     _contentType, _contentEncoding = mimetypes.guess_type(str(webFilename))
 
@@ -279,10 +278,45 @@ def send_file(self, Connection, webFilename, Data, _lastmodified, _response):
 
     _response["Status"] = "200 OK"
 
-    if "Accept-Encoding" in Data["Headers"]:
-        self.sendResponse(Connection, _response, AcceptEncoding=Data["Headers"]["Accept-Encoding"])
+    accept_encoding = Data["Headers"].get("Accept-Encoding")
+
+    if download:
+        # A log file grows all the time: compressed for this request only
+        _response["Data"] = read_file(webFilename)
+        self.sendResponse(Connection, _response, AcceptEncoding=accept_encoding)
+        return
+
+    encoding = None
+    if not _contentEncoding and is_compressible(webFilename):
+        encoding = negotiate_encoding(self, accept_encoding)
+
+    if encoding is None:
+        _response["Data"] = read_file(webFilename)
     else:
-        self.sendResponse(Connection, _response)
+        _response["Headers"]["Content-Encoding"] = encoding
+        _response["Data"] = compressed_content(self, webFilename, encoding)
+
+    # No AcceptEncoding: the body is sent as it is, already compressed or not to be
+    self.sendResponse(Connection, _response)
+
+
+def read_file(webFilename):
+    with open(webFilename, mode="rb") as webFile:
+        return webFile.read()
+
+
+def negotiate_encoding(self, accept_encoding):
+    """gzip when enabled and accepted, else deflate, else None (same choice as sendResponse)."""
+    for encoding, setting in (("gzip", "enableGzip"), ("deflate", "enableDeflate")):
+        if self.pluginconf.pluginConf[setting] and accept_encoding and encoding in accept_encoding:
+            return encoding
+    return None
+
+
+def compressed_content(self, webFilename, encoding):
+    if self.pluginconf.pluginConf["enableCache"]:
+        return self.compressed_files.get(webFilename, encoding)
+    return compress(read_file(webFilename), encoding)
 
 
 def with_charset(content_type):
