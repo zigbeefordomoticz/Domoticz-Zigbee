@@ -5,7 +5,8 @@ Covers Decode0041:
   - nwkid matches ControllerNWKID → status '00' with coordinator IEEE
   - nwkid in ListOfDevices → status '00' with device IEEE
   - Unknown nwkid → status '81'
-  - Always calls raw_APS_request
+  - Calls raw_APS_request once the controller is known
+  - Controller not ready (startup) → request dropped with a Warning, never an Error
 """
 
 import sys
@@ -72,3 +73,22 @@ class TestDecode0041:
         call_args = raw.call_args
         payload = call_args.args[5] if len(call_args.args) > 5 else call_args.kwargs.get("payload", "")
         assert "81" in payload
+
+    @pytest.mark.parametrize("ctrl_nwkid, ctrl_ieee", [
+        (None, None),
+        (None, CTRL_IEEE),
+        (CTRL_NWKID, None),
+    ])
+    def test_controller_not_ready_drops_with_warning(self, mod, plugin, monkeypatch, ctrl_nwkid, ctrl_ieee):
+        self._setup(plugin, monkeypatch, mod)
+        plugin.ControllerNWKID = ctrl_nwkid
+        plugin.ControllerIEEE = ctrl_ieee
+        plugin.log = MagicMock()
+        mod.Decode0041(plugin, {}, _make_msg(), LQI)
+        mod.raw_APS_request.assert_not_called()
+        levels = [c.args[1] for c in plugin.log.logging.call_args_list]
+        assert levels.count("Warning") == 1
+        assert "Error" not in levels
+        warning = next(c for c in plugin.log.logging.call_args_list if c.args[1] == "Warning")
+        assert "Controller not ready" in warning.args[2]
+        assert warning.args[3] == "1234"  # requester
