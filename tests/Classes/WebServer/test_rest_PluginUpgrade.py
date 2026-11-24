@@ -171,6 +171,18 @@ class TestRestPluginUpgradeStderrCapture:
         error_calls = [c for c in plugin.logging.call_args_list if c.args[0] == "Error"]
         assert any("permission denied" in c.args[1] for c in error_calls)
 
+    def test_script_is_asked_to_fail_when_git_pull_fails(self, rpu, plugin, monkeypatch):
+        # Without it the script ends with 0, and the WebUI shows a successful upgrade
+        monkeypatch.setenv("SOME_VARIABLE", "kept")
+        run_mock = MagicMock(return_value=_fake_process(stdout="ok"))
+        monkeypatch.setattr(rpu.subprocess, "run", run_mock)
+
+        rpu.rest_plugin_upgrade(plugin, "GET", {}, {})
+
+        env = run_mock.call_args.kwargs["env"]
+        assert env["Z4D_UPGRADE_FAIL_ON_GIT_PULL"] == "1"
+        assert env["SOME_VARIABLE"] == "kept"
+
     def test_non_get_verb_short_circuits(self, rpu, plugin, monkeypatch):
         run_mock = MagicMock()
         monkeypatch.setattr(rpu.subprocess, "run", run_mock)
