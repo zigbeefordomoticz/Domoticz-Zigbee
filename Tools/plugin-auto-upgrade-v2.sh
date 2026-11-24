@@ -199,7 +199,9 @@ update_git_config() {
         echo "Added safe.directory: $dir"
     fi
 
-    [ "$(is_docker)" ] && git config --global pull.rebase false
+    if is_docker; then
+        git config --global pull.rebase false || echo "Warning: cannot set git pull.rebase, continuing..."
+    fi
     if GIT_PULL_OUTPUT=$(git pull 2>&1); then
         echo "$GIT_PULL_OUTPUT"
     else
