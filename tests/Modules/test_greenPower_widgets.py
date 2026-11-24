@@ -71,7 +71,7 @@ PREAMBLE = textwrap.dedent(
     import Modules.readAttributes  # noqa: F401
     import Modules.greenPowerWidgets as gpw
     from Classes.PluginStore import PluginStore
-    from Modules.greenPowerStore import GP_STORE_NAME, GP_STORE_VERSION, request_gp_widget_creation
+    from Modules.greenPowerStore import GP_STORE_NAME, GP_STORE_VERSION, GreenPowerRequests, request_gp_widget_creation
 
     GP_IEEE = "000000000155a3b2"
     ALIAS = "a3b2"
@@ -106,6 +106,7 @@ PREAMBLE = textwrap.dedent(
         p.pairing_in_progress = False
         p.ZiGateModel = None
         p.flush_list_of_devices = False
+        p.green_power_requests = GreenPowerRequests()
         store = PluginStore(GP_STORE_NAME, GP_STORE_VERSION)
         store.set(GP_IEEE, record or gp_record())
         p.PluginStores = {GP_STORE_NAME: store}
@@ -113,7 +114,7 @@ PREAMBLE = textwrap.dedent(
 
     def commission(p):
         request_gp_widget_creation(p, GP_IEEE)
-        gpw.process_gp_widget_creation_requests(p, DEVICES)
+        gpw.process_gp_requests(p, DEVICES)
 
     def stored(p):
         return p.PluginStores[GP_STORE_NAME].get(GP_IEEE)
@@ -196,7 +197,7 @@ def test_switch_created_from_the_heartbeat_with_the_zigbee_definition():
         assert record["Ep"] == {"01": {"ClusterType": {str(unit.ID): "Switch"}}}
         assert p.flush_list_of_devices is True
         assert p.ListOfDevices == {} and p.log.errors() == []
-        assert not getattr(p, "gp_widget_creation_requests")
+        assert p.green_power_requests.widgets == set() and p.green_power_requests.store_flush is False
         # Shown on Admin → Provisioning
         from Modules.greenPowerFeed import gp_feed
         (event,) = gp_feed(p).snapshot()["Events"]

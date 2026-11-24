@@ -228,6 +228,8 @@ class WebServer(object):
         self.widget_creation_requests = None
         # Green Power pairing feed (Modules/greenPowerFeed.py), set by update_green_power_feed()
         self.GreenPowerFeed = None
+        # What the heartbeat is asked to do, set by update_green_power_requests()
+        self.green_power_requests = None
         self.IEEE2NWK = IEEE2NWK
         self.DeviceConf = DeviceConf
         self.Devices = Devices
@@ -307,6 +309,10 @@ class WebServer(object):
     def update_green_power_models(self, models):
         # Green Power device types (Modules/greenPowerModels.py), read by gp_models()
         self.GreenPowerModels = models or {}
+
+    def update_green_power_requests(self, requests):
+        # The plugin's own GreenPowerRequests (Modules/greenPowerStore.py), read by the heartbeat
+        self.green_power_requests = requests
         
     def update_groupManagement(self, groupmanagement):
         self.groupmgt = groupmanagement if groupmanagement else None

@@ -210,7 +210,7 @@ from Modules.greenPower import (green_power_widget_command,
                                 is_green_power_device_id)
 from Modules.greenPowerFeed import GP_FEED_ATTRIBUTE, GreenPowerFeed, gp_feed
 from Modules.greenPowerModels import gp_models, load_gp_models
-from Modules.greenPowerStore import gp_devices_for_zigpy
+from Modules.greenPowerStore import GreenPowerRequests, gp_devices_for_zigpy
 from Modules.zigpy_preload import device_has_left_the_network
 from Zigbee.zdpCommands import (zdp_get_permit_joint_status,
                                 zdp_NWK_address_request)
@@ -345,6 +345,8 @@ class BasePlugin:
         self.z4d_certified_devices_version = None
         
         self.flush_list_of_devices = False
+        # Asked of the heartbeat by the Green Power decoders and, as the same object, the WebServer
+        self.green_power_requests = GreenPowerRequests()
 
         self.loggingFileHandle = None
         self.level = 0
@@ -1815,6 +1817,7 @@ def start_web_server(self, webserver_port, webserver_homefolder):
     self.webserver.update_plugin_stores(self.PluginStores)
     self.webserver.update_green_power_feed(gp_feed(self))
     self.webserver.update_green_power_models(gp_models(self))
+    self.webserver.update_green_power_requests(self.green_power_requests)
 
 
 def pingZigate(self):
