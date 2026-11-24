@@ -202,7 +202,9 @@ update_git_config() {
     if is_docker; then
         git config --global pull.rebase false || echo "Warning: cannot set git pull.rebase, continuing..."
     fi
-    if GIT_PULL_OUTPUT=$(git pull 2>&1); then
+    # --prune: a branch deleted on GitHub ("fix") makes the pull fail when a new one has it as
+    # a folder ("fix/something"), and keeps its files in .git
+    if GIT_PULL_OUTPUT=$(git pull --prune 2>&1); then
         echo "$GIT_PULL_OUTPUT"
     else
         GIT_PULL_FAILED=true
