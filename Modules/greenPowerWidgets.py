@@ -46,8 +46,7 @@ from Modules.domoticzAbstractLayer import (domo_create_api,
                                            retreive_free_unit_for_widget)
 from Modules.greenPowerFeed import gp_feed, gp_src_id
 from Modules.greenPowerModels import gp_model_command, gp_models
-from Modules.greenPowerStore import (GP_WIDGET_CREATION_REQUESTS, gp_store,
-                                     request_gp_store_flush)
+from Modules.greenPowerStore import gp_store, request_gp_store_flush
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 
 # Domoticz selector switch (Type, Subtype, Switchtype), as createDomoticzWidget() creates them
@@ -144,11 +143,15 @@ def _widget_types(ep_conf):
 
 # ─── Creation (heartbeat only) ──────────────────────────────────────────────
 
-def process_gp_widget_creation_requests(self, Devices):
-    """Carry out the creations queued by greenPowerStore.request_gp_widget_creation(). Heartbeat only."""
-    queued = getattr(self, GP_WIDGET_CREATION_REQUESTS, None)
-    while queued:
-        create_gp_widgets(self, Devices, queued.pop())
+def process_gp_requests(self, Devices):
+    """Carry out what greenPowerStore.GreenPowerRequests holds. Heartbeat only, before the flush of the device list."""
+    requests = self.green_power_requests
+    while requests.widgets:
+        create_gp_widgets(self, Devices, requests.widgets.pop())
+
+    if requests.store_flush:
+        requests.store_flush = False
+        self.flush_list_of_devices = True
 
 
 def create_gp_widgets(self, Devices, ieee):
