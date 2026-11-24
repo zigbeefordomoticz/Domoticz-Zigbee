@@ -512,17 +512,19 @@ class TestRequestWidgetCreation:
 
         assert obj.widget_creation_requests["abcd"]["remove_existing_widgets"] is True
 
-    def test_queue_is_created_lazily_on_a_plain_object(self, domoCreate_module):
-        class Plugin:
+    def test_queue_is_not_created_on_demand(self, domoCreate_module):
+        # A queue created here would belong to the caller alone: the request is
+        # accepted and never served. Better to fail than to look successful.
+        class WebServer:
             def __init__(self):
                 self.log = MagicMock()
 
-        obj = Plugin()
+        obj = WebServer()
+
+        with pytest.raises(AttributeError):
+            domoCreate_module.request_widget_creation(obj, "abcd", "from the WebUI")
+
         assert not hasattr(obj, "widget_creation_requests")
-
-        domoCreate_module.request_widget_creation(obj, "abcd", "from the WebUI")
-
-        assert "abcd" in obj.widget_creation_requests
 
     def test_repeated_requests_are_deduplicated(self, domoCreate_module):
         obj = _make_self(_ts0041())
