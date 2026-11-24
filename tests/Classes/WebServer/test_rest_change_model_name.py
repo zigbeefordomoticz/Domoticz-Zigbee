@@ -60,7 +60,7 @@ def results():
                 self.pluginconf = PluginConf()
                 self.ListOfDevices = devices
                 self.log = MagicMock()
-                self.errors = []
+                self.errors = [] self.widget_creation_requests = {}
             def logging(self, level, message):
                 if level == "Error":
                     self.errors.append(message)
@@ -76,7 +76,7 @@ def results():
                 plugin.errors.append("raised %s: %s" % (type(error).__name__, error))
             out[name] = {
                 "devices": plugin.ListOfDevices,
-                "queued": sorted(getattr(plugin, "widget_creation_requests", {})),
+                "queued": sorted(plugin.widget_creation_requests),
                 "errors": plugin.errors,
                 "status": response.get("Status"),
             }
