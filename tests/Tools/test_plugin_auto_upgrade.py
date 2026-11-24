@@ -183,3 +183,31 @@ def test_pull_rebase_is_set_in_docker_only(sandbox, script, in_docker):
 
     gitconfig = (Path(sandbox.env["HOME"]) / ".gitconfig").read_text()
     assert ("rebase = false" in gitconfig) is in_docker
+
+
+@pytest.mark.parametrize("script", SCRIPTS)
+def test_branch_deleted_upstream_does_not_block_the_pull(tmp_path, script):
+    sandbox = Sandbox(tmp_path)
+    sandbox.git(sandbox.upstream, "branch", "topic")
+    sandbox.git(sandbox.plugin, "fetch", "-q")
+    sandbox.git(sandbox.upstream, "branch", "-D", "topic")
+    sandbox.git(sandbox.upstream, "branch", "topic/new")
+    sandbox.publish("version 2")
+
+    result = sandbox.upgrade(script, Z4D_UPGRADE_FAIL_ON_GIT_PULL="1")
+
+    assert result.returncode == 0
+    assert sandbox.code == "version 2"
+    remotes = sandbox.plugin / ".git" / "refs" / "remotes" / "origin"
+    assert not (remotes / "topic").is_file()
+
+
+@pytest.mark.parametrize("script", SCRIPTS)
+def test_local_branches_and_tags_are_kept(sandbox, script):
+    sandbox.git(sandbox.plugin, "branch", "my-branch")
+    sandbox.git(sandbox.plugin, "tag", "my-tag")
+
+    sandbox.upgrade(script)
+
+    sandbox.git(sandbox.plugin, "rev-parse", "--verify", "refs/heads/my-branch")
+    sandbox.git(sandbox.plugin, "rev-parse", "--verify", "refs/tags/my-tag")
