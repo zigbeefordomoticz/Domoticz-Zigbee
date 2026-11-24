@@ -12,6 +12,8 @@ echo "----------------------------------------------------"
 VENV_PATH=""
 VENV_ACTIVATED=false
 PKG_MANAGER=""
+GIT_PULL_FAILED=false
+GIT_PULL_OUTPUT=""
 PYTHON_VERSION="python${1:-3}"
 PIP_OPTIONS="--no-input install -r requirements.txt --ignore-requires-python --upgrade"
 
@@ -178,6 +180,18 @@ is_docker() {
 }
 
 update_git_config() {
+    # A plugin installed from a release archive (PyPluginStore release delivery, or a
+    # downloaded zip) has no .git: there is nothing to pull, and its code is updated
+    # by whoever installed it. The Python modules are still upgraded further down.
+    if [ ! -e .git ]; then
+        if [ -f .pypluginstore.json ]; then
+            echo "Plugin installed by PyPluginStore from a release: skipping git pull, update the plugin code from PyPluginStore."
+        else
+            echo "Plugin folder is not a git checkout: skipping git pull."
+        fi
+        return 0
+    fi
+
     echo "Updating git configuration..."
     dir=$(pwd)
     if ! git config --get-all --global safe.directory | grep -qx "$dir"; then
@@ -185,8 +199,35 @@ update_git_config() {
         echo "Added safe.directory: $dir"
     fi
 
-    [ "$(is_docker)" ] && git config --global pull.rebase false
-    git pull || echo "Warning: git pull failed, continuing..."
+    if is_docker; then
+        git config --global pull.rebase false || echo "Warning: cannot set git pull.rebase, continuing..."
+    fi
+    if GIT_PULL_OUTPUT=$(git pull 2>&1); then
+        echo "$GIT_PULL_OUTPUT"
+    else
+        GIT_PULL_FAILED=true
+        echo "$GIT_PULL_OUTPUT"
+        echo "ERROR: git pull failed, the upgrade continues with the Python modules only."
+    fi
+}
+
+# A failed git pull does not prevent the upgrade of the Python modules, but it must not look
+# like a successful upgrade: the plugin code is still the previous one.
+# The exit code stays 0 unless the caller asks for it (the WebUI does): customstart.sh, which
+# users copy outside of the plugin, takes a non-zero code for "Python modules not installed"
+# and runs the whole upgrade again.
+report_pull_failure() {
+    [ "$GIT_PULL_FAILED" = true ] || return 0
+
+    echo ""
+    echo "ERROR: the plugin code was NOT updated, 'git pull' failed:"
+    echo "$GIT_PULL_OUTPUT" | tail -n 15
+    echo "The Python modules are those of the version already installed."
+    echo "See https://zigbeefordomoticz.github.io/wiki/en-eng/Plugin_Update.html#in-case-of-error"
+    if [ "${Z4D_UPGRADE_FAIL_ON_GIT_PULL:-}" = "1" ]; then
+        exit 10
+    fi
+    exit 0
 }
 
 print_version_info() {
@@ -211,7 +252,7 @@ check_and_upgrade_pip
 update_git_config
 update_python_modules
 print_version_info
-
+report_pull_failure
 
 echo ""
 echo "Plugin upgrade process completed successfully."
