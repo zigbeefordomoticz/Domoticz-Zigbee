@@ -20,6 +20,9 @@ from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
 from Modules.zigateConsts import SIZE_DATA_TYPE, analog_value
 
+# What the WebUI edits in a reporting configuration. Anything else (the manufacturer code) is kept as it is.
+EDITED_FIELDS = ("DataType", "MinInterval", "MaxInterval", "TimeOut", "Change")
+
 
 def rest_cfgrpt_ondemand(self, verb, data, parameters):
     # Trigger a Cfg Reporting on a specific Device
@@ -229,7 +232,8 @@ def rest_cfgrpt_ondemand_with_config_put(self, verb, data, parameters , _respons
         for attribute in attributes_list:
             if "Attribute" not in attribute:
                 continue
-            cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ] = {}
+            cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ] = fields_not_edited(
+                self, nwkid, cluster_info["ClusterId"], attribute[ "Attribute"])
             # All data are sent by the Frontend in hex. We need to make sure they are store in the proper format
             for info in attribute["Infos"]:
                 if "MinInterval" in info:
@@ -309,6 +313,19 @@ def get_cfg_rpt_record(self, NwkId):
         return self.DeviceConf[ self.ListOfDevices[NwkId]["Model"]]["ConfigureReporting" ]
 
     return None
+
+
+def fields_not_edited(self, nwkid, cluster, attribute):
+    device = self.ListOfDevices[nwkid]
+    fields = {}
+    for record in (
+        self.DeviceConf.get(device.get("Model") or "", {}).get("ConfigureReporting"),
+        device.get(STORE_CUSTOM_CONFIGURE_REPORTING),
+    ):
+        attributes = ((record or {}).get(cluster) or {}).get("Attributes") or {}
+        fields.update({key: value for key, value in (attributes.get(attribute) or {}).items() if key not in EDITED_FIELDS})
+
+    return fields
 
 
 def datatype_formating( self, value, data_type):

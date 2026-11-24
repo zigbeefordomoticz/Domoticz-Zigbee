@@ -1020,6 +1020,14 @@ def manufacturer_specific_attribute(self, key, cluster, attr, cfg_attribute):
         self.logging( "Debug", f'manufacturer_specific_attribute - NwkId: {key} found attribute: {attr} Manuf Specific, return ManufCode: {cfg_attribute["ManufSpecific"]}', nwkid=key )
         return cfg_attribute["ManufSpecific"]
 
+    # A custom configuration saved from the WebUI used to lose it: the one of the device configuration then applies
+    if STORE_CUSTOM_CONFIGURE_REPORTING in self.ListOfDevices[key]:
+        model_configuration = deviceconf_device(self, key).get(STORE_CONFIGURE_REPORTING) or {}
+        attributes = (model_configuration.get(cluster) or {}).get("Attributes") or {}
+        return (attributes.get(attr) or {}).get("ManufSpecific")
+
+    return None
+
 
 def store_read_configure_reporting_record( self, NwkId, Ep, ClusterId, status, attribute, DataType, MinInterval, MaxInterval, Change, timeout ):
     
