@@ -691,7 +691,10 @@ def request_widget_creation(self, NwkId, reason, remove_existing_widgets=False):
     widgets themselves - they record the request here and
     process_widget_creation_requests() carries it out from the heartbeat.
 
-    Only ListOfDevices is touched here, and that is a ThreadSafeDeviceDict.
+    ``self`` is the WebServer for a REST endpoint and the plugin for the heartbeat.
+    Both hold the same ``widget_creation_requests`` dict: plugin.py creates it and
+    start_web_server() hands it over. It is not created here on demand, as that
+    gives the WebServer a queue of its own, which the heartbeat never reads.
 
     ``remove_existing_widgets`` additionally drops the device's current widgets
     first, which is what changing a device's model requires.
@@ -699,9 +702,7 @@ def request_widget_creation(self, NwkId, reason, remove_existing_widgets=False):
     Returns the number of heartbeats before the request is expected to be served,
     so a caller can tell the user when to look.
     """
-    queued = getattr(self, "widget_creation_requests", None)
-    if queued is None:
-        queued = self.widget_creation_requests = {}
+    queued = self.widget_creation_requests
 
     pending = queued.get(NwkId)
     if pending:

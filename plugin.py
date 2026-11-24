@@ -309,6 +309,9 @@ class BasePlugin:
         self.PluginStores = {}
         # Created here, before the transport and the WebServer use it from their threads
         setattr(self, GP_FEED_ATTRIBUTE, GreenPowerFeed())
+        # Widget (re)creations asked for by the WebUI, per NwkId (Modules/domoCreate.py).
+        # start_web_server() hands this same dict to the WebServer: never reassign it.
+        self.widget_creation_requests = {}
         self.pluginParameters = None
 
         self.PluginHealth = {}
@@ -1808,6 +1811,7 @@ def start_web_server(self, webserver_port, webserver_homefolder):
     )
     if self.FirmwareVersion:
         self.webserver.update_firmware(self.FirmwareVersion)
+    self.webserver.update_widget_creation_requests(self.widget_creation_requests)
     self.webserver.update_plugin_stores(self.PluginStores)
     self.webserver.update_green_power_feed(gp_feed(self))
     self.webserver.update_green_power_models(gp_models(self))

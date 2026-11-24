@@ -224,6 +224,8 @@ class WebServer(object):
         self.fakeDevicesInPairingMode = 0
         # Plugin stores (Modules/database.load_plugin_stores), set by update_plugin_stores()
         self.PluginStores = {}
+        # The plugin's queue of widget creations, set by update_widget_creation_requests()
+        self.widget_creation_requests = None
         # Green Power pairing feed (Modules/greenPowerFeed.py), set by update_green_power_feed()
         self.GreenPowerFeed = None
         self.IEEE2NWK = IEEE2NWK
@@ -294,6 +296,10 @@ class WebServer(object):
 
     def update_plugin_stores(self, plugin_stores):
         self.PluginStores = plugin_stores or {}
+
+    def update_widget_creation_requests(self, requests):
+        # The dict the heartbeat drains, not a copy: the REST handlers queue into it
+        self.widget_creation_requests = requests
 
     def update_green_power_feed(self, feed):
         self.GreenPowerFeed = feed
