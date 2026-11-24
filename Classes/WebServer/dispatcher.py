@@ -31,6 +31,7 @@ def setup_list_rest_commands( self ):
         {"Name": "casaia-update-ircode", "Verbs": {"PUT"}, "function": self.rest_casa_device_ircode_update },
         {"Name": "cfgrpt-ondemand", "Verbs": {"GET"}, "function": self.rest_cfgrpt_ondemand},
         {"Name": "cfgrpt-ondemand-config", "Verbs": { "GET", "PUT", "DELETE" }, "function": self.rest_cfgrpt_ondemand_with_config},
+        {"Name": "cfgrpt-read", "Verbs": {"GET", "PUT"}, "function": self.rest_cfgrpt_read},
         {"Name": "change-channel", "Verbs": {"PUT"}, "function": self.rest_change_channel},
         {"Name": "change-model", "Verbs": {"PUT"}, "function": self.rest_change_model_name},
         {"Name": "clear-error-history", "Verbs": {"GET"}, "function": self.rest_logErrorHistoryClear },
