@@ -49,7 +49,9 @@ def rest_plugin_upgrade(self, verb, data, parameters):
         text=True,
         capture_output=True,
         shell=True,
-        errors='backslashreplace'
+        errors='backslashreplace',
+        # Plugin code not updated (git pull failed) is a failed upgrade for the WebUI
+        env={**os.environ, "Z4D_UPGRADE_FAIL_ON_GIT_PULL": "1"},
     )
     output = str(process.stdout) + str(process.stderr)
     result = {"result": output, "ReturnCode": process.returncode }
