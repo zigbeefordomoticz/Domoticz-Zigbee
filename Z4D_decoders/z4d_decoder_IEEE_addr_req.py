@@ -34,9 +34,10 @@ def Decode0041(self, Devices, MsgData, MsgLQI):
 
     # Guard: controller must be fully initialised before we can answer
     if not self.ControllerNWKID or not self.ControllerIEEE:
-        self.log.logging('Input', 'Error',
+        # Expected while starting up: a Warning does not raise the Domoticz error nor feed the error history
+        self.log.logging('Input', 'Warning',
             'Decode0041 - Controller not ready (NwkId=%s IEEE=%s), dropping request' % (
-                self.ControllerNWKID, self.ControllerIEEE))
+                self.ControllerNWKID, self.ControllerIEEE), srcNwkId)
         return
 
     if nwkid == self.ControllerNWKID:
