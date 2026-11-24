@@ -22,7 +22,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-IEEE = "a4c138604ac0aa20"
+IEEE = "a4c1380000000001"
 NWKID = "76c4"
 PLUGIN = "Zigbee"
 
