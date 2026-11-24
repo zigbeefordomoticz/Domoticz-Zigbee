@@ -42,6 +42,48 @@ def rest_cfgrpt_ondemand(self, verb, data, parameters):
     return _response
 
 
+def rest_cfgrpt_read(self, verb, data, parameters):
+    """Reporting configuration held by the device.
+
+    PUT cfgrpt-read/<nwkid>: ask the device. It answers later, and only if it is awake.
+    GET cfgrpt-read/<nwkid>: what it answered so far, one record per endpoint, cluster and attribute.
+    """
+    _response = prepResponseMessage(self, setupHeadersResponse())
+
+    if len(parameters) != 1 or parameters[0] == "0000" or parameters[0] not in self.ListOfDevices:
+        self.logging("Log", f"rest_cfgrpt_read - [CFGR0201] unknown device {verb} {parameters}")
+        _response["Status"] = "404 NOT FOUND"
+        _response["Data"] = json.dumps({"Error": "UNKNOWN_DEVICE"})
+        return _response
+
+    nwkid = parameters[0]
+    if verb == "GET":
+        _response["Data"] = json.dumps(read_reporting_records(self, nwkid))
+        return _response
+
+    if self.configureReporting is None:
+        self.logging("Log", f"rest_cfgrpt_read - [CFGR0202] configure reporting not ready {verb} {parameters}")
+        _response["Status"] = "503 SERVICE UNAVAILABLE"
+        _response["Data"] = json.dumps({"Error": "NOT_READY"})
+        return _response
+
+    asked = self.configureReporting.read_reporting_configuration_on_demand(nwkid)
+    _response["Data"] = json.dumps({"Attributes": asked, "TimeStamp": int(time.time())})
+    return _response
+
+
+def read_reporting_records(self, nwkid):
+    stored = self.ListOfDevices[nwkid].get(STORE_READ_CONFIGURE_REPORTING) or {}
+    records = []
+    # Copies: an answer of the device can be stored while we are reading
+    for ep, clusters in list(stored.get("Ep", {}).items()):
+        for cluster, attributes in list(clusters.items()):
+            for attribute, info in list(attributes.items()):
+                records.append({"Ep": ep, "ClusterId": cluster, "Attribute": attribute, **info})
+
+    return {"TimeStamp": stored.get("TimeStamp"), "Records": records}
+
+
 def rest_cfgrpt_ondemand_with_config(self, verb, data, parameters ):
 
 

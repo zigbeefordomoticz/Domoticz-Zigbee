@@ -100,7 +100,8 @@ class WebServer(object):
     from Classes.WebServer.rest_Casaia import (rest_casa_device_ircode_update,
                                                rest_casa_device_list)
     from Classes.WebServer.rest_CfgReporting import (
-        rest_cfgrpt_ondemand, rest_cfgrpt_ondemand_with_config)
+        rest_cfgrpt_ondemand, rest_cfgrpt_ondemand_with_config,
+        rest_cfgrpt_read)
     from Classes.WebServer.rest_Chameleon import rest_chameleon_tic
     from Classes.WebServer.rest_change_ModelName import rest_change_model_name
     from Classes.WebServer.rest_device_params import rest_device_param
