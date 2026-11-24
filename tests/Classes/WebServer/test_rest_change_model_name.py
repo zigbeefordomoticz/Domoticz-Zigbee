@@ -60,7 +60,8 @@ def results():
                 self.pluginconf = PluginConf()
                 self.ListOfDevices = devices
                 self.log = MagicMock()
-                self.errors = [] self.widget_creation_requests = {}
+                self.errors = []
+                self.widget_creation_requests = {}
             def logging(self, level, message):
                 if level == "Error":
                     self.errors.append(message)
