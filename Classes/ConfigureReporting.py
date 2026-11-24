@@ -375,6 +375,44 @@ class ConfigureReporting:
 
         return wip_flag
 
+    def read_reporting_configuration_on_demand(self, nwkid):
+        """Ask the device how its attributes report (WebUI), battery devices included.
+
+        ZCL has no command listing the reporting table of a device: each attribute has to be named. Ask, on every
+        endpoint which is configured, for the attributes of the reporting configuration of the device and for those
+        read before. The answers are stored by read_report_configure_response().
+
+        Returns the number of attributes asked for.
+        """
+        if nwkid == "0000" or nwkid not in self.ListOfDevices:
+            return 0
+
+        definition = self.retreive_configuration_reporting_definition(nwkid)
+        known = (self.ListOfDevices[nwkid].get(STORE_READ_CONFIGURE_REPORTING) or {}).get("Ep", {})
+        asked = 0
+        for ep in list(self.ListOfDevices[nwkid].get("Ep", {})):
+            if is_fake_ep(self, nwkid, ep) or not is_bind_ep(self, nwkid, ep):
+                continue
+
+            for cluster in getClusterListforEP(self, nwkid, ep):
+                if not do_we_have_to_do_the_work(self, nwkid, ep, cluster):
+                    continue
+
+                configured = (definition.get(cluster) or {}).get("Attributes", {})
+                by_manufacturer = {}
+                for attribute in sorted({*configured, *known.get(ep, {}).get(cluster, {})}):
+                    manufacturer = manufacturer_specific_attribute(self, nwkid, cluster, attribute, configured.get(attribute, {}))
+                    by_manufacturer.setdefault(manufacturer, []).append(int(attribute, 16))
+
+                for manufacturer, attributes in by_manufacturer.items():
+                    self.read_report_configure_request(
+                        nwkid, ep, cluster, attributes, "01" if manufacturer else "00", manufacturer or "0000"
+                    )
+                    asked += len(attributes)
+
+        self.logging("Debug", f"read_reporting_configuration_on_demand - {nwkid} {asked} attributes asked", nwkid=nwkid)
+        return asked
+
     def read_report_configure_request(self, nwkid, epout, cluster_id, attribute_list, manuf_specific="00", manuf_code="0000"):
 
         maxAttributesPerRequest = get_max_cfg_rpt_attribute_value( self, nwkid=nwkid)
