@@ -78,31 +78,31 @@ def gp_devices_for_zigpy(self):
     return list(store.snapshot().values())
 
 
-GP_WIDGET_CREATION_REQUESTS = "gp_widget_creation_requests"
+class GreenPowerRequests:
+    """
+    What is asked of the heartbeat, carried out by
+    Modules/greenPowerWidgets.process_gp_requests().
+
+    A decoder asks with the plugin as self, a REST handler with the WebServer:
+    plugin.py creates the one instance and start_web_server() hands it over.
+    """
+
+    def __init__(self):
+        self.widgets = set()      # IEEE of the GPDs to create the widgets of
+        self.store_flush = False  # write the store
 
 
 def request_gp_widget_creation(self, ieee):
     """
-    Queue the widget creation of a GPD. Decoders run on the forwarder thread;
-    the creation is carried out from the heartbeat by
-    Modules/greenPowerWidgets.process_gp_widget_creation_requests(), as
-    process_widget_creation_requests() does for Zigbee devices.
+    Queue the widget creation of a GPD. Decoders run on the forwarder thread and
+    REST handlers on a WebServer one; the Domoticz API is for the heartbeat.
     """
-    queued = getattr(self, GP_WIDGET_CREATION_REQUESTS, None)
-    if queued is None:
-        queued = set()
-        setattr(self, GP_WIDGET_CREATION_REQUESTS, queued)
-    queued.add(ieee)
+    self.green_power_requests.widgets.add(ieee)
 
 
 def request_gp_store_flush(self):
-    """
-    Have the store written at the next heartbeat, with the device list.
-
-    Same flag as Modules.database.request_flush_plugin_listofdevices(), set
-    here so that the Green Power decoder does not import Modules.database.
-    """
-    self.flush_list_of_devices = True
+    """Have the store written at the next heartbeat, with the device list."""
+    self.green_power_requests.store_flush = True
 
 
 def gp_device_record(frame_record, now, lqi, previous=None):
