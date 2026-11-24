@@ -120,10 +120,14 @@ class ConfigureReporting:
             configure_reporting_for_one_device(self, key, True)
 
     def cfg_reporting_on_demand(self, nwkid):
-        # Remove Cfg Rpt tracking attributes
+        # The user asks for it (WebUI): send the reporting configuration whatever the device last reported.
+        # Remove Cfg Rpt tracking attributes, and with them the mismatch retry counters
         if STORE_CONFIGURE_REPORTING in self.ListOfDevices[nwkid]:
             del self.ListOfDevices[nwkid][STORE_CONFIGURE_REPORTING]
-        configure_reporting_for_one_device(self, nwkid, False)
+
+        # Batch mode skips the devices which are not main powered. A battery device is configured as at pairing
+        # time; a main powered one keeps the batch checks (load, re-bind), the heartbeat doing it if skipped here.
+        configure_reporting_for_one_device(self, nwkid, mainPoweredDevice(self, nwkid))
 
     def prepare_and_send_configure_reporting( self, key, Ep, cluster_configuration, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure ):
 
