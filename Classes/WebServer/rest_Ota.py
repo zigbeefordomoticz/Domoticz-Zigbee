@@ -535,11 +535,17 @@ def rest_ota_firmware_cancel(self, _response, parameter):
 
 
 def rest_ota_firmware_available(self, verb, data, parameters):
-    
+    """The newer firmware found in the online indexes and still to download: one whose file is
+    already in OTAFirmware/ is left out, the update is then started from Admin > Firmware."""
+
     _response = prepResponseMessage(self, setupHeadersResponse())
     _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
     if verb == "GET":
+        if self.OTA:
+            # A firmware file dropped into OTAFirmware/ leaves the list without restarting the plugin
+            self.OTA.rescan_firmware_folders()
+
         _fwAvail = []
         # Iterate over devices
         for device_key, device_data in self.ListOfDevices.items():
@@ -568,6 +574,9 @@ def rest_ota_firmware_available(self, verb, data, parameters):
                 current_version = update_info.get("currentversion", "N/A")
                 newest_version = update_info.get("newestversion", "N/A")
                 url = update_info.get("url", "N/A")
+
+                if self.OTA and self.OTA.restapi_firmware_downloaded(device_key, fwtype, newest_version):
+                    continue
 
                 device = {
                     'nwkid': device_key,
