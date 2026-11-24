@@ -20,11 +20,12 @@
 import time
 
 from Modules.domoticzAbstractLayer import (
-    device_touch_api, domo_read_BatteryLevel, domo_read_Color,
-    domo_read_Device_Idx, domo_read_LastUpdate, domo_read_Name,
-    domo_read_nValue_sValue, domo_read_Options, domo_read_TimedOut,
-    domo_update_api, domoticz_log_api, retrieve_widgetid_from_deviceId_unit,
-    timeout_widget_api, update_battery_api)
+    device_touch_api, domo_delete_widget, domo_read_BatteryLevel,
+    domo_read_Color, domo_read_Device_Idx, domo_read_LastUpdate,
+    domo_read_Name, domo_read_nValue_sValue, domo_read_Options,
+    domo_read_TimedOut, domo_units, domo_update_api, domoticz_log_api,
+    retrieve_widgetid_from_deviceId_unit, timeout_widget_api,
+    update_battery_api)
 from Modules.greenPowerStore import gp_store
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import (is_domoticz_touch,
@@ -687,10 +688,10 @@ def remove_all_widgets( self, Devices, NwkId):
         return
     ieee = self.ListOfDevices[ NwkId ]['IEEE']
 
-    for _unit in list(Devices):
-        if Devices[_unit].DeviceID == ieee:
-            Devices[_unit].Delete()
-        
+    # With DomoticzEx, Devices is keyed by DeviceID and only a unit has a Delete()
+    for unit in domo_units(self, Devices, ieee):
+        domo_delete_widget(self, Devices, ieee, unit)
+
     if "ClusterType" in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["ClusterType"] = {}
     for _ep in self.ListOfDevices[NwkId]["Ep"]:
