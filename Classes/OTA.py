@@ -712,6 +712,25 @@ class OTAManagement(object):
             if image["intManufCode"] == manuf_code and not firmware_file_suits_device(self, nwkid, file_name, image)
         )
 
+    def restapi_firmware_downloaded(self, nwkid, image_type, version):
+        """True when a loaded firmware file that this device may get has this image type, in this
+        version or a newer one: there is nothing left to download, the update starts from the WebUI.
+
+        image_type, version: as OTAUpdate keeps them (decimal strings, see notify_ota_firmware_available()).
+        """
+        try:
+            image_type = int(image_type)
+            version = int(version)
+        except (TypeError, ValueError):
+            return False
+
+        manuf_code = manufacturer_code_of_image_type(self, nwkid, image_type)
+        images = (self.ListOfImages["Brands"][brand][file_name] for brand, file_name in images_in_offer_order(self, nwkid))
+        return any(
+            image["intManufCode"] == manuf_code and image["ImageType"] == image_type and image["originalVersion"] >= version
+            for image in images
+        )
+
 
     def restapi_firmware_update(self, data):
         """
@@ -1657,16 +1676,33 @@ def firmware_update_rejection(self, brand, file_name, target_nwkid, target_ep, f
     return None
 
 
-def known_version_of_image(self, nwkid, image):
-    """The version the device reported in its last Query Next Image Request for this image's manufacturer and type, or None."""
-    ota_client = self.ListOfDevices[nwkid].get("OTAClient", {})
-    queried = ota_client.get("Images", {}).get("%04x" % image["ImageType"])
-    if queried is None and ota_client.get("ImageType") == image["ImageType"]:
+def last_query_of_image_type(self, nwkid, image_type):
+    """What the device sent in its last Query Next Image Request for this image type, or None."""
+    ota_client = self.ListOfDevices.get(nwkid, {}).get("OTAClient", {})
+    queried = ota_client.get("Images", {}).get("%04x" % image_type)
+    if queried is None and ota_client.get("ImageType") == image_type:
         # Device entry written before OTAClient had Images
         queried = ota_client
+    return queried
+
+
+def known_version_of_image(self, nwkid, image):
+    """The version the device reported in its last Query Next Image Request for this image's manufacturer and type, or None."""
+    queried = last_query_of_image_type(self, nwkid, image["ImageType"])
     if queried is None or queried.get("ManufacturerCode") != image["intManufCode"]:
         return None
     return queried.get("CurrentImageVersion")
+
+
+def manufacturer_code_of_image_type(self, nwkid, image_type):
+    """The manufacturer code the device asks this image type with, else the one of its node descriptor, or None."""
+    queried = last_query_of_image_type(self, nwkid, image_type)
+    if queried is not None and queried.get("ManufacturerCode") is not None:
+        return queried["ManufacturerCode"]
+    try:
+        return int(self.ListOfDevices.get(nwkid, {}).get("Manufacturer"), 16)
+    except (TypeError, ValueError):
+        return None
 
 
 def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_update=False):
