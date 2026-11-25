@@ -275,6 +275,7 @@ SETTINGS = {
             "Ikea": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Illuminance": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Input": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "KeepAlive": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "LQIthreshold": { "type": "int", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False },
             "Legrand": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "ListImportedModules": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },

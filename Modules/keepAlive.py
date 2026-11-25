@@ -19,6 +19,9 @@ network when the reads stay without answer.
 
 The Read Attributes Response must be APS encrypted (section 3.18.4): zigpySend does it for
 this cluster, see APS_ENCRYPTED_CLUSTERS.
+
+Debug flag "KeepAlive": the read received (Decode0100), the answer (here), the result of the
+send (zigpySend), and the values a device reports on this cluster (Conf/ZclDefinitions/0025.json).
 """
 
 from Modules.sendZigateCommand import raw_APS_request
@@ -59,6 +62,11 @@ def keep_alive_read_attribute_request(self, nwkid, src_ep, sqn, cluster_id, attr
     for idx in range(0, len(attributes), 4):
         payload += encode_keep_alive_record(attributes[idx:idx + 4])
 
-    self.log.logging("Input", "Debug", f"Decode0100 - keep_alive_read_attribute_request - {nwkid}/{src_ep} attributes: {attributes} response: {payload}", nwkid)
+    ack_is_disabled = is_ack_tobe_disabled(self, nwkid)
+    self.log.logging(
+        ["Input", "KeepAlive"], "Debug",
+        f"keep_alive_read_attribute_request - {nwkid}/{src_ep} sqn: {sqn} attributes: {attributes} response: {payload} ackIsDisabled: {ack_is_disabled}",
+        nwkid,
+    )
 
-    raw_APS_request(self, nwkid, src_ep, cluster_id, "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, nwkid))
+    raw_APS_request(self, nwkid, src_ep, cluster_id, "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=ack_is_disabled)

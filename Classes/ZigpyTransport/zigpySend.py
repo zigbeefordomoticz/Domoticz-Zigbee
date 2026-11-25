@@ -57,8 +57,9 @@ WAITING_TIME_BETWEEN_REQUESTS = .100  # inter-request pacing
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 VERIFY_KEY_DELAY = 6                  # extra delay for verify-key commands
 PROFILE_ZHA = 0x0104
+KEEP_ALIVE_CLUSTER = 0x0025
 # Clusters whose frames must be APS encrypted with the device's link key (ZCL r8 section 3.18.4 for Keep-Alive)
-APS_ENCRYPTED_CLUSTERS = {0x0025}
+APS_ENCRYPTED_CLUSTERS = {KEEP_ALIVE_CLUSTER}
 
 
 # ---------------------------------------------------------------------------
@@ -406,6 +407,12 @@ async def zigpy_broadcast(
 # transport_request — concurrency gate + retry wrapper
 # ---------------------------------------------------------------------------
 
+def _log_keep_alive(self, profile, cluster, nwkid, message):
+    """Log what happens to a Keep-Alive answer under its own debug flag."""
+    if profile == PROFILE_ZHA and cluster == KEEP_ALIVE_CLUSTER:
+        self.log.logging("KeepAlive", "Debug", f"Keep-Alive answer to 0x{nwkid} {message}", nwkid)
+
+
 def measure_execution_time(func):
     """Decorator that optionally times and logs transport_request execution."""
     @functools.wraps(func)
@@ -491,6 +498,7 @@ async def transport_request(
                 f"transport_request: Request {sequence} skipped. Device not reachable: "
                 f"NwkId: {_nwkid} IEEE: {_ieee}"
             )
+            _log_keep_alive(self, Profile, Cluster, _nwkid, f"{_ieee} skipped, device not reachable")
             return None
 
         result = await _send_and_retry(
@@ -531,7 +539,7 @@ async def _send_and_retry(
                          f"_send_and_retry: {function} {common_log_info} "
                          f"extended_timeout: {extended_timeout} Attempt: {attempt}")
         try:
-            result, _ = await zigpy_request(
+            result, message = await zigpy_request(
                 self, destination, profile, cluster,
                 source_ep, dest_ep, sequence, payload,
                 ack_is_disable=ack_is_disable,
@@ -540,6 +548,7 @@ async def _send_and_retry(
                 priority=packet_priority,
             )
         except asyncio.TimeoutError:
+            _log_keep_alive(self, profile, cluster, nwkid, f"{ieee} attempt: {attempt} timeout")
             self.log.logging("TransportZigpy", "Debug",
                              f"Timeout while submitting - {function} {common_log_info} Attempt: {attempt}")
             self.statistics._reTx += 1
@@ -556,6 +565,9 @@ async def _send_and_retry(
             return 0xB6
 
         else:
+            _log_keep_alive(self, profile, cluster, nwkid,
+                            f"{ieee} payload: {payload.hex()} APS encrypted AckIsDisable: {ack_is_disable} "
+                            f"attempt: {attempt} result: {result!r} {message or ''}")
             if result == -1:
                 return result
 

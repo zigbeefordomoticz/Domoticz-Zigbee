@@ -11,11 +11,16 @@ Coverage:
   - an unsupported attribute gets a status-only record and does not drop the others
   - a repeated sequence number is answered again
   - the answer goes to the requesting endpoint, with the device's ack setting
+  - the answered attributes agree with Conf/ZclDefinitions/0025.json
+  - the answer is logged under the KeepAlive debug flag, which is declared in PluginConf
 """
 
+import ast
 import importlib
+import json
 import sys
 import types
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -26,6 +31,9 @@ EP = "02"
 
 BASE_RECORD = "0000" + "00" + "20" + "0a"
 JITTER_RECORD = "0100" + "00" + "21" + "2c01"
+
+REPO = Path(__file__).resolve().parents[2]
+ZCL_DEFINITION = REPO / "Conf" / "ZclDefinitions" / "0025.json"
 
 
 def _make_stub(name, **attrs):
@@ -99,3 +107,43 @@ def test_ack_setting_of_the_device(ka, ack_disabled):
     ka._ack.return_value = ack_disabled
     _, kwargs = _request(ka, "0000")
     assert kwargs["ackIsDisabled"] is ack_disabled
+
+
+def test_answers_agree_with_the_zcl_definition(ka):
+    definition = json.loads(ZCL_DEFINITION.read_text(encoding="utf-8"))
+    assert definition["ClusterId"] == "0025"
+    assert definition["Enabled"]
+
+    mandatory = {attr for attr, details in definition["Attributes"].items() if details["Mandatory"]}
+    assert mandatory == set(ka.KEEP_ALIVE_ATTRIBUTES)
+
+    for attribute, (data_type, size, value) in ka.KEEP_ALIVE_ATTRIBUTES.items():
+        details = definition["Attributes"][attribute]
+        low, high = (int(bound, 16) for bound in details["Range"])
+        assert details["DataType"] == data_type
+        assert int(details["Default"], 16) == value
+        assert low <= value <= high < 256 ** size
+
+
+def test_answer_logged_under_the_keep_alive_flag(ka):
+    plugin = MagicMock()
+    ka.keep_alive_read_attribute_request(plugin, NWKID, EP, "05", "0025", "0000")
+
+    (modules, log_type, message, nwkid), _ = plugin.log.logging.call_args
+    assert "KeepAlive" in modules
+    assert log_type == "Debug"
+    assert "180501" + BASE_RECORD in message
+    assert nwkid == NWKID
+
+
+def test_keep_alive_flag_is_declared():
+    """An undeclared debug flag is logged as an Error by LoggingManagement."""
+    settings = ast.literal_eval(next(
+        node.value for node in ast.parse((REPO / "Classes" / "PluginConf.py").read_text(encoding="utf-8")).body
+        if isinstance(node, ast.Assign) and node.targets[0].id == "SETTINGS"
+    ))
+    flag = settings["VerboseLogging"]["param"]["KeepAlive"]
+    assert flag["type"] == "bool"
+    assert flag["default"] == 0
+    assert not flag["hidden"]
+    assert json.loads(ZCL_DEFINITION.read_text(encoding="utf-8"))["Debug"] == "KeepAlive"
