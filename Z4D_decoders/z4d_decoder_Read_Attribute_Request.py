@@ -3,6 +3,7 @@ import time
 from Modules.basicInputs import read_attribute_response
 from Modules.basicOutputs import handle_unknow_device
 from Modules.domoTools import lastSeenUpdate
+from Modules.keepAlive import keep_alive_read_attribute_request
 from Modules.livolo import livolo_read_attribute_request
 from Modules.schneider_wiser import wiser_read_attribute_request
 from Modules.tools import (timeStamped, updLQI, updSQN,
@@ -73,6 +74,10 @@ def Decode0100(self, Devices, MsgData, MsgLQI):
     if MsgClusterId == '000a':
         self.log.logging(['Input', 'TimeServer'], 'Debug', 'Decode0100 - Time Server Cluster %s/%s nbAttribute: %s' % (MsgSrcAddr, MsgSrcEp, nbAttribute))
         timeserver_multiple_read_attribute_request(self, Devices, MsgSrcAddr, MsgSrcEp, MsgDstEp, MsgSqn, MsgClusterId, MsgManufSpec, MsgManufCode, MsgData[24:], nbAttribute)  
+        return
+
+    if MsgClusterId == '0025' and MsgManufSpec == '00':
+        keep_alive_read_attribute_request(self, MsgSrcAddr, MsgSrcEp, MsgSqn, MsgClusterId, MsgData[24:])
         return
 
     # Iterate over attributes in the message data

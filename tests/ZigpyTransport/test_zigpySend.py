@@ -13,6 +13,7 @@ Covers:
   - _get_destination               (address-mode routing)
   - send_broadcast_command         (app.broadcast wrapper)
   - send_multicast_command         (app.mrequest wrapper)
+  - zigpy_request                  (APS encryption of the Keep-Alive cluster)
 """
 
 import asyncio
@@ -368,6 +369,46 @@ class TestSendMulticastCommand(unittest.TestCase):
             result, msg = run(send_multicast_command(t, "0005", 0x0104, "0006", 1, 0, b"\x01"))
         t.app.mrequest.assert_called_once()
         self.assertEqual(result, 0x00)
+
+
+# ===========================================================================
+# zigpy_request — APS encryption
+# ===========================================================================
+
+class TestZigpyRequestApsEncryption(unittest.TestCase):
+    """ZCL r8 3.18.4: the Keep-Alive Read Attributes Response must be APS encrypted (issue #2324)."""
+
+    def _tx_options(self, profile, cluster, ack_is_disable=False):
+        from Classes.ZigpyTransport import zigpySend
+        t = make_transport()
+        t.app.send_packet = AsyncMock()
+        t.app.config = {zigpySend.zigpy.config.CONF_SOURCE_ROUTING: False}
+        with patch.object(zigpySend.t, "ZigbeePacket") as packet, \
+                patch.object(zigpySend.t, "AddrModeAddress"), \
+                patch.object(zigpySend.t, "SerializableBytes"):
+            run(zigpySend.zigpy_request(t, MagicMock(), profile, cluster, 1, 1, 5, b"\x18\x05\x01",
+                                        ack_is_disable=ack_is_disable))
+        t.app.send_packet.assert_awaited_once()
+        return packet.call_args.kwargs["tx_options"]
+
+    def test_keep_alive_is_encrypted_and_acked(self):
+        import zigpy.types as zt
+        self.assertEqual(self._tx_options(0x0104, 0x0025),
+                         zt.TransmitOptions.ACK | zt.TransmitOptions.APS_Encryption)
+
+    def test_keep_alive_is_encrypted_without_ack(self):
+        import zigpy.types as zt
+        self.assertEqual(self._tx_options(0x0104, 0x0025, ack_is_disable=True),
+                         zt.TransmitOptions.APS_Encryption)
+
+    def test_other_clusters_are_not(self):
+        import zigpy.types as zt
+        for cluster in (0x0000, 0x0006, 0x000a, 0x0019, 0x0500):
+            self.assertEqual(self._tx_options(0x0104, cluster), zt.TransmitOptions.ACK)
+
+    def test_zdo_cluster_with_the_same_id_is_not(self):
+        import zigpy.types as zt
+        self.assertEqual(self._tx_options(0x0000, 0x0025), zt.TransmitOptions.ACK)
 
 
 if __name__ == "__main__":

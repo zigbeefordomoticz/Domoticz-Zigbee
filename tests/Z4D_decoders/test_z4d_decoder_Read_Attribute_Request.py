@@ -80,6 +80,24 @@ class TestDecode0100:
         assert multi.call_args[0][9] == "000000020007"
         rar.assert_not_called()
 
+    def test_keep_alive_cluster_answered_once_for_all_attributes(self, mod, plugin, monkeypatch):
+        """Cluster 0025 → one answer carrying every attribute (issue #2324)."""
+        plugin.ListOfDevices = {ADDR: {"Model": "ZBMINIL2", "Manufacturer Name": "SONOFF",
+                                       "Manufacturer": "1286"}}
+        keep_alive = MagicMock()
+        monkeypatch.setattr(mod, "keep_alive_read_attribute_request", keep_alive)
+        mod.Decode0100(plugin, {}, _msg(cluster="0025", attr="00000001", nb="02"), LQI)
+        keep_alive.assert_called_once_with(plugin, ADDR, EP, "01", "0025", "00000001")
+
+    def test_keep_alive_manufacturer_specific_read_not_answered(self, mod, plugin, monkeypatch):
+        """A manufacturer specific attribute 0000 is not TCKeepAliveBase."""
+        plugin.ListOfDevices = {ADDR: {"Model": "ZBMINIL2", "Manufacturer Name": "SONOFF",
+                                       "Manufacturer": "1286"}}
+        keep_alive = MagicMock()
+        monkeypatch.setattr(mod, "keep_alive_read_attribute_request", keep_alive)
+        mod.Decode0100(plugin, {}, _msg(cluster="0025", attr="0000", manuf_spec="01", manuf_code="1286"), LQI)
+        keep_alive.assert_not_called()
+
     def test_other_cluster_logs(self, mod, plugin, monkeypatch):
         """Unknown cluster/attribute → logs Read Attribute Request."""
         plugin.ListOfDevices = {ADDR: {"Model": "SomeModel", "Manufacturer Name": "",
