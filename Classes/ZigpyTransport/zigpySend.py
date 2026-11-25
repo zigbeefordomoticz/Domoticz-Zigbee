@@ -253,6 +253,10 @@ async def zigpy_request(
         self.log.logging("TransportZigpy", "Log", "zigpy_request: app is None, cannot send packet")
         return (zigpy.zcl.foundation.Status.DELIVERY_ERROR, "ZCL FAILURE: app is None")
 
+    # The supervisor replaces self.app on a stack restart, which can happen during the send
+    app = self.app
+    nwkid = device.nwk.serialize()[::-1].hex()
+
     if use_ieee:
         src = t.AddrModeAddress(addr_mode=t.AddrMode.IEEE, address=self.app.state.node_info.ieee)
         dst = t.AddrModeAddress(addr_mode=t.AddrMode.IEEE, address=device.ieee)
@@ -275,7 +279,7 @@ async def zigpy_request(
         tx_options |= t.TransmitOptions.FORCE_ROUTE_DISCOVERY
 
     try:
-        await self.app.send_packet(
+        await app.send_packet(
             t.ZigbeePacket(
                 src=src,
                 src_ep=src_ep,
@@ -322,7 +326,7 @@ async def zigpy_request(
 
     except Exception as e:
         self.log.logging(
-            "TransportZigpy", "Error",
+            "TransportZigpy", _log_level_of_send_failure(self, app, e, nwkid),
             f"zigpy_request: Error sending packet\n"
             f"  src={src}, src_ep={src_ep}, dst={dst}, dst_ep={dst_ep}, tsn={sequence}\n"
             f"  profile_id={profile}, cluster_id={cluster}, "
@@ -333,7 +337,51 @@ async def zigpy_request(
         )
         return (zigpy.exceptions.DeliveryError, f"ZCL FAILURE: {e}")
 
+    _radio_is_back(self)
     return (zigpy.zcl.foundation.Status.SUCCESS, "")
+
+
+def _radio_is_down(app, exception):
+    """
+    Is the send failure due to the link to the coordinator, and not to the device?
+
+    connection_lost() marks the app as restarting before the pending requests fail, with
+    whatever exception the radio library uses. The requests issued after that are refused
+    with a ControllerException.
+    """
+    return (getattr(app, "restarting", False) is True
+            or isinstance(exception, zigpy.exceptions.ControllerException))
+
+
+def _log_level_of_send_failure(self, app, exception, nwkid):
+    """
+    Level at which zigpy_request logs the details of a failure: Error, or Debug when the radio is down.
+
+    Every request pending when the radio goes down fails at once. One Error tells it for the
+    whole outage: one per request would push everything else out of the error history.
+    """
+    if not _radio_is_down(app, exception):
+        return "Error"
+
+    self._radio_down_requests += 1
+    if self._radio_down_requests == 1:
+        self.log.logging(
+            "TransportZigpy", "Error",
+            f"Radio link down: request to {nwkid} not sent ({type(exception).__name__}: {exception}). "
+            "The next ones are only logged in Debug (TransportZigpy) until the link is back.",
+            nwkid,
+            {"Error code": "ZIGPY-SEND-01", "Exception": f"{type(exception).__name__}: {exception}"},
+        )
+    return "Debug"
+
+
+def _radio_is_back(self):
+    if self._radio_down_requests:
+        self.log.logging(
+            "TransportZigpy", "Status",
+            f"Radio link is back, {self._radio_down_requests} request(s) could not be sent while it was down."
+        )
+        self._radio_down_requests = 0
 
 
 async def zigpy_mrequest(
