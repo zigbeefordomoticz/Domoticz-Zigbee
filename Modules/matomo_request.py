@@ -56,7 +56,8 @@ Custom dimensions (Matomo site ID 9)
 
 Visit scope (13-22): copies of 3, 4 (chipset family only), 1, 6, 5, 2, the
 Python version and CPU architecture parts of 8, 7, and 11 without the board
-revision. See ``populate_custom_dimensions``.
+revision (``Container`` or ``No device tree`` when the host shows no board).
+See ``populate_custom_dimensions``.
 
 Dependencies
 ------------
@@ -105,6 +106,11 @@ _BOARD_REVISION_RE = re.compile(r'\s+Rev\s+\S+$')
 
 RONELABS_MODEL_INFO = "/etc/modelinfo"
 DEVICE_TREE_CONFIGURATION = "/proc/device-tree/model"
+
+# Files the container engines create at the root of a container: Docker, Podman
+CONTAINER_MARKERS = ("/.dockerenv", "/run/.containerenv")
+PLATFORM_CONTAINER = "Container"
+PLATFORM_NO_DEVICE_TREE = "No device tree"
 
 _UPTIME_THRESHOLDS = [
     (1 * 86400, "1 day"),
@@ -181,7 +187,8 @@ def populate_custom_dimensions(self):
         19 – Python version, major.minor only, e.g. ``3.11`` (part of 8)
         20 – CPU architecture, ``platform.machine()``, e.g. ``aarch64`` (part of 8)
         21 – OS distribution (= 7)
-        22 – Hardware platform: 11 without the board revision
+        22 – Hardware platform: 11 without the board revision; without a board
+             model, ``Container`` or ``No device tree``
 
     Returns:
         dict: Mapping of ``"dimensionN"`` keys to sanitised string values.
@@ -253,6 +260,11 @@ def populate_custom_dimensions(self):
         _custom_dimensions[ "dimension11"] = clean_custom_dimension_value(pi_model)
 
     add_visit_dimensions(_custom_dimensions)
+
+    # No board model: tell a container from a host which has none (visit scope only)
+    if VISIT_HARDWARE_DIMENSION not in _custom_dimensions:
+        _custom_dimensions[ VISIT_HARDWARE_DIMENSION] = PLATFORM_CONTAINER if is_container() else PLATFORM_NO_DEVICE_TREE
+
     return _custom_dimensions
 
 
@@ -620,6 +632,18 @@ def clean_custom_dimension_value(value: str) -> str:
         str: Sanitised value safe for inclusion in a Matomo tracking URL.
     """
     return _MULTI_SPACE_RE.sub(' ', _DIMENSION_CLEAN_RE.sub(' ', value)).strip()
+
+
+def is_container():
+    """Tell if the plugin runs in a Docker or Podman container.
+
+    Docker hides ``/sys/firmware`` from its containers, which
+    ``/proc/device-tree`` links to: a Raspberry Pi has no board model there.
+
+    Returns:
+        bool: True when one of ``CONTAINER_MARKERS`` exists.
+    """
+    return any(os.path.exists(marker) for marker in CONTAINER_MARKERS)
 
 
 def get_raspberry_pi_model():
