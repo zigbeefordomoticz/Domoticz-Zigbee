@@ -55,6 +55,9 @@ SEMAPHORE_TIMEOUT = 240               # seconds to wait for a concurrency slot
 WAITING_TIME_BETWEEN_REQUESTS = .100  # inter-request pacing
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 VERIFY_KEY_DELAY = 6                  # extra delay for verify-key commands
+PROFILE_ZHA = 0x0104
+# Clusters whose frames must be APS encrypted with the device's link key (ZCL r8 section 3.18.4 for Keep-Alive)
+APS_ENCRYPTED_CLUSTERS = {0x0025}
 
 
 # ---------------------------------------------------------------------------
@@ -284,6 +287,9 @@ async def zigpy_request(
 
     if not ack_is_disable:
         tx_options |= t.TransmitOptions.ACK
+
+    if profile == PROFILE_ZHA and cluster in APS_ENCRYPTED_CLUSTERS:
+        tx_options |= t.TransmitOptions.APS_Encryption
 
     if force_route_discovery:
         tx_options |= t.TransmitOptions.FORCE_ROUTE_DISCOVERY

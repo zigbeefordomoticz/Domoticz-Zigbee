@@ -82,6 +82,7 @@ class _PacketPriority(_enum.IntEnum):
 class _TransmitOptions(_enum.IntFlag):
     NONE = 0
     ACK  = 1
+    APS_Encryption = 2
 
 
 class _BroadcastAddress(_enum.IntEnum):
