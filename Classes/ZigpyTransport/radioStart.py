@@ -114,6 +114,11 @@ async def start_zigpy_task(self, channel, extended_pan_id):
     # We MUST use queue.Queue (not asyncio.Queue) — Domoticz uses a plain thread
     self.writer_queue = queue.Queue()
 
+    # Counted once the final queue is in place: what was sent before is dropped with the previous one.
+    # _supervisor_running is set by _radio_startup(), only when the radio has started.
+    if getattr(self.app, "_supervisor_running", False):
+        self.stack_starts += 1
+
     try:
         await worker_loop(self)
 
