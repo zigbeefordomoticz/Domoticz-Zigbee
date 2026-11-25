@@ -317,6 +317,10 @@ class BasePlugin:
         self.HeartbeatCount = 0
         self.internalHB = 0
 
+        # Modules/stackRestartPolling.py
+        self.stack_starts_seen = 0
+        self.devices_to_poll_after_restart = []
+
         self.currentChannel = None  # Curent Channel. Set in Decode8009/Decode8024
         self.ControllerIEEE = None  # Zigate IEEE. Set in CDecode8009/Decode8024
         self.ControllerNWKID = None  # Zigate NWKID. Set in CDecode8009/Decode8024

@@ -11,7 +11,7 @@ Covers:
   - blz_configuration_setup
   - optional_configuration_setup
   - radio_start                (unknown module, missing app)
-  - start_zigpy_task           (radio_start timeout, extendedPANID parsing)
+  - start_zigpy_task           (radio_start timeout, extendedPANID parsing, stack_starts)
 """
 
 import asyncio
@@ -500,6 +500,50 @@ class TestStartZigpyTaskTimeout(unittest.TestCase):
             run(start_zigpy_task(t, channel=0, extended_pan_id=0))
 
         self.assertEqual(received_pan_id[0], 0xDEADBEEFDEADBEEF)
+
+
+# ===========================================================================
+# start_zigpy_task — stack_starts, read by Modules/stackRestartPolling.py
+# ===========================================================================
+
+class TestStackStarts(unittest.TestCase):
+
+    def _cycle(self, t, app):
+        from Classes.ZigpyTransport.radioStart import start_zigpy_task
+
+        seen = []
+
+        async def radio_start(transport, *args, **kwargs):
+            transport.writer_queue = queue_during_start
+            transport.app = app
+
+        async def worker_loop(transport):
+            seen.append((transport.stack_starts, transport.writer_queue is queue_during_start))
+
+        queue_during_start = MagicMock()
+        with patch("Classes.ZigpyTransport.radioStart.radio_start", side_effect=radio_start), \
+             patch("Classes.ZigpyTransport.radioStart.worker_loop", new=worker_loop), \
+             patch("Classes.ZigpyTransport.radioStart.asyncio.sleep", new=AsyncMock()):
+            run(start_zigpy_task(t, channel=0, extended_pan_id=0))
+        return seen[0]
+
+    def _transport(self):
+        t = make_transport()
+        t.stack_starts = 0
+        t.pluginconf.pluginConf["extendedPANID"] = "0x1234567890ABCDEF"
+        return t
+
+    def test_counts_each_successful_start_on_the_final_queue(self):
+        t = self._transport()
+        for expected in (1, 2):
+            app = types.SimpleNamespace(_supervisor_running=True, shutdown=AsyncMock())
+            self.assertEqual(self._cycle(t, app), (expected, False))
+
+    def test_failed_start_is_not_counted(self):
+        t = self._transport()
+        self._cycle(t, types.SimpleNamespace(shutdown=AsyncMock()))
+        self._cycle(t, None)
+        self.assertEqual(t.stack_starts, 0)
 
 
 if __name__ == "__main__":
