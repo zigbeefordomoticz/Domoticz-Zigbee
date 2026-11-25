@@ -47,6 +47,9 @@ from Zigbee.zdpCommands import zdp_simple_descriptor_request
 #
 # Host -> Node :  Read Attribute Request ( 0x0500 / 0x0000, 0x0001, 0x0002 )
 
+# A Match_Desc_rsp received later than this (seconds) is not taken for an answer to our request
+MATCH_DESC_REQUEST_LIFETIME = 300
+
 ENROLL_RESPONSE_OK_CODE = 0x00
 ZONE_ID = 0x00
 
@@ -115,6 +118,8 @@ class IAS_Zone_Management:
         self.readZclClusters = readZclClusters
         self.FirmwareVersion = FirmwareVersion
         self.pairing_in_progress = pairing_in_progress
+        # Our Match_Desc_req on cluster 0x0500 waiting for a response. ( NwkId, SQN ): time of the request
+        self.match_desc_requests = {}
 
 
     def logging(self, logType, message):
@@ -124,6 +129,22 @@ class IAS_Zone_Management:
     def setZigateIEEE(self, ZigateIEEE):
         self.logging("Debug", f"setZigateIEEE - Set Zigate IEEE: {ZigateIEEE}")
         self.ControllerIEEE = ZigateIEEE
+
+
+    def match_descriptor_request_sent(self, nwkid, sqn):
+        # To be called before the Match_Desc_req is sent, so that the response cannot come first
+        now = time.time()
+        for key, sent_at in list(self.match_desc_requests.items()):
+            if now - sent_at > MATCH_DESC_REQUEST_LIFETIME:
+                self.match_desc_requests.pop(key, None)
+        self.match_desc_requests[(nwkid, sqn)] = now
+
+
+    def is_match_descriptor_response_expected(self, nwkid, sqn):
+        # A Match_Desc_rsp does not tell which cluster was asked for, only the SQN links it to our request.
+        # One request, one response: the request is forgotten, and a copy of the response is not expected.
+        sent_at = self.match_desc_requests.pop((nwkid, sqn), None)
+        return sent_at is not None and time.time() - sent_at <= MATCH_DESC_REQUEST_LIFETIME
 
 
     def IAS_write_CIE_after_match_descriptor( self, nwkid, ep):
