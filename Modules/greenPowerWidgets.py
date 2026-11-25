@@ -41,7 +41,8 @@ from Modules.domoCreate import (SIMPLE_WIDGET, createSwitchSelector,
                                 selector_style, set_default_value)
 from Modules.domoMaj import maj_domo_widgets
 from Modules.domoticzAbstractLayer import (domo_create_api,
-                                           domo_read_nValue_sValue,
+                                           domo_read_Device_Idx,
+                                           domo_read_nValue_sValue, domo_units,
                                            find_widget_unit_from_WidgetID,
                                            retreive_free_unit_for_widget)
 from Modules.greenPowerFeed import gp_feed, gp_src_id
@@ -148,21 +149,42 @@ def process_gp_requests(self, Devices):
     requests = self.green_power_requests
     while requests.widgets:
         create_gp_widgets(self, Devices, requests.widgets.pop())
+    while requests.recreate:
+        create_gp_widgets(self, Devices, requests.recreate.pop(), recreate=True)
 
     if requests.store_flush:
         requests.store_flush = False
         self.flush_list_of_devices = True
 
 
-def create_gp_widgets(self, Devices, ieee):
-    """Create the widgets of a GPD that has none yet. A GPD commissioned again keeps its widgets."""
+def _live_gp_bindings(self, Devices, ieee, record):
+    """{ep: {widget idx: widget type}} of a GPD, without the widgets deleted from Domoticz."""
+    existing = {str(domo_read_Device_Idx(self, Devices, ieee, unit)) for unit in domo_units(self, Devices, ieee)}
+    live = {}
+    for ep, ep_record in (record.get("Ep") or {}).items():
+        bound = {idx: widget_type for idx, widget_type in (ep_record.get("ClusterType") or {}).items() if str(idx) in existing}
+        if bound:
+            live[ep] = bound
+    return live
+
+
+def create_gp_widgets(self, Devices, ieee, recreate=False):
+    """
+    Create the widgets of a GPD that has none yet. A GPD commissioned again keeps
+    its widgets, and a widget the user deleted stays deleted.
+
+    recreate, asked from the WebUI: create the widgets of its configuration that
+    are missing in Domoticz (deleted one by one, deleted while the plugin was
+    stopped, refused by Domoticz) and keep the others. Widgets are matched per
+    endpoint and type.
+    """
     store = gp_store(self)
     record = store.get(ieee) if store is not None else None
     if record is None:
         return
 
     nwk = record.get("nwk")
-    if any(ep.get("ClusterType") for ep in (record.get("Ep") or {}).values()):
+    if not recreate and any(ep.get("ClusterType") for ep in (record.get("Ep") or {}).values()):
         self.log.logging("GreenPower", "Debug", "Green Power device %s already has its widgets" % ieee, nwk)
         return
 
@@ -174,19 +196,26 @@ def create_gp_widgets(self, Devices, ieee):
         return
 
     nick_name = conf.get("NickName") or model_name
-    ep_records = {}
+    # Recreated: what is still there is kept, whatever its endpoint or type
+    ep_records = {ep: {"ClusterType": bound} for ep, bound in _live_gp_bindings(self, Devices, ieee, record).items()} if recreate else {}
+    created = 0
     for ep, ep_conf in (conf.get("Ep") or {}).items():
-        cluster_type = {}
+        cluster_type = dict(ep_records.get(ep, {}).get("ClusterType", {}))
+        kept = list(cluster_type.values())
         for widget_type in _widget_types(ep_conf):
+            stored_type = SIMPLE_WIDGET.get(widget_type, {}).get("ForceClusterType") or widget_type
+            if stored_type in kept:
+                kept.remove(stored_type)
+                continue
             widget_idx = _create_gp_widget(self, Devices, ieee, nwk, ep, widget_type, nick_name)
             if widget_idx is not None:
-                cluster_type[str(widget_idx)] = SIMPLE_WIDGET.get(widget_type, {}).get("ForceClusterType") or widget_type
+                cluster_type[str(widget_idx)] = stored_type
+                created += 1
         if cluster_type:
             ep_records[ep] = {"ClusterType": cluster_type}
 
     store.update(ieee, {"Model": model_name, "Ep": ep_records})
     request_gp_store_flush(self)
-    created = sum(len(e["ClusterType"]) for e in ep_records.values())
     self.log.logging("GreenPower", "Status", "Green Power device %s: %s widget(s) created as %s" % (ieee, created, model_name), nwk)
     gp_feed(self).add("widgets", IEEE=ieee, SrcId=gp_src_id(ieee), NwkId=nwk, Model=model_name, Widgets=created)
 
