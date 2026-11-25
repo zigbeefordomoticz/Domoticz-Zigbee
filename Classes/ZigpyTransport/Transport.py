@@ -94,6 +94,7 @@ class ZigpyTransport(object):
 
         self._stack_health = "INIT"
         self._restart_count = 0
+        self.stack_starts = 0           # successful stack starts, read by Modules/stackRestartPolling.py
         self._consecutive_failures = 0  # reset to 0 after a stable run; drives radio-recovery hook
         self._restart_timestamps = []   # monotonic timestamps of recent restarts (circuit breaker)
 
