@@ -221,17 +221,18 @@ HEARTBEAT_SCRIPT = textwrap.dedent(
     ra.ReadAttributeReq = lambda self, addr, EpIn, EpOut, Cluster, attributes, **kw: reads.append([addr, Cluster, attributes])
     hb.hr_process_device = lambda *a: None
     hb.check_and_reset_device_if_needed = lambda *a: None
+    # The request queues of the WebUI and Green Power are not under test, whatever they are called and hold
+    for name in [n for n in vars(hb) if n.startswith("process_") and n.endswith("_requests")]:
+        setattr(hb, name, lambda *a: None)
 
     def device(clusters, maccapa="8e", model="", **kw):
         return {"Status": "inDB", "Health": "Live", "Model": model, "MacCapa": maccapa, "IEEE": "", "Param": {},
                 "Ep": {"01": {"ClusterType": {"1": "Switch"}, **{c: {} for c in clusters}}}} | kw
 
-    # Not a MagicMock: the heartbeat drains request queues, and a mocked queue is never empty
+    # Not a MagicMock: an attribute missing here fails, a mocked one could loop for ever
     plugin = types.SimpleNamespace(
         log=MagicMock(), busy=False, pairing_in_progress=False, HeartbeatCount=1,
         adminWidgets=None, groupmgt=None, networkmap=None, networkenergy=None,
-        widget_creation_requests={},
-        green_power_requests=types.SimpleNamespace(widgets=set(), store_flush=False),
         pluginconf=types.SimpleNamespace(pluginConf={"forcePollingAfterAction": 1}),
         DeviceConf={"PollingBattery": {"PollingEnabled": 1}},
         ControllerLink=types.SimpleNamespace(stack_starts=1, loadTransmit=lambda: 0),
