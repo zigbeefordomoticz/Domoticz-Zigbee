@@ -769,9 +769,9 @@ def configure_reporting_for_one_cluster(self, key, Ep, cluster, batchMode, clust
                 self.logging( "Debug", f"------> configure_reporting_for_one_cluster - {key}/{Ep} skip Attribute {attr} for Cluster {cluster} due to ZDeviceID {ZDeviceID}", nwkid=key, )
                 continue
 
-            if "ZDeviceID" in cluster_configuration[attr] and (
-                ZDeviceID not in cluster_configuration[attr]["ZDeviceID"] and len(cluster_configuration[attr]["ZDeviceID"]) != 0
-            ):
+            # The device id is stored in lowercase, the table has it in uppercase (#2335)
+            allowed_device_ids = { x.lower() for x in cluster_configuration[attr].get("ZDeviceID", ()) }
+            if allowed_device_ids and ZDeviceID.lower() not in allowed_device_ids:
                 self.logging( "Debug", f"------> configure_reporting_for_one_cluster - {key}/{Ep} skip Attribute {attr} for Cluster {cluster} due to ZDeviceID {ZDeviceID}", nwkid=key, )
                 continue
 
