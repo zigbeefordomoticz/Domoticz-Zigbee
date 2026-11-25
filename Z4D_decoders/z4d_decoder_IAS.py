@@ -47,12 +47,19 @@ def Decode8046(self, Devices, MsgData, MsgLQI):
     updLQI(self, MsgDataShAddr, MsgLQI)
     
     self.log.logging('Input', 'Debug', 'Decode8046 - Match Descriptor response: SQN: %s Status: %s Nwkid: %s Lenght: %s List: %s' % (MsgDataSQN, MsgDataStatus, MsgDataShAddr, MsgDataLenList, MsgDataMatchList))
-    if MsgDataStatus == '00' and MsgDataLenList != '00' and self.iaszonemgt:
-        idx = 0
-        while idx < int(MsgDataLenList, 16):
-            ep = MsgDataMatchList[idx:idx + 2]
-            idx += 2
-            self.log.logging('Input', 'Debug', 'Decode8046 - Match Descriptor response Nwkid: %sfound Ep: %s Matching 0500' % (MsgDataShAddr, ep))
+    if not self.iaszonemgt:
+        return
+
+    if not self.iaszonemgt.is_match_descriptor_response_expected(MsgDataShAddr, MsgDataSQN):
+        self.log.logging('Input', 'Debug', 'Decode8046 - Match Descriptor response Nwkid: %s SQN: %s is not for a 0500 request, ignored' % (MsgDataShAddr, MsgDataSQN), MsgDataShAddr)
+        return
+
+    if MsgDataStatus == '00' and MsgDataLenList != '00':
+        # Length is a number of endpoints, each one is 2 characters
+        matching_ep = MsgDataMatchList[:2 * int(MsgDataLenList, 16)]
+        for idx in range(0, len(matching_ep), 2):
+            ep = matching_ep[idx:idx + 2]
+            self.log.logging('Input', 'Debug', 'Decode8046 - Match Descriptor response Nwkid: %s found Ep: %s Matching 0500' % (MsgDataShAddr, ep), MsgDataShAddr)
             self.iaszonemgt.IAS_write_CIE_after_match_descriptor(MsgDataShAddr, ep)
 
     

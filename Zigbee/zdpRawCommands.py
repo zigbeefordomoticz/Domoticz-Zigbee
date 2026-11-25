@@ -236,7 +236,11 @@ def zdp_raw_match_desc_req_0500(self, nwkid):
     else:
         _zdp_log(self, "Debug", "zdp_raw_match_desc_req_0500  - [%s] %s Queue Length: %s" % (
             sqn, nwkid, self.ControllerLink.loadTransmit()),)
- 
+
+    if self.iaszonemgt:
+        # The response doesn't hold the cluster: Decode8046 recognises it with the SQN
+        self.iaszonemgt.match_descriptor_request_sent(nwkid, sqn)
+
     raw_APS_request(
         self,
         nwkid,
