@@ -17,12 +17,12 @@ from typing import Dict, Set
 
 from Zigbee.helperDefautResponse import must_send_default_response
 
-from Modules.tools import (get_deviceconf_parameter_value,
-                           is_direction_to_client, is_direction_to_server,
+from Modules.tools import (is_direction_to_client, is_direction_to_server,
                            retreive_cmd_payload_from_8002)
 from Modules.zigateConsts import (SIZE_DATA_TYPE, ZIGATE_EP, composite_value,
                                   discrete_value)
 from Zigbee.encoder_tools import decode_endian_data, encapsulate_plugin_frame
+from Zigbee.zclDuplicateFrames import find_first_frame
 from Zigbee.zclRawCommands import zcl_raw_default_response
 
 MALFORMED_COMMAND = "80"
@@ -36,50 +36,39 @@ SCENE_RESPONSE_MSGTYPES = {
     "06": "80a6",  # Get Scene Membership
 }
 
-def is_duplicate_zcl_frame(self, nwkid, cluster_id, sqn, default_response_disable=False):
+def is_duplicate_zcl_frame(self, nwkid, endpoint, cluster_id, payload, sqn, command):
     """
-    Checks if a given Zigbee ZCL frame is a duplicate based on its sequence number.
+    Check if a ZCL frame is a copy of a frame received just before (see Zigbee.zclDuplicateFrames).
 
-    This function prevents processing duplicate ZCL frames by maintaining a history 
-    of received sequence numbers per cluster for each device.
+    The Default Response sent for the first frame, if any, is sent again for the copy:
+    the device most likely repeats the frame because it did not receive it.
 
     Parameters:
-        nwkid (int): The network ID of the Zigbee device.
-        cluster_id (int): The cluster ID associated with the frame.
-        sqn (int): The sequence number of the received frame.
-        default_response_disable (bool): Flag indicating if default response is disabled.
+        nwkid (str): The network ID of the Zigbee device.
+        endpoint (str): Source endpoint of the frame.
+        cluster_id (str): The cluster ID associated with the frame.
+        payload (str): The ZCL payload, from the frame control to the end of the data.
+        sqn (str): The sequence number of the received frame.
+        command (str): The ZCL command.
 
     Returns:
-        bool: True if the frame is a duplicate, False otherwise.
+        bool: True if the frame is a copy and must not be decoded, False otherwise.
     """
-    if self.zigbee_communication != "zigpy":
-        # No check for zigate
-        return False
-    if nwkid not in self.ListOfDevices:
-        # The device is not yet known
-        return False
-    if "Model" not in self.ListOfDevices[nwkid]:
-        return False
-    if not default_response_disable:
-        # ????
+    first_frame = find_first_frame(self, nwkid, endpoint, cluster_id, payload, sqn, command)
+    if first_frame is None:
         return False
 
-    if (
-        not get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "enableZclDuplicatecheck", return_default=False)
-        or not self.pluginconf.pluginConf.get("enableZclDuplicatecheck", False)
-    ):
-        # We have disabled the ZCL SQN duplicate check
-        return False
+    default_response = first_frame.default_response
+    self.log.logging(
+        ["zclDecoder", "zclDefaultResponse"], "Debug",
+        f"Duplicate frame dropped {nwkid}/{endpoint} cluster: {cluster_id} sqn: {sqn} payload: {payload} "
+        f"default response sent again: {default_response is not None}",
+        nwkid
+    )
+    if default_response is not None:
+        zcl_raw_default_response(self, **default_response)
+    return True
 
-    zcl_sqn = self.ListOfDevices.setdefault(nwkid, {}).setdefault("ZCL-IN-SQN", {})
-
-    if sqn != "00" and sqn == zcl_sqn.get(cluster_id):
-        self.log.logging("zclDecoder", "Log", f"Duplicate frame {nwkid} sqn: {sqn} sqn_clusters{zcl_sqn} cluster_id: {cluster_id} default_response_disable: {default_response_disable}", nwkid)
-        return True  # Duplicate frame detected
-
-    zcl_sqn[cluster_id] = sqn  # Store new sequence number
-
-    return False
 
 def send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufcode, status="00"):
     if self.zigbee_communication != "zigpy":
@@ -126,8 +115,7 @@ def zcl_decoders(self, src_nwk_id, src_endpoint, target_ep, cluster_id, payload,
     disable_default_response, global_command, sqn, manufacturer_code, command, data = retreive_cmd_payload_from_8002(payload)
 
     # Check for duplicate ZCL frames
-    if is_duplicate_zcl_frame(self, src_nwk_id, cluster_id, sqn, disable_default_response):
-        self.log.logging("zclDecoder", "Log", f"Duplicate frame found [{sqn}] {payload}", src_nwk_id)
+    if is_duplicate_zcl_frame(self, src_nwk_id, src_endpoint, cluster_id, payload, sqn, command):
         return None
 
     # Log ZCL message details

@@ -371,6 +371,7 @@ class BasePlugin:
         
         # Zigpy
         self.zigbee_communication = None  # "zigpy" or "native"
+        self.zcl_recent_frames = {}  # Zigbee.zclDuplicateFrames
         #self.pythonModuleVersion = {}
         
         self.device_settings = {}
