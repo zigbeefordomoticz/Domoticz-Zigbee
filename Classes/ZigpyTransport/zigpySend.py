@@ -225,6 +225,29 @@ def _make_unicast_callback(self):
 # Low-level Zigpy packet submission
 # ---------------------------------------------------------------------------
 
+def _is_keep_alive(profile, cluster):
+    return profile == PROFILE_ZHA and cluster == KEEP_ALIVE_CLUSTER
+
+
+def _log_keep_alive(self, nwkid, message):
+    """Log what happens to a Keep-Alive answer under its own debug flag."""
+    self.log.logging("KeepAlive", "Debug", f"Keep-Alive answer to 0x{nwkid} {message}", nwkid)
+
+
+def log_keep_alive_result(func):
+    """Decorator that logs the result of zigpy_request for a Keep-Alive answer."""
+    @functools.wraps(func)
+    async def wrapper(self, device, profile, cluster, *args, **kwargs):
+        result, message = await func(self, device, profile, cluster, *args, **kwargs)
+        if _is_keep_alive(profile, cluster):
+            _log_keep_alive(self, device.nwk.serialize()[::-1].hex(),
+                            f"{device.ieee} APS encrypted AckIsDisable: {kwargs.get('ack_is_disable')} "
+                            f"result: {result!r} {message or ''}")
+        return result, message
+    return wrapper
+
+
+@log_keep_alive_result
 async def zigpy_request(
     self,
     device: zigpy.device.Device,
@@ -407,12 +430,6 @@ async def zigpy_broadcast(
 # transport_request — concurrency gate + retry wrapper
 # ---------------------------------------------------------------------------
 
-def _log_keep_alive(self, profile, cluster, nwkid, message):
-    """Log what happens to a Keep-Alive answer under its own debug flag."""
-    if profile == PROFILE_ZHA and cluster == KEEP_ALIVE_CLUSTER:
-        self.log.logging("KeepAlive", "Debug", f"Keep-Alive answer to 0x{nwkid} {message}", nwkid)
-
-
 def measure_execution_time(func):
     """Decorator that optionally times and logs transport_request execution."""
     @functools.wraps(func)
@@ -498,7 +515,8 @@ async def transport_request(
                 f"transport_request: Request {sequence} skipped. Device not reachable: "
                 f"NwkId: {_nwkid} IEEE: {_ieee}"
             )
-            _log_keep_alive(self, Profile, Cluster, _nwkid, f"{_ieee} skipped, device not reachable")
+            if _is_keep_alive(Profile, Cluster):
+                _log_keep_alive(self, _nwkid, f"{_ieee} skipped, device not reachable")
             return None
 
         result = await _send_and_retry(
@@ -539,7 +557,7 @@ async def _send_and_retry(
                          f"_send_and_retry: {function} {common_log_info} "
                          f"extended_timeout: {extended_timeout} Attempt: {attempt}")
         try:
-            result, message = await zigpy_request(
+            result, _ = await zigpy_request(
                 self, destination, profile, cluster,
                 source_ep, dest_ep, sequence, payload,
                 ack_is_disable=ack_is_disable,
@@ -548,7 +566,6 @@ async def _send_and_retry(
                 priority=packet_priority,
             )
         except asyncio.TimeoutError:
-            _log_keep_alive(self, profile, cluster, nwkid, f"{ieee} attempt: {attempt} timeout")
             self.log.logging("TransportZigpy", "Debug",
                              f"Timeout while submitting - {function} {common_log_info} Attempt: {attempt}")
             self.statistics._reTx += 1
@@ -565,9 +582,6 @@ async def _send_and_retry(
             return 0xB6
 
         else:
-            _log_keep_alive(self, profile, cluster, nwkid,
-                            f"{ieee} payload: {payload.hex()} APS encrypted AckIsDisable: {ack_is_disable} "
-                            f"attempt: {attempt} result: {result!r} {message or ''}")
             if result == -1:
                 return result
 
