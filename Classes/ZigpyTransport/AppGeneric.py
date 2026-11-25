@@ -948,7 +948,10 @@ def _preload_devices_from_plugin_db(self):
             _apply_node_descriptor(self, dev, nwkid, node_desc, source, described, undescribed)
         else:
             dev = self.devices[eui64]
-            LOGGER.warning(
+            # The radio library puts the coordinator in the table itself, at every start
+            is_coordinator = nwk_int == dev.nwk == 0x0000
+            LOGGER.log(
+                logging.DEBUG if is_coordinator else logging.WARNING,
                 "Device with IEEE %s already exists (0x%x, 0x%04x) vs. (%s, 0x%04x) in zigpy db, skipping add_device()",
                 eui64, ieee_int, nwk_int, dev.ieee, dev.nwk,
             )
@@ -1082,7 +1085,9 @@ def get_device(self, ieee=None, nwk=None):
             _nwk = nwk.serialize()[::-1].hex() if nwk is not None else None
             _ieee = "%016x" % zigpy_t.uint64_t.deserialize(ieee.serialize())[0] if ieee is not None else None
 
-            if self.callBackGetDevice(_ieee if ieee else None, _nwk if nwk else None) is not None:
+            found = self.callBackGetDevice(_ieee if ieee else None, _nwk if nwk else None)
+            # bellows looks the coordinator up in start_network(), before adding it to the table
+            if found is not None and found[0] != 0x0000:
                 LOGGER.warning(
                     "get_device miss for a known plugin device ieee=%s nwk=%s — "
                     "device was not pre-loaded at startup", _ieee, _nwk
