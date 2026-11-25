@@ -17,6 +17,7 @@ from Modules.tools import (build_default_response_fcf, build_fcf,
                            describe_fcf, fcf_direction, get_and_inc_ZCL_SQN,
                            is_ack_tobe_disabled)
 from Zigbee.encoder_tools import decode_endian_data
+from Zigbee.zclDuplicateFrames import remember_default_response
 
 DEFAULT_ACK_MODE = False
 
@@ -224,6 +225,14 @@ def zcl_raw_default_response( self, nwkid, cie_ep, dst_ep, cluster, response_to_
 
     self.log.logging(DEFAULT_RESPONSE_LOG, "Debug", f"zcl_raw_default_response ==== payload: {payload}", nwkid)
 
+    remember_default_response(
+        self, nwkid, dst_ep, cluster, sqn, response_to_command,
+        {
+            "nwkid": nwkid, "cie_ep": cie_ep, "dst_ep": dst_ep, "cluster": cluster,
+            "response_to_command": response_to_command, "sqn": sqn, "command_status": command_status,
+            "manufcode": manufcode, "orig_fcf": orig_fcf,
+        }
+    )
     raw_APS_request( self, nwkid, dst_ep, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=cie_ep, highpriority=True, ackIsDisabled=is_ack_tobe_disabled(self, nwkid) )
 
     return sqn
