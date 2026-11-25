@@ -304,12 +304,14 @@ REPO_CONF = Path(__file__).resolve().parents[3] / "Conf"
 def gp_webserver():
     from Modules.greenPowerFeed import GreenPowerFeed
     from Modules.greenPowerModels import load_gp_models
+    from Modules.greenPowerStore import GreenPowerRequests
 
     webserver = FakeWebServer({})
     webserver.log = MagicMock()
     webserver.zigbee_communication = "zigpy"
     webserver.ControllerLink = MagicMock()
     webserver.GreenPowerFeed = GreenPowerFeed()
+    webserver.green_power_requests = GreenPowerRequests()
     load_gp_models(webserver, REPO_CONF)
     return webserver
 
@@ -417,8 +419,8 @@ def test_put_sets_the_type_of_a_gpd_without_widgets_and_queues_its_widgets(gp_we
     assert response["Status"] == "200 OK"
     assert payload == {"IEEE": IEEE, "Model": "GreenPower-OnOff-Dim"}
     assert gp_webserver.PluginStores["GreenPowerDevices"].records[IEEE]["RequestedModel"] == "GreenPower-OnOff-Dim"
-    assert gp_webserver.gp_widget_creation_requests == {IEEE}
-    assert gp_webserver.flush_list_of_devices is True
+    assert gp_webserver.green_power_requests.widgets == {IEEE}
+    assert gp_webserver.green_power_requests.store_flush is True
 
 
 @pytest.mark.parametrize("body", [b"{not json", ["GreenPower-OnOff"], {}, {"Model": None}, {"Model": "No-Such-Type"}])
@@ -430,7 +432,7 @@ def test_put_refuses_a_bad_type(gp_webserver, body):
     assert response["Status"] == "400 BAD REQUEST"
     assert "BE_Error" in payload
     assert "RequestedModel" not in gp_webserver.PluginStores["GreenPowerDevices"].records[IEEE]
-    assert not hasattr(gp_webserver, "gp_widget_creation_requests")
+    assert gp_webserver.green_power_requests.widgets == set()
 
 
 def test_delete_removes_a_gpd_without_widgets(gp_webserver, removals):

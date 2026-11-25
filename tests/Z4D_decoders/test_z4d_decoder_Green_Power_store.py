@@ -117,7 +117,7 @@ def plugin(gp_store_module):
         log=MagicMock(),
         PluginStores={gp_store_module.GP_STORE_NAME: store},
         store=store,
-        flush_list_of_devices=False,
+        green_power_requests=gp_store_module.GreenPowerRequests(),
     )
 
 
@@ -178,7 +178,7 @@ class TestCommissioning:
         assert record["Commissioned"] == record["LastSeen"] > 0
         # Frame-only fields are not stored
         assert "v" not in record and "recommissioned" not in record
-        assert plugin.flush_list_of_devices is True
+        assert plugin.green_power_requests.store_flush is True
 
     def test_commissioned_again_replaces_key_and_counter_keeps_first_time(self, decoder, helpers, plugin, transport, gp_types):
         listener = GreenPowerListener(transport)
@@ -196,8 +196,8 @@ class TestCommissioning:
         assert record["Commissioned"] == 1000
         assert record["LastSeen"] > 1000
 
-    def test_store_not_loaded_is_an_error_with_code(self, decoder, helpers, transport, gp_types):
-        plugin = SimpleNamespace(log=MagicMock(), flush_list_of_devices=False)
+    def test_store_not_loaded_is_an_error_with_code(self, decoder, helpers, transport, gp_types, gp_store_module):
+        plugin = SimpleNamespace(log=MagicMock(), green_power_requests=gp_store_module.GreenPowerRequests())
         GreenPowerListener(transport).device_initialized(make_gpd(transport, gp_types))
 
         decode_last(helpers, decoder, plugin, transport)
@@ -205,7 +205,7 @@ class TestCommissioning:
         error = plugin.log.logging.call_args
         assert error.args[1] == "Error"
         assert error.args[4] == {"Error code": "GPSTORE-9E00-01"}
-        assert plugin.flush_list_of_devices is False
+        assert plugin.green_power_requests.store_flush is False
 
     def test_security_key_never_logged(self, decoder, helpers, plugin, transport, gp_types):
         listener = GreenPowerListener(transport)
@@ -225,7 +225,7 @@ class TestCommand:
         dev = make_gpd(transport, gp_types)
         listener.device_initialized(dev)
         decode_last(helpers, decoder, plugin, transport)
-        plugin.flush_list_of_devices = False
+        plugin.green_power_requests.store_flush = False
         plugin.store.records[IEEE_HEX]["LastSeen"] = 1000
 
         press(dev, 0x01020304)
@@ -234,7 +234,7 @@ class TestCommand:
         record = plugin.store.records[IEEE_HEX]
         assert record["frame_counter"] == 0x01020304
         assert record["LastSeen"] > 1000
-        assert plugin.flush_list_of_devices is False
+        assert plugin.green_power_requests.store_flush is False
 
     def test_command_from_unknown_device_is_logged(self, decoder, helpers, plugin, transport, gp_types):
         listener = GreenPowerListener(transport)
@@ -256,20 +256,20 @@ class TestRemoval:
         dev = make_gpd(transport, gp_types)
         listener.device_initialized(dev)
         decode_last(helpers, decoder, plugin, transport)
-        plugin.flush_list_of_devices = False
+        plugin.green_power_requests.store_flush = False
 
         listener.device_removed(dev)
         decode_last(helpers, decoder, plugin, transport)
 
         assert IEEE_HEX not in plugin.store
-        assert plugin.flush_list_of_devices is True
+        assert plugin.green_power_requests.store_flush is True
 
     def test_removal_of_unknown_device_requests_no_flush(self, decoder, helpers, plugin, transport, gp_types):
         GreenPowerListener(transport).device_removed(make_gpd(transport, gp_types))
 
         decode_last(helpers, decoder, plugin, transport)
 
-        assert plugin.flush_list_of_devices is False
+        assert plugin.green_power_requests.store_flush is False
 
 
 class TestHandOverToZigpy:
@@ -295,7 +295,7 @@ class TestWidgets:
 
         decode_last(helpers, decoder, plugin, transport)
 
-        assert plugin.gp_widget_creation_requests == {IEEE_HEX}
+        assert plugin.green_power_requests.widgets == {IEEE_HEX}
 
     def test_commissioning_is_shown_on_the_provisioning_page(self, decoder, helpers, plugin, transport, gp_types):
         plugin.webserver = MagicMock()
