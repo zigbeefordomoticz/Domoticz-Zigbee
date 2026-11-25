@@ -38,6 +38,7 @@ import glob
 import zigpy.config
 import zigpy.types as t
 
+from Classes.ZigpyTransport.lostCommands import report_lost_commands
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_0302_frame_content, build_plugin_8009_frame_content,
     build_plugin_8043_frame_list_node_descriptor,
@@ -110,6 +111,9 @@ async def start_zigpy_task(self, channel, extended_pan_id):
         f"start_zigpy_task: radio_start finished, "
         f"app={'set' if self.app else 'None'}, zigpy_running={self.zigpy_running}"
     )
+
+    # What was sent while the radio was starting is dropped with the queue
+    report_lost_commands(self)
 
     # We MUST use queue.Queue (not asyncio.Queue) — Domoticz uses a plain thread
     self.writer_queue = queue.Queue()
