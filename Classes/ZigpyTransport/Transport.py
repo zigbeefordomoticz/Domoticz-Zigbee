@@ -72,6 +72,10 @@ class ZigpyTransport(object):
         self._concurrent_requests_semaphores_list = {}
         self._currently_waiting_requests_list = {}  
         self._currently_not_reachable = []
+
+        # Requests not sent since the radio link went down, 0 when the link is up
+        self._radio_down_requests = 0
+
         self._periodic_reset = None
         
         # Initialise SQN Management
