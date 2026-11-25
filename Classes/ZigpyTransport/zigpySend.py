@@ -18,8 +18,8 @@ the APS ACK/NACK is forwarded back to the plugin:
 
   process_raw_command        — decode a RAW-COMMAND dict, pick transport type
   send_{broadcast,multicast,unicast}_command — top-level send helpers
-  transport_request          — concurrency gate + retry wrapper (decorated)
-  _send_and_retry            — retry loop with timeout
+  transport_request          — concurrency gate (decorated)
+  _send_request              — single send + result handling
   zigpy_request / _mrequest / _broadcast — thin wrappers around app.send_packet
   handle_transport_result    — update reachability + forward APS status
   _limit_concurrency         — asyncio.Semaphore context manager per device
@@ -52,7 +52,6 @@ from Modules.macPrefix import DELAY_FOR_VERY_KEY
 
 ERROR_TASK_CREATION_FAILED = 0xB6
 SEMAPHORE_TIMEOUT = 240               # seconds to wait for a concurrency slot
-REQUEST_TIMEOUT = 8                   # seconds to attempt a unicast send
 WAITING_TIME_BETWEEN_REQUESTS = .100  # inter-request pacing
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 VERIFY_KEY_DELAY = 6                  # extra delay for verify-key commands
@@ -456,7 +455,7 @@ async def zigpy_broadcast(
 
 
 # ---------------------------------------------------------------------------
-# transport_request — concurrency gate + retry wrapper
+# transport_request — concurrency gate
 # ---------------------------------------------------------------------------
 
 def measure_execution_time(func):
@@ -521,7 +520,7 @@ async def transport_request(
     Send a Zigbee message using the transport layer.
 
     Applies an optional pre-send delay, acquires the per-device concurrency
-    semaphore, checks reachability, and delegates to _send_and_retry.
+    semaphore, checks reachability, and delegates to _send_request.
     """
     _nwkid = destination.nwk.serialize()[::-1].hex()
     _ieee = str(destination.ieee)
@@ -546,7 +545,7 @@ async def transport_request(
             )
             return None
 
-        result = await _send_and_retry(
+        result = await _send_request(
             self, Function, destination, Profile, Cluster, _nwkid,
             sEp, dEp, sequence, payload, use_ieee, _ieee,
             ack_is_disable, extended_timeout, delayAfterSent
@@ -556,15 +555,16 @@ async def transport_request(
     return result
 
 
-async def _send_and_retry(
+async def _send_request(
     self, function, destination, profile, cluster,
     nwkid, source_ep, dest_ep, sequence, payload,
     use_ieee, ieee, ack_is_disable, extended_timeout, delay_after_sent
 ):
     """
-    Sends a Zigbee request and optionally retries until REQUEST_TIMEOUT is reached.
+    Sends a Zigbee request, once, and reports its result.
 
-    Single send if ack_is_disable is True; retry loop otherwise.
+    There is no retry here: zigpy_request returns the send failures (timeout, delivery
+    error, radio down) instead of raising them.
     """
     common_log_info = (
         f"{ieee}/0x{nwkid} 0x{profile:X} 0x{cluster:X} payload: {payload} "
@@ -574,86 +574,42 @@ async def _send_and_retry(
     # ping and other control traffic can always preempt them.  This mirrors
     # zigpy's own OTA manager which explicitly wraps image_block_response in
     # request_priority(PacketPriority.LOW) for the same reason.
-    # Retries keep LOW priority — never escalate OTA to HIGH.
-    is_ota_cluster = (cluster == 0x0019)
-    packet_priority = t.PacketPriority.LOW if is_ota_cluster else t.PacketPriority.NORMAL
+    packet_priority = t.PacketPriority.LOW if cluster == 0x0019 else t.PacketPriority.NORMAL
 
+    self.log.logging("TransportZigpy", "Debug", f"_send_request: {function} {common_log_info}")
+    try:
+        result, _ = await zigpy_request(
+            self, destination, profile, cluster,
+            source_ep, dest_ep, sequence, payload,
+            ack_is_disable=ack_is_disable,
+            use_ieee=use_ieee,
+            extended_timeout=extended_timeout,
+            priority=packet_priority,
+        )
 
-    async def __try_send(attempt):
+    except Exception as e:
+        self.log.logging("TransportZigpy", "Log",
+                         f"Warning while submitting - {function} {common_log_info} "
+                         f"Exception: '{e}' ({type(e).__name__})")
+        self.statistics._ackKO += 1
+        handle_transport_result(self, function, cluster, sequence, 0xB6,
+                                ack_is_disable, extended_timeout, ieee, nwkid, destination.lqi)
+        return 0xB6
+
+    if result == -1:
+        return result
+
+    delay_after_cmd = max(delay_after_sent,
+                          self.pluginconf.pluginConf.get("DelayAfterCommandSent", 0))
+    if delay_after_cmd > 0:
         self.log.logging("TransportZigpy", "Debug",
-                         f"_send_and_retry: {function} {common_log_info} "
-                         f"extended_timeout: {extended_timeout} Attempt: {attempt}")
-        try:
-            result, _ = await zigpy_request(
-                self, destination, profile, cluster,
-                source_ep, dest_ep, sequence, payload,
-                ack_is_disable=ack_is_disable,
-                use_ieee=use_ieee,
-                extended_timeout=extended_timeout,
-                priority=packet_priority,
-            )
-        except asyncio.TimeoutError:
-            self.log.logging("TransportZigpy", "Debug",
-                             f"Timeout while submitting - {function} {common_log_info} Attempt: {attempt}")
-            self.statistics._reTx += 1
-            self.statistics._TOdata += 1
-            return None  # retry
+                         f"sleeping {delay_after_cmd} as per configured!!")
+        await asyncio.sleep(delay_after_cmd)
 
-        except Exception as e:
-            self.log.logging("TransportZigpy", "Log",
-                             f"Warning while submitting - {function} {common_log_info} "
-                             f"Attempt: {attempt} Exception: '{e}' ({type(e).__name__})")
-            self.statistics._ackKO += 1
-            handle_transport_result(self, function, cluster, sequence, 0xB6,
-                                    ack_is_disable, extended_timeout, ieee, nwkid, destination.lqi)
-            return 0xB6
-
-        else:
-            if result == -1:
-                return result
-
-            delay_after_cmd = max(delay_after_sent,
-                                  self.pluginconf.pluginConf.get("DelayAfterCommandSent", 0))
-            if delay_after_cmd > 0:
-                self.log.logging("TransportZigpy", "Debug",
-                                 f"sleeping {delay_after_cmd} as per configured!!")
-                await asyncio.sleep(delay_after_cmd)
-
-            handle_transport_result(self, function, cluster, sequence, result,
-                                    ack_is_disable, extended_timeout, ieee, nwkid, destination.lqi)
-            self.log.logging("TransportZigpy", "Debug", f"_send_and_retry: result: {result}")
-            return result
-
-    if ack_is_disable:
-        return await __try_send(attempt=1)
-
-    start_time = time.monotonic()
-    attempt = 0
-    while True:
-        attempt += 1
-        elapsed = time.monotonic() - start_time
-
-        if elapsed >= REQUEST_TIMEOUT:
-            self.log.logging("TransportZigpy", "Log",
-                             f"_send_and_retry: {common_log_info} TIMEOUT of {REQUEST_TIMEOUT}s "
-                             f"reached after {attempt - 1} attempts.")
-            self.statistics._ackKO += 1
-            handle_transport_result(self, function, cluster, sequence, 0xB6,
-                                    ack_is_disable, extended_timeout, ieee, nwkid, destination.lqi)
-            return 0xB6
-
-        self.log.logging("TransportZigpy", "Debug",
-                         f"_send_and_retry: {function} {common_log_info} "
-                         f"extended_timeout: {extended_timeout} Attempt: {attempt} Elapsed: {elapsed:.2f}s")
-        result = await __try_send(attempt)
-
-        if result is not None:
-            return result
-
-        # Escalate non-OTA retries to HIGH so they recover quickly.
-        # OTA retries intentionally stay at LOW to avoid starving other traffic.
-        if not is_ota_cluster:
-            packet_priority = t.PacketPriority.HIGH
+    handle_transport_result(self, function, cluster, sequence, result,
+                            ack_is_disable, extended_timeout, ieee, nwkid, destination.lqi)
+    self.log.logging("TransportZigpy", "Debug", f"_send_request: result: {result}")
+    return result
 
 
 # ---------------------------------------------------------------------------
