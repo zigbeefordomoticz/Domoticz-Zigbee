@@ -76,6 +76,10 @@ def Decode0100(self, Devices, MsgData, MsgLQI):
         timeserver_multiple_read_attribute_request(self, Devices, MsgSrcAddr, MsgSrcEp, MsgDstEp, MsgSqn, MsgClusterId, MsgManufSpec, MsgManufCode, MsgData[24:], nbAttribute)  
         return
 
+    if MsgClusterId == '0025':
+        self.log.logging(['Input', 'KeepAlive'], 'Debug', 'Decode0100 - Keep-Alive Cluster %s/%s model: %s Sqn: %s ManufSpec: %s ManufCode: %s attributes: %s' % (
+            MsgSrcAddr, MsgSrcEp, model_name, MsgSqn, MsgManufSpec, MsgManufCode, MsgData[24:]), MsgSrcAddr)
+
     if MsgClusterId == '0025' and MsgManufSpec == '00':
         keep_alive_read_attribute_request(self, MsgSrcAddr, MsgSrcEp, MsgSqn, MsgClusterId, MsgData[24:])
         return

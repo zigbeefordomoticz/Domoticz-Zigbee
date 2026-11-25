@@ -14,6 +14,7 @@ Covers:
   - send_broadcast_command         (app.broadcast wrapper)
   - send_multicast_command         (app.mrequest wrapper)
   - zigpy_request                  (APS encryption of the Keep-Alive cluster)
+  - _send_and_retry                (Keep-Alive answers logged under the KeepAlive debug flag)
 """
 
 import asyncio
@@ -409,6 +410,41 @@ class TestZigpyRequestApsEncryption(unittest.TestCase):
     def test_zdo_cluster_with_the_same_id_is_not(self):
         import zigpy.types as zt
         self.assertEqual(self._tx_options(0x0000, 0x0025), zt.TransmitOptions.ACK)
+
+
+# ===========================================================================
+# KeepAlive debug flag
+# ===========================================================================
+
+class TestKeepAliveDebugFlag(unittest.TestCase):
+
+    def _keep_alive_logs(self, profile, cluster, request_result):
+        from Classes.ZigpyTransport import zigpySend
+        t = make_transport()
+        with patch.object(zigpySend, "zigpy_request", AsyncMock(return_value=request_result)), \
+                patch.object(zigpySend, "handle_transport_result"):
+            run(zigpySend._send_and_retry(t, "fct", MagicMock(), profile, cluster, "1234", 1, 1, 5, b"\x18\x05\x01",
+                                          False, "00:11", True, False, 0))
+        return [c.args for c in t.log.logging.call_args_list if c.args[0] == "KeepAlive"]
+
+    def test_answer_sent_is_logged_with_the_nwkid(self):
+        logs = self._keep_alive_logs(0x0104, 0x0025, (0x00, ""))
+        self.assertEqual(len(logs), 1)
+        self.assertEqual(logs[0][1], "Debug")
+        self.assertIn("payload: 180501", logs[0][2])
+        self.assertIn("result: 0", logs[0][2])
+        self.assertEqual(logs[0][3], "1234")
+
+    def test_reason_of_a_failure_is_logged(self):
+        logs = self._keep_alive_logs(0x0104, 0x0025, (0xB7, "ZCL FAILURE: no link key"))
+        self.assertIn("ZCL FAILURE: no link key", logs[0][2])
+
+    def test_cancelled_send_is_logged(self):
+        self.assertIn("result: -1", self._keep_alive_logs(0x0104, 0x0025, (-1, None))[0][2])
+
+    def test_other_traffic_is_not(self):
+        self.assertEqual(self._keep_alive_logs(0x0104, 0x0006, (0x00, "")), [])
+        self.assertEqual(self._keep_alive_logs(0x0000, 0x0025, (0x00, "")), [])
 
 
 if __name__ == "__main__":

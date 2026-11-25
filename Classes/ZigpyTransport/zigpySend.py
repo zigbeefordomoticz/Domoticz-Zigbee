@@ -56,8 +56,9 @@ WAITING_TIME_BETWEEN_REQUESTS = .100  # inter-request pacing
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 VERIFY_KEY_DELAY = 6                  # extra delay for verify-key commands
 PROFILE_ZHA = 0x0104
+KEEP_ALIVE_CLUSTER = 0x0025
 # Clusters whose frames must be APS encrypted with the device's link key (ZCL r8 section 3.18.4 for Keep-Alive)
-APS_ENCRYPTED_CLUSTERS = {0x0025}
+APS_ENCRYPTED_CLUSTERS = {KEEP_ALIVE_CLUSTER}
 
 
 # ---------------------------------------------------------------------------
@@ -464,6 +465,12 @@ async def zigpy_broadcast(
 # transport_request — concurrency gate
 # ---------------------------------------------------------------------------
 
+def _log_keep_alive(self, profile, cluster, nwkid, message):
+    """Log what happens to a Keep-Alive answer under its own debug flag."""
+    if profile == PROFILE_ZHA and cluster == KEEP_ALIVE_CLUSTER:
+        self.log.logging("KeepAlive", "Debug", f"Keep-Alive answer to 0x{nwkid} {message}", nwkid)
+
+
 def measure_execution_time(func):
     """Decorator that optionally times and logs transport_request execution."""
     @functools.wraps(func)
@@ -549,6 +556,7 @@ async def transport_request(
                 f"transport_request: Request {sequence} skipped. Device not reachable: "
                 f"NwkId: {_nwkid} IEEE: {_ieee}"
             )
+            _log_keep_alive(self, Profile, Cluster, _nwkid, f"{_ieee} skipped, device not reachable")
             return None
 
         result = await _send_request(

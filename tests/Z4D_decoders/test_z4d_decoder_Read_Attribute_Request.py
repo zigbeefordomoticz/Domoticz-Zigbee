@@ -88,6 +88,8 @@ class TestDecode0100:
         monkeypatch.setattr(mod, "keep_alive_read_attribute_request", keep_alive)
         mod.Decode0100(plugin, {}, _msg(cluster="0025", attr="00000001", nb="02"), LQI)
         keep_alive.assert_called_once_with(plugin, ADDR, EP, "01", "0025", "00000001")
+        assert any("KeepAlive" in c.args[0] and c.args[1] == "Debug" and c.args[3] == ADDR
+                   for c in plugin.log.logging.call_args_list)
 
     def test_keep_alive_manufacturer_specific_read_not_answered(self, mod, plugin, monkeypatch):
         """A manufacturer specific attribute 0000 is not TCKeepAliveBase."""
@@ -97,6 +99,7 @@ class TestDecode0100:
         monkeypatch.setattr(mod, "keep_alive_read_attribute_request", keep_alive)
         mod.Decode0100(plugin, {}, _msg(cluster="0025", attr="0000", manuf_spec="01", manuf_code="1286"), LQI)
         keep_alive.assert_not_called()
+        assert any("KeepAlive" in c.args[0] for c in plugin.log.logging.call_args_list)
 
     def test_other_cluster_logs(self, mod, plugin, monkeypatch):
         """Unknown cluster/attribute → logs Read Attribute Request."""
