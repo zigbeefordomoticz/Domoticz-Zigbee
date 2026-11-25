@@ -407,14 +407,43 @@ def over_write_type_from_deviceconf(self, Devices, NwkId):
 
 
 
+def _type_without_endpoint_type(self, NWKID, Ep):
+    """Where the widget Type of an endpoint comes from, when its record holds none.
+
+    Returns ``(ep_type, global_type)``. ``ep_type`` is the Type of this endpoint, or None when
+    it is not known here. Then ``global_type`` is the Type of the whole device, or "" to let
+    GetType() find the one of the endpoint.
+
+    The device-level "Type" of the record cannot tell: CreateDomoDevice writes there the Types
+    of all the widgets it created (update_device_type). It is the configured one until the first
+    creation only. Taken as such afterwards, an endpoint without widget, the Green Power one
+    (f2) for instance, gets a second set of all the widgets of the device.
+    """
+    device = self.ListOfDevices.get(NWKID, {})
+    recorded_type = device.get("Type", "")
+    if recorded_type in [{}, ""]:
+        return None, ""
+
+    model = device.get("Model")
+    device_conf = self.DeviceConf.get(model) if isinstance(model, str) else None
+    if device_conf is None:
+        return None, ""
+
+    if device_conf.get("Type"):
+        return None, device_conf["Type"]
+
+    # Some configuration files give {} as the Type of an endpoint without widget
+    return device_conf.get("Ep", {}).get(Ep, {}).get("Type") or "", ""
+
+
 def extract_key_infos(self, NWKID, Ep, GlobalEP, GlobalType):
     """
     Extracts and returns the key device type information for a given network ID (NWKID) and endpoint (Ep).
 
     This function determines the device type by checking:
     1. The device's endpoint data in `ListOfDevices[NWKID]["Ep"][Ep]`.
-    2. The global device type in `ListOfDevices[NWKID]`.
-    3. If neither exists, it calls `GetType()` to determine the type.
+    2. The configuration file of the model, its device-level type first.
+    3. If neither gives one, it calls `GetType()` to determine the type.
 
     The extracted types are added to `GlobalType` if they are not already present.
 
@@ -446,8 +475,12 @@ def extract_key_infos(self, NWKID, Ep, GlobalEP, GlobalType):
                          f"extract_key_infos - Type via ListOfDevice: {_Type} Ep: {Ep}", NWKID)
     else:
         # Check global Type if endpoint Type is missing
-        global_dev_type = self.ListOfDevices.get(NWKID, {}).get("Type", "")
-        if global_dev_type in [{}, ""]:
+        ep_type, global_dev_type = _type_without_endpoint_type(self, NWKID, Ep)
+        if ep_type is not None:
+            _Type = ep_type.split("/")
+            self.log.logging("WidgetCreation", "Debug",
+                             f"extract_key_infos - Type via the configuration: {_Type} Ep: {Ep}", NWKID)
+        elif global_dev_type in [{}, ""]:
             _Type = GetType(self, NWKID, Ep).split("/")
             self.log.logging("WidgetCreation", "Debug",
                              f"extract_key_infos - Type via GetType: {_Type} Ep: {Ep}", NWKID)
