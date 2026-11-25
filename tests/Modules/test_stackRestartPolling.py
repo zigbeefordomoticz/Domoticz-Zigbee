@@ -221,24 +221,22 @@ HEARTBEAT_SCRIPT = textwrap.dedent(
     ra.ReadAttributeReq = lambda self, addr, EpIn, EpOut, Cluster, attributes, **kw: reads.append([addr, Cluster, attributes])
     hb.hr_process_device = lambda *a: None
     hb.check_and_reset_device_if_needed = lambda *a: None
-    hb.process_widget_creation_requests = lambda *a: None
-    hb.process_gp_widget_creation_requests = lambda *a: None
 
     def device(clusters, maccapa="8e", model="", **kw):
         return {"Status": "inDB", "Health": "Live", "Model": model, "MacCapa": maccapa, "IEEE": "", "Param": {},
                 "Ep": {"01": {"ClusterType": {"1": "Switch"}, **{c: {} for c in clusters}}}} | kw
 
-    plugin = MagicMock()
-    plugin.busy = False
-    plugin.pairing_in_progress = False
-    plugin.HeartbeatCount = 1
-    plugin.adminWidgets = plugin.groupmgt = plugin.networkmap = plugin.networkenergy = None
-    plugin.pluginconf.pluginConf = {"forcePollingAfterAction": 1}
-    plugin.DeviceConf = {"PollingBattery": {"PollingEnabled": 1}}
-    plugin.ControllerLink.stack_starts = 1
-    plugin.ControllerLink.loadTransmit.return_value = 0
-    plugin.stack_starts_seen = 0
-    plugin.devices_to_poll_after_restart = []
+    # Not a MagicMock: the heartbeat drains request queues, and a mocked queue is never empty
+    plugin = types.SimpleNamespace(
+        log=MagicMock(), busy=False, pairing_in_progress=False, HeartbeatCount=1,
+        adminWidgets=None, groupmgt=None, networkmap=None, networkenergy=None,
+        widget_creation_requests={},
+        green_power_requests=types.SimpleNamespace(widgets=set(), store_flush=False),
+        pluginconf=types.SimpleNamespace(pluginConf={"forcePollingAfterAction": 1}),
+        DeviceConf={"PollingBattery": {"PollingEnabled": 1}},
+        ControllerLink=types.SimpleNamespace(stack_starts=1, loadTransmit=lambda: 0),
+        stack_starts_seen=0, devices_to_poll_after_restart=[],
+    )
     plugin.ListOfDevices = {
         "0000": device(["0006"]),
         "aa01": device(["0000", "0006", "0008"]),
