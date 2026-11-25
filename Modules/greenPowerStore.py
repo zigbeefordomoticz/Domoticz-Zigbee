@@ -89,6 +89,7 @@ class GreenPowerRequests:
 
     def __init__(self):
         self.widgets = set()      # IEEE of the GPDs to create the widgets of
+        self.recreate = set()     # IEEE of the GPDs to create the missing widgets of
         self.store_flush = False  # write the store
 
 
@@ -98,6 +99,11 @@ def request_gp_widget_creation(self, ieee):
     REST handlers on a WebServer one; the Domoticz API is for the heartbeat.
     """
     self.green_power_requests.widgets.add(ieee)
+
+
+def request_gp_widget_recreation(self, ieee):
+    """Queue the creation of the widgets a GPD misses, as asked from the WebUI (recreate widgets)."""
+    self.green_power_requests.recreate.add(ieee)
 
 
 def request_gp_store_flush(self):

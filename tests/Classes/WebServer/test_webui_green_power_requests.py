@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-PUT and DELETE /zgp-device from the REST handler to the heartbeat.
+PUT and DELETE /zgp-device, and PUT /recreate-widgets for a Green Power device,
+from the REST handler to the heartbeat.
 
 The handlers run with the WebServer as self and the heartbeat with the plugin. The
 widget queue and the flush flag were set on self, so the type given to a Green Power
@@ -153,4 +154,92 @@ def test_a_request_is_served_once():
         assert len(devices[GP_IEEE].Units) == widgets
         assert plugin.flush_list_of_devices is False
         """
+    )
+
+
+RECREATE = textwrap.dedent(
+    """
+    from Classes.WebServer.rest_recreateWidget import rest_recreate_widgets
+
+    webserver.IEEE2NWK = plugin.IEEE2NWK = {}
+    webserver.widget_creation_requests = plugin.widget_creation_requests = {}
+
+    def recreate(body):
+        response = rest_recreate_widgets(webserver, "PUT", json.dumps(body).encode(), [])
+        assert response["Status"] == "200 OK", response
+        return json.loads(response["Data"]) if response["Data"] else {}
+
+    def with_one_widget_deleted():
+        call("PUT", {"Model": "GreenPower-4Buttons"})
+        heartbeat()
+        units = devices[GP_IEEE].Units
+        assert len(units) == 2
+        units.pop(max(units))
+    """
+)
+
+
+def test_recreate_widgets_of_a_green_power_device():
+    _run(
+        RECREATE
+        + textwrap.dedent(
+            """
+            with_one_widget_deleted()
+
+            assert recreate({"IEEE": GP_IEEE})["Status"] == "Ok"
+            domoticz.Error.assert_not_called()
+            assert len(devices[GP_IEEE].Units) == 1, "the REST handler must leave Domoticz alone"
+
+            heartbeat()
+
+            assert len(devices[GP_IEEE].Units) == 2
+            assert plugin.widget_creation_requests == {}
+            """
+        )
+    )
+
+
+def test_recreate_widgets_takes_the_ieee_in_any_case():
+    _run(
+        RECREATE
+        + textwrap.dedent(
+            """
+            store.set("00000000aabbccdd", {"ieee": "00000000aabbccdd", "nwk": "ccdd"})
+
+            recreate({"IEEE": "00000000AABBCCDD"})
+
+            assert plugin.green_power_requests.recreate == {"00000000aabbccdd"}
+            """
+        )
+    )
+
+
+def test_recreate_widgets_by_nwkid_is_for_the_zigbee_device():
+    _run(
+        RECREATE
+        + textwrap.dedent(
+            """
+            # A Zigbee device holds the alias NwkId of the Green Power device
+            with_one_widget_deleted()
+            plugin.ListOfDevices["0304"] = webserver.ListOfDevices["0304"] = {"Status": "inDB"}
+
+            recreate({"NWKID": "0304"})
+
+            assert plugin.green_power_requests.recreate == set()
+            assert list(webserver.widget_creation_requests) == ["0304"]
+            """
+        )
+    )
+
+
+def test_recreate_widgets_of_an_unknown_ieee_queues_nothing():
+    _run(
+        RECREATE
+        + textwrap.dedent(
+            """
+            for ieee in ("00158d0005bea6da", 12):
+                assert recreate({"IEEE": ieee}) == {}
+            assert plugin.green_power_requests.recreate == set()
+            """
+        )
     )
