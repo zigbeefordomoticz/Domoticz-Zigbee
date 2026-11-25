@@ -54,9 +54,10 @@ Custom dimensions (Matomo site ID 9)
 12  Raw coordinator MAC          Formatted IEEE string (RoneLabs only)
 ==  ===========================  ====================================
 
-Visit scope (13-22): copies of 3, 4 (chipset family only), 1, 6, 5, 2, the
+Visit scope (13-26): copies of 3, 4 (chipset family only), 1, 6, 5, 2, the
 Python version and CPU architecture parts of 8, 7, and 11 without the board
-revision (``Container`` or ``No device tree`` when the host shows no board).
+revision (``Container`` or ``No device tree`` when the host shows no board), then
+copies of 4 and 10, the connection type and the install type.
 See ``populate_custom_dimensions``.
 
 Dependencies
@@ -88,7 +89,9 @@ ACTION_NAME = "PluginInstanceInfos"
 # 2026-11-22): visit key -> the action-scope dimension it copies. Chipset (14)
 # and hardware platform (22) are derived from 4 and 11, see
 # add_visit_dimensions(); Python version (19) and CPU architecture (20) are
-# the two parts of 8 that matter, see get_python_and_machine().
+# the two parts of 8 that matter, see get_python_and_machine(). Connection type
+# (25) and install type (26) have no action-scope dimension, see
+# get_connection_type() and get_install_type().
 VISIT_DIMENSIONS = {
     "dimension13": "dimension3",   # Plugin version
     "dimension15": "dimension1",   # Domoticz version
@@ -96,11 +99,30 @@ VISIT_DIMENSIONS = {
     "dimension17": "dimension5",   # Network size
     "dimension18": "dimension2",   # Coordinator model
     "dimension21": "dimension7",   # OS distribution
+    "dimension23": "dimension4",   # Coordinator firmware
+    "dimension24": "dimension10",  # RoneLabs model
 }
 VISIT_CHIPSET_DIMENSION = "dimension14"
 VISIT_PYTHON_DIMENSION = "dimension19"
 VISIT_MACHINE_DIMENSION = "dimension20"
 VISIT_HARDWARE_DIMENSION = "dimension22"
+VISIT_CONNECTION_DIMENSION = "dimension25"
+VISIT_INSTALL_DIMENSION = "dimension26"
+
+# Hardware parameter Mode2, up to the first comma (USB,115200,hardware) -> value sent
+CONNECTION_TYPES = {
+    "USB": "USB",
+    "DIN": "DIN",
+    "PI": "PI",
+    "Wifi": "TCPIP",
+    "Socket": "Socket",
+}
+
+# Marker of a release installed by PyPluginStore, in the plugin folder
+PYPLUGINSTORE_MARKER = ".pypluginstore.json"
+INSTALL_GIT = "Git"
+INSTALL_PYPLUGINSTORE = "PyPluginStore"
+INSTALL_OTHER = "Other"
 
 _BOARD_REVISION_RE = re.compile(r'\s+Rev\s+\S+$')
 
@@ -189,6 +211,10 @@ def populate_custom_dimensions(self):
         21 – OS distribution (= 7)
         22 – Hardware platform: 11 without the board revision; without a board
              model, ``Container`` or ``No device tree``
+        23 – Coordinator firmware version (= 4)
+        24 – RoneLabs appliance model (= 10)
+        25 – Connection type of the coordinator, e.g. ``USB`` or ``Socket``
+        26 – Install type: ``Git``, ``PyPluginStore`` (release) or ``Other``
 
     Returns:
         dict: Mapping of ``"dimensionN"`` keys to sanitised string values.
@@ -265,11 +291,19 @@ def populate_custom_dimensions(self):
     if VISIT_HARDWARE_DIMENSION not in _custom_dimensions:
         _custom_dimensions[ VISIT_HARDWARE_DIMENSION] = PLATFORM_CONTAINER if is_container() else PLATFORM_NO_DEVICE_TREE
 
+    # Connection and install type (visit scope only)
+    _connection = get_connection_type(self)
+    if _connection:
+        _custom_dimensions[ VISIT_CONNECTION_DIMENSION] = _connection
+    _install = get_install_type(self)
+    if _install:
+        _custom_dimensions[ VISIT_INSTALL_DIMENSION] = _install
+
     return _custom_dimensions
 
 
 def add_visit_dimensions(custom_dimensions):
-    """Add the visit-scope copies of the main dimensions (Matomo ids 13-18, 21, 22).
+    """Add the visit-scope copies of the main dimensions (Matomo ids 13-18, 21-24).
 
     Action-scope dimensions can only be counted per visit; a visit-scope
     dimension gives the number of installs (unique visitors) per value.
@@ -632,6 +666,40 @@ def clean_custom_dimension_value(value: str) -> str:
         str: Sanitised value safe for inclusion in a Matomo tracking URL.
     """
     return _MULTI_SPACE_RE.sub(' ', _DIMENSION_CLEAN_RE.sub(' ', value)).strip()
+
+
+def get_connection_type(self):
+    """Return how the coordinator is connected, from the hardware parameter Mode2.
+
+    Only the type: no serial port, address, port, baudrate or flow control.
+
+    Returns:
+        str | None: a value of ``CONNECTION_TYPES``, or None when there is no
+        coordinator (``None``) or the parameter is not a known one.
+    """
+    mode2 = self.pluginParameters.get("Mode2") or ""
+    return CONNECTION_TYPES.get(mode2.split(",")[0].strip())
+
+
+def get_install_type(self):
+    """Return how the plugin was installed, from what its own folder holds.
+
+    The parent folders are not looked at: the plugin folder may sit in the git
+    checkout of a Domoticz built from source.
+
+    Returns:
+        str | None: ``PyPluginStore`` for a release installed by it, ``Git`` for
+        a git checkout (PyPluginStore's git installs included), ``Other`` for
+        anything else; None when the plugin folder is not known.
+    """
+    home_folder = self.pluginParameters.get("HomeFolder")
+    if not home_folder:
+        return None
+    if os.path.exists(os.path.join(home_folder, PYPLUGINSTORE_MARKER)):
+        return INSTALL_PYPLUGINSTORE
+    if os.path.exists(os.path.join(home_folder, ".git")):
+        return INSTALL_GIT
+    return INSTALL_OTHER
 
 
 def is_container():
