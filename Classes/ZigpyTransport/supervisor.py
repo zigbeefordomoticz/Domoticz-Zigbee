@@ -35,6 +35,7 @@ import contextlib
 import queue
 import time
 
+from Classes.ZigpyTransport.lostCommands import report_lost_commands
 from Classes.ZigpyTransport.radioStart import start_zigpy_task
 
 # ---------------------------------------------------------------------------
@@ -268,6 +269,7 @@ async def _prepare_for_restart(self):
                          "_prepare_for_restart: app is None, no disconnect needed")
 
     # Fresh queue — stale pre-crash commands must not be replayed.
+    report_lost_commands(self)
     self.writer_queue = queue.Queue()
     self.log.logging("TransportZigpyStack", "Debug",
                      "_prepare_for_restart: fresh writer_queue created")
