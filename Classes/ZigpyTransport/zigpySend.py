@@ -125,8 +125,19 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None, delayAft
     destination, transport_needs = _get_destination(self, NwkId, addressmode, Profile, Cluster,
                                                     sEp, dEp, sequence, payload)
     if destination is None:
-        self.log.logging("TransportZigpy", "Error",
-                         f"process_raw_command: unknown destination: {destination}")
+        self.log.logging(
+            "TransportZigpy", "Error",
+            f"process_raw_command: unknown destination: {NwkId}/{dEp:02x}, {Function} "
+            f"Cluster: {Cluster:04x} not sent",
+            NwkId,
+            {
+                "Error code": "ZIGPY-SEND-02",
+                "Function": Function,
+                "NwkId": NwkId,
+                "Cluster": f"{Cluster:04x}",
+                "AddressMode": addressmode,
+            },
+        )
         return
 
     handlers = {
