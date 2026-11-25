@@ -12,7 +12,7 @@ Covers:
 import sys
 import importlib
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call
 
 _MOD = "Z4D_decoders.z4d_decoder_IAS"
 
@@ -77,6 +77,33 @@ class TestDecode8046:
         monkeypatch.setattr(mod, "updLQI", MagicMock())
         plugin.iaszonemgt = None
         mod.Decode8046(plugin, {}, self.MSG_WITH_MATCH, LQI)
+
+    @pytest.mark.parametrize("endpoints", [["01"], ["01", "02"], ["01", "0b", "f2"]])
+    def test_every_listed_endpoint_is_handled(self, mod, plugin, monkeypatch, endpoints):
+        monkeypatch.setattr(mod, "updSQN", MagicMock())
+        monkeypatch.setattr(mod, "updLQI", MagicMock())
+        plugin.iaszonemgt = MagicMock()
+        msg = "01" + "00" + "abcd" + "%02x" % len(endpoints) + "".join(endpoints)
+        mod.Decode8046(plugin, {}, msg, LQI)
+        assert plugin.iaszonemgt.IAS_write_CIE_after_match_descriptor.call_args_list == [
+            call("abcd", ep) for ep in endpoints
+        ]
+
+    def test_bytes_after_the_list_are_not_endpoints(self, mod, plugin, monkeypatch):
+        monkeypatch.setattr(mod, "updSQN", MagicMock())
+        monkeypatch.setattr(mod, "updLQI", MagicMock())
+        plugin.iaszonemgt = MagicMock()
+        mod.Decode8046(plugin, {}, self.MSG_WITH_MATCH + "02", LQI)
+        plugin.iaszonemgt.IAS_write_CIE_after_match_descriptor.assert_called_once_with("abcd", "01")
+
+    def test_response_to_another_request_is_ignored(self, mod, plugin, monkeypatch):
+        monkeypatch.setattr(mod, "updSQN", MagicMock())
+        monkeypatch.setattr(mod, "updLQI", MagicMock())
+        plugin.iaszonemgt = MagicMock()
+        plugin.iaszonemgt.is_match_descriptor_response_expected.return_value = False
+        mod.Decode8046(plugin, {}, self.MSG_WITH_MATCH, LQI)
+        plugin.iaszonemgt.is_match_descriptor_response_expected.assert_called_once_with("abcd", "01")
+        plugin.iaszonemgt.IAS_write_CIE_after_match_descriptor.assert_not_called()
 
 
 # ─── Decode8400 ───────────────────────────────────────────────────────────────
