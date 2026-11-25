@@ -235,6 +235,29 @@ def _make_unicast_callback(self):
 # Low-level Zigpy packet submission
 # ---------------------------------------------------------------------------
 
+def _is_keep_alive(profile, cluster):
+    return profile == PROFILE_ZHA and cluster == KEEP_ALIVE_CLUSTER
+
+
+def _log_keep_alive(self, nwkid, message):
+    """Log what happens to a Keep-Alive answer under its own debug flag."""
+    self.log.logging("KeepAlive", "Debug", f"Keep-Alive answer to 0x{nwkid} {message}", nwkid)
+
+
+def log_keep_alive_result(func):
+    """Decorator that logs the result of zigpy_request for a Keep-Alive answer."""
+    @functools.wraps(func)
+    async def wrapper(self, device, profile, cluster, *args, **kwargs):
+        result, message = await func(self, device, profile, cluster, *args, **kwargs)
+        if _is_keep_alive(profile, cluster):
+            _log_keep_alive(self, device.nwk.serialize()[::-1].hex(),
+                            f"{device.ieee} APS encrypted AckIsDisable: {kwargs.get('ack_is_disable')} "
+                            f"result: {result!r} {message or ''}")
+        return result, message
+    return wrapper
+
+
+@log_keep_alive_result
 async def zigpy_request(
     self,
     device: zigpy.device.Device,
@@ -465,12 +488,6 @@ async def zigpy_broadcast(
 # transport_request — concurrency gate
 # ---------------------------------------------------------------------------
 
-def _log_keep_alive(self, profile, cluster, nwkid, message):
-    """Log what happens to a Keep-Alive answer under its own debug flag."""
-    if profile == PROFILE_ZHA and cluster == KEEP_ALIVE_CLUSTER:
-        self.log.logging("KeepAlive", "Debug", f"Keep-Alive answer to 0x{nwkid} {message}", nwkid)
-
-
 def measure_execution_time(func):
     """Decorator that optionally times and logs transport_request execution."""
     @functools.wraps(func)
@@ -556,7 +573,8 @@ async def transport_request(
                 f"transport_request: Request {sequence} skipped. Device not reachable: "
                 f"NwkId: {_nwkid} IEEE: {_ieee}"
             )
-            _log_keep_alive(self, Profile, Cluster, _nwkid, f"{_ieee} skipped, device not reachable")
+            if _is_keep_alive(Profile, Cluster):
+                _log_keep_alive(self, _nwkid, f"{_ieee} skipped, device not reachable")
             return None
 
         result = await _send_request(
