@@ -603,19 +603,19 @@ def connection_lost(self, exc: Exception) -> None:
             LOGGER.warning("+ Connection to the radio was lost, give time for recover ...")
             return
 
-        connection_lost_error( self, "NCP reset due to exceeded maximum ACK timeout count, plugin restart might be required" )
+        connection_lost_error( self, "NCP reset due to exceeded maximum ACK timeout count" )
 
     elif isinstance(exc, (serial.serialutil.SerialException, asyncio.CancelledError)):
-        connection_lost_error( self, "Connection to coordinator lost, SerialError or CancelledError, plugin restart might be required" )
+        connection_lost_error( self, "Connection to coordinator lost, SerialError or CancelledError" )
 
 
     elif isinstance(exc, OSError):
         # With the new serialx lib we get different exceptions when the serial port is disconnected or in use by another process, so let's catch OSError as well
-        connection_lost_error( self, "Connection to coordinator lost, OSError (device disconnected or in use by another process), plugin restart might be required" )
+        connection_lost_error( self, "Connection to coordinator lost, OSError (device disconnected or in use by another process)" )
 
 
     elif isinstance(exc, (TimeoutError, asyncio.TimeoutError)):
-        connection_lost_error( self, "Connection to coordinator lost, TimeOut, plugin restart might be required" )
+        connection_lost_error( self, "Connection to coordinator lost, TimeOut" )
 
     else:
         connection_lost_error(self, "Unexpected error type in connection_lost: %s %r, plugin restart might be required", type(exc), exc)
@@ -626,9 +626,10 @@ def connection_lost_error(self, message: str) -> None:
     Mark the controller as restarting and trigger a plugin restart.
 
     Sets self.restarting = True and self.current_error = 'connection lost',
-    logs the provided message at ERROR level, then calls
-    self.callBackRestartPlugin() to request a full plugin restart from the
-    Domoticz layer.
+    logs the provided message at ERROR level with the recovery started, then
+    signals the supervisor to restart the Zigbee stack. Without an active
+    supervisor, calls self.callBackRestartPlugin() to request a full plugin
+    restart from the Domoticz layer.
 
     This is a shared helper called by connection_lost() for all fatal
     error conditions.
@@ -639,7 +640,6 @@ def connection_lost_error(self, message: str) -> None:
     """
     self.restarting = True
     self.current_error = "connection lost"
-    LOGGER.error(message)
 
     # If the in-process supervisor is active, let it handle recovery
     # without triggering a full Domoticz plugin restart
@@ -647,6 +647,10 @@ def connection_lost_error(self, message: str) -> None:
     # _supervisor_running and zigpy_running_ref are injected onto self.app by _radio_startup().
     supervisor_active = getattr(self, '_supervisor_running', False)
     transport = getattr(self, 'zigpy_running_ref', None)
+
+    # Tell the user what happens next, there is nothing to do by hand
+    recovery = "restarting the Zigbee stack" if supervisor_active and transport is not None else "restarting the plugin"
+    LOGGER.error("%s, %s", message, recovery)
 
     self.log.logging(
         "TransportZigpyStack", "Debug",
