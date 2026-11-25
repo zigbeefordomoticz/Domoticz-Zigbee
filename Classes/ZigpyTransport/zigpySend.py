@@ -56,6 +56,10 @@ REQUEST_TIMEOUT = 8                   # seconds to attempt a unicast send
 WAITING_TIME_BETWEEN_REQUESTS = .100  # inter-request pacing
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 VERIFY_KEY_DELAY = 6                  # extra delay for verify-key commands
+PROFILE_ZHA = 0x0104
+KEEP_ALIVE_CLUSTER = 0x0025
+# Clusters whose frames must be APS encrypted with the device's link key (ZCL r8 section 3.18.4 for Keep-Alive)
+APS_ENCRYPTED_CLUSTERS = {KEEP_ALIVE_CLUSTER}
 
 
 # ---------------------------------------------------------------------------
@@ -221,6 +225,29 @@ def _make_unicast_callback(self):
 # Low-level Zigpy packet submission
 # ---------------------------------------------------------------------------
 
+def _is_keep_alive(profile, cluster):
+    return profile == PROFILE_ZHA and cluster == KEEP_ALIVE_CLUSTER
+
+
+def _log_keep_alive(self, nwkid, message):
+    """Log what happens to a Keep-Alive answer under its own debug flag."""
+    self.log.logging("KeepAlive", "Debug", f"Keep-Alive answer to 0x{nwkid} {message}", nwkid)
+
+
+def log_keep_alive_result(func):
+    """Decorator that logs the result of zigpy_request for a Keep-Alive answer."""
+    @functools.wraps(func)
+    async def wrapper(self, device, profile, cluster, *args, **kwargs):
+        result, message = await func(self, device, profile, cluster, *args, **kwargs)
+        if _is_keep_alive(profile, cluster):
+            _log_keep_alive(self, device.nwk.serialize()[::-1].hex(),
+                            f"{device.ieee} APS encrypted AckIsDisable: {kwargs.get('ack_is_disable')} "
+                            f"result: {result!r} {message or ''}")
+        return result, message
+    return wrapper
+
+
+@log_keep_alive_result
 async def zigpy_request(
     self,
     device: zigpy.device.Device,
@@ -270,6 +297,9 @@ async def zigpy_request(
 
     if not ack_is_disable:
         tx_options |= t.TransmitOptions.ACK
+
+    if profile == PROFILE_ZHA and cluster in APS_ENCRYPTED_CLUSTERS:
+        tx_options |= t.TransmitOptions.APS_Encryption
 
     if force_route_discovery:
         tx_options |= t.TransmitOptions.FORCE_ROUTE_DISCOVERY
@@ -485,6 +515,8 @@ async def transport_request(
                 f"transport_request: Request {sequence} skipped. Device not reachable: "
                 f"NwkId: {_nwkid} IEEE: {_ieee}"
             )
+            if _is_keep_alive(Profile, Cluster):
+                _log_keep_alive(self, _nwkid, f"{_ieee} skipped, device not reachable")
             return None
 
         result = await _send_and_retry(

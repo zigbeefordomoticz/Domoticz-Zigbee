@@ -13,9 +13,12 @@ Covers:
   - _get_destination               (address-mode routing)
   - send_broadcast_command         (app.broadcast wrapper)
   - send_multicast_command         (app.mrequest wrapper)
+  - zigpy_request                  (APS encryption of the Keep-Alive cluster)
+  - zigpy_request, transport_request (Keep-Alive answers logged under the KeepAlive debug flag)
 """
 
 import asyncio
+import contextlib
 import queue
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch, call
@@ -368,6 +371,106 @@ class TestSendMulticastCommand(unittest.TestCase):
             result, msg = run(send_multicast_command(t, "0005", 0x0104, "0006", 1, 0, b"\x01"))
         t.app.mrequest.assert_called_once()
         self.assertEqual(result, 0x00)
+
+
+# ===========================================================================
+# zigpy_request — APS encryption
+# ===========================================================================
+
+class TestZigpyRequestApsEncryption(unittest.TestCase):
+    """ZCL r8 3.18.4: the Keep-Alive Read Attributes Response must be APS encrypted (issue #2324)."""
+
+    def _tx_options(self, profile, cluster, ack_is_disable=False):
+        from Classes.ZigpyTransport import zigpySend
+        t = make_transport()
+        t.app.send_packet = AsyncMock()
+        t.app.config = {zigpySend.zigpy.config.CONF_SOURCE_ROUTING: False}
+        with patch.object(zigpySend.t, "ZigbeePacket") as packet, \
+                patch.object(zigpySend.t, "AddrModeAddress"), \
+                patch.object(zigpySend.t, "SerializableBytes"):
+            run(zigpySend.zigpy_request(t, MagicMock(), profile, cluster, 1, 1, 5, b"\x18\x05\x01",
+                                        ack_is_disable=ack_is_disable))
+        t.app.send_packet.assert_awaited_once()
+        return packet.call_args.kwargs["tx_options"]
+
+    def test_keep_alive_is_encrypted_and_acked(self):
+        import zigpy.types as zt
+        self.assertEqual(self._tx_options(0x0104, 0x0025),
+                         zt.TransmitOptions.ACK | zt.TransmitOptions.APS_Encryption)
+
+    def test_keep_alive_is_encrypted_without_ack(self):
+        import zigpy.types as zt
+        self.assertEqual(self._tx_options(0x0104, 0x0025, ack_is_disable=True),
+                         zt.TransmitOptions.APS_Encryption)
+
+    def test_other_clusters_are_not(self):
+        import zigpy.types as zt
+        for cluster in (0x0000, 0x0006, 0x000a, 0x0019, 0x0500):
+            self.assertEqual(self._tx_options(0x0104, cluster), zt.TransmitOptions.ACK)
+
+    def test_zdo_cluster_with_the_same_id_is_not(self):
+        import zigpy.types as zt
+        self.assertEqual(self._tx_options(0x0000, 0x0025), zt.TransmitOptions.ACK)
+
+
+# ===========================================================================
+# KeepAlive debug flag
+# ===========================================================================
+
+class TestKeepAliveDebugFlag(unittest.TestCase):
+
+    def _keep_alive_logs(self, profile, cluster, send_error=None):
+        from Classes.ZigpyTransport import zigpySend
+        t = make_transport()
+        t.app.send_packet = AsyncMock(side_effect=send_error)
+        t.app.config = {zigpySend.zigpy.config.CONF_SOURCE_ROUTING: False}
+        device = MagicMock()
+        device.nwk.serialize.return_value = b"\x34\x12"
+        with patch.object(zigpySend.t, "ZigbeePacket"), \
+                patch.object(zigpySend.t, "AddrModeAddress"), \
+                patch.object(zigpySend.t, "SerializableBytes"):
+            run(zigpySend.zigpy_request(t, device, profile, cluster, 1, 1, 5, b"\x18\x05\x01", ack_is_disable=False))
+        return [c.args for c in t.log.logging.call_args_list if c.args[0] == "KeepAlive"]
+
+    def test_answer_sent_is_logged_with_the_nwkid(self):
+        logs = self._keep_alive_logs(0x0104, 0x0025)
+        self.assertEqual(len(logs), 1)
+        self.assertEqual(logs[0][1], "Debug")
+        self.assertIn("AckIsDisable: False", logs[0][2])
+        self.assertEqual(logs[0][3], "1234")
+
+    def test_reason_of_a_failure_is_logged(self):
+        from Classes.ZigpyTransport import zigpySend
+        for error in (zigpySend.zigpy.exceptions.DeliveryError("no link key"), RuntimeError("no link key")):
+            logs = self._keep_alive_logs(0x0104, 0x0025, error)
+            self.assertEqual(len(logs), 1)
+            self.assertIn("ZCL FAILURE: no link key", logs[0][2])
+
+    def test_timeout_is_logged(self):
+        self.assertIn("TimeoutError", self._keep_alive_logs(0x0104, 0x0025, asyncio.TimeoutError())[0][2])
+
+    def test_other_traffic_is_not(self):
+        self.assertEqual(self._keep_alive_logs(0x0104, 0x0006), [])
+        self.assertEqual(self._keep_alive_logs(0x0000, 0x0025), [])
+
+    def test_answer_skipped_for_a_not_reachable_device_is_logged(self):
+        from Classes.ZigpyTransport import zigpySend
+        t = make_transport()
+        device = MagicMock(ieee="00:11")
+        device.nwk.serialize.return_value = b"\x34\x12"
+        t._currently_not_reachable = ["00:11"]
+
+        @contextlib.asynccontextmanager
+        async def waiting(self, destination, sequence):
+            t._currently_waiting_requests_list["00:11"] = 1
+            yield
+
+        with patch.object(zigpySend, "_limit_concurrency", waiting), \
+                patch.object(zigpySend, "check_transport_readiness", return_value=True):
+            run(zigpySend.transport_request(t, "fct", device, 0x0104, 0x0025, 1, 1, 5, b""))
+        logs = [c.args for c in t.log.logging.call_args_list if c.args[0] == "KeepAlive"]
+        self.assertEqual(len(logs), 1)
+        self.assertIn("skipped", logs[0][2])
 
 
 if __name__ == "__main__":
