@@ -198,6 +198,7 @@ from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8047_frame_content, build_plugin_8048_frame_content)
 from Classes.ZigpyTransport.supervisor import zigpy_heartbeat_activity
 from Classes.ZigpyTransport.Transport import ZigpyTransport
+from Modules.maskKeys import mask_keys
 
 LOGGER = logging.getLogger(__name__)
 
@@ -373,7 +374,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
             new_state=new_state,
         )
 
-    self.log.logging("TransportZigpy", "Debug", f"Network info: {self.state.network_info}")
+    self.log.logging("TransportZigpy", "Debug", f"Network info: {mask_keys(self.state.network_info)}")
     self.log.logging("TransportZigpy", "Debug", f"Node info   : {self.state.node_info}")
 
     # Start Network
@@ -705,7 +706,7 @@ def _retrieve_previous_backup(self):
         self.log.logging("TransportZigpy", "Log", "Allow eui64 overwrite only once !!!")
         _retrieved_backup.network_info.stack_specific.setdefault("ezsp", {})[ "i_understand_i_can_update_eui64_only_once_and_i_still_want_to_do_it"] = True
 
-    self.log.logging("TransportZigpy", "Debug", "Last backup retreived: %s" % _retrieved_backup )
+    self.log.logging("TransportZigpy", "Debug", "Last backup retreived: %s" % mask_keys(_retrieved_backup) )
     return _retrieved_backup
 
 

@@ -17,6 +17,7 @@ import time
 
 import Modules.tools
 from Modules.domoticzAbstractLayer import getConfigItem, setConfigItem
+from Modules.maskKeys import mask_keys
 
 def handle_zigpy_backup(self, backup):
 
@@ -26,7 +27,7 @@ def handle_zigpy_backup(self, backup):
 
     _pluginData = Path( self.pluginconf.pluginConf["pluginData"] )
     _coordinator_backup = _pluginData / ("Coordinator-%02d.backup" %self.HardwareID )
-    self.log.logging("TransportZigpy", "Debug", "Backups: %s" %backup)
+    self.log.logging("TransportZigpy", "Debug", "Backups: %s" %mask_keys(backup))
 
     if os.path.exists(_coordinator_backup):
         Modules.tools.rotate_file_versions(_coordinator_backup, self.pluginconf.pluginConf["numDeviceListVersion"])
