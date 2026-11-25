@@ -43,6 +43,7 @@ from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8043_frame_list_node_descriptor,
     build_plugin_8045_frame_list_controller_ep)
 from Classes.ZigpyTransport.workerLoop import worker_loop
+from Modules.maskKeys import MASKED_KEY
 
 def _transport_heartbeat(transport) -> None:
     """Update supervisor liveness timestamp from the coordinator watchdog tick."""
@@ -555,9 +556,7 @@ def display_network_infos(self):
     self.log.logging("TransportZigpy", "Status",
                      f"  Device NWK:            0x{self.app.state.node_info.nwk:04X}")
     self.log.logging("TransportZigpy", "Status",
-                     "  Network key:           "
-                     + ":".join(f"{c:02x}"
-                                for c in self.app.state.network_information.network_key.key))
+                     f"  Network key:           {MASKED_KEY}")
     self.log.logging("TransportZigpy", "Status",
                      f"  Network key sequence:  {self.app.state.network_info.network_key.seq}")
     self.log.logging("TransportZigpy", "Status",
