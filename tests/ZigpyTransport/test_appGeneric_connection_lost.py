@@ -108,3 +108,53 @@ def test_ncp_failure_names_the_recovery():
     )
 
     assert out["errors"] == ["NCP reset due to exceeded maximum ACK timeout count, restarting the Zigbee stack"]
+
+
+UNEXPECTED = {
+    "None": ("None", "port closed by the remote side"),
+    "ControllerException": (
+        '__import__("zigpy.exceptions").exceptions.ControllerException("watchdog")',
+        "unexpected error ControllerException('watchdog')",
+    ),
+    "RuntimeError with a percent sign": ('RuntimeError("100%s")', "unexpected error RuntimeError('100%s')"),
+}
+
+
+@pytest.mark.parametrize("exc, text", UNEXPECTED.values(), ids=UNEXPECTED)
+def test_unexpected_error_restarts_the_running_stack(exc, text):
+    out = run(SCENARIO.format(supervisor=True, exc=exc))
+
+    assert out["errors"] == [f"Connection to coordinator lost, {text}, restarting the Zigbee stack"]
+    assert out["restarting"] and out["stack_stopped"]
+    assert out["plugin_restarts"] == 0
+
+
+@pytest.mark.parametrize("exc", [exc for exc, _ in UNEXPECTED.values()], ids=UNEXPECTED)
+def test_unexpected_error_during_the_start_is_left_to_the_retries(exc):
+    out = run(SCENARIO.format(supervisor=False, exc=exc))
+
+    assert out["errors"] == []
+    assert not out["restarting"]
+    assert out["plugin_restarts"] == 0
+
+
+@pytest.mark.parametrize("flag", ["shutting_down", "restarting"])
+def test_port_closed_by_the_plugin_is_not_an_error(flag):
+    out = run(SCENARIO.format(supervisor=True, exc="None").replace(f"{flag}=False", f"{flag}=True"))
+
+    assert out["errors"] == []
+    assert not out["stack_stopped"]
+    assert out["plugin_restarts"] == 0
+
+
+def test_other_ncp_failure_restarts_the_stack():
+    pytest.importorskip("bellows")
+    out = run(
+        "from bellows.ash import NcpFailure\nfrom bellows.types.named import NcpResetCode\n"
+        + textwrap.dedent(SCENARIO.format(supervisor=True, exc="NcpFailure(code=NcpResetCode.RESET_WATCHDOG)"))
+    )
+
+    assert len(out["errors"]) == 1
+    assert "unexpected error <NcpFailure(" in out["errors"][0] and "RESET_WATCHDOG" in out["errors"][0]
+    assert out["errors"][0].endswith(", restarting the Zigbee stack")
+    assert out["stack_stopped"]
