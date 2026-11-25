@@ -192,7 +192,7 @@ from Modules.restartPlugin import (restart_attempt_due,
                                    restartPluginViaDomoticzJsonApi)
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
 from Modules.tools import (build_list_of_device_model,
-                           reconcile_ieee_nwkid, lookupForIEEE,
+                           get_device_nickname, reconcile_ieee_nwkid, lookupForIEEE,
                            night_shift_jobs, unregister_domoticz_widget)
 from Modules.tools_mac_capa import node_descriptor_fields
 from Modules.txPower import set_TxPower
@@ -954,6 +954,10 @@ class BasePlugin:
         return result
 
 
+    def zigpy_get_device_name(self, nwkid):
+        return get_device_nickname(self, NwkId=nwkid)
+
+
     def zigpy_backup_available(self, backups):
         handle_zigpy_backup(self, backups)
 
@@ -1357,6 +1361,7 @@ def _start_zigpy_backend(self, backend_key):
         SerialPort,
         communication_specifics,
         zigpy_get_all_gp_devices=self.zigpy_get_all_gp_devices,
+        zigpy_get_device_name=self.zigpy_get_device_name,
         )
 
     self.ControllerLink.open_cie_connection()
