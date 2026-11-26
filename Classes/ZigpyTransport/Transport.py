@@ -72,6 +72,7 @@ class ZigpyTransport(object):
         self._concurrent_requests_semaphores_list = {}
         self._currently_waiting_requests_list = {}  
         self._currently_not_reachable = []
+        self._not_reachable_dropped = {}  # IEEE: requests dropped since the device was found not reachable
         self._periodic_reset = None
         
         # Initialise SQN Management
