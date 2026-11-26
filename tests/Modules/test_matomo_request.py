@@ -109,8 +109,10 @@ class TestVisitDimensions:
         plugin.pluginParameters["DisplayFirmwareVersion"] = "Znp - 20220219"
         with patch.object(matomo, "get_distribution", return_value=None), \
              patch.object(matomo, "get_architecture_model", return_value=None), \
+             patch.object(matomo, "get_python_and_machine", return_value=("", "")), \
              patch.object(matomo, "get_ronelabs_model_custom_definition", return_value=None), \
              patch.object(matomo, "get_raspberry_pi_model", return_value=None), \
+             patch.object(matomo, "is_container", return_value=False), \
              patch.object(matomo, "get_network_size_items", return_value="Small"):
             dims = matomo.populate_custom_dimensions(plugin)
         assert dims["dimension13"] == dims["dimension3"]
@@ -118,6 +120,93 @@ class TestVisitDimensions:
         assert dims["dimension15"] == dims["dimension1"]
         assert dims["dimension16"] == dims["dimension6"]
         assert dims["dimension17"] == "Small"
+        assert dims["dimension18"] == "ZiGate"
+        assert dims["dimension22"] == "No device tree"
+        for absent in ("dimension19", "dimension20", "dimension21"):
+            assert absent not in dims
+
+
+class TestPlatformVisitDimensions:
+    """Visit-scope dimensions 18-22: coordinator, Python, CPU, OS, hardware."""
+
+    def test_coordinator_and_os_are_copies(self, matomo):
+        dims = {"dimension2": "ZBDongle-E ezsp", "dimension7": "Debian GNU Linux 12"}
+        matomo.add_visit_dimensions(dims)
+        assert dims["dimension18"] == "ZBDongle-E ezsp"
+        assert dims["dimension21"] == "Debian GNU Linux 12"
+
+    @pytest.mark.parametrize("model, expected", [
+        ("Raspberry Pi 4 Model B Rev 1.5", "Raspberry Pi 4 Model B"),
+        ("Raspberry Pi 5 Model B Rev 1.0", "Raspberry Pi 5 Model B"),
+        ("Raspberry Pi Zero 2 W Rev 1.0", "Raspberry Pi Zero 2 W"),
+        ("Rockchip RK3328 EVB", "Rockchip RK3328 EVB"),
+        ("OpenWrt One", "OpenWrt One"),
+    ])
+    def test_hardware_drops_board_revision(self, matomo, model, expected):
+        dims = {"dimension11": model}
+        matomo.add_visit_dimensions(dims)
+        assert dims["dimension22"] == expected
+
+    def test_device_tree_nul_is_cleaned_before_the_revision_is_dropped(self, matomo, plugin):
+        with patch.object(matomo, "get_raspberry_pi_model", return_value="Raspberry Pi 3 Model B Plus Rev 1.3\x00"), \
+             patch.object(matomo, "get_ronelabs_model_custom_definition", return_value=None), \
+             patch.object(matomo, "get_network_size_items", return_value="Small"):
+            dims = matomo.populate_custom_dimensions(plugin)
+        assert dims["dimension22"] == "Raspberry Pi 3 Model B Plus"
+
+    def test_no_device_tree_no_hardware_value(self, matomo):
+        dims = {"dimension7": "Ubuntu 24.04"}
+        matomo.add_visit_dimensions(dims)
+        assert "dimension22" not in dims
+
+    @pytest.mark.parametrize("model, container, expected", [
+        (None, True, "Container"),
+        (None, False, "No device tree"),
+        ("\x00", False, "No device tree"),
+        ("Raspberry Pi 4 Model B Rev 1.5", False, "Raspberry Pi 4 Model B"),
+        # A container which is given the device tree: the board says more
+        ("Raspberry Pi 4 Model B Rev 1.5", True, "Raspberry Pi 4 Model B"),
+    ])
+    def test_snapshot_hardware_without_board_model(self, matomo, plugin, model, container, expected):
+        with patch.object(matomo, "get_raspberry_pi_model", return_value=model), \
+             patch.object(matomo, "is_container", return_value=container), \
+             patch.object(matomo, "get_ronelabs_model_custom_definition", return_value=None), \
+             patch.object(matomo, "get_network_size_items", return_value="Small"):
+            dims = matomo.populate_custom_dimensions(plugin)
+        assert dims["dimension22"] == expected
+
+    @pytest.mark.parametrize("container", [True, False])
+    def test_action_platform_stays_empty_without_board_model(self, matomo, plugin, container):
+        with patch.object(matomo, "get_raspberry_pi_model", return_value=None), \
+             patch.object(matomo, "is_container", return_value=container), \
+             patch.object(matomo, "get_ronelabs_model_custom_definition", return_value=None), \
+             patch.object(matomo, "get_network_size_items", return_value="Small"):
+            dims = matomo.populate_custom_dimensions(plugin)
+        assert "dimension11" not in dims
+
+    @pytest.mark.parametrize("present, expected", [
+        ("/.dockerenv", True),
+        ("/run/.containerenv", True),
+        ("/proc/device-tree/model", False),
+    ])
+    def test_is_container(self, matomo, present, expected):
+        with patch.object(matomo.os.path, "exists", side_effect=lambda path: path == present):
+            assert matomo.is_container() is expected
+
+    def test_python_and_machine_values(self, matomo):
+        with patch.object(matomo.platform, "python_version_tuple", return_value=("3", "11", "2")), \
+             patch.object(matomo.platform, "machine", return_value="aarch64"):
+            assert matomo.get_python_and_machine() == ("3.11", "aarch64")
+
+    def test_snapshot_carries_python_and_machine(self, matomo, plugin):
+        with patch.object(matomo, "get_python_and_machine", return_value=("3.13", "x86_64")), \
+             patch.object(matomo, "get_raspberry_pi_model", return_value=None), \
+             patch.object(matomo, "get_ronelabs_model_custom_definition", return_value=None), \
+             patch.object(matomo, "get_network_size_items", return_value="Small"):
+            dims = matomo.populate_custom_dimensions(plugin)
+        assert dims["dimension19"] == "3.13"
+        assert dims["dimension20"] == "x86_64"
+        assert dims["dimension21"] == "Raspberry Pi OS 11"
 
 
 # ---------------------------------------------------------------------------
