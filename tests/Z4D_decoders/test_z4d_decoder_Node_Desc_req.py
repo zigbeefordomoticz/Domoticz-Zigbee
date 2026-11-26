@@ -69,3 +69,69 @@ class TestDecode0042:
         monkeypatch.setattr(mod, "raw_APS_request", raw)
         mod.Decode0042(plugin, {}, _make_msg(nwkid="0000"), LQI)
         raw.assert_called_once()
+
+
+def _payload(raw):
+    # raw_APS_request(self, nwkid, ep, cluster, profile, payload, ...)
+    return raw.call_args.args[5]
+
+
+class TestDecode0042Payload:
+    """The response is sent as raw ZDP: Node_Desc_rsp layout, little-endian 16-bit fields."""
+
+    # Coordinator record as Decode8042 stores it (big-endian hex, ZiGate 0x8042 field names)
+    # for an EZSP coordinator: logical type Coordinator, 2.4 GHz, MAC capability 0x8f,
+    # buffer 0x52, max in/out transfer 128, server mask 0x2c41, descriptor capability 0x00.
+    EZSP_COORDINATOR = {
+        "Ep": {}, "Manufacturer": "1049",
+        "bitfield": "4000", "macapa": "8f", "Max Buffer Size": "52",
+        "Max Rx": "0080", "Max Tx": "0080",
+        "server_mask": "2c41", "descriptor_capability": "00",
+    }
+
+    def test_success_payload_is_in_zdp_order(self, mod, plugin, monkeypatch):
+        plugin.ListOfDevices["0000"] = dict(self.EZSP_COORDINATOR)
+        raw = MagicMock()
+        monkeypatch.setattr(mod, "raw_APS_request", raw)
+        mod.Decode0042(plugin, {}, _make_msg(nwkid="0000"), LQI)
+
+        # The same bytes as the Node_Desc_rsp the EZSP stack sends itself for this coordinator,
+        # except the manufacturer code, which the plugin answers as 0x0000.
+        expected = (
+            "01" "00" "0000"   # sqn, status Success, NWKAddrOfInterest
+            "0040"             # logical type Coordinator / 2.4 GHz band
+            "8f"               # MAC capability
+            "0000"             # manufacturer code
+            "52"               # max buffer size
+            "8000"             # max incoming transfer size 128
+            "412c"             # server mask 0x2c41
+            "8000"             # max outgoing transfer size 128
+            "00"               # descriptor capability
+        )
+        assert _payload(raw) == expected
+
+    def test_success_payload_has_node_descriptor_length(self, mod, plugin, monkeypatch):
+        plugin.ListOfDevices["0000"] = dict(self.EZSP_COORDINATOR)
+        raw = MagicMock()
+        monkeypatch.setattr(mod, "raw_APS_request", raw)
+        mod.Decode0042(plugin, {}, _make_msg(nwkid="0000"), LQI)
+
+        # sqn + status + NWK address = 4 bytes, Node Descriptor = 13 bytes
+        assert len(bytes.fromhex(_payload(raw))) == 4 + 13
+
+    def test_response_goes_back_to_the_requester_on_zdo(self, mod, plugin, monkeypatch):
+        plugin.ListOfDevices["0000"] = dict(self.EZSP_COORDINATOR)
+        raw = MagicMock()
+        monkeypatch.setattr(mod, "raw_APS_request", raw)
+        mod.Decode0042(plugin, {}, _make_msg(nwkid="0000", src="e568"), LQI)
+
+        args = raw.call_args.args
+        assert args[1:5] == ("e568", "00", "8002", "0000")
+        assert raw.call_args.kwargs["zigpyzqn"] == "01"
+
+    def test_error_payload_has_little_endian_nwk_address(self, mod, plugin, monkeypatch):
+        raw = MagicMock()
+        monkeypatch.setattr(mod, "raw_APS_request", raw)
+        mod.Decode0042(plugin, {}, _make_msg(nwkid="1234"), LQI)
+
+        assert _payload(raw) == "01" "80" "3412"
