@@ -720,6 +720,7 @@ def report_dropped_request(self, ieee, nwkid, function, cluster, sequence):
 
 
 def report_reachable_again(self, ieee, nwkid):
+    """A device found not reachable acknowledged a request again: log how many requests were dropped meanwhile."""
     dropped = self._not_reachable_dropped.pop(ieee, 0)
     if dropped:
         self.log.logging(

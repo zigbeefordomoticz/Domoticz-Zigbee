@@ -51,7 +51,7 @@ def make_transport():
     t._concurrent_requests_semaphores_list = {}
     t._currently_waiting_requests_list     = {}
     t._currently_not_reachable             = []
-    t._not_reachable_dropped               = {}
+    t._not_reachable_dropped = {}
     t.pluginconf  = MagicMock()
     t.pluginconf.pluginConf = {"ForceAPSAck": False}
     return t
