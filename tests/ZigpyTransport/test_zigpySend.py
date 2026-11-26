@@ -51,6 +51,7 @@ def make_transport():
     t._concurrent_requests_semaphores_list = {}
     t._currently_waiting_requests_list     = {}
     t._currently_not_reachable             = []
+    t._not_reachable_dropped               = {}
     t.pluginconf  = MagicMock()
     t.pluginconf.pluginConf = {"ForceAPSAck": False}
     return t
@@ -575,6 +576,104 @@ class TestProcessRawCommandPairing(unittest.TestCase):
     def test_request_without_the_flag_is_not_pairing(self):
         # e.g. the raw command of the WebUI
         self.assertFalse(self._pairing_passed(self._data()))
+
+
+# ===========================================================================
+# Requests dropped while a device is not reachable: visible in the log
+# ===========================================================================
+
+def _levels(t):
+    return [c.args[1] for c in t.log.logging.call_args_list]
+
+
+class TestDroppedRequestsAreLogged(unittest.TestCase):
+
+    def test_first_drop_is_logged_the_next_ones_in_debug(self):
+        from Classes.ZigpyTransport.zigpySend import report_dropped_request
+        t = make_transport()
+        for sqn in range(4):
+            report_dropped_request(t, IEEE, "9d5a", "IAS_Zone_enrollment_response", 0x0500, sqn)
+        self.assertEqual(_levels(t), ["Log", "Debug", "Debug", "Debug"])
+        first = t.log.logging.call_args_list[0].args[2]
+        self.assertIn("9d5a", first)
+        self.assertIn("IAS_Zone_enrollment_response", first)
+        self.assertIn("0x0500", first)
+        self.assertEqual(t._not_reachable_dropped, {IEEE: 4})
+
+    def test_count_is_logged_when_the_device_answers_again(self):
+        from Classes.ZigpyTransport.zigpySend import report_dropped_request, report_reachable_again
+        t = make_transport()
+        for sqn in range(3):
+            report_dropped_request(t, IEEE, "9d5a", "fn", 0x0001, sqn)
+        t.log.logging.reset_mock()
+        report_reachable_again(t, IEEE, "9d5a")
+        self.assertEqual(_levels(t), ["Log"])
+        self.assertIn("3 request(s)", t.log.logging.call_args.args[2])
+        self.assertEqual(t._not_reachable_dropped, {})
+
+    def test_nothing_logged_when_nothing_was_dropped(self):
+        from Classes.ZigpyTransport.zigpySend import report_reachable_again
+        t = make_transport()
+        report_reachable_again(t, IEEE, "9d5a")
+        t.log.logging.assert_not_called()
+
+    def test_a_new_burst_is_logged_again(self):
+        from Classes.ZigpyTransport.zigpySend import report_dropped_request, report_reachable_again
+        t = make_transport()
+        report_dropped_request(t, IEEE, "9d5a", "fn", 0x0001, 1)
+        report_reachable_again(t, IEEE, "9d5a")
+        t.log.logging.reset_mock()
+        report_dropped_request(t, IEEE, "9d5a", "fn", 0x0001, 2)
+        self.assertEqual(_levels(t), ["Log"])
+
+    def test_successful_send_reports_the_dropped_requests(self):
+        from Classes.ZigpyTransport.zigpySend import handle_transport_result
+        t = make_transport()
+        t._currently_not_reachable = [IEEE]
+        t._not_reachable_dropped = {IEEE: 2}
+        with patch("Classes.ZigpyTransport.zigpySend.push_APS_ACK_NACKto_plugin"):
+            handle_transport_result(t, "fn", 0x0006, 1, 0x00, ack_is_disable=False, extended_timeout=False,
+                                    _ieee=IEEE, _nwkid="9d5a", lqi=255)
+        self.assertNotIn(IEEE, t._currently_not_reachable)
+        self.assertEqual(t._not_reachable_dropped, {})
+        self.assertIn("2 request(s)", t.log.logging.call_args.args[2])
+
+
+class TestTransportRequestDropIsLogged(unittest.TestCase):
+    """The case seen on a HEIMAN water sensor: the requests queued behind a timeout were dropped in Debug only."""
+
+    def test_queued_request_of_a_not_reachable_device_is_logged(self):
+        from Classes.ZigpyTransport import zigpySend
+        t = make_transport()
+        t._radiomodule = "ezsp"
+        t._currently_not_reachable = [IEEE]
+        destination = MagicMock()
+        destination.ieee = IEEE
+        destination.nwk.serialize.return_value = bytes.fromhex("5a9d")
+        send = AsyncMock(return_value=0x00)
+        real_sleep = asyncio.sleep  # the module's asyncio.sleep is patched below, the scenario must still yield
+
+        async def scenario():
+            semaphore = asyncio.Semaphore(zigpySend.MAX_CONCURRENT_REQUESTS_PER_DEVICE)
+            t._concurrent_requests_semaphores_list[IEEE] = semaphore
+            await semaphore.acquire()
+            task = asyncio.ensure_future(zigpySend.transport_request(
+                t, "IAS_Zone_enrollment_response", destination, 0x0104, 0x0500, 1, 1, 0x16, b"\x19\x16\x00\x00\x00",
+                ack_is_disable=False))
+            await real_sleep(0)
+            semaphore.release()
+            return await task
+
+        with patch.object(zigpySend, "_send_request", new=send), \
+                patch.object(zigpySend.asyncio, "sleep", new=AsyncMock()):
+            result = run(scenario())
+
+        self.assertIsNone(result)
+        send.assert_not_awaited()
+        logged = [c.args for c in t.log.logging.call_args_list if c.args[1] == "Log"]
+        self.assertEqual(len(logged), 1)
+        self.assertIn("IAS_Zone_enrollment_response", logged[0][2])
+        self.assertEqual(t._not_reachable_dropped, {IEEE: 1})
 
 
 if __name__ == "__main__":

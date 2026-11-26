@@ -600,6 +600,7 @@ async def transport_request(
 
     async with _limit_concurrency(self, destination, sequence):
         if is_skipped_as_not_reachable(self, _ieee, _nwkid, sequence, pairing):
+            report_dropped_request(self, _ieee, _nwkid, Function, Cluster, sequence)
             if _is_keep_alive(Profile, Cluster):
                 _log_keep_alive(self, _nwkid, f"{_ieee} skipped, device not reachable")
             return None
@@ -688,8 +689,44 @@ def handle_transport_result(self, Function, Cluster, sequence, result, ack_is_di
     if result == 0x00:
         if _ieee in self._currently_not_reachable:
             self._currently_not_reachable.remove(_ieee)
+        report_reachable_again(self, _ieee, _nwkid)
     elif _ieee not in self._currently_not_reachable:
         self._currently_not_reachable.append(_ieee)
+
+
+def report_dropped_request(self, ieee, nwkid, function, cluster, sequence):
+    """
+    A request queued for a device found not reachable is dropped.
+
+    The first one of a burst is logged, the next ones only in Debug: report_reachable_again()
+    gives their number once the device answers.
+    """
+    dropped = self._not_reachable_dropped.get(ieee, 0) + 1
+    self._not_reachable_dropped[ieee] = dropped
+    if dropped == 1:
+        self.log.logging(
+            "TransportZigpy", "Log",
+            f"Device {nwkid} ({ieee}) did not acknowledge a request: the requests queued for it are dropped "
+            f"until it answers again. First one: {function} cluster 0x{cluster:04x} sequence {sequence}",
+            nwkid,
+        )
+        return
+    self.log.logging(
+        "TransportZigpy", "Debug",
+        f"transport_request: Request {sequence} skipped. Device not reachable: NwkId: {nwkid} IEEE: {ieee} "
+        f"({dropped} dropped)",
+        nwkid,
+    )
+
+
+def report_reachable_again(self, ieee, nwkid):
+    dropped = self._not_reachable_dropped.pop(ieee, 0)
+    if dropped:
+        self.log.logging(
+            "TransportZigpy", "Log",
+            f"Device {nwkid} ({ieee}) answers again: {dropped} request(s) were dropped while it was not reachable",
+            nwkid,
+        )
 
 
 def push_APS_ACK_NACKto_plugin(self, nwkid, Cluster, sequence, result, lqi):
