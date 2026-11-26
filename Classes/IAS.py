@@ -51,6 +51,9 @@ from Zigbee.zdpCommands import zdp_simple_descriptor_request
 MATCH_DESC_REQUEST_LIFETIME = 300
 
 ENROLL_RESPONSE_OK_CODE = 0x00
+# Status of an Ep once its Zone Enroll Response is sent. It becomes "Enrolled" when the device reports
+# ZoneState 0x01 (IAS_CIE_service_discovery_response): the response can be lost, a sleepy device can miss it.
+ENROLL_RESPONSE_SENT = "Enroll Response sent"
 ZONE_ID = 0x00
 
 IAS_ATTRIBUT_ZONE_STATE = "0000"
@@ -280,7 +283,7 @@ class IAS_Zone_Management:
                 self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ] = {}
 
             # We are may be in an Auto-Enrollment by the device ( Frient )
-            self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Enrolled2"
+            self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = ENROLL_RESPONSE_SENT
             self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["ZoneId"] = "%02x" %ZONE_ID
             IAS_Zone_enrollment_response(self, NwkId, Ep, sqn, ZONE_ID)
             check_IAS_CIE_Address(self, NwkId, Ep)
@@ -299,7 +302,7 @@ class IAS_Zone_Management:
             check_IAS_CIE_Address(self, NwkId, Ep)
             return
         
-        self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Enrolled"
+        self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = ENROLL_RESPONSE_SENT
         self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["ZoneId"] = "%02x" %ZONE_ID
         IAS_Zone_enrollment_response(self, NwkId, Ep, sqn, ZONE_ID)
         check_IAS_CIE_Address(self, NwkId, Ep)
@@ -526,12 +529,12 @@ def IAS_CIE_service_discovery( self, NwkId, Epout):
 
 
 def IAS_Zone_enrollment_response(self, NwkId, Ep, sqn, ZoneID):
-    # The IAS Zone server SHALL change its ZoneState attribute to 0x01 (enrolled). 
+    # On receipt, the IAS Zone server SHALL change its ZoneState attribute to 0x01 (enrolled).
+    # The Ep is taken as enrolled only when the device reports it, see ENROLL_RESPONSE_SENT.
     self.logging("Debug", f"IAS Zone_enroll_response for {NwkId}/{Ep}")
     if not self.ControllerIEEE:
         self.logging("Error", "IASZone_enroll_response_zoneIDzoneID - Zigate IEEE not yet known")
         return
-    self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Enrolled"
     zcl_ias_zone_enroll_response(self, NwkId, ZIGATE_EP, Ep, "%02x" %ENROLL_RESPONSE_OK_CODE, "%02x" %ZoneID, sqn=sqn, ackIsDisabled=False)
 
 
