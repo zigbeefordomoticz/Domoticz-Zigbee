@@ -81,9 +81,10 @@ class TestDecode0042Payload:
 
     # Coordinator record as Decode8042 stores it (big-endian hex, ZiGate 0x8042 field names)
     # for an EZSP coordinator: logical type Coordinator, 2.4 GHz, MAC capability 0x8f,
-    # buffer 0x52, max in/out transfer 128, server mask 0x2c41, descriptor capability 0x00.
+    # manufacturer 0xabcd, buffer 0x52, max in/out transfer 128, server mask 0x2c41,
+    # descriptor capability 0x00.
     EZSP_COORDINATOR = {
-        "Ep": {}, "Manufacturer": "1049",
+        "Ep": {}, "Manufacturer": "abcd",
         "bitfield": "4000", "macapa": "8f", "Max Buffer Size": "52",
         "Max Rx": "0080", "Max Tx": "0080",
         "server_mask": "2c41", "descriptor_capability": "00",
@@ -95,13 +96,13 @@ class TestDecode0042Payload:
         monkeypatch.setattr(mod, "raw_APS_request", raw)
         mod.Decode0042(plugin, {}, _make_msg(nwkid="0000"), LQI)
 
-        # The same bytes as the Node_Desc_rsp the EZSP stack sends itself for this coordinator,
-        # except the manufacturer code, which the plugin answers as 0x0000.
+        # The same bytes as the Node_Desc_rsp the EZSP stack sends itself for this coordinator
+        # (ZBDongle-E capture: 0040 8f cdab 52 8000 412c 8000 00).
         expected = (
             "01" "00" "0000"   # sqn, status Success, NWKAddrOfInterest
             "0040"             # logical type Coordinator / 2.4 GHz band
             "8f"               # MAC capability
-            "0000"             # manufacturer code
+            "cdab"             # manufacturer code 0xabcd, the coordinator's own
             "52"               # max buffer size
             "8000"             # max incoming transfer size 128
             "412c"             # server mask 0x2c41
@@ -135,3 +136,22 @@ class TestDecode0042Payload:
         mod.Decode0042(plugin, {}, _make_msg(nwkid="1234"), LQI)
 
         assert _payload(raw) == "01" "80" "3412"
+
+    def test_manufacturer_code_is_the_coordinators_own(self, mod, plugin, monkeypatch):
+        plugin.ListOfDevices["0000"] = dict(self.EZSP_COORDINATOR, Manufacturer="1037")
+        raw = MagicMock()
+        monkeypatch.setattr(mod, "raw_APS_request", raw)
+        mod.Decode0042(plugin, {}, _make_msg(nwkid="0000"), LQI)
+
+        # bytes 7-8 of the payload: after sqn, status, NWK address (4 bytes), bitfield (2) and MAC capability (1)
+        assert _payload(raw)[14:18] == "3710"
+
+    @pytest.mark.parametrize("stored", ["", {}, "12", "zzzz", "1 37"])
+    def test_unusable_manufacturer_code_is_sent_as_0000(self, mod, plugin, monkeypatch, stored):
+        plugin.ListOfDevices["0000"] = dict(self.EZSP_COORDINATOR, Manufacturer=stored)
+        raw = MagicMock()
+        monkeypatch.setattr(mod, "raw_APS_request", raw)
+        mod.Decode0042(plugin, {}, _make_msg(nwkid="0000"), LQI)
+
+        assert _payload(raw)[14:18] == "0000"
+        assert len(bytes.fromhex(_payload(raw))) == 4 + 13

@@ -1,3 +1,4 @@
+import re
 import struct
 
 from Modules.sendZigateCommand import raw_APS_request
@@ -31,8 +32,11 @@ def Decode0042(self, Devices, MsgData, MsgLQI):
     else:
         status = '00'
 
+        # The coordinator's own code, as its stack reported it in its Node Descriptor (Decode8042),
+        # so this answer matches the one the stack sends itself
         controllerManufacturerCode = self.ListOfDevices['0000']['Manufacturer']
-        controllerManufacturerCode = '0000'
+        if not isinstance(controllerManufacturerCode, str) or not re.fullmatch('[0-9a-fA-F]{4}', controllerManufacturerCode):
+            controllerManufacturerCode = '0000'
         self.log.logging('Input', 'Debug', 'Decode0042 - %s/%s requested manuf code -responding with Manufacturer: %s' % (srcNwkId, srcEp, controllerManufacturerCode))
         manuf_code16 = _le16(controllerManufacturerCode)
         max_in_size16 = _le16(self.ListOfDevices['0000']['Max Rx'])
