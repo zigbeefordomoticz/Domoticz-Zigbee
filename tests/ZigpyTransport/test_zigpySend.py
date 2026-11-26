@@ -370,5 +370,109 @@ class TestSendMulticastCommand(unittest.TestCase):
         self.assertEqual(result, 0x00)
 
 
+# ===========================================================================
+# Not reachable: queued requests of a device being paired are not dropped
+# ===========================================================================
+
+IEEE = "aa:bb:cc:dd:ee:ff:00:11"
+
+
+class TestIsSkippedAsNotReachable(unittest.TestCase):
+
+    def _transport(self, not_reachable, waiting):
+        t = make_transport()
+        t._currently_not_reachable = [IEEE] if not_reachable else []
+        t._currently_waiting_requests_list = {IEEE: waiting}
+        return t
+
+    def test_reachable_device_is_not_skipped(self):
+        from Classes.ZigpyTransport.zigpySend import is_skipped_as_not_reachable
+        self.assertFalse(is_skipped_as_not_reachable(self._transport(False, 3), IEEE, "abcd", 1, False))
+
+    def test_not_reachable_without_queue_is_not_skipped(self):
+        from Classes.ZigpyTransport.zigpySend import is_skipped_as_not_reachable
+        self.assertFalse(is_skipped_as_not_reachable(self._transport(True, 0), IEEE, "abcd", 1, False))
+
+    def test_not_reachable_with_queue_is_skipped(self):
+        from Classes.ZigpyTransport.zigpySend import is_skipped_as_not_reachable
+        self.assertTrue(is_skipped_as_not_reachable(self._transport(True, 1), IEEE, "abcd", 1, False))
+
+    def test_not_reachable_with_queue_but_pairing_is_sent(self):
+        from Classes.ZigpyTransport.zigpySend import is_skipped_as_not_reachable
+        self.assertFalse(is_skipped_as_not_reachable(self._transport(True, 5), IEEE, "abcd", 1, True))
+
+
+class TestTransportRequestPairing(unittest.TestCase):
+    """The case seen on a HEIMAN water sensor: one timeout during its link-key exchange, the queue behind it."""
+
+    def _run(self, pairing):
+        from Classes.ZigpyTransport import zigpySend
+        t = make_transport()
+        t._radiomodule = "ezsp"
+        t._currently_not_reachable = [IEEE]
+        t.pluginconf.pluginConf = {"ForceAPSAck": False}
+        destination = MagicMock()
+        destination.ieee = IEEE
+        destination.nwk.serialize.return_value = bytes.fromhex("5a9d")
+        send = AsyncMock(return_value=0x00)
+        real_sleep = asyncio.sleep  # the module's asyncio.sleep is patched below, the scenario must still yield
+
+        async def scenario():
+            # Hold the device slot, so that the request below queues behind it like during the pairing
+            semaphore = asyncio.Semaphore(zigpySend.MAX_CONCURRENT_REQUESTS_PER_DEVICE)
+            t._concurrent_requests_semaphores_list[IEEE] = semaphore
+            await semaphore.acquire()
+            task = asyncio.ensure_future(zigpySend.transport_request(
+                t, "IAS_Zone_enrollment_response", destination, 0x0104, 0x0500, 1, 1, 0x16, b"\x19\x16\x00\x00\x00",
+                ack_is_disable=False, pairing=pairing))
+            await real_sleep(0)
+            self.assertEqual(t._currently_waiting_requests_list[IEEE], 1)
+            semaphore.release()
+            return await task
+
+        with patch.object(zigpySend, "_send_and_retry", new=send), \
+                patch.object(zigpySend.asyncio, "sleep", new=AsyncMock()):
+            result = run(scenario())
+        return send, result
+
+    def test_queued_request_of_a_pairing_device_is_sent(self):
+        send, result = self._run(pairing=True)
+        send.assert_awaited_once()
+        self.assertEqual(result, 0x00)
+
+    def test_queued_request_of_another_device_is_still_skipped(self):
+        send, result = self._run(pairing=False)
+        send.assert_not_awaited()
+        self.assertIsNone(result)
+
+
+class TestProcessRawCommandPairing(unittest.TestCase):
+
+    def _data(self, **extra):
+        data = {
+            "Function": "fn", "timestamp": 0, "Profile": 0x0104, "Cluster": 0x0500, "TargetNwk": 0x9D5A,
+            "TargetEp": 1, "SrcEp": 1, "payload": "1001", "AddressMode": 0x02, "RxOnIdle": True,
+        }
+        data.update(extra)
+        return data
+
+    def _pairing_passed(self, data):
+        from Classes.ZigpyTransport import zigpySend
+        t = make_transport()
+        unicast = AsyncMock(return_value=(0x00, ""))
+        with patch.object(zigpySend, "_get_destination", return_value=(MagicMock(), "Unicast")), \
+                patch.object(zigpySend, "send_unicast_command", new=unicast):
+            run(zigpySend.process_raw_command(t, data, AckIsDisable=False, Sqn=1))
+        return unicast.call_args.kwargs["pairing"]
+
+    def test_pairing_flag_reaches_the_unicast_send(self):
+        self.assertTrue(self._pairing_passed(self._data(Pairing=True)))
+        self.assertFalse(self._pairing_passed(self._data(Pairing=False)))
+
+    def test_request_without_the_flag_is_not_pairing(self):
+        # e.g. the raw command of the WebUI
+        self.assertFalse(self._pairing_passed(self._data()))
+
+
 if __name__ == "__main__":
     unittest.main()

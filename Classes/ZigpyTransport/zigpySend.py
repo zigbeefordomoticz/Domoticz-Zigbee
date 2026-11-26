@@ -115,6 +115,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None, delayAft
     addressmode = data["AddressMode"]
     extended_timeout = False if AckIsDisable else data.get("RxOnIdle", False)
     delay = data.get("Delay", None)
+    pairing = data.get("Pairing", False)
 
     self.log.logging("TransportZigpy", "Debug",
                      f"process_raw_command: ready to request Function: {Function} NwkId: {NwkId}/{dEp} "
@@ -134,7 +135,8 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None, delayAft
         "Multicast": lambda: send_multicast_command(self, NwkId, Profile, Cluster, sEp, sequence, payload),
         "Unicast":   lambda: send_unicast_command(self, destination, Profile, Cluster, sEp, dEp,
                                                   sequence, payload, AckIsDisable, delay,
-                                                  extended_timeout, Function, Sqn, delayAfterSent),
+                                                  extended_timeout, Function, Sqn, delayAfterSent,
+                                                  pairing=pairing),
     }
 
     key = "Multicast" if addressmode == 0x01 else transport_needs
@@ -170,7 +172,8 @@ async def send_multicast_command(self, NwkId, Profile, Cluster, sEp, sequence, p
 
 
 async def send_unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequence, payload,
-                               AckIsDisable, delay, extended_timeout, Function, Sqn, delayAfterSent):
+                               AckIsDisable, delay, extended_timeout, Function, Sqn, delayAfterSent,
+                               pairing=False):
     """
     Sends a unicast command to a Zigbee device.
 
@@ -190,7 +193,8 @@ async def send_unicast_command(self, destination, Profile, Cluster, sEp, dEp, se
         task = asyncio.create_task(
             transport_request(self, Function, destination, Profile, Cluster, sEp, dEp, sequence,
                               payload, ack_is_disable=AckIsDisable, use_ieee=False, delay=delay,
-                              extended_timeout=extended_timeout, delayAfterSent=delayAfterSent),
+                              extended_timeout=extended_timeout, delayAfterSent=delayAfterSent,
+                              pairing=pairing),
             name=f"send_unicast_command-{Function}-{destination}-{Cluster}-{Sqn}"
         )
     except (TypeError, ValueError, RuntimeError) as e:
@@ -441,6 +445,33 @@ def measure_execution_time(func):
     return wrapper
 
 
+def is_skipped_as_not_reachable(self, ieee, nwkid, sequence, pairing):
+    """
+    Is a request dropped because its device is not reachable?
+
+    Once a send to a device fails, the requests queued for it are dropped, so that a device which
+    is gone does not hold the queue. A device being paired is not gone: a battery device can miss
+    the send timeout while it exchanges its link key, and dropping its queue loses the enrollment.
+    """
+    if ieee not in self._currently_not_reachable or not self._currently_waiting_requests_list.get(ieee, 0):
+        return False
+
+    if pairing:
+        self.log.logging(
+            "TransportZigpy", "Debug",
+            f"transport_request: Request {sequence} sent although the device is not reachable: pairing. "
+            f"NwkId: {nwkid} IEEE: {ieee}"
+        )
+        return False
+
+    self.log.logging(
+        "TransportZigpy", "Debug",
+        f"transport_request: Request {sequence} skipped. Device not reachable: "
+        f"NwkId: {nwkid} IEEE: {ieee}"
+    )
+    return True
+
+
 @measure_execution_time
 async def transport_request(
     self,
@@ -457,6 +488,7 @@ async def transport_request(
     delay=None,
     extended_timeout=False,
     delayAfterSent=0,
+    pairing=False,
 ):
     """
     Send a Zigbee message using the transport layer.
@@ -479,12 +511,7 @@ async def transport_request(
         await asyncio.sleep(delay)
 
     async with _limit_concurrency(self, destination, sequence):
-        if _ieee in self._currently_not_reachable and self._currently_waiting_requests_list.get(_ieee, 0):
-            self.log.logging(
-                "TransportZigpy", "Debug",
-                f"transport_request: Request {sequence} skipped. Device not reachable: "
-                f"NwkId: {_nwkid} IEEE: {_ieee}"
-            )
+        if is_skipped_as_not_reachable(self, _ieee, _nwkid, sequence, pairing):
             return None
 
         result = await _send_and_retry(
