@@ -356,7 +356,7 @@ def make_transport(loop=None):
     transport._concurrent_requests_semaphores_list = {}
     transport._currently_waiting_requests_list     = {}
     transport._currently_not_reachable             = []
-    transport._not_reachable_dropped               = {}
+    transport._not_reachable_dropped = {}
 
     # ----- plugin config -----
     transport.pluginconf = MagicMock()
