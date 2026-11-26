@@ -275,6 +275,7 @@ async def _prepare_for_restart(self):
     self._concurrent_requests_semaphores_list.clear()
     self._currently_waiting_requests_list.clear()
     self._currently_not_reachable.clear()
+    self._not_reachable_dropped.clear()
 
     self.zigpy_running = False
     self.log.logging("TransportZigpyStack", "Debug",

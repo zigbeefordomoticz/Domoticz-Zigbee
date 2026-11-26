@@ -51,6 +51,7 @@ def make_transport(loop=None):
     t._concurrent_requests_semaphores_list = {}
     t._currently_waiting_requests_list     = {}
     t._currently_not_reachable             = []
+    t._not_reachable_dropped = {}
     t.restart_plugin      = MagicMock()
     return t
 
@@ -113,10 +114,12 @@ class TestPrepareForRestart(unittest.TestCase):
         t._concurrent_requests_semaphores_list = {"ieee1": MagicMock()}
         t._currently_waiting_requests_list     = {"ieee1": 2}
         t._currently_not_reachable             = ["ieee1"]
+        t._not_reachable_dropped = {"ieee1": 4}
         self._run_prepare(t)
         self.assertEqual(t._concurrent_requests_semaphores_list, {})
         self.assertEqual(t._currently_waiting_requests_list, {})
         self.assertEqual(t._currently_not_reachable, [])
+        self.assertEqual(t._not_reachable_dropped, {})
 
     def test_creates_fresh_writer_queue(self):
         t = make_transport()
