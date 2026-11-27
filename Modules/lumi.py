@@ -27,7 +27,7 @@ from Modules.readAttributes import ReadAttributeRequest_0b04_050b
 from Modules.tools import (checkAndStoreAttributeValue,
                            get_deviceconf_parameter_value,
                            getListOfEpForCluster, is_ack_tobe_disabled,
-                           voltage2batteryP)
+                           mainPoweredDevice, voltage2batteryP)
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, SIZE_DATA_TYPE, ZIGATE_EP
 
 XIAOMI_POWERMETER_EP = {
@@ -981,7 +981,9 @@ def lumi_private_cluster(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006", sOnOff)
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0006", "0000", sOnOff)
 
-    if sOnOff2 != "" and self.ListOfDevices[MsgSrcAddr]["MacCapa"] == "8e" and self.ListOfDevices[MsgSrcAddr]["Model"] not in ("lumi.sensor_wleak.aq1",):
+    # mainPoweredDevice(), not MacCapa == "8e": a MainPoweredDevice model that announced
+    # itself as an end device (lumi.light.aqcn02) is kept at MacCapa 84.
+    if sOnOff2 != "" and mainPoweredDevice(self, MsgSrcAddr) and self.ListOfDevices[MsgSrcAddr]["Model"] not in ("lumi.sensor_wleak.aq1",):
         self.log.logging( "Lumi", "Debug", "lumi_private_cluster - 0000/ff01 Saddr: %s sOnOff2: %s" % (MsgSrcAddr, sOnOff2), MsgSrcAddr )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006", sOnOff2)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0006", "0000", sOnOff)
