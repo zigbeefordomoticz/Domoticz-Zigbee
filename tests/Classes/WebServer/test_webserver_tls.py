@@ -10,6 +10,7 @@ are present. It must refuse TLS 1.0 and 1.1 on its own, whoever calls it
 """
 
 import datetime
+import os
 import ssl
 import types
 
@@ -18,7 +19,8 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509.oid import NameOID
 
-from Classes.WebServer.com import check_cert_and_key
+from Classes.WebServer.com import (check_cert_and_key,
+                                 webui_certificate_paths, webui_uses_tls)
 
 
 def _fake_webserver():
@@ -73,3 +75,27 @@ def test_no_context_with_invalid_certificate(tmp_path):
         f.write("not a certificate")
 
     assert check_cert_and_key(_fake_webserver(), cert_path, key_path) is None
+
+
+def test_certificate_paths_from_settings_else_plugin_folder(tmp_path):
+    home = str(tmp_path)
+    assert webui_certificate_paths({}, home) == (
+        os.path.join(home, "server.crt"), os.path.join(home, "server.key"))
+    assert webui_certificate_paths({"SSLCertificate": "/c.crt", "SSLPrivateKey": "/k.key"}, home) == (
+        "/c.crt", "/k.key")
+
+
+def test_webui_uses_tls_with_a_usable_certificate(tmp_path):
+    """The custom menu page and run_server() agree on https."""
+    cert_path, key_path = _write_self_signed(tmp_path)
+    assert webui_uses_tls({"SSLCertificate": cert_path, "SSLPrivateKey": key_path}, str(tmp_path))
+    # Defaults: server.crt / server.key in the plugin folder
+    assert webui_uses_tls({}, str(tmp_path))
+
+
+def test_webui_uses_no_tls_without_or_with_a_bad_certificate(tmp_path):
+    assert not webui_uses_tls({}, str(tmp_path))
+    cert_path, key_path = _write_self_signed(tmp_path)
+    with open(cert_path, "w") as f:
+        f.write("not a certificate")
+    assert not webui_uses_tls({}, str(tmp_path))

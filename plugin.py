@@ -150,6 +150,7 @@ from Classes.SceneSelector import SceneSelector
 from Classes.ThreadSafeDeviceDict import ThreadSafeDeviceDict
 from Classes.TransportStats import TransportStatistics
 from Classes.WebServer.WebServer import WebServer
+from Classes.WebServer.com import webui_uses_tls
 from Classes.ZigpyTopology import ZigpyTopology
 from Modules.basicOutputs import (ZigatePermitToJoin, leaveRequest,
                                   setExtendedPANID, setTimeServer,
@@ -164,7 +165,7 @@ from Modules.database import (LoadDeviceList, flush_plugin_listofdevice,
                               checkDevices2LOD, checkListOfDevice2Devices,
                               SCENES_STORE, import_local_device_conf,
                               load_plugin_stores)
-from Modules.domoticzCustomMenu import custom_menu_html
+from Modules.domoticzCustomMenu import custom_menu_html, webui_enabled
 from Modules.domoticzAbstractLayer import (
     domo_read_Name, load_list_of_domoticz_widget,
     retrieve_widgetid_from_deviceId_unit)
@@ -526,8 +527,11 @@ class BasePlugin:
 
         # Create Domoticz Sub menu
         if "DomoticzCustomMenu" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["DomoticzCustomMenu"]:
-            Domoticz.Status("Z4D installs the WebUI in the Domoticz custom menu")
-            install_Z4D_to_domoticz_custom_ui( )
+            if webui_enabled(Parameters["Mode4"]):
+                Domoticz.Status("Z4D installs the WebUI in the Domoticz custom menu")
+                install_Z4D_to_domoticz_custom_ui( self.pluginconf.pluginConf )
+            else:
+                Domoticz.Status("Z4D WebUI disabled (Plugin WebUI port %s): no entry in the Domoticz custom menu" % Parameters["Mode4"])
 
         # Create the adminStatusWidget if needed
         self.PluginHealth["Flag"] = 4
@@ -682,7 +686,7 @@ class BasePlugin:
 
         # Starting WebServer
         if self.webserver is None:
-            if Parameters["Mode4"].isdigit() or ':' in Parameters["Mode4"]:
+            if webui_enabled(Parameters["Mode4"]):
                 start_web_server(self, Parameters["Mode4"], Parameters["HomeFolder"])
             else:
                 self.log.logging( "Plugin", "Error", "WebServer disabled du to Parameter Mode4 set to %s" % Parameters["Mode4"] )
@@ -2022,14 +2026,14 @@ def DumpHTTPResponseToLog(httpDict):
                 Domoticz.Log("--->'" + x + "':'" + str(httpDict[x]) + "'")
 
 
-def install_Z4D_to_domoticz_custom_ui():
+def install_Z4D_to_domoticz_custom_ui(plugin_conf):
 
     _startupfolder = pathlib.Path( Parameters['StartupFolder'] )
     custom_file = _startupfolder / 'www/templates' / f"{Parameters['Name']}.html"
 
     try:
         with open( custom_file, "wt") as z4d_html_file:
-            z4d_html_file.write( custom_menu_html( Parameters['Name'], Parameters['Mode4'] ) )
+            z4d_html_file.write( custom_menu_html( Parameters['Name'], Parameters['Mode4'], webui_uses_tls( plugin_conf, Parameters['HomeFolder'] ) ) )
     except Exception as e:
         Domoticz.Error('Error during installing plugin custom page')
         Domoticz.Error(repr(e))
