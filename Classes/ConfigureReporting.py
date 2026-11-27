@@ -120,10 +120,14 @@ class ConfigureReporting:
             configure_reporting_for_one_device(self, key, True)
 
     def cfg_reporting_on_demand(self, nwkid):
-        # Remove Cfg Rpt tracking attributes
+        # The user asks for it (WebUI): send the reporting configuration whatever the device last reported.
+        # Remove Cfg Rpt tracking attributes, and with them the mismatch retry counters
         if STORE_CONFIGURE_REPORTING in self.ListOfDevices[nwkid]:
             del self.ListOfDevices[nwkid][STORE_CONFIGURE_REPORTING]
-        configure_reporting_for_one_device(self, nwkid, False)
+
+        # Batch mode skips the devices which are not main powered. A battery device is configured as at pairing
+        # time; a main powered one keeps the batch checks (load, re-bind), the heartbeat doing it if skipped here.
+        configure_reporting_for_one_device(self, nwkid, mainPoweredDevice(self, nwkid))
 
     def prepare_and_send_configure_reporting( self, key, Ep, cluster_configuration, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure ):
 
@@ -374,6 +378,44 @@ class ConfigureReporting:
             self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING]["Request"]["TimeStamp"] = time.time()
 
         return wip_flag
+
+    def read_reporting_configuration_on_demand(self, nwkid):
+        """Ask the device how its attributes report (WebUI), battery devices included.
+
+        ZCL has no command listing the reporting table of a device: each attribute has to be named. Ask, on every
+        endpoint which is configured, for the attributes of the reporting configuration of the device and for those
+        read before. The answers are stored by read_report_configure_response().
+
+        Returns the number of attributes asked for.
+        """
+        if nwkid == "0000" or nwkid not in self.ListOfDevices:
+            return 0
+
+        definition = self.retreive_configuration_reporting_definition(nwkid)
+        known = (self.ListOfDevices[nwkid].get(STORE_READ_CONFIGURE_REPORTING) or {}).get("Ep", {})
+        asked = 0
+        for ep in list(self.ListOfDevices[nwkid].get("Ep", {})):
+            if is_fake_ep(self, nwkid, ep) or not is_bind_ep(self, nwkid, ep):
+                continue
+
+            for cluster in getClusterListforEP(self, nwkid, ep):
+                if not do_we_have_to_do_the_work(self, nwkid, ep, cluster):
+                    continue
+
+                configured = (definition.get(cluster) or {}).get("Attributes", {})
+                by_manufacturer = {}
+                for attribute in sorted({*configured, *known.get(ep, {}).get(cluster, {})}):
+                    manufacturer = manufacturer_specific_attribute(self, nwkid, cluster, attribute, configured.get(attribute, {}))
+                    by_manufacturer.setdefault(manufacturer, []).append(int(attribute, 16))
+
+                for manufacturer, attributes in by_manufacturer.items():
+                    self.read_report_configure_request(
+                        nwkid, ep, cluster, attributes, "01" if manufacturer else "00", manufacturer or "0000"
+                    )
+                    asked += len(attributes)
+
+        self.logging("Debug", f"read_reporting_configuration_on_demand - {nwkid} {asked} attributes asked", nwkid=nwkid)
+        return asked
 
     def read_report_configure_request(self, nwkid, epout, cluster_id, attribute_list, manuf_specific="00", manuf_code="0000"):
 
@@ -727,9 +769,9 @@ def configure_reporting_for_one_cluster(self, key, Ep, cluster, batchMode, clust
                 self.logging( "Debug", f"------> configure_reporting_for_one_cluster - {key}/{Ep} skip Attribute {attr} for Cluster {cluster} due to ZDeviceID {ZDeviceID}", nwkid=key, )
                 continue
 
-            if "ZDeviceID" in cluster_configuration[attr] and (
-                ZDeviceID not in cluster_configuration[attr]["ZDeviceID"] and len(cluster_configuration[attr]["ZDeviceID"]) != 0
-            ):
+            # The device id is stored in lowercase, the table has it in uppercase (#2335)
+            allowed_device_ids = { x.lower() for x in cluster_configuration[attr].get("ZDeviceID", ()) }
+            if allowed_device_ids and ZDeviceID.lower() not in allowed_device_ids:
                 self.logging( "Debug", f"------> configure_reporting_for_one_cluster - {key}/{Ep} skip Attribute {attr} for Cluster {cluster} due to ZDeviceID {ZDeviceID}", nwkid=key, )
                 continue
 
@@ -790,7 +832,7 @@ def do_rebind_if_needed(self, nwkid, Ep, batchMode, cluster):
                 unbindDevice(self, self.ListOfDevices[nwkid]["IEEE"], Ep, cluster)
             bindDevice(self, self.ListOfDevices[nwkid]["IEEE"], Ep, cluster)
         else:
-            self.logging("Error", f"configureReporting - inconsitency on {nwkid} no IEEE found : {str(self.ListOfDevices[nwkid])} ")
+            self.logging("Error", f"configureReporting - inconsitency on {nwkid} no IEEE found", nwkid, {"Error code": "CFGR0001", "Ep": Ep, "Cluster": cluster})
 
 def read_report_configure_response_zigpy(self, MsgData, MsgLQI):  # Read Configure Report response
     self.logging( "Debug", f"Read Configure Reporting response - {MsgData}", )
@@ -977,6 +1019,14 @@ def manufacturer_specific_attribute(self, key, cluster, attr, cfg_attribute):
     if "ManufSpecific" in cfg_attribute:
         self.logging( "Debug", f'manufacturer_specific_attribute - NwkId: {key} found attribute: {attr} Manuf Specific, return ManufCode: {cfg_attribute["ManufSpecific"]}', nwkid=key )
         return cfg_attribute["ManufSpecific"]
+
+    # A custom configuration saved from the WebUI used to lose it: the one of the device configuration then applies
+    if STORE_CUSTOM_CONFIGURE_REPORTING in self.ListOfDevices[key]:
+        model_configuration = deviceconf_device(self, key).get(STORE_CONFIGURE_REPORTING) or {}
+        attributes = (model_configuration.get(cluster) or {}).get("Attributes") or {}
+        return (attributes.get(attr) or {}).get("ManufSpecific")
+
+    return None
 
 
 def store_read_configure_reporting_record( self, NwkId, Ep, ClusterId, status, attribute, DataType, MinInterval, MaxInterval, Change, timeout ):

@@ -15,10 +15,27 @@ from time import time
 
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
+from Classes.WebServer.tools import request_json_object
 from Modules.domoCreate import request_widget_creation
 from Modules.domoticzAbstractLayer import (domoticz_error_api,
                                            domoticz_log_api,
                                            domoticz_status_api)
+from Modules.greenPowerStore import gp_store, request_gp_widget_recreation
+
+
+def _recreate_green_power_widgets(self, key):
+    """
+    True when key is the IEEE of a Green Power device: its request is queued. Only by IEEE:
+    its NwkId is an alias, which a Zigbee device can also hold.
+    """
+    store = gp_store(self)
+    ieee = key.lower() if isinstance(key, str) else None
+    if store is None or ieee not in store:
+        return False
+    request_gp_widget_recreation(self, ieee)
+    self.log.logging("GreenPower", "Status", "Green Power device %s: recreate widgets requested from the WebUI, done at the next heartbeat" % ieee,
+                     (store.get(ieee) or {}).get("nwk"))
+    return True
 
 
 def rest_recreate_widgets(self, verb, data, parameters):
@@ -32,8 +49,10 @@ def rest_recreate_widgets(self, verb, data, parameters):
     if verb != "PUT":
         return _response
 
-    data = data.decode("utf8")
-    data = eval(data)  # nosec B307
+    data = request_json_object(self, data, "recreate-widgets")
+    if data is None:
+        _response["Data"] = json.dumps({"Status": "Error", "Description": "request body is not a JSON object"})
+        return _response
     self.logging("Log", "rest_recreate_widgets - Data: %s" % data)
 
     if "IEEE" not in data and "NWKID" not in data:
@@ -44,6 +63,9 @@ def rest_recreate_widgets(self, verb, data, parameters):
 
     if "IEEE" in data:
         key = data["IEEE"]
+        if _recreate_green_power_widgets(self, key):
+            _response["Data"] = json.dumps({"Status": "Ok", "Description": "Green Power device %s widget creation requested at %s, it will be done on the next heartbeat" % (key, int(time()))})
+            return _response
         if key not in self.IEEE2NWK:
             domoticz_error_api("rest_recreate_widgets - Unknown device %s " % key)
             return _response

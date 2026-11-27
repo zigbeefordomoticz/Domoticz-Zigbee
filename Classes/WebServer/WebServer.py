@@ -16,14 +16,17 @@ import mimetypes
 import os
 import os.path
 import platform
+import re
 import time
 from collections import deque
 
 from Classes.PluginConf import SETTINGS
 from Classes.TransportStats import TREND_REST_FIELDS
+from Classes.WebServer.compressedFiles import CompressedFiles
 from Classes.WebServer.rest_GreenPower import green_power_supported
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
+from Classes.WebServer.rest_DeviceRemoval import remove_device
 from Classes.WebServer.settings_metadata import (check_numeric_setting,
                                                  setting_metadata)
 from Modules.actuators import actuators
@@ -98,7 +101,8 @@ class WebServer(object):
     from Classes.WebServer.rest_Casaia import (rest_casa_device_ircode_update,
                                                rest_casa_device_list)
     from Classes.WebServer.rest_CfgReporting import (
-        rest_cfgrpt_ondemand, rest_cfgrpt_ondemand_with_config)
+        rest_cfgrpt_ondemand, rest_cfgrpt_ondemand_with_config,
+        rest_cfgrpt_read)
     from Classes.WebServer.rest_Chameleon import rest_chameleon_tic
     from Classes.WebServer.rest_change_ModelName import rest_change_model_name
     from Classes.WebServer.rest_device_params import rest_device_param
@@ -220,8 +224,12 @@ class WebServer(object):
         self.fakeDevicesInPairingMode = 0
         # Plugin stores (Modules/database.load_plugin_stores), set by update_plugin_stores()
         self.PluginStores = {}
+        # The plugin's queue of widget creations, set by update_widget_creation_requests()
+        self.widget_creation_requests = None
         # Green Power pairing feed (Modules/greenPowerFeed.py), set by update_green_power_feed()
         self.GreenPowerFeed = None
+        # What the heartbeat is asked to do, set by update_green_power_requests()
+        self.green_power_requests = None
         self.IEEE2NWK = IEEE2NWK
         self.DeviceConf = DeviceConf
         self.Devices = Devices
@@ -240,6 +248,7 @@ class WebServer(object):
         self.client_threads = []
         self.webui_running = None
         self.clients = {}
+        self.compressed_files = CompressedFiles()
         
 
         # httpPort could have 2 formats. port number only or IP:port
@@ -290,12 +299,20 @@ class WebServer(object):
     def update_plugin_stores(self, plugin_stores):
         self.PluginStores = plugin_stores or {}
 
+    def update_widget_creation_requests(self, requests):
+        # The dict the heartbeat drains, not a copy: the REST handlers queue into it
+        self.widget_creation_requests = requests
+
     def update_green_power_feed(self, feed):
         self.GreenPowerFeed = feed
 
     def update_green_power_models(self, models):
         # Green Power device types (Modules/greenPowerModels.py), read by gp_models()
         self.GreenPowerModels = models or {}
+
+    def update_green_power_requests(self, requests):
+        # The plugin's own GreenPowerRequests (Modules/greenPowerStore.py), read by the heartbeat
+        self.green_power_requests = requests
         
     def update_groupManagement(self, groupmanagement):
         self.groupmgt = groupmanagement if groupmanagement else None
@@ -876,9 +893,9 @@ class WebServer(object):
 
     def rest_Device(self, verb, data, parameters):
 
-        def getDeviceInfos(self, widget_idx):
-            device_id = self.ListOfDomoticzWidget[widget_idx]["DeviceID"]
-            unit = self.ListOfDomoticzWidget[widget_idx]["Unit"]
+        def getDeviceInfos(self, widget_idx, widget_info):
+            device_id = widget_info["DeviceID"]
+            unit = widget_info["Unit"]
             nValue, sValue = domo_read_nValue_sValue(self, self.Devices, device_id, unit)
             SignalLevel = domo_read_SignalLevel(self, self.Devices, device_id, unit)
             BatteryLevel = domo_read_BatteryLevel(self, self.Devices, device_id, unit)
@@ -904,31 +921,31 @@ class WebServer(object):
         if not self.ListOfDomoticzWidget or len(self.ListOfDomoticzWidget) == 0:
             return _response
 
+        # One snapshot of (idx, widget) pairs: indexing the keys one by one raises
+        # KeyError when the Domoticz thread rebuilds the index in between.
+        widgets = [
+            (widget_idx, widget_info)
+            for widget_idx, widget_info in self.ListOfDomoticzWidget.items()
+            if len(widget_info["DeviceID"]) == 16
+        ]
+
         if len(parameters) == 0:
             # Return the Full List of ZiGate Domoticz Widget
-            device_lst = [
-                getDeviceInfos(self, widget_idx)
-                for widget_idx in self.ListOfDomoticzWidget
-                if len(self.ListOfDomoticzWidget[widget_idx]["DeviceID"]) == 16
-            ]
+            device_lst = [getDeviceInfos(self, widget_idx, widget_info) for widget_idx, widget_info in widgets]
             _response["Data"] = json.dumps(device_lst, sort_keys=True)
 
         elif len(parameters) == 1:
-            for widget_idx in self.ListOfDomoticzWidget:
-                if (
-                    len(self.ListOfDomoticzWidget[widget_idx]["DeviceID"]) == 16
-                    and parameters[0] == self.ListOfDomoticzWidget[widget_idx]["DeviceID"]
-                ):
-                    _response["Data"] = json.dumps(getDeviceInfos(self, widget_idx), sort_keys=True)
+            for widget_idx, widget_info in widgets:
+                if parameters[0] == widget_info["DeviceID"]:
+                    _response["Data"] = json.dumps(getDeviceInfos(self, widget_idx, widget_info), sort_keys=True)
                     break
 
         else:
             device_lst = [
-                getDeviceInfos(self, widget_idx)
+                getDeviceInfos(self, widget_idx, widget_info)
                 for parm in parameters
-                for widget_idx in self.ListOfDomoticzWidget
-                if len(self.ListOfDomoticzWidget[widget_idx]["DeviceID"]) == 16
-                and parm == self.ListOfDomoticzWidget[widget_idx]["DeviceID"]
+                for widget_idx, widget_info in widgets
+                if parm == widget_info["DeviceID"]
             ]
             _response["Data"] = json.dumps(device_lst, sort_keys=True)
 
@@ -942,36 +959,7 @@ class WebServer(object):
 
         if verb == "DELETE":
             if len(parameters) == 1:
-                ieee = nwkid = None
-                deviceId = parameters[0]
-                if len(deviceId) == 4:  # Short Network Addr
-                    if deviceId not in self.ListOfDevices:
-                        domoticz_error_api("rest_zDevice - Device: %s to be DELETED unknown LOD" % (deviceId))
-                        domoticz_error_api("Device %s to be removed unknown" % deviceId)
-                        _response["Data"] = json.dumps([], sort_keys=True)
-                        return _response
-                    nwkid = deviceId
-                    ieee = self.ListOfDevices[deviceId]["IEEE"]
-                else:
-                    if deviceId not in self.IEEE2NWK:
-                        domoticz_error_api("rest_zDevice - Device: %s to be DELETED unknown in IEEE22NWK" % (deviceId))
-                        domoticz_error_api("Device %s to be removed unknown" % deviceId)
-                        _response["Data"] = json.dumps([], sort_keys=True)
-                        return _response
-                    ieee = deviceId
-                    nwkid = self.IEEE2NWK[ieee]
-                if nwkid:
-                    del self.ListOfDevices[nwkid]
-                if ieee:
-                    del self.IEEE2NWK[ieee]
-
-                # for a remove in case device didn't send the leave
-                if ieee and "IEEE" in self.ControllerData and self.zigbee_communication == "native":
-                    # uParrentAddress + uChildAddress (uint64)
-                    sendZigateCmd(self, "0026", self.ControllerData["IEEE"] + ieee)
-
-                action = {"Name": "Device %s/%s removed" % (nwkid, ieee)}
-                _response["Data"] = json.dumps(action, sort_keys=True)
+                return remove_device(self, parameters[0], _response)
 
         elif verb == "GET":
             _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
@@ -1112,32 +1100,6 @@ class WebServer(object):
 
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-
-        if verb == "DELETE":
-            if len(parameters) == 1:
-                deviceId = parameters[0]
-                if len(deviceId) == 4:  # Short Network Addr
-                    if deviceId not in self.ListOfDevices:
-                        domoticz_error_api("rest_zDevice - Device: %s to be DELETED unknown LOD" % (deviceId))
-                        domoticz_error_api("Device %s to be removed unknown" % deviceId)
-                        _response["Data"] = json.dumps([], sort_keys=True)
-                        return _response
-                    nwkid = deviceId
-                    ieee = self.ListOfDevice[deviceId]["IEEE"]
-                else:
-                    if deviceId not in self.IEEE2NWK:
-                        domoticz_error_api("rest_zDevice - Device: %s to be DELETED unknown in IEEE22NWK" % (deviceId))
-                        domoticz_error_api("Device %s to be removed unknown" % deviceId)
-                        _response["Data"] = json.dumps([], sort_keys=True)
-                        return _response
-                    ieee = deviceId
-                    nwkid = self.IEEE2NWK[ieee]
-
-                del self.ListOfDevice[nwkid]
-                del self.IEEE2NWK[ieee]
-                action = {"Name": "Device %s/%s removed" % (nwkid, ieee)}
-                _response["Data"] = json.dumps(action, sort_keys=True)
-            return _response
 
         if verb == "GET":
             if self.Devices is None or len(self.Devices) == 0:
@@ -1293,6 +1255,8 @@ class WebServer(object):
                 for item in self.ListOfDevices:
                     entry = dict(self.ListOfDevices[item])
                     entry["NwkID"] = item
+                    # The ZDeviceID / ProfileID the model's configuration declares, beside the reported ones
+                    entry["DeviceConfIdentity"] = device_conf_identity(self.DeviceConf, entry.get("Model"))
                     zdev_lst.append(entry)
                 #_response["Data"] = json.dumps(zdev_lst, sort_keys=False)
                 _response["Data"] = json.dumps(zdev_lst, sort_keys=False, cls=ZigbeeJSONEncoder)
@@ -1310,6 +1274,8 @@ class WebServer(object):
                 # The model configuration's notes (_comment, _description...), for the WebUI device details
                 if "Device" in device_infos:
                     device_infos["DeviceConfInfo"] = device_conf_info(self.DeviceConf, device_infos["Device"].get("Model"))
+                    # The ZDeviceID / ProfileID the configuration declares; "Device" keeps the reported ones
+                    device_infos["DeviceConfIdentity"] = device_conf_identity(self.DeviceConf, device_infos["Device"].get("Model"))
 
                 _response["Data"] = json.dumps(device_infos, sort_keys=False, cls=ZigbeeJSONEncoder)
 
@@ -1756,6 +1722,32 @@ def device_conf_info(device_conf, model):
     if not isinstance(model_conf, dict):
         return {}
     return {key: value for key, value in model_conf.items() if isinstance(key, str) and key.startswith("_")}
+
+
+DEVICE_CONF_IDENTITY_KEYS = ("ZDeviceID", "ProfileID")
+_RE_DEVICE_CONF_ID = re.compile(r"[0-9a-fA-F]{4}")
+
+
+def device_conf_identity(device_conf, model):
+    """ The ZDeviceID / ProfileID a model's configuration declares, for the WebUI.
+
+    A device may report a manufacturer-private ZDeviceID (the CASAIA CPR412-E reports c412),
+    and its configuration then states what the device is to be taken for ("ZDeviceID": "0202").
+    The reported value stays as it is in ListOfDevices: this only serves the configured one.
+
+    Values are 4 hex digits, returned lowercase as the plugin stores ids; anything else is left out.
+    {} for an unknown model or a configuration declaring neither key. """
+    if not isinstance(model, str) or not isinstance(device_conf, dict):
+        return {}
+    model_conf = device_conf.get(model)
+    if not isinstance(model_conf, dict):
+        return {}
+    identity = {}
+    for key in DEVICE_CONF_IDENTITY_KEYS:
+        value = model_conf.get(key)
+        if isinstance(value, str) and _RE_DEVICE_CONF_ID.fullmatch(value):
+            identity[key] = value.lower()
+    return identity
 
 
 def replace_single_quotes_with_double(json_string):

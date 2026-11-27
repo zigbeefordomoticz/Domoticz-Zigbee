@@ -43,7 +43,8 @@ Custom dimensions (Matomo site ID 9)
 2   Coordinator model            ``pluginParameters["CoordinatorModel"]``
 3   Plugin version               ``pluginParameters["PluginVersion"]``
 4   Coordinator firmware         ``pluginParameters["DisplayFirmwareVersion"]``
-5   Network size                 Router + end-device count (bucketed)
+5   Network size                 Router + end-device count (bucketed);
+                                 ``Empty`` = coordinator only
 6   Certified DB version         ``pluginParameters["CertifiedDbVersion"]``
 7   OS distribution              ``distro.name() + distro.version()``
 8   Python / CPU architecture    ``platform`` module
@@ -52,6 +53,12 @@ Custom dimensions (Matomo site ID 9)
 11  Raspberry Pi model           ``/proc/device-tree/model``
 12  Raw coordinator MAC          Formatted IEEE string (RoneLabs only)
 ==  ===========================  ====================================
+
+Visit scope (13-26): copies of 3, 4 (chipset family only), 1, 6, 5, 2, the
+Python version and CPU architecture parts of 8, 7, and 11 without the board
+revision (``Container`` or ``No device tree`` when the host shows no board), then
+copies of 4 and 10, the connection type and the install type.
+See ``populate_custom_dimensions``.
 
 Dependencies
 ------------
@@ -78,19 +85,54 @@ APIV = 1  # API Version
 SITE_ID = 9
 ACTION_NAME = "PluginInstanceInfos"
 
-# Visit-scope custom dimensions of site 9 (created 2026-11-18): visit key ->
-# the action-scope dimension it copies. Chipset (14) is derived from the
-# firmware label (4), see add_visit_dimensions().
+# Visit-scope custom dimensions of site 9 (13-17 created 2026-11-18, 18-22
+# 2026-11-22): visit key -> the action-scope dimension it copies. Chipset (14)
+# and hardware platform (22) are derived from 4 and 11, see
+# add_visit_dimensions(); Python version (19) and CPU architecture (20) are
+# the two parts of 8 that matter, see get_python_and_machine(). Connection type
+# (25) and install type (26) have no action-scope dimension, see
+# get_connection_type() and get_install_type().
 VISIT_DIMENSIONS = {
     "dimension13": "dimension3",   # Plugin version
     "dimension15": "dimension1",   # Domoticz version
     "dimension16": "dimension6",   # Certified Db
     "dimension17": "dimension5",   # Network size
+    "dimension18": "dimension2",   # Coordinator model
+    "dimension21": "dimension7",   # OS distribution
+    "dimension23": "dimension4",   # Coordinator firmware
+    "dimension24": "dimension10",  # RoneLabs model
 }
 VISIT_CHIPSET_DIMENSION = "dimension14"
+VISIT_PYTHON_DIMENSION = "dimension19"
+VISIT_MACHINE_DIMENSION = "dimension20"
+VISIT_HARDWARE_DIMENSION = "dimension22"
+VISIT_CONNECTION_DIMENSION = "dimension25"
+VISIT_INSTALL_DIMENSION = "dimension26"
+
+# Hardware parameter Mode2, up to the first comma (USB,115200,hardware) -> value sent
+CONNECTION_TYPES = {
+    "USB": "USB",
+    "DIN": "DIN",
+    "PI": "PI",
+    "Wifi": "TCPIP",
+    "Socket": "Socket",
+}
+
+# Marker of a release installed by PyPluginStore, in the plugin folder
+PYPLUGINSTORE_MARKER = ".pypluginstore.json"
+INSTALL_GIT = "Git"
+INSTALL_PYPLUGINSTORE = "PyPluginStore"
+INSTALL_OTHER = "Other"
+
+_BOARD_REVISION_RE = re.compile(r'\s+Rev\s+\S+$')
 
 RONELABS_MODEL_INFO = "/etc/modelinfo"
 DEVICE_TREE_CONFIGURATION = "/proc/device-tree/model"
+
+# Files the container engines create at the root of a container: Docker, Podman
+CONTAINER_MARKERS = ("/.dockerenv", "/run/.containerenv")
+PLATFORM_CONTAINER = "Container"
+PLATFORM_NO_DEVICE_TREE = "No device tree"
 
 _UPTIME_THRESHOLDS = [
     (1 * 86400, "1 day"),
@@ -163,6 +205,16 @@ def populate_custom_dimensions(self):
         15 – Domoticz version (= 1)
         16 – Certified device-DB version (= 6)
         17 – Network size category (= 5)
+        18 – Coordinator model (= 2)
+        19 – Python version, major.minor only, e.g. ``3.11`` (part of 8)
+        20 – CPU architecture, ``platform.machine()``, e.g. ``aarch64`` (part of 8)
+        21 – OS distribution (= 7)
+        22 – Hardware platform: 11 without the board revision; without a board
+             model, ``Container`` or ``No device tree``
+        23 – Coordinator firmware version (= 4)
+        24 – RoneLabs appliance model (= 10)
+        25 – Connection type of the coordinator, e.g. ``USB`` or ``Socket``
+        26 – Install type: ``Git``, ``PyPluginStore`` (release) or ``Other``
 
     Returns:
         dict: Mapping of ``"dimensionN"`` keys to sanitised string values.
@@ -208,6 +260,13 @@ def populate_custom_dimensions(self):
     if _archi:
         _custom_dimensions[ "dimension8"] = clean_custom_dimension_value( _archi)
 
+    # Python version and CPU architecture on their own (visit scope only)
+    _python, _machine = get_python_and_machine()
+    if _python:
+        _custom_dimensions[ VISIT_PYTHON_DIMENSION] = clean_custom_dimension_value( _python)
+    if _machine:
+        _custom_dimensions[ VISIT_MACHINE_DIMENSION] = clean_custom_dimension_value( _machine)
+
     # Uptime
     if self.statistics:
         _uptime = get_uptime_category(self.statistics._start)
@@ -227,11 +286,24 @@ def populate_custom_dimensions(self):
         _custom_dimensions[ "dimension11"] = clean_custom_dimension_value(pi_model)
 
     add_visit_dimensions(_custom_dimensions)
+
+    # No board model: tell a container from a host which has none (visit scope only)
+    if VISIT_HARDWARE_DIMENSION not in _custom_dimensions:
+        _custom_dimensions[ VISIT_HARDWARE_DIMENSION] = PLATFORM_CONTAINER if is_container() else PLATFORM_NO_DEVICE_TREE
+
+    # Connection and install type (visit scope only)
+    _connection = get_connection_type(self)
+    if _connection:
+        _custom_dimensions[ VISIT_CONNECTION_DIMENSION] = _connection
+    _install = get_install_type(self)
+    if _install:
+        _custom_dimensions[ VISIT_INSTALL_DIMENSION] = _install
+
     return _custom_dimensions
 
 
 def add_visit_dimensions(custom_dimensions):
-    """Add the visit-scope copies of the main dimensions (Matomo ids 13-17).
+    """Add the visit-scope copies of the main dimensions (Matomo ids 13-18, 21-24).
 
     Action-scope dimensions can only be counted per visit; a visit-scope
     dimension gives the number of installs (unique visitors) per value.
@@ -246,6 +318,13 @@ def add_visit_dimensions(custom_dimensions):
         chipset = firmware.split(" - ")[0].strip()
         if chipset:
             custom_dimensions[VISIT_CHIPSET_DIMENSION] = chipset
+
+    # 'Raspberry Pi 4 Model B Rev 1.5' -> 'Raspberry Pi 4 Model B'
+    board = custom_dimensions.get("dimension11")
+    if board:
+        board = _BOARD_REVISION_RE.sub("", board).strip()
+        if board:
+            custom_dimensions[VISIT_HARDWARE_DIMENSION] = board
 
 
 def matomo_plugin_analytics_infos(self):
@@ -452,6 +531,20 @@ def get_architecture_model(self):
     return None
 
 
+def get_python_and_machine():
+    """Return the Python version (major.minor) and the CPU architecture.
+
+    The two parts of the architecture string (dimension 8) that the reports
+    count, each kept short so the visit dimensions 19 and 20 stay readable.
+
+    Returns:
+        tuple[str, str]: e.g. ``("3.11", "aarch64")``; an empty string for a
+        part the platform module cannot tell.
+    """
+    major, minor, _ = platform.python_version_tuple()
+    return f"{major}.{minor}", platform.machine()
+
+
 def get_ronelabs_model_custom_definition():
     """Return the RoneLabs appliance model string, or None on non-RoneLabs hardware.
 
@@ -502,13 +595,20 @@ def get_network_size_items(self):
     """Return the network-size category label for the current Zigbee network.
 
     Counts routers and end-devices then delegates to :func:`classify_nwk_size`.
+    With no device counted, tells an empty network (``"Empty"``: the device
+    list holds the coordinator ``0000`` only) from a list whose entries could
+    not be classified as router or end device (``"unknown"``).
 
     Returns:
-        str: Size category such as ``"Small"``, ``"Large"``, or ``"unknown"``.
+        str: Size category such as ``"Small"``, ``"Large"``, ``"Empty"`` or
+        ``"unknown"``.
     """
     routers, end_devices = how_many_devices(self)
     networkTotalsize = routers + end_devices
-    
+
+    if networkTotalsize == 0 and all(nwkid == "0000" for nwkid in self.ListOfDevices):
+        return "Empty"
+
     return classify_nwk_size(networkTotalsize)
 
 
@@ -566,6 +666,52 @@ def clean_custom_dimension_value(value: str) -> str:
         str: Sanitised value safe for inclusion in a Matomo tracking URL.
     """
     return _MULTI_SPACE_RE.sub(' ', _DIMENSION_CLEAN_RE.sub(' ', value)).strip()
+
+
+def get_connection_type(self):
+    """Return how the coordinator is connected, from the hardware parameter Mode2.
+
+    Only the type: no serial port, address, port, baudrate or flow control.
+
+    Returns:
+        str | None: a value of ``CONNECTION_TYPES``, or None when there is no
+        coordinator (``None``) or the parameter is not a known one.
+    """
+    mode2 = self.pluginParameters.get("Mode2") or ""
+    return CONNECTION_TYPES.get(mode2.split(",")[0].strip())
+
+
+def get_install_type(self):
+    """Return how the plugin was installed, from what its own folder holds.
+
+    The parent folders are not looked at: the plugin folder may sit in the git
+    checkout of a Domoticz built from source.
+
+    Returns:
+        str | None: ``PyPluginStore`` for a release installed by it, ``Git`` for
+        a git checkout (PyPluginStore's git installs included), ``Other`` for
+        anything else; None when the plugin folder is not known.
+    """
+    home_folder = self.pluginParameters.get("HomeFolder")
+    if not home_folder:
+        return None
+    if os.path.exists(os.path.join(home_folder, PYPLUGINSTORE_MARKER)):
+        return INSTALL_PYPLUGINSTORE
+    if os.path.exists(os.path.join(home_folder, ".git")):
+        return INSTALL_GIT
+    return INSTALL_OTHER
+
+
+def is_container():
+    """Tell if the plugin runs in a Docker or Podman container.
+
+    Docker hides ``/sys/firmware`` from its containers, which
+    ``/proc/device-tree`` links to: a Raspberry Pi has no board model there.
+
+    Returns:
+        bool: True when one of ``CONTAINER_MARKERS`` exists.
+    """
+    return any(os.path.exists(marker) for marker in CONTAINER_MARKERS)
 
 
 def get_raspberry_pi_model():

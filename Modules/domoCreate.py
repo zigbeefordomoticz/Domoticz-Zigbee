@@ -229,33 +229,74 @@ def _resolve_widget_trio(widgetType, Type_, Subtype_, Switchtype_, widgetOptions
     return None
 
 
-def _find_reusable_widget_unit(self, target_trio, target_fullname):
+def _widget_bindings(self, nwkid):
+    """Map each widget IDX the device already holds to the endpoints it is bound on.
+
+    Returns ``{str(idx): {ep: cluster_type}}``, read from the per-endpoint
+    ``ClusterType``. A device record still carrying the legacy device-level
+    ``ClusterType`` (v3.0.x) gives no endpoint, so its widgets are left out and
+    stay reusable anywhere, as before.
+    """
+    bindings = {}
+    endpoints = self.ListOfDevices.get(nwkid, {}).get("Ep") or {}
+    for ep, ep_data in endpoints.items():
+        if not isinstance(ep_data, dict):
+            continue
+        for idx, cluster_type in (ep_data.get("ClusterType") or {}).items():
+            bindings.setdefault(str(idx), {})[ep] = cluster_type
+    return bindings
+
+
+def _find_reusable_widget_unit(self, target_trio, target_fullname, ep=None, cluster_type=None, bindings=None):
     """Find an existing, not-yet-claimed Domoticz unit matching the target widget.
+
+    A unit already bound to an endpoint of this device is only a candidate for
+    that same endpoint. Otherwise a 'recreate widgets' on a device whose widgets
+    partly exist links a widget of one endpoint to another one (the probe
+    temperature of a two-sensor device becoming the ambient one too), and the
+    widget then shows the values of both. A unit bound to no endpoint - the
+    re-pairing case, where the device record is new - is a candidate anywhere.
 
     Matching policy (conservative, to avoid mis-linking ambiguous widgets such as
     several 'Custom' or selector widgets sharing the same Type/Subtype/Switchtype):
-      1. Same (Type, Subtype, Switchtype) AND same widget name  -> strongest.
-      2. Same (Type, Subtype, Switchtype) only when there is exactly one candidate.
+      1. Same signature, already bound on this endpoint as this cluster type
+         -> it is that widget, whatever the user renamed it to.
+      2. Same (Type, Subtype, Switchtype) AND same widget name.
+      3. Same (Type, Subtype, Switchtype) only when there is exactly one candidate.
     Otherwise no reuse (a new widget is created).
     """
     pool = getattr(self, "widget_reuse_pool", None)
     if not pool or target_trio is None:
         return None
 
+    bindings = bindings or {}
     t_type, t_sub, t_switch = target_trio
 
     def _matches(info):
         return info["Type"] == t_type and info["SubType"] == t_sub and info["SwitchType"] == t_switch
 
-    # 1) Same signature AND same name (same physical device / endpoint being re-paired)
-    for unit, info in pool.items():
-        if info["Name"] == target_fullname and _matches(info):
+    def _bound_eps(info):
+        return bindings.get(str(info["ID"]), {})
+
+    eligible = {
+        unit: info for unit, info in pool.items()
+        if _matches(info) and (not _bound_eps(info) or ep in _bound_eps(info))
+    }
+
+    # 1) Already bound on this endpoint as this cluster type
+    if cluster_type is not None:
+        for unit, info in eligible.items():
+            if _bound_eps(info).get(ep) == cluster_type:
+                return unit
+
+    # 2) Same signature AND same name (same physical device / endpoint being re-paired)
+    for unit, info in eligible.items():
+        if info["Name"] == target_fullname:
             return unit
 
-    # 2) Same signature, only when unambiguous
-    candidates = [unit for unit, info in pool.items() if _matches(info)]
-    if len(candidates) == 1:
-        return candidates[0]
+    # 3) Same signature, only when unambiguous
+    if len(eligible) == 1:
+        return next(iter(eligible))
 
     return None
 
@@ -275,7 +316,9 @@ def _try_reuse_widget(self, Devices, nwkid, ieee, ep, cType, widgetName, widgetT
         return None
 
     target_fullname = f"{self.pluginParameters['Name']} - {widgetName}"
-    unit = _find_reusable_widget_unit(self, target_trio, target_fullname)
+    unit = _find_reusable_widget_unit(
+        self, target_trio, target_fullname,
+        ep=ep, cluster_type=ForceClusterType or cType, bindings=_widget_bindings(self, nwkid))
     if unit is None:
         return None
 
@@ -407,14 +450,43 @@ def over_write_type_from_deviceconf(self, Devices, NwkId):
 
 
 
+def _type_without_endpoint_type(self, NWKID, Ep):
+    """Where the widget Type of an endpoint comes from, when its record holds none.
+
+    Returns ``(ep_type, global_type)``. ``ep_type`` is the Type of this endpoint, or None when
+    it is not known here. Then ``global_type`` is the Type of the whole device, or "" to let
+    GetType() find the one of the endpoint.
+
+    The device-level "Type" of the record cannot tell: CreateDomoDevice writes there the Types
+    of all the widgets it created (update_device_type). It is the configured one until the first
+    creation only. Taken as such afterwards, an endpoint without widget, the Green Power one
+    (f2) for instance, gets a second set of all the widgets of the device.
+    """
+    device = self.ListOfDevices.get(NWKID, {})
+    recorded_type = device.get("Type", "")
+    if recorded_type in [{}, ""]:
+        return None, ""
+
+    model = device.get("Model")
+    device_conf = self.DeviceConf.get(model) if isinstance(model, str) else None
+    if device_conf is None:
+        return None, ""
+
+    if device_conf.get("Type"):
+        return None, device_conf["Type"]
+
+    # Some configuration files give {} as the Type of an endpoint without widget
+    return device_conf.get("Ep", {}).get(Ep, {}).get("Type") or "", ""
+
+
 def extract_key_infos(self, NWKID, Ep, GlobalEP, GlobalType):
     """
     Extracts and returns the key device type information for a given network ID (NWKID) and endpoint (Ep).
 
     This function determines the device type by checking:
     1. The device's endpoint data in `ListOfDevices[NWKID]["Ep"][Ep]`.
-    2. The global device type in `ListOfDevices[NWKID]`.
-    3. If neither exists, it calls `GetType()` to determine the type.
+    2. The configuration file of the model, its device-level type first.
+    3. If neither gives one, it calls `GetType()` to determine the type.
 
     The extracted types are added to `GlobalType` if they are not already present.
 
@@ -446,8 +518,12 @@ def extract_key_infos(self, NWKID, Ep, GlobalEP, GlobalType):
                          f"extract_key_infos - Type via ListOfDevice: {_Type} Ep: {Ep}", NWKID)
     else:
         # Check global Type if endpoint Type is missing
-        global_dev_type = self.ListOfDevices.get(NWKID, {}).get("Type", "")
-        if global_dev_type in [{}, ""]:
+        ep_type, global_dev_type = _type_without_endpoint_type(self, NWKID, Ep)
+        if ep_type is not None:
+            _Type = ep_type.split("/")
+            self.log.logging("WidgetCreation", "Debug",
+                             f"extract_key_infos - Type via the configuration: {_Type} Ep: {Ep}", NWKID)
+        elif global_dev_type in [{}, ""]:
             _Type = GetType(self, NWKID, Ep).split("/")
             self.log.logging("WidgetCreation", "Debug",
                              f"extract_key_infos - Type via GetType: {_Type} Ep: {Ep}", NWKID)
@@ -648,7 +724,10 @@ def request_widget_creation(self, NwkId, reason, remove_existing_widgets=False):
     widgets themselves - they record the request here and
     process_widget_creation_requests() carries it out from the heartbeat.
 
-    Only ListOfDevices is touched here, and that is a ThreadSafeDeviceDict.
+    ``self`` is the WebServer for a REST endpoint and the plugin for the heartbeat.
+    Both hold the same ``widget_creation_requests`` dict: plugin.py creates it and
+    start_web_server() hands it over. It is not created here on demand, as that
+    gives the WebServer a queue of its own, which the heartbeat never reads.
 
     ``remove_existing_widgets`` additionally drops the device's current widgets
     first, which is what changing a device's model requires.
@@ -656,9 +735,7 @@ def request_widget_creation(self, NwkId, reason, remove_existing_widgets=False):
     Returns the number of heartbeats before the request is expected to be served,
     so a caller can tell the user when to look.
     """
-    queued = getattr(self, "widget_creation_requests", None)
-    if queued is None:
-        queued = self.widget_creation_requests = {}
+    queued = self.widget_creation_requests
 
     pending = queued.get(NwkId)
     if pending:

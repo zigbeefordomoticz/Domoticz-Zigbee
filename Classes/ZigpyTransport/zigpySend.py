@@ -18,8 +18,8 @@ the APS ACK/NACK is forwarded back to the plugin:
 
   process_raw_command        — decode a RAW-COMMAND dict, pick transport type
   send_{broadcast,multicast,unicast}_command — top-level send helpers
-  transport_request          — concurrency gate + retry wrapper (decorated)
-  _send_and_retry            — retry loop with timeout
+  transport_request          — concurrency gate (decorated)
+  _send_request              — single send + result handling
   zigpy_request / _mrequest / _broadcast — thin wrappers around app.send_packet
   handle_transport_result    — update reachability + forward APS status
   _limit_concurrency         — asyncio.Semaphore context manager per device
@@ -52,10 +52,13 @@ from Modules.macPrefix import DELAY_FOR_VERY_KEY
 
 ERROR_TASK_CREATION_FAILED = 0xB6
 SEMAPHORE_TIMEOUT = 240               # seconds to wait for a concurrency slot
-REQUEST_TIMEOUT = 8                   # seconds to attempt a unicast send
 WAITING_TIME_BETWEEN_REQUESTS = .100  # inter-request pacing
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 VERIFY_KEY_DELAY = 6                  # extra delay for verify-key commands
+PROFILE_ZHA = 0x0104
+KEEP_ALIVE_CLUSTER = 0x0025
+# Clusters whose frames must be APS encrypted with the device's link key (ZCL r8 section 3.18.4 for Keep-Alive)
+APS_ENCRYPTED_CLUSTERS = {KEEP_ALIVE_CLUSTER}
 
 
 # ---------------------------------------------------------------------------
@@ -115,6 +118,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None, delayAft
     addressmode = data["AddressMode"]
     extended_timeout = False if AckIsDisable else data.get("RxOnIdle", False)
     delay = data.get("Delay", None)
+    pairing = data.get("Pairing", False)
 
     self.log.logging("TransportZigpy", "Debug",
                      f"process_raw_command: ready to request Function: {Function} NwkId: {NwkId}/{dEp} "
@@ -125,8 +129,19 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None, delayAft
     destination, transport_needs = _get_destination(self, NwkId, addressmode, Profile, Cluster,
                                                     sEp, dEp, sequence, payload)
     if destination is None:
-        self.log.logging("TransportZigpy", "Error",
-                         f"process_raw_command: unknown destination: {destination}")
+        self.log.logging(
+            "TransportZigpy", "Error",
+            f"process_raw_command: unknown destination: {NwkId}/{dEp:02x}, {Function} "
+            f"Cluster: {Cluster:04x} not sent",
+            NwkId,
+            {
+                "Error code": "ZIGPY-SEND-02",
+                "Function": Function,
+                "NwkId": NwkId,
+                "Cluster": f"{Cluster:04x}",
+                "AddressMode": addressmode,
+            },
+        )
         return
 
     handlers = {
@@ -134,7 +149,8 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None, delayAft
         "Multicast": lambda: send_multicast_command(self, NwkId, Profile, Cluster, sEp, sequence, payload),
         "Unicast":   lambda: send_unicast_command(self, destination, Profile, Cluster, sEp, dEp,
                                                   sequence, payload, AckIsDisable, delay,
-                                                  extended_timeout, Function, Sqn, delayAfterSent),
+                                                  extended_timeout, Function, Sqn, delayAfterSent,
+                                                  pairing=pairing),
     }
 
     key = "Multicast" if addressmode == 0x01 else transport_needs
@@ -170,7 +186,8 @@ async def send_multicast_command(self, NwkId, Profile, Cluster, sEp, sequence, p
 
 
 async def send_unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequence, payload,
-                               AckIsDisable, delay, extended_timeout, Function, Sqn, delayAfterSent):
+                               AckIsDisable, delay, extended_timeout, Function, Sqn, delayAfterSent,
+                               pairing=False):
     """
     Sends a unicast command to a Zigbee device.
 
@@ -190,7 +207,8 @@ async def send_unicast_command(self, destination, Profile, Cluster, sEp, dEp, se
         task = asyncio.create_task(
             transport_request(self, Function, destination, Profile, Cluster, sEp, dEp, sequence,
                               payload, ack_is_disable=AckIsDisable, use_ieee=False, delay=delay,
-                              extended_timeout=extended_timeout, delayAfterSent=delayAfterSent),
+                              extended_timeout=extended_timeout, delayAfterSent=delayAfterSent,
+                              pairing=pairing),
             name=f"send_unicast_command-{Function}-{destination}-{Cluster}-{Sqn}"
         )
     except (TypeError, ValueError, RuntimeError) as e:
@@ -221,6 +239,29 @@ def _make_unicast_callback(self):
 # Low-level Zigpy packet submission
 # ---------------------------------------------------------------------------
 
+def _is_keep_alive(profile, cluster):
+    return profile == PROFILE_ZHA and cluster == KEEP_ALIVE_CLUSTER
+
+
+def _log_keep_alive(self, nwkid, message):
+    """Log what happens to a Keep-Alive answer under its own debug flag."""
+    self.log.logging("KeepAlive", "Debug", f"Keep-Alive answer to 0x{nwkid} {message}", nwkid)
+
+
+def log_keep_alive_result(func):
+    """Decorator that logs the result of zigpy_request for a Keep-Alive answer."""
+    @functools.wraps(func)
+    async def wrapper(self, device, profile, cluster, *args, **kwargs):
+        result, message = await func(self, device, profile, cluster, *args, **kwargs)
+        if _is_keep_alive(profile, cluster):
+            _log_keep_alive(self, device.nwk.serialize()[::-1].hex(),
+                            f"{device.ieee} APS encrypted AckIsDisable: {kwargs.get('ack_is_disable')} "
+                            f"result: {result!r} {message or ''}")
+        return result, message
+    return wrapper
+
+
+@log_keep_alive_result
 async def zigpy_request(
     self,
     device: zigpy.device.Device,
@@ -253,6 +294,10 @@ async def zigpy_request(
         self.log.logging("TransportZigpy", "Log", "zigpy_request: app is None, cannot send packet")
         return (zigpy.zcl.foundation.Status.DELIVERY_ERROR, "ZCL FAILURE: app is None")
 
+    # The supervisor replaces self.app on a stack restart, which can happen during the send
+    app = self.app
+    nwkid = device.nwk.serialize()[::-1].hex()
+
     if use_ieee:
         src = t.AddrModeAddress(addr_mode=t.AddrMode.IEEE, address=self.app.state.node_info.ieee)
         dst = t.AddrModeAddress(addr_mode=t.AddrMode.IEEE, address=device.ieee)
@@ -271,11 +316,14 @@ async def zigpy_request(
     if not ack_is_disable:
         tx_options |= t.TransmitOptions.ACK
 
+    if profile == PROFILE_ZHA and cluster in APS_ENCRYPTED_CLUSTERS:
+        tx_options |= t.TransmitOptions.APS_Encryption
+
     if force_route_discovery:
         tx_options |= t.TransmitOptions.FORCE_ROUTE_DISCOVERY
 
     try:
-        await self.app.send_packet(
+        await app.send_packet(
             t.ZigbeePacket(
                 src=src,
                 src_ep=src_ep,
@@ -322,7 +370,7 @@ async def zigpy_request(
 
     except Exception as e:
         self.log.logging(
-            "TransportZigpy", "Error",
+            "TransportZigpy", _log_level_of_send_failure(self, app, e, nwkid),
             f"zigpy_request: Error sending packet\n"
             f"  src={src}, src_ep={src_ep}, dst={dst}, dst_ep={dst_ep}, tsn={sequence}\n"
             f"  profile_id={profile}, cluster_id={cluster}, "
@@ -333,7 +381,51 @@ async def zigpy_request(
         )
         return (zigpy.exceptions.DeliveryError, f"ZCL FAILURE: {e}")
 
+    _radio_is_back(self)
     return (zigpy.zcl.foundation.Status.SUCCESS, "")
+
+
+def _radio_is_down(app, exception):
+    """
+    Is the send failure due to the link to the coordinator, and not to the device?
+
+    connection_lost() marks the app as restarting before the pending requests fail, with
+    whatever exception the radio library uses. The requests issued after that are refused
+    with a ControllerException.
+    """
+    return (getattr(app, "restarting", False) is True
+            or isinstance(exception, zigpy.exceptions.ControllerException))
+
+
+def _log_level_of_send_failure(self, app, exception, nwkid):
+    """
+    Level at which zigpy_request logs the details of a failure: Error, or Debug when the radio is down.
+
+    Every request pending when the radio goes down fails at once. One Error tells it for the
+    whole outage: one per request would push everything else out of the error history.
+    """
+    if not _radio_is_down(app, exception):
+        return "Error"
+
+    self._radio_down_requests += 1
+    if self._radio_down_requests == 1:
+        self.log.logging(
+            "TransportZigpy", "Error",
+            f"Radio link down: request to {nwkid} not sent ({type(exception).__name__}: {exception}). "
+            "The next ones are only logged in Debug (TransportZigpy) until the link is back.",
+            nwkid,
+            {"Error code": "ZIGPY-SEND-01", "Exception": f"{type(exception).__name__}: {exception}"},
+        )
+    return "Debug"
+
+
+def _radio_is_back(self):
+    if self._radio_down_requests:
+        self.log.logging(
+            "TransportZigpy", "Status",
+            f"Radio link is back, {self._radio_down_requests} request(s) could not be sent while it was down."
+        )
+        self._radio_down_requests = 0
 
 
 async def zigpy_mrequest(
@@ -397,7 +489,7 @@ async def zigpy_broadcast(
 
 
 # ---------------------------------------------------------------------------
-# transport_request — concurrency gate + retry wrapper
+# transport_request — concurrency gate
 # ---------------------------------------------------------------------------
 
 def measure_execution_time(func):
@@ -441,6 +533,33 @@ def measure_execution_time(func):
     return wrapper
 
 
+def is_skipped_as_not_reachable(self, ieee, nwkid, sequence, pairing):
+    """
+    Is a request dropped because its device is not reachable?
+
+    Once a send to a device fails, the requests queued for it are dropped, so that a device which
+    is gone does not hold the queue. A device being paired is not gone: a battery device can miss
+    the send timeout while it exchanges its link key, and dropping its queue loses the enrollment.
+    """
+    if ieee not in self._currently_not_reachable or not self._currently_waiting_requests_list.get(ieee, 0):
+        return False
+
+    if pairing:
+        self.log.logging(
+            "TransportZigpy", "Debug",
+            f"transport_request: Request {sequence} sent although the device is not reachable: pairing. "
+            f"NwkId: {nwkid} IEEE: {ieee}"
+        )
+        return False
+
+    self.log.logging(
+        "TransportZigpy", "Debug",
+        f"transport_request: Request {sequence} skipped. Device not reachable: "
+        f"NwkId: {nwkid} IEEE: {ieee}"
+    )
+    return True
+
+
 @measure_execution_time
 async def transport_request(
     self,
@@ -457,12 +576,13 @@ async def transport_request(
     delay=None,
     extended_timeout=False,
     delayAfterSent=0,
+    pairing=False,
 ):
     """
     Send a Zigbee message using the transport layer.
 
     Applies an optional pre-send delay, acquires the per-device concurrency
-    semaphore, checks reachability, and delegates to _send_and_retry.
+    semaphore, checks reachability, and delegates to _send_request.
     """
     _nwkid = destination.nwk.serialize()[::-1].hex()
     _ieee = str(destination.ieee)
@@ -479,15 +599,13 @@ async def transport_request(
         await asyncio.sleep(delay)
 
     async with _limit_concurrency(self, destination, sequence):
-        if _ieee in self._currently_not_reachable and self._currently_waiting_requests_list.get(_ieee, 0):
-            self.log.logging(
-                "TransportZigpy", "Debug",
-                f"transport_request: Request {sequence} skipped. Device not reachable: "
-                f"NwkId: {_nwkid} IEEE: {_ieee}"
-            )
+        if is_skipped_as_not_reachable(self, _ieee, _nwkid, sequence, pairing):
+            report_dropped_request(self, _ieee, _nwkid, Function, Cluster, sequence)
+            if _is_keep_alive(Profile, Cluster):
+                _log_keep_alive(self, _nwkid, f"{_ieee} skipped, device not reachable")
             return None
 
-        result = await _send_and_retry(
+        result = await _send_request(
             self, Function, destination, Profile, Cluster, _nwkid,
             sEp, dEp, sequence, payload, use_ieee, _ieee,
             ack_is_disable, extended_timeout, delayAfterSent
@@ -497,15 +615,16 @@ async def transport_request(
     return result
 
 
-async def _send_and_retry(
+async def _send_request(
     self, function, destination, profile, cluster,
     nwkid, source_ep, dest_ep, sequence, payload,
     use_ieee, ieee, ack_is_disable, extended_timeout, delay_after_sent
 ):
     """
-    Sends a Zigbee request and optionally retries until REQUEST_TIMEOUT is reached.
+    Sends a Zigbee request, once, and reports its result.
 
-    Single send if ack_is_disable is True; retry loop otherwise.
+    There is no retry here: zigpy_request returns the send failures (timeout, delivery
+    error, radio down) instead of raising them.
     """
     common_log_info = (
         f"{ieee}/0x{nwkid} 0x{profile:X} 0x{cluster:X} payload: {payload} "
@@ -515,86 +634,42 @@ async def _send_and_retry(
     # ping and other control traffic can always preempt them.  This mirrors
     # zigpy's own OTA manager which explicitly wraps image_block_response in
     # request_priority(PacketPriority.LOW) for the same reason.
-    # Retries keep LOW priority — never escalate OTA to HIGH.
-    is_ota_cluster = (cluster == 0x0019)
-    packet_priority = t.PacketPriority.LOW if is_ota_cluster else t.PacketPriority.NORMAL
+    packet_priority = t.PacketPriority.LOW if cluster == 0x0019 else t.PacketPriority.NORMAL
 
+    self.log.logging("TransportZigpy", "Debug", f"_send_request: {function} {common_log_info}")
+    try:
+        result, _ = await zigpy_request(
+            self, destination, profile, cluster,
+            source_ep, dest_ep, sequence, payload,
+            ack_is_disable=ack_is_disable,
+            use_ieee=use_ieee,
+            extended_timeout=extended_timeout,
+            priority=packet_priority,
+        )
 
-    async def __try_send(attempt):
+    except Exception as e:
+        self.log.logging("TransportZigpy", "Log",
+                         f"Warning while submitting - {function} {common_log_info} "
+                         f"Exception: '{e}' ({type(e).__name__})")
+        self.statistics._ackKO += 1
+        handle_transport_result(self, function, cluster, sequence, 0xB6,
+                                ack_is_disable, extended_timeout, ieee, nwkid, destination.lqi)
+        return 0xB6
+
+    if result == -1:
+        return result
+
+    delay_after_cmd = max(delay_after_sent,
+                          self.pluginconf.pluginConf.get("DelayAfterCommandSent", 0))
+    if delay_after_cmd > 0:
         self.log.logging("TransportZigpy", "Debug",
-                         f"_send_and_retry: {function} {common_log_info} "
-                         f"extended_timeout: {extended_timeout} Attempt: {attempt}")
-        try:
-            result, _ = await zigpy_request(
-                self, destination, profile, cluster,
-                source_ep, dest_ep, sequence, payload,
-                ack_is_disable=ack_is_disable,
-                use_ieee=use_ieee,
-                extended_timeout=extended_timeout,
-                priority=packet_priority,
-            )
-        except asyncio.TimeoutError:
-            self.log.logging("TransportZigpy", "Debug",
-                             f"Timeout while submitting - {function} {common_log_info} Attempt: {attempt}")
-            self.statistics._reTx += 1
-            self.statistics._TOdata += 1
-            return None  # retry
+                         f"sleeping {delay_after_cmd} as per configured!!")
+        await asyncio.sleep(delay_after_cmd)
 
-        except Exception as e:
-            self.log.logging("TransportZigpy", "Log",
-                             f"Warning while submitting - {function} {common_log_info} "
-                             f"Attempt: {attempt} Exception: '{e}' ({type(e).__name__})")
-            self.statistics._ackKO += 1
-            handle_transport_result(self, function, cluster, sequence, 0xB6,
-                                    ack_is_disable, extended_timeout, ieee, nwkid, destination.lqi)
-            return 0xB6
-
-        else:
-            if result == -1:
-                return result
-
-            delay_after_cmd = max(delay_after_sent,
-                                  self.pluginconf.pluginConf.get("DelayAfterCommandSent", 0))
-            if delay_after_cmd > 0:
-                self.log.logging("TransportZigpy", "Debug",
-                                 f"sleeping {delay_after_cmd} as per configured!!")
-                await asyncio.sleep(delay_after_cmd)
-
-            handle_transport_result(self, function, cluster, sequence, result,
-                                    ack_is_disable, extended_timeout, ieee, nwkid, destination.lqi)
-            self.log.logging("TransportZigpy", "Debug", f"_send_and_retry: result: {result}")
-            return result
-
-    if ack_is_disable:
-        return await __try_send(attempt=1)
-
-    start_time = time.monotonic()
-    attempt = 0
-    while True:
-        attempt += 1
-        elapsed = time.monotonic() - start_time
-
-        if elapsed >= REQUEST_TIMEOUT:
-            self.log.logging("TransportZigpy", "Log",
-                             f"_send_and_retry: {common_log_info} TIMEOUT of {REQUEST_TIMEOUT}s "
-                             f"reached after {attempt - 1} attempts.")
-            self.statistics._ackKO += 1
-            handle_transport_result(self, function, cluster, sequence, 0xB6,
-                                    ack_is_disable, extended_timeout, ieee, nwkid, destination.lqi)
-            return 0xB6
-
-        self.log.logging("TransportZigpy", "Debug",
-                         f"_send_and_retry: {function} {common_log_info} "
-                         f"extended_timeout: {extended_timeout} Attempt: {attempt} Elapsed: {elapsed:.2f}s")
-        result = await __try_send(attempt)
-
-        if result is not None:
-            return result
-
-        # Escalate non-OTA retries to HIGH so they recover quickly.
-        # OTA retries intentionally stay at LOW to avoid starving other traffic.
-        if not is_ota_cluster:
-            packet_priority = t.PacketPriority.HIGH
+    handle_transport_result(self, function, cluster, sequence, result,
+                            ack_is_disable, extended_timeout, ieee, nwkid, destination.lqi)
+    self.log.logging("TransportZigpy", "Debug", f"_send_request: result: {result}")
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -614,8 +689,45 @@ def handle_transport_result(self, Function, Cluster, sequence, result, ack_is_di
     if result == 0x00:
         if _ieee in self._currently_not_reachable:
             self._currently_not_reachable.remove(_ieee)
+        report_reachable_again(self, _ieee, _nwkid)
     elif _ieee not in self._currently_not_reachable:
         self._currently_not_reachable.append(_ieee)
+
+
+def report_dropped_request(self, ieee, nwkid, function, cluster, sequence):
+    """
+    A request queued for a device found not reachable is dropped.
+
+    The first one of a burst is logged, the next ones only in Debug: report_reachable_again()
+    gives their number once the device answers.
+    """
+    dropped = self._not_reachable_dropped.get(ieee, 0) + 1
+    self._not_reachable_dropped[ieee] = dropped
+    if dropped == 1:
+        self.log.logging(
+            "TransportZigpy", "Log",
+            f"Device {nwkid} ({ieee}) did not acknowledge a request: the requests queued for it are dropped "
+            f"until it answers again. First one: {function} cluster 0x{cluster:04x} sequence {sequence}",
+            nwkid,
+        )
+        return
+    self.log.logging(
+        "TransportZigpy", "Debug",
+        f"transport_request: Request {sequence} skipped. Device not reachable: NwkId: {nwkid} IEEE: {ieee} "
+        f"({dropped} dropped)",
+        nwkid,
+    )
+
+
+def report_reachable_again(self, ieee, nwkid):
+    """A device found not reachable acknowledged a request again: log how many requests were dropped meanwhile."""
+    dropped = self._not_reachable_dropped.pop(ieee, 0)
+    if dropped:
+        self.log.logging(
+            "TransportZigpy", "Log",
+            f"Device {nwkid} ({ieee}) answers again: {dropped} request(s) were dropped while it was not reachable",
+            nwkid,
+        )
 
 
 def push_APS_ACK_NACKto_plugin(self, nwkid, Cluster, sequence, result, lqi):

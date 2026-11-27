@@ -16,9 +16,8 @@ from time import time
 from Classes.GroupMgtv2.GrpErrorCodes import GroupRequestError
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
-from Modules.domoticzAbstractLayer import (
-    domo_browse_widgets, domo_read_Device_Idx, domo_read_Name,
-    domoticz_error_api, retrieve_widgetid_from_deviceId_unit)
+from Modules.domoticzAbstractLayer import (domo_read_Device_Idx,
+                                           domo_read_Name, domoticz_error_api)
 from Modules.tools import mainPoweredDevice
 
 GROUP_ERROR_STATUS = {
@@ -180,21 +179,31 @@ def is_cluster_not_for_group( self, nwkid, ep):
       
 def _build_device_widgetList_infos( self, widgetID, ep, ZDeviceName ):
     self.logging("Debug", f"_build_device_widgetList_infos - for WidgetIdx {widgetID} ep {ep} Zname {ZDeviceName}")
-    widget_list = []
-    
-    for device_ieee, unit in domo_browse_widgets(self, self.Devices): 
-        widget_idx = retrieve_widgetid_from_deviceId_unit(self, self.Devices, device_ieee, unit)
-        if widget_idx != int(widgetID):
-            continue
-        widget = {
-            "_ID": domo_read_Device_Idx(self,self.Devices,device_ieee,unit,),
-            "Name": domo_read_Name( self, self.Devices, device_ieee, unit, ),
-            "IEEE": device_ieee,
-            "Ep": ep,
-            "ZDeviceName": ZDeviceName,
-        }
-        widget_list.append( widget )
-    return widget_list
+    # One lookup in the widget index by its idx, instead of a scan of every widget, each
+    # with its own scan of the index: the scans made this request quadratic in the number
+    # of widgets, which kept it long enough to meet an index rebuild.
+    try:
+        widget_idx = int(widgetID)
+    except (TypeError, ValueError):
+        return []
+
+    widget_info = self.ListOfDomoticzWidget.get(widget_idx)
+    if widget_info is None:
+        return []
+
+    device_ieee = widget_info["DeviceID"]
+    unit = widget_info["Unit"]
+    if domo_read_Device_Idx(self, self.Devices, device_ieee, unit) != widget_idx:
+        # Gone from Domoticz since the last index rebuild
+        return []
+
+    return [{
+        "_ID": widget_idx,
+        "Name": domo_read_Name(self, self.Devices, device_ieee, unit),
+        "IEEE": device_ieee,
+        "Ep": ep,
+        "ZDeviceName": ZDeviceName,
+    }]
 
 
 def rest_rescan_group(self, verb, data, parameters):

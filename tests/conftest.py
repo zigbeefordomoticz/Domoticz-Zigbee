@@ -204,6 +204,9 @@ _STUBS = {
         wiser_read_attribute_request=MagicMock(name="wiser_read_attribute_request"),
         schneider_multiple_read_attribute_request=MagicMock(name="schneider_multiple_read_attribute_request"),
     ),
+    "Modules.keepAlive": dict(
+        keep_alive_read_attribute_request=MagicMock(name="keep_alive_read_attribute_request"),
+    ),
     "Modules.timeServer": dict(
         timeserver_multiple_read_attribute_request=MagicMock(name="timeserver_multiple_read_attribute_request"),
     ),

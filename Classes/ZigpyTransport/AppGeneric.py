@@ -198,6 +198,7 @@ from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8047_frame_content, build_plugin_8048_frame_content)
 from Classes.ZigpyTransport.supervisor import zigpy_heartbeat_activity
 from Classes.ZigpyTransport.Transport import ZigpyTransport
+from Modules.maskKeys import mask_keys
 
 LOGGER = logging.getLogger(__name__)
 
@@ -373,7 +374,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
             new_state=new_state,
         )
 
-    self.log.logging("TransportZigpy", "Debug", f"Network info: {self.state.network_info}")
+    self.log.logging("TransportZigpy", "Debug", f"Network info: {mask_keys(self.state.network_info)}")
     self.log.logging("TransportZigpy", "Debug", f"Node info   : {self.state.node_info}")
 
     # Start Network
@@ -569,6 +570,10 @@ def connection_lost(self, exc: Exception) -> None:
     - Treats SerialException, CancelledError, TimeoutError, and
       asyncio.TimeoutError as fatal connection errors requiring a plugin
       restart.
+    - Any other error (NcpFailure with another code, ControllerException from
+      the zigpy watchdog, None when the remote side closes the port) is fatal
+      too, but only while the stack is up (_supervisor_running). Otherwise it
+      is logged and left to the start retries or to the shutdown in progress.
 
     Note:
         Bellows-specific types (NcpFailure, NcpResetCode) are imported inline.
@@ -578,7 +583,8 @@ def connection_lost(self, exc: Exception) -> None:
         try/except ImportError.
 
     Args:
-        exc: The exception that caused the connection loss.
+        exc: The exception that caused the connection loss, None when the port
+             was closed without an error.
     """
 
     try:
@@ -602,22 +608,30 @@ def connection_lost(self, exc: Exception) -> None:
             LOGGER.warning("+ Connection to the radio was lost, give time for recover ...")
             return
 
-        connection_lost_error( self, "NCP reset due to exceeded maximum ACK timeout count, plugin restart might be required" )
+        connection_lost_error( self, "NCP reset due to exceeded maximum ACK timeout count" )
 
     elif isinstance(exc, (serial.serialutil.SerialException, asyncio.CancelledError)):
-        connection_lost_error( self, "Connection to coordinator lost, SerialError or CancelledError, plugin restart might be required" )
+        connection_lost_error( self, "Connection to coordinator lost, SerialError or CancelledError" )
 
 
     elif isinstance(exc, OSError):
         # With the new serialx lib we get different exceptions when the serial port is disconnected or in use by another process, so let's catch OSError as well
-        connection_lost_error( self, "Connection to coordinator lost, OSError (device disconnected or in use by another process), plugin restart might be required" )
+        connection_lost_error( self, "Connection to coordinator lost, OSError (device disconnected or in use by another process)" )
 
 
     elif isinstance(exc, (TimeoutError, asyncio.TimeoutError)):
-        connection_lost_error( self, "Connection to coordinator lost, TimeOut, plugin restart might be required" )
+        connection_lost_error( self, "Connection to coordinator lost, TimeOut" )
+
+    elif not getattr(self, '_supervisor_running', False):
+        # Stack not up yet, or already stopping. A failed start attempt closes the port itself (exc is None) and the
+        # start has its own retries: a recovery here would turn each failed attempt into a plugin restart.
+        LOGGER.warning("+ Zigbee stack not running, no recovery started")
+
+    elif exc is None:
+        connection_lost_error( self, "Connection to coordinator lost, port closed by the remote side" )
 
     else:
-        connection_lost_error(self, "Unexpected error type in connection_lost: %s %r, plugin restart might be required", type(exc), exc)
+        connection_lost_error( self, f"Connection to coordinator lost, unexpected error {exc!r}" )
 
 
 def connection_lost_error(self, message: str) -> None:
@@ -625,9 +639,10 @@ def connection_lost_error(self, message: str) -> None:
     Mark the controller as restarting and trigger a plugin restart.
 
     Sets self.restarting = True and self.current_error = 'connection lost',
-    logs the provided message at ERROR level, then calls
-    self.callBackRestartPlugin() to request a full plugin restart from the
-    Domoticz layer.
+    logs the provided message at ERROR level with the recovery started, then
+    signals the supervisor to restart the Zigbee stack. Without an active
+    supervisor, calls self.callBackRestartPlugin() to request a full plugin
+    restart from the Domoticz layer.
 
     This is a shared helper called by connection_lost() for all fatal
     error conditions.
@@ -638,7 +653,6 @@ def connection_lost_error(self, message: str) -> None:
     """
     self.restarting = True
     self.current_error = "connection lost"
-    LOGGER.error(message)
 
     # If the in-process supervisor is active, let it handle recovery
     # without triggering a full Domoticz plugin restart
@@ -646,6 +660,10 @@ def connection_lost_error(self, message: str) -> None:
     # _supervisor_running and zigpy_running_ref are injected onto self.app by _radio_startup().
     supervisor_active = getattr(self, '_supervisor_running', False)
     transport = getattr(self, 'zigpy_running_ref', None)
+
+    # Tell the user what happens next, there is nothing to do by hand
+    recovery = "restarting the Zigbee stack" if supervisor_active and transport is not None else "restarting the plugin"
+    LOGGER.error("%s, %s", message, recovery)
 
     self.log.logging(
         "TransportZigpyStack", "Debug",
@@ -705,7 +723,7 @@ def _retrieve_previous_backup(self):
         self.log.logging("TransportZigpy", "Log", "Allow eui64 overwrite only once !!!")
         _retrieved_backup.network_info.stack_specific.setdefault("ezsp", {})[ "i_understand_i_can_update_eui64_only_once_and_i_still_want_to_do_it"] = True
 
-    self.log.logging("TransportZigpy", "Debug", "Last backup retreived: %s" % _retrieved_backup )
+    self.log.logging("TransportZigpy", "Debug", "Last backup retreived: %s" % mask_keys(_retrieved_backup) )
     return _retrieved_backup
 
 
@@ -947,7 +965,10 @@ def _preload_devices_from_plugin_db(self):
             _apply_node_descriptor(self, dev, nwkid, node_desc, source, described, undescribed)
         else:
             dev = self.devices[eui64]
-            LOGGER.warning(
+            # The radio library puts the coordinator in the table itself, at every start
+            is_coordinator = nwk_int == dev.nwk == 0x0000
+            LOGGER.log(
+                logging.DEBUG if is_coordinator else logging.WARNING,
                 "Device with IEEE %s already exists (0x%x, 0x%04x) vs. (%s, 0x%04x) in zigpy db, skipping add_device()",
                 eui64, ieee_int, nwk_int, dev.ieee, dev.nwk,
             )
@@ -1081,7 +1102,9 @@ def get_device(self, ieee=None, nwk=None):
             _nwk = nwk.serialize()[::-1].hex() if nwk is not None else None
             _ieee = "%016x" % zigpy_t.uint64_t.deserialize(ieee.serialize())[0] if ieee is not None else None
 
-            if self.callBackGetDevice(_ieee if ieee else None, _nwk if nwk else None) is not None:
+            found = self.callBackGetDevice(_ieee if ieee else None, _nwk if nwk else None)
+            # bellows looks the coordinator up in start_network(), before adding it to the table
+            if found is not None and found[0] != 0x0000:
                 LOGGER.warning(
                     "get_device miss for a known plugin device ieee=%s nwk=%s — "
                     "device was not pre-loaded at startup", _ieee, _nwk
@@ -1415,6 +1438,44 @@ def _is_green_power_for_zigpy_only(packet):
     return packet.data.serialize()[3:11] == GP_ALIAS_ANNCE_IEEE
 
 
+# ---------------------------------------------------------------------------
+# Helper: give the plugin a NWK source address, never an IEEE one
+# ---------------------------------------------------------------------------
+def _with_nwk_source(self, packet):
+    """
+    Return the packet with its IEEE source address replaced by the device's NWK address.
+
+    The plugin keys every device by its NWK address: decode8002 takes a
+    16-hex-digit IEEE source for an unknown NwkId and drops the frame, and the
+    ZDO request decoders put it where a NWK address belongs. Some radios report
+    an IEEE source: zigpy-deconz maps the firmware's IEEE and NWK_AND_IEEE
+    modes to AddrMode.IEEE (seen with a ConBee III and an ESP32 ZBOSS end
+    device, espressif/arduino-esp32#12520).
+
+    The NWK address comes from zigpy, then from the plugin database. A device
+    neither knows keeps its IEEE source, as before.
+    """
+    if packet.src is None or packet.src.addr_mode != zigpy_t.AddrMode.IEEE:
+        return packet
+
+    ieee = packet.src.address
+    nwk = None
+    try:
+        nwk = super(type(self), self).get_device(ieee=ieee).nwk
+    except KeyError:
+        if self.callBackGetDevice:
+            found = self.callBackGetDevice("%016x" % zigpy_t.uint64_t.deserialize(ieee.serialize())[0], None)
+            if found is not None:
+                nwk = zigpy_t.NWK(found[0])
+
+    if nwk is None:
+        self.log.logging("TransportZigpy", "Debug", f"packet_received IEEE source {ieee} unknown, kept as is")
+        return packet
+
+    self.log.logging("TransportZigpy", "Debug", f"packet_received IEEE source {ieee} → NWK {nwk}")
+    return packet.replace(src=zigpy_t.AddrModeAddress(addr_mode=zigpy_t.AddrMode.NWK, address=nwk))
+
+
 @measure_execution_time
 def packet_received(self, packet: zigpy_t.ZigbeePacket) -> None:
     """
@@ -1449,7 +1510,10 @@ def packet_received(self, packet: zigpy_t.ZigbeePacket) -> None:
         _transport._last_heartbeat = now
     else:
         self.log.logging("TransportZigpyStack", "Debug", "packet_received: zigpy_running_ref not set — heartbeat skipped")
-        
+
+    # The plugin works with NWK addresses only
+    packet = _with_nwk_source(self, packet)
+
             
     sender = packet.src.address.serialize()[::-1].hex()
     addr_mode = int(packet.src.addr_mode) if packet.src.addr_mode is not None else None

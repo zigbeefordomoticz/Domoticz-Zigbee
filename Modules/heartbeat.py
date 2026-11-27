@@ -24,7 +24,7 @@ from DevicesModules.custom_Chameleon import erl_z3_master_info
 from Modules.basicOutputs import getListofAttribute
 from Modules.casaia import pollingCasaia
 from Modules.danfoss import danfoss_room_sensor_polling
-from Modules.greenPowerWidgets import process_gp_widget_creation_requests
+from Modules.greenPowerWidgets import process_gp_requests
 from Modules.domoCreate import (process_widget_creation_requests,
                                 retry_failed_widget_creation)
 from Modules.domoticzAbstractLayer import (find_widget_unit_from_WidgetID,
@@ -64,6 +64,7 @@ from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST, ReadAttributeReq,
                                     read_attributes_ticmeter_tarif,
                                     refresh_zlinky_stge)
 from Modules.schneider_wiser import schneiderRenforceent
+from Modules.stackRestartPolling import poll_devices_after_stack_restart
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import (ReArrangeMacCapaBasedOnModel, deviceconf_device,
                            drop_stale_nwkid, get_device_nickname,
@@ -423,6 +424,21 @@ def pollingDeviceStatus(self, NwkId):
         ReadAttributeRequest_0201_0012(self, NwkId)
         self.log.logging("Heartbeat", "Debug", "++ pollingDeviceStatus -  %s  for Thermostat" % (NwkId), NwkId)
     return False
+
+
+def has_status_to_poll(self, NwkId):
+    """ True when pollingDeviceStatus() has something to read, on a device polled after an action """
+    device = self.ListOfDevices.get(NwkId, {})
+    if device.get("Status") != "inDB":
+        return False
+
+    if not (
+        mainPoweredDevice(self, NwkId)
+        or get_deviceconf_parameter_value(self, device.get("Model", ""), "PollingEnabled", return_default=False)
+    ):
+        return False
+
+    return any(getListOfEpForCluster(self, NwkId, cluster) for cluster in ("0006", "0008", "0102", "0101", "0201"))
 
 
 def checkHealth(self, NwkId):
@@ -892,7 +908,7 @@ def processListOfDevices(self, Devices):
     process_widget_creation_requests(self, Devices)
 
     # Same for Green Power devices, whose commissioning (9e00) is decoded on the forwarder thread
-    process_gp_widget_creation_requests(self, Devices)
+    process_gp_requests(self, Devices)
 
     # Admin widgets (Z4D Status, Z4D Notifications) Domoticz refused to create at
     # startup. They are created from AdminWidgets.__init__ and nowhere else, so
@@ -1036,6 +1052,8 @@ def processListOfDevices(self, Devices):
     if self.pairing_in_progress and self.Ping['Permit'] is None and self.Ping['TimeStamp'] > time.time() + 60:
         self.log.logging( "Heartbeat", "Log", "Timeout on pairing in progress status, reseting")
         self.pairing_in_progress = False
+
+    poll_devices_after_stack_restart(self, has_status_to_poll, pollingDeviceStatus)
 
     # Network Topology
     if self.networkmap:

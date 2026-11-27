@@ -51,7 +51,6 @@ from Modules.macPrefix import DELAY_FOR_VERY_KEY
 
 ERROR_TASK_CREATION_FAILED = 0xB6
 SEMAPHORE_TIMEOUT = 60  # seconds
-REQUEST_TIMEOUT = 8   # This is a given time for the request to be sent
 WAITING_TIME_BETWEEN_REQUESTS = .100
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 VERIFY_KEY_DELAY = 6
@@ -166,12 +165,32 @@ def stop_zigpy_thread(self):
     if self.writer_queue:
         self.writer_queue.put_nowait("STOP")
 
-    # Cancel any manually-started long-running tasks.
-    if self.manual_topology_scan_task:
-        self.manual_topology_scan_task.cancel()
+    # Cancel any manually-started long-running tasks (topology / interference scan).
+    # They belong to the zigpy event loop, which runs in another thread: cancel them
+    # on that loop. A direct task.cancel() from here raises "Non-thread-safe operation
+    # invoked on an event loop other than the current one" when the loop is in debug
+    # mode (EventLoopInstrumentation), half-way through the cancel: the task is left
+    # unable to wake up, and _cleanup() then waits for it forever (issue #2267).
+    for task in (self.manual_topology_scan_task, self.manual_interference_scan_task):
+        _cancel_task_threadsafe(self, task)
 
-    if self.manual_interference_scan_task:
-        self.manual_interference_scan_task.cancel()
+
+def _cancel_task_threadsafe(self, task):
+    """Schedule task.cancel() on the zigpy event loop, from any thread."""
+    if task is None or task.done():
+        return
+
+    loop = self.zigpy_loop
+    if loop is None or loop.is_closed():
+        # No loop left to run the task: nothing to cancel.
+        return
+
+    try:
+        loop.call_soon_threadsafe(task.cancel)
+    except RuntimeError as e:
+        # The loop closed between the check and the call; _cleanup() has already
+        # cancelled every task of that loop.
+        self.log.logging(["TransportZigpy", "StopProcess"], "Debug", f"stop_zigpy_thread - cannot cancel {task}: {e}")
 
 
 def start_zigpy_thread(self):

@@ -34,7 +34,7 @@ from Zigbee.encoder_tools import loggable_plugin_frame
 
 
 class ZigpyTransport(object):
-    def __init__(self, ControllerData, pluginParameters, pluginconf, F_out, zigpy_upd_device, zigpy_get_device, zigpy_get_all_devices, zigpy_backup_available, restart_plugin, log, statistics, hardwareid, radiomodule, serialPort, com_specifcs, zigpy_get_all_gp_devices=None):
+    def __init__(self, ControllerData, pluginParameters, pluginconf, F_out, zigpy_upd_device, zigpy_get_device, zigpy_get_all_devices, zigpy_backup_available, restart_plugin, log, statistics, hardwareid, radiomodule, serialPort, com_specifcs, zigpy_get_all_gp_devices=None, zigpy_get_device_name=None):
         self.zigbee_communication = "zigpy"
         self.pluginParameters = pluginParameters
         self.pluginconf = pluginconf
@@ -43,6 +43,7 @@ class ZigpyTransport(object):
         self.ZigpyGetDevice = zigpy_get_device
         self.ZigpyGetAllDevices = zigpy_get_all_devices
         self.ZigpyGetAllGpDevices = zigpy_get_all_gp_devices
+        self.ZigpyGetDeviceName = zigpy_get_device_name
         self.ZigpyBackupAvailable = zigpy_backup_available
         self.restart_plugin = restart_plugin
         self.log = log
@@ -72,6 +73,11 @@ class ZigpyTransport(object):
         self._concurrent_requests_semaphores_list = {}
         self._currently_waiting_requests_list = {}  
         self._currently_not_reachable = []
+        self._not_reachable_dropped = {}  # IEEE: requests dropped since the device was found not reachable
+
+        # Requests not sent since the radio link went down, 0 when the link is up
+        self._radio_down_requests = 0
+
         self._periodic_reset = None
         
         # Initialise SQN Management
@@ -90,6 +96,7 @@ class ZigpyTransport(object):
 
         self._stack_health = "INIT"
         self._restart_count = 0
+        self.stack_starts = 0           # successful stack starts, read by Modules/stackRestartPolling.py
         self._consecutive_failures = 0  # reset to 0 after a stable run; drives radio-recovery hook
         self._restart_timestamps = []   # monotonic timestamps of recent restarts (circuit breaker)
 

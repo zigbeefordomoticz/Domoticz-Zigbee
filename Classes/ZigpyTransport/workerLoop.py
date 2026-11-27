@@ -32,6 +32,7 @@ from zigpy.exceptions import (APIException, ControllerException, DeliveryError,
 from zigpy_znp.exceptions import (CommandNotRecognized, InvalidCommandResponse,
                                    InvalidFrame)
 
+from Classes.ZigpyTransport.lostCommands import report_lost_command
 from Classes.ZigpyTransport.plugin_encoders import build_plugin_8009_frame_content
 from Classes.ZigpyTransport.tools import handle_thread_error
 from Classes.ZigpyTransport.zigpySend import (log_exception, process_raw_command,
@@ -63,6 +64,8 @@ async def worker_loop(self):
                     self.log.logging(["TransportZigpy", "StopProcess"], "Debug",
                                      "worker_loop - Shutting down ... exit.")
                     self.zigpy_running = False
+                    # The stack was stopped meanwhile: this command is out of the queue and will not be sent
+                    report_lost_command(self, command_to_send)
                     break
 
                 await process_incoming_command(self, command_to_send)

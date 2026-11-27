@@ -23,6 +23,10 @@ import time
 from Modules.tools import get_deviceconf_parameter_value, device_listening_on_iddle
 from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_COMMANDS, ZIGATE_EP
 
+# Seconds after the creation of the widgets (PairingTime) during which a device is still taken as pairing:
+# the IAS enrollment, the binding and the configure reporting run after the PairingInProgress flag is cleared.
+PAIRING_SEND_WINDOW = 300
+
 
 def add_Last_Cmds(self, isqn="", address_mode="", nwkid="", cmd="", datas=""):
     # Ensure the device exists
@@ -171,7 +175,7 @@ def sendZigateCmd(self, cmd, datas, ackIsDisabled=False):
                 "Error",
                 "sendZigateCmd - Decoding error %s %s" % (cmd, datas),
                 NwkId,
-                {"Error code": "BOUTPUTS-CMD-02", "ListOfDevices": self.ListOfDevices},
+                {"Error code": "BOUTPUTS-CMD-02", "Cmd": cmd, "datas": datas, "Known devices": len(self.ListOfDevices)},
             )
             return None
         if AddrMod == "01":
@@ -280,6 +284,17 @@ def zigate_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, paylo
     )
     
     
+def device_is_pairing(self, nwkid):
+    """Is the device being paired, or was it paired less than PAIRING_SEND_WINDOW seconds ago?"""
+    device = self.ListOfDevices.get(nwkid)
+    if not device:
+        return False
+    if device.get("PairingInProgress"):
+        return True
+    pairing_time = device.get("PairingTime")
+    return isinstance(pairing_time, (int, float)) and time.time() - pairing_time <= PAIRING_SEND_WINDOW
+
+
 def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, zigpyzqn=None, groupaddrmode=False, highpriority=False, ackIsDisabled=False, delayAfterSent=0):
 
     if zigpyzqn is None:
@@ -298,6 +313,7 @@ def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payloa
         'RxOnIdle': device_listening_on_iddle(self, targetaddr),
         'payload': payload,
         'delayAfterSent': delayAfterSent,
+        'Pairing': device_is_pairing(self, targetaddr),
         'timestamp': time.time()
     }
 

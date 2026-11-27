@@ -16,6 +16,7 @@ import time
 
 import zigpy.types as t
 
+from Modules.maskKeys import mask_keys
 from Zigbee.encoder_tools import encapsulate_plugin_frame
 
 
@@ -148,7 +149,7 @@ def build_plugin_8014_frame_content(self, nwkid, payload):
     
 def build_plugin_8015_frame_content( self, network_info):
     # Get list of active devices
-    self.log.logging( "TransportPluginEncoder", "Debug", "build_plugin_8015_frame_content key_table %s" %str(network_info))
+    self.log.logging( "TransportPluginEncoder", "Debug", "build_plugin_8015_frame_content key_table %s" %mask_keys(network_info))
     buildPayload = ""
     for idx, (ieee, nwk) in enumerate(network_info.nwk_addresses.items()):
         nwk_hex = "%04x" % int(nwk.serialize()[::-1].hex(), 16)

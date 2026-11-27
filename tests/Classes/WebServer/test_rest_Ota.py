@@ -49,6 +49,7 @@ def rest_ota(monkeypatch):
 def webserver():
     ws = MagicMock()
     ws.pluginconf.pluginConf = {"enableKeepalive": False}
+    ws.OTA.restapi_firmware_downloaded.return_value = False
     ws.ListOfDevices = {
         "1234": {
             "ZDeviceName": "Bulb",
@@ -284,3 +285,36 @@ def test_firmware_available_lists_an_image_type_once(rest_ota, webserver):
 
     firmwares = json.loads(response["Data"])
     assert [(fw["fwtype"], fw["url"]) for fw in firmwares] == [("1249", "new"), ("4204", "other")]
+
+
+def test_firmware_available_leaves_out_a_downloaded_firmware(rest_ota, webserver):
+    webserver.ListOfDevices["1234"]["OTAUpdate"] = {
+        "1249": {"currentversion": "42002", "newestversion": "65004", "url": "downloaded"},
+        "4204": {"currentversion": "1", "newestversion": "2", "url": "to download"},
+    }
+    webserver.OTA.restapi_firmware_downloaded.side_effect = lambda nwkid, fwtype, version: (nwkid, fwtype, version) == ("1234", "1249", "65004")
+
+    response = rest_ota.rest_ota_firmware_available(webserver, "GET", None, [])
+
+    assert [fw["url"] for fw in json.loads(response["Data"])] == ["to download"]
+    # The record stays: the firmware is listed again if its file is removed
+    assert list(webserver.ListOfDevices["1234"]["OTAUpdate"]) == ["1249", "4204"]
+
+
+def test_firmware_available_reads_the_firmware_folders_first(rest_ota, webserver):
+    """A file dropped into OTAFirmware/ while the plugin runs counts as downloaded."""
+    webserver.ListOfDevices["1234"]["OTAUpdate"] = {"1249": {"currentversion": "42002", "newestversion": "65004", "url": "u"}}
+    webserver.OTA.rescan_firmware_folders.side_effect = lambda: setattr(webserver.OTA.restapi_firmware_downloaded, "return_value", True)
+
+    response = rest_ota.rest_ota_firmware_available(webserver, "GET", None, [])
+
+    assert json.loads(response["Data"]) == []
+
+
+def test_firmware_available_without_ota(rest_ota, webserver):
+    webserver.OTA = None
+    webserver.ListOfDevices["1234"]["OTAUpdate"] = {"1249": {"currentversion": "42002", "newestversion": "65004", "url": "u"}}
+
+    response = rest_ota.rest_ota_firmware_available(webserver, "GET", None, [])
+
+    assert [fw["fwtype"] for fw in json.loads(response["Data"])] == ["1249"]

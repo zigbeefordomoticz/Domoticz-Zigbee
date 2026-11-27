@@ -47,7 +47,13 @@ from Zigbee.zdpCommands import zdp_simple_descriptor_request
 #
 # Host -> Node :  Read Attribute Request ( 0x0500 / 0x0000, 0x0001, 0x0002 )
 
+# A Match_Desc_rsp received later than this (seconds) is not taken for an answer to our request
+MATCH_DESC_REQUEST_LIFETIME = 300
+
 ENROLL_RESPONSE_OK_CODE = 0x00
+# Status of an Ep once its Zone Enroll Response is sent. It becomes "Enrolled" when the device reports
+# ZoneState 0x01 (IAS_CIE_service_discovery_response): the response can be lost, a sleepy device can miss it.
+ENROLL_RESPONSE_SENT = "Enroll Response sent"
 ZONE_ID = 0x00
 
 IAS_ATTRIBUT_ZONE_STATE = "0000"
@@ -115,6 +121,8 @@ class IAS_Zone_Management:
         self.readZclClusters = readZclClusters
         self.FirmwareVersion = FirmwareVersion
         self.pairing_in_progress = pairing_in_progress
+        # Our Match_Desc_req on cluster 0x0500 waiting for a response. ( NwkId, SQN ): time of the request
+        self.match_desc_requests = {}
 
 
     def logging(self, logType, message):
@@ -124,6 +132,22 @@ class IAS_Zone_Management:
     def setZigateIEEE(self, ZigateIEEE):
         self.logging("Debug", f"setZigateIEEE - Set Zigate IEEE: {ZigateIEEE}")
         self.ControllerIEEE = ZigateIEEE
+
+
+    def match_descriptor_request_sent(self, nwkid, sqn):
+        # To be called before the Match_Desc_req is sent, so that the response cannot come first
+        now = time.time()
+        for key, sent_at in list(self.match_desc_requests.items()):
+            if now - sent_at > MATCH_DESC_REQUEST_LIFETIME:
+                self.match_desc_requests.pop(key, None)
+        self.match_desc_requests[(nwkid, sqn)] = now
+
+
+    def is_match_descriptor_response_expected(self, nwkid, sqn):
+        # A Match_Desc_rsp does not tell which cluster was asked for, only the SQN links it to our request.
+        # One request, one response: the request is forgotten, and a copy of the response is not expected.
+        sent_at = self.match_desc_requests.pop((nwkid, sqn), None)
+        return sent_at is not None and time.time() - sent_at <= MATCH_DESC_REQUEST_LIFETIME
 
 
     def IAS_write_CIE_after_match_descriptor( self, nwkid, ep):
@@ -259,7 +283,7 @@ class IAS_Zone_Management:
                 self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ] = {}
 
             # We are may be in an Auto-Enrollment by the device ( Frient )
-            self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Enrolled2"
+            self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = ENROLL_RESPONSE_SENT
             self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["ZoneId"] = "%02x" %ZONE_ID
             IAS_Zone_enrollment_response(self, NwkId, Ep, sqn, ZONE_ID)
             check_IAS_CIE_Address(self, NwkId, Ep)
@@ -278,7 +302,7 @@ class IAS_Zone_Management:
             check_IAS_CIE_Address(self, NwkId, Ep)
             return
         
-        self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Enrolled"
+        self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = ENROLL_RESPONSE_SENT
         self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["ZoneId"] = "%02x" %ZONE_ID
         IAS_Zone_enrollment_response(self, NwkId, Ep, sqn, ZONE_ID)
         check_IAS_CIE_Address(self, NwkId, Ep)
@@ -505,12 +529,12 @@ def IAS_CIE_service_discovery( self, NwkId, Epout):
 
 
 def IAS_Zone_enrollment_response(self, NwkId, Ep, sqn, ZoneID):
-    # The IAS Zone server SHALL change its ZoneState attribute to 0x01 (enrolled). 
+    # On receipt, the IAS Zone server SHALL change its ZoneState attribute to 0x01 (enrolled).
+    # The Ep is taken as enrolled only when the device reports it, see ENROLL_RESPONSE_SENT.
     self.logging("Debug", f"IAS Zone_enroll_response for {NwkId}/{Ep}")
     if not self.ControllerIEEE:
         self.logging("Error", "IASZone_enroll_response_zoneIDzoneID - Zigate IEEE not yet known")
         return
-    self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] = "Enrolled"
     zcl_ias_zone_enroll_response(self, NwkId, ZIGATE_EP, Ep, "%02x" %ENROLL_RESPONSE_OK_CODE, "%02x" %ZoneID, sqn=sqn, ackIsDisabled=False)
 
 

@@ -62,6 +62,19 @@ def ReArrangeMacCapaBasedOnModel(self, nwkid, inMacCapa):
         or self.ListOfDevices[nwkid]["Model"] in ("TI0001", "TS0011", "TS0013", "TS0601-switch", "TS0601-2Gangs-switch", )
     ):
         # Livol Switch, must be converted to Main Powered
+        # Only the power source is wrong for a device that announced itself as a
+        # reduced-function device (no-neutral switches: Livolo, TS0011, Sonoff
+        # ZBMINI-L*): it stays an End Device, otherwise NetworkMap, NetworkEnergy
+        # and the WebUI take it for a router.
+        announced = _announced_mac_capability(self.ListOfDevices[nwkid])
+        if announced and not announced & MAC_CAPABILITY_FULL_FUNCTION_DEVICE:
+            mac_capa = "%02x" % (announced | MAC_CAPABILITY_MAIN_POWERED)
+            self.ListOfDevices[nwkid]["LogicalType"] = "End Device"
+            self.ListOfDevices[nwkid]["DeviceType"] = "RFD"
+            self.ListOfDevices[nwkid]["MacCapa"] = mac_capa
+            self.ListOfDevices[nwkid]["PowerSource"] = "Main"
+            return mac_capa
+
         # Patch some status as Device Annouced doesn't provide much info
         self.ListOfDevices[nwkid]["LogicalType"] = "Router"
     # Not DevideType but DeviceType    
@@ -126,15 +139,12 @@ def mainPoweredDevice(self, nwkid):
         mainPower = False
 
     # These are device annouced as Battery, but are Main Powered ( some time without neutral)
+    # Only the answer changes: the record itself is corrected by ReArrangeMacCapaBasedOnModel().
     if (
         get_deviceconf_parameter_value(self, model_name, "MainPoweredDevice")
         or model_name in ("TI0001", "TS0011", "TS0601-switch", "TS0601-2Gangs-switch", "ZBMINI-L",)
     ):
         mainPower = True
-        self.ListOfDevices[nwkid]["LogicalType"] = "End Device"
-    # Not DevideType but DeviceType    
-    #    self.ListOfDevices[nwkid]["DevideType"] = "RFD"
-        self.ListOfDevices[nwkid]["DeviceType"] = "RFD"
 
     if not mainPower and "PowerSource" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["PowerSource"] != {}:
         mainPower = self.ListOfDevices[nwkid]["PowerSource"] == "Main"
@@ -233,6 +243,26 @@ CAPABILITY_TO_MAC_CAPABILITY_BIT = {
 }
 
 MAC_CAPABILITY_FULL_FUNCTION_DEVICE = 0b00000010
+MAC_CAPABILITY_MAIN_POWERED = 0b00000100
+
+
+def _announced_mac_capability(device_record):
+    """The MAC capability byte the device announced, or 0 when it is not known.
+
+    Read from "Capability" (the device announcement), else from "macapa" (the
+    Node Descriptor response). Never from MacCapa: it may already hold an
+    earlier per-model rewrite ("8e"), which would make an end device look
+    full-function.
+    """
+    capability = device_record.get("Capability")
+    if isinstance(capability, (list, tuple, set)) and capability:
+        flags = 0
+        for name, bit in CAPABILITY_TO_MAC_CAPABILITY_BIT.items():
+            if name in capability:
+                flags |= bit
+        return flags
+
+    return _node_descriptor_int(device_record.get("macapa"), 0xFF)
 
 
 def node_descriptor_fields(nwkid, device_record):

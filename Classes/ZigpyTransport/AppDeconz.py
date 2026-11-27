@@ -25,6 +25,7 @@ from Classes.ZigpyTransport.firmwareversionHelper import \
     deconz_extract_versioning_for_plugin
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8010_frame_content, build_plugin_8015_frame_content)
+from Modules.maskKeys import mask_keys
 
 LOGGER = logging.getLogger(__name__)
 
@@ -85,7 +86,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         network_info = self.state.network_info
 
         # deConz doesn't have such capabilities to provided list of paired devices.
-        LOGGER.info("startup Network Info: %s" %str(network_info))
+        LOGGER.info("startup Network Info: %s" %mask_keys(network_info))
         self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
 
         version = int(self.state.node_info.version,16)
@@ -223,7 +224,8 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         await self.move_network_to_channel(channel)
 
     async def remove_ieee(self, ieee):
-        pass
+        # zigpy's default also asks a router's children to leave: they stay, and find another parent
+        await self.remove(ieee, remove_children=False)
 
 
     async def coordinator_backup( self ):

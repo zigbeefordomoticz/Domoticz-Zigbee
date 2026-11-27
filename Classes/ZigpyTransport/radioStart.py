@@ -38,11 +38,13 @@ import glob
 import zigpy.config
 import zigpy.types as t
 
+from Classes.ZigpyTransport.lostCommands import report_lost_commands
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_0302_frame_content, build_plugin_8009_frame_content,
     build_plugin_8043_frame_list_node_descriptor,
     build_plugin_8045_frame_list_controller_ep)
 from Classes.ZigpyTransport.workerLoop import worker_loop
+from Modules.maskKeys import MASKED_KEY
 
 def _transport_heartbeat(transport) -> None:
     """Update supervisor liveness timestamp from the coordinator watchdog tick."""
@@ -111,8 +113,16 @@ async def start_zigpy_task(self, channel, extended_pan_id):
         f"app={'set' if self.app else 'None'}, zigpy_running={self.zigpy_running}"
     )
 
+    # What was sent while the radio was starting is dropped with the queue
+    report_lost_commands(self)
+
     # We MUST use queue.Queue (not asyncio.Queue) — Domoticz uses a plain thread
     self.writer_queue = queue.Queue()
+
+    # Counted once the final queue is in place: what was sent before is dropped with the previous one.
+    # _supervisor_running is set by _radio_startup(), only when the radio has started.
+    if getattr(self.app, "_supervisor_running", False):
+        self.stack_starts += 1
 
     try:
         await worker_loop(self)
@@ -555,9 +565,7 @@ def display_network_infos(self):
     self.log.logging("TransportZigpy", "Status",
                      f"  Device NWK:            0x{self.app.state.node_info.nwk:04X}")
     self.log.logging("TransportZigpy", "Status",
-                     "  Network key:           "
-                     + ":".join(f"{c:02x}"
-                                for c in self.app.state.network_information.network_key.key))
+                     f"  Network key:           {MASKED_KEY}")
     self.log.logging("TransportZigpy", "Status",
                      f"  Network key sequence:  {self.app.state.network_info.network_key.seq}")
     self.log.logging("TransportZigpy", "Status",

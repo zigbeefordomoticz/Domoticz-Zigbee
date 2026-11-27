@@ -16,6 +16,8 @@ the real widget code, against a fake DomoticzEx:
   creation       queued, carried out from the heartbeat: a Switch with the
                  Zigbee path's definition (SIMPLE_WIDGET), ClusterType kept in
                  the store record; nothing created twice; certified NickName used
+  recreation     asked from the WebUI: the missing widgets created, the others
+                 kept with their binding; commissioning again never does it
   update         Off / On / Toggle → the Switch through maj_domo_widgets()
                  (NwkId None): nValue/sValue written, no ListOfDevices entry
                  created, the Zigbee device holding the GPD's alias NwkId untouched
@@ -71,7 +73,7 @@ PREAMBLE = textwrap.dedent(
     import Modules.readAttributes  # noqa: F401
     import Modules.greenPowerWidgets as gpw
     from Classes.PluginStore import PluginStore
-    from Modules.greenPowerStore import GP_STORE_NAME, GP_STORE_VERSION, request_gp_widget_creation
+    from Modules.greenPowerStore import GP_STORE_NAME, GP_STORE_VERSION, GreenPowerRequests, request_gp_widget_creation
 
     GP_IEEE = "000000000155a3b2"
     ALIAS = "a3b2"
@@ -106,6 +108,7 @@ PREAMBLE = textwrap.dedent(
         p.pairing_in_progress = False
         p.ZiGateModel = None
         p.flush_list_of_devices = False
+        p.green_power_requests = GreenPowerRequests()
         store = PluginStore(GP_STORE_NAME, GP_STORE_VERSION)
         store.set(GP_IEEE, record or gp_record())
         p.PluginStores = {GP_STORE_NAME: store}
@@ -113,7 +116,7 @@ PREAMBLE = textwrap.dedent(
 
     def commission(p):
         request_gp_widget_creation(p, GP_IEEE)
-        gpw.process_gp_widget_creation_requests(p, DEVICES)
+        gpw.process_gp_requests(p, DEVICES)
 
     def stored(p):
         return p.PluginStores[GP_STORE_NAME].get(GP_IEEE)
@@ -196,7 +199,7 @@ def test_switch_created_from_the_heartbeat_with_the_zigbee_definition():
         assert record["Ep"] == {"01": {"ClusterType": {str(unit.ID): "Switch"}}}
         assert p.flush_list_of_devices is True
         assert p.ListOfDevices == {} and p.log.errors() == []
-        assert not getattr(p, "gp_widget_creation_requests")
+        assert p.green_power_requests.widgets == set() and p.green_power_requests.store_flush is False
         # Shown on Admin → Provisioning
         from Modules.greenPowerFeed import gp_feed
         (event,) = gp_feed(p).snapshot()["Events"]
@@ -215,6 +218,154 @@ def test_widgets_never_created_twice():
 
         assert len(DEVICES[GP_IEEE].Units) == 1
         """
+    )
+
+
+RECREATE = textwrap.dedent(
+    """
+    from Modules.greenPowerModels import load_gp_models
+    from Modules.greenPowerStore import request_gp_widget_recreation
+
+    def four_buttons():
+        p = make_plugin(gp_record(device_id=0x07, commands=[], RequestedModel="GreenPower-4Buttons"))
+        load_gp_models(p, "Conf")
+        commission(p)
+        return p
+
+    def recreate(p):
+        request_gp_widget_recreation(p, GP_IEEE)
+        gpw.process_gp_requests(p, DEVICES)
+
+    def bound(p, ep):
+        return list(stored(p)["Ep"].get(ep, {}).get("ClusterType", {}))
+
+    def delete_widget(widget_id):
+        units = DEVICES[GP_IEEE].Units
+        del units[next(unit for unit, u in units.items() if u.ID == int(widget_id))]
+
+    def ids():
+        return {str(u.ID) for u in DEVICES[GP_IEEE].Units.values()}
+    """
+)
+
+
+def test_recreate_creates_the_missing_widget_and_keeps_the_other():
+    _run(
+        RECREATE
+        + textwrap.dedent(
+            """
+            p = four_buttons()
+            [f1], [f2] = bound(p, "f1"), bound(p, "f2")
+            delete_widget(f2)
+            p.flush_list_of_devices = False
+
+            recreate(p)
+
+            [new_f2] = bound(p, "f2")
+            assert bound(p, "f1") == [f1]
+            assert new_f2 != f2
+            assert ids() == {f1, new_f2}
+            assert p.flush_list_of_devices is True
+            assert "1 widget(s) created as GreenPower-4Buttons" in p.log.text()
+
+            # The new widget gets its button, not the other one
+            gpw.update_gp_widgets(p, DEVICES, GP_IEEE, 0x69, "04")
+            values = {str(u.ID): u.nValue for u in DEVICES[GP_IEEE].Units.values()}
+            assert values == {f1: 0, new_f2: 1}
+            assert p.log.errors() == []
+            """
+        )
+    )
+
+
+def test_recreate_with_every_widget_there_creates_nothing():
+    _run(
+        RECREATE
+        + textwrap.dedent(
+            """
+            p = four_buttons()
+            before, bindings = ids(), stored(p)["Ep"]
+
+            recreate(p)
+            recreate(p)
+
+            assert ids() == before
+            assert stored(p)["Ep"] == bindings
+            """
+        )
+    )
+
+
+def test_recreate_when_the_widgets_were_deleted_with_the_plugin_stopped():
+    _run(
+        RECREATE
+        + textwrap.dedent(
+            """
+            # No onDeviceRemoved: the store still holds the bindings
+            p = four_buttons()
+            old = ids()
+            DEVICES.clear()
+
+            recreate(p)
+
+            assert len(ids()) == 2 and not ids() & old
+            assert {bound(p, "f1")[0], bound(p, "f2")[0]} == ids()
+            """
+        )
+    )
+
+
+def test_recreate_keeps_a_widget_its_configuration_no_longer_has():
+    _run(
+        RECREATE
+        + textwrap.dedent(
+            """
+            p = four_buttons()
+            before = ids()
+            p.PluginStores[GP_STORE_NAME].update(GP_IEEE, {"RequestedModel": "GreenPower-OnOff"})
+
+            recreate(p)
+
+            assert before < ids()
+            assert len(bound(p, "f1")) == len(bound(p, "f2")) == 1
+            """
+        )
+    )
+
+
+def test_recreate_serves_one_request_and_forgets_an_unknown_gpd():
+    _run(
+        RECREATE
+        + textwrap.dedent(
+            """
+            p = four_buttons()
+            delete_widget(bound(p, "f2")[0])
+            request_gp_widget_recreation(p, "0000000000000bad")
+
+            recreate(p)
+
+            assert p.green_power_requests.recreate == set()
+            assert p.log.errors() == []
+            assert len(ids()) == 2
+            """
+        )
+    )
+
+
+def test_commissioned_again_a_deleted_widget_stays_deleted():
+    _run(
+        RECREATE
+        + textwrap.dedent(
+            """
+            p = four_buttons()
+            delete_widget(bound(p, "f2")[0])
+            left = ids()
+
+            commission(p)
+
+            assert ids() == left
+            """
+        )
     )
 
 

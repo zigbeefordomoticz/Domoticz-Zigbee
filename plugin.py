@@ -150,6 +150,7 @@ from Classes.SceneSelector import SceneSelector
 from Classes.ThreadSafeDeviceDict import ThreadSafeDeviceDict
 from Classes.TransportStats import TransportStatistics
 from Classes.WebServer.WebServer import WebServer
+from Classes.WebServer.com import webui_uses_tls
 from Classes.ZigpyTopology import ZigpyTopology
 from Modules.basicOutputs import (ZigatePermitToJoin, leaveRequest,
                                   setExtendedPANID, setTimeServer,
@@ -164,6 +165,7 @@ from Modules.database import (LoadDeviceList, flush_plugin_listofdevice,
                               checkDevices2LOD, checkListOfDevice2Devices,
                               SCENES_STORE, import_local_device_conf,
                               load_plugin_stores)
+from Modules.domoticzCustomMenu import custom_menu_html, webui_enabled
 from Modules.domoticzAbstractLayer import (
     domo_read_Name, load_list_of_domoticz_widget,
     retrieve_widgetid_from_deviceId_unit)
@@ -192,7 +194,7 @@ from Modules.restartPlugin import (restart_attempt_due,
                                    restartPluginViaDomoticzJsonApi)
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
 from Modules.tools import (build_list_of_device_model,
-                           reconcile_ieee_nwkid, lookupForIEEE,
+                           get_device_nickname, reconcile_ieee_nwkid, lookupForIEEE,
                            night_shift_jobs, unregister_domoticz_widget)
 from Modules.tools_mac_capa import node_descriptor_fields
 from Modules.txPower import set_TxPower
@@ -209,7 +211,7 @@ from Modules.greenPower import (green_power_widget_command,
                                 is_green_power_device_id)
 from Modules.greenPowerFeed import GP_FEED_ATTRIBUTE, GreenPowerFeed, gp_feed
 from Modules.greenPowerModels import gp_models, load_gp_models
-from Modules.greenPowerStore import gp_devices_for_zigpy
+from Modules.greenPowerStore import GreenPowerRequests, gp_devices_for_zigpy
 from Modules.zigpy_preload import device_has_left_the_network
 from Zigbee.zdpCommands import (zdp_get_permit_joint_status,
                                 zdp_NWK_address_request)
@@ -259,6 +261,7 @@ class BasePlugin:
 
         self.ListOfDomoticzWidget = ThreadSafeDeviceDict()
         self.ListOfDevices = ThreadSafeDeviceDict()
+        self.tuya_sampling_requests = {}  # Last SamplingInterval sent, per NwkId (Modules/tuyaTS0601.py)
         self.IEEE2NWK = ThreadSafeDeviceDict()
 
         self.DiscoveryDevices = {}  # Used to collect pairing information
@@ -307,6 +310,9 @@ class BasePlugin:
         self.PluginStores = {}
         # Created here, before the transport and the WebServer use it from their threads
         setattr(self, GP_FEED_ATTRIBUTE, GreenPowerFeed())
+        # Widget (re)creations asked for by the WebUI, per NwkId (Modules/domoCreate.py).
+        # start_web_server() hands this same dict to the WebServer: never reassign it.
+        self.widget_creation_requests = {}
         self.pluginParameters = None
 
         self.PluginHealth = {}
@@ -316,6 +322,10 @@ class BasePlugin:
 
         self.HeartbeatCount = 0
         self.internalHB = 0
+
+        # Modules/stackRestartPolling.py
+        self.stack_starts_seen = 0
+        self.devices_to_poll_after_restart = []
 
         self.currentChannel = None  # Curent Channel. Set in Decode8009/Decode8024
         self.ControllerIEEE = None  # Zigate IEEE. Set in CDecode8009/Decode8024
@@ -340,6 +350,8 @@ class BasePlugin:
         self.z4d_certified_devices_version = None
         
         self.flush_list_of_devices = False
+        # Asked of the heartbeat by the Green Power decoders and, as the same object, the WebServer
+        self.green_power_requests = GreenPowerRequests()
 
         self.loggingFileHandle = None
         self.level = 0
@@ -371,6 +383,7 @@ class BasePlugin:
         
         # Zigpy
         self.zigbee_communication = None  # "zigpy" or "native"
+        self.zcl_recent_frames = {}  # Zigbee.zclDuplicateFrames
         #self.pythonModuleVersion = {}
         
         self.device_settings = {}
@@ -514,8 +527,11 @@ class BasePlugin:
 
         # Create Domoticz Sub menu
         if "DomoticzCustomMenu" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["DomoticzCustomMenu"]:
-            Domoticz.Status("Z4D installs the WebUI in the Domoticz custom menu")
-            install_Z4D_to_domoticz_custom_ui( )
+            if webui_enabled(Parameters["Mode4"]):
+                Domoticz.Status("Z4D installs the WebUI in the Domoticz custom menu")
+                install_Z4D_to_domoticz_custom_ui( self.pluginconf.pluginConf )
+            else:
+                Domoticz.Status("Z4D WebUI disabled (Plugin WebUI port %s): no entry in the Domoticz custom menu" % Parameters["Mode4"])
 
         # Create the adminStatusWidget if needed
         self.PluginHealth["Flag"] = 4
@@ -618,6 +634,9 @@ class BasePlugin:
             self.onStop()
             return
 
+        # LoadDeviceList() has replaced self.ListOfDevices
+        self.log.loggingUpdateListOfDevices(self.ListOfDevices)
+
         load_plugin_stores(self)
 
         # Log ListOfDevices dictionary
@@ -663,11 +682,11 @@ class BasePlugin:
         if self.iaszonemgt is None:
             # Create IAS Zone object
             # Domoticz.Log("Init IAS_Zone_management ZigateComm: %s" %self.ControllerLink)
-            self.iaszonemgt = IAS_Zone_Management(self.pluginconf, self.ControllerLink, self.ListOfDevices, self.IEEE2NWK, self.DeviceConf, self.log, self.zigbee_communication, self.readZclClusters, self.pairing_in_progress, self.FirmwareVersion)
+            self.iaszonemgt = IAS_Zone_Management(self.pluginconf, self.ControllerLink, self.ListOfDevices, self.IEEE2NWK, self.DeviceConf, self.log, self.zigbee_communication, FirmwareVersion=self.FirmwareVersion, readZclClusters=self.readZclClusters, pairing_in_progress=self.pairing_in_progress)
 
         # Starting WebServer
         if self.webserver is None:
-            if Parameters["Mode4"].isdigit() or ':' in Parameters["Mode4"]:
+            if webui_enabled(Parameters["Mode4"]):
                 start_web_server(self, Parameters["Mode4"], Parameters["HomeFolder"])
             else:
                 self.log.logging( "Plugin", "Error", "WebServer disabled du to Parameter Mode4 set to %s" % Parameters["Mode4"] )
@@ -952,6 +971,10 @@ class BasePlugin:
         result = int(nwkid, 16), int(ieee, 16)
         self.log.logging("TransportZigpy", "Debug", f"zigpy_get_device({orig_ieee}, {orig_nwkid}) returns {result[0]:04x} {result[1]:016x}")
         return result
+
+
+    def zigpy_get_device_name(self, nwkid):
+        return get_device_nickname(self, NwkId=nwkid)
 
 
     def zigpy_backup_available(self, backups):
@@ -1357,6 +1380,7 @@ def _start_zigpy_backend(self, backend_key):
         SerialPort,
         communication_specifics,
         zigpy_get_all_gp_devices=self.zigpy_get_all_gp_devices,
+        zigpy_get_device_name=self.zigpy_get_device_name,
         )
 
     self.ControllerLink.open_cie_connection()
@@ -1803,9 +1827,11 @@ def start_web_server(self, webserver_port, webserver_homefolder):
     )
     if self.FirmwareVersion:
         self.webserver.update_firmware(self.FirmwareVersion)
+    self.webserver.update_widget_creation_requests(self.widget_creation_requests)
     self.webserver.update_plugin_stores(self.PluginStores)
     self.webserver.update_green_power_feed(gp_feed(self))
     self.webserver.update_green_power_models(gp_models(self))
+    self.webserver.update_green_power_requests(self.green_power_requests)
 
 
 def pingZigate(self):
@@ -2000,27 +2026,14 @@ def DumpHTTPResponseToLog(httpDict):
                 Domoticz.Log("--->'" + x + "':'" + str(httpDict[x]) + "'")
 
 
-def install_Z4D_to_domoticz_custom_ui():
-
-    line1 = '<iframe id="%s"' %Parameters['Name'] + 'style="width:100%;height:800px;overflow:scroll;">\n'
-    line2 = '</iframe>\n'
-    line3 = '\n'
-    line4 = '<script>\n'
-    line5 = 'document.getElementById(\'%s\').src' %Parameters['Name'] + ' = "http://" + location.hostname + ":%s/z4d/";\n' %Parameters['Mode4']
-    #line5 = 'document.getElementById(\'%s\').src' %Parameters['Name'] + ' = location.protocol + "/z4d/";\n' 
-    line6 = '</script>\n'
+def install_Z4D_to_domoticz_custom_ui(plugin_conf):
 
     _startupfolder = pathlib.Path( Parameters['StartupFolder'] )
     custom_file = _startupfolder / 'www/templates' / f"{Parameters['Name']}.html"
 
     try:
         with open( custom_file, "wt") as z4d_html_file:
-            z4d_html_file.write( line1 )
-            z4d_html_file.write( line2 )
-            z4d_html_file.write( line3 )
-            z4d_html_file.write( line4 )
-            z4d_html_file.write( line5 )
-            z4d_html_file.write( line6 )
+            z4d_html_file.write( custom_menu_html( Parameters['Name'], Parameters['Mode4'], webui_uses_tls( plugin_conf, Parameters['HomeFolder'] ) ) )
     except Exception as e:
         Domoticz.Error('Error during installing plugin custom page')
         Domoticz.Error(repr(e))

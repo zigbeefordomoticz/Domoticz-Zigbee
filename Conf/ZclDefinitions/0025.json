@@ -1,0 +1,13 @@
+{
+    "ClusterId": "0025",
+    "Description": "Keep-Alive",
+    "Version": "1",
+    "Enabled": true,
+    "Debug": "KeepAlive",
+    "Attributes": {
+        "0000": { "Enabled": true, "Name": "TCKeepAliveBase", "DataType": "20", "Acc": "R", "Range": [ "01", "ff" ], "Default": "0a", "Mandatory": true, "ActionList": [ "check_store_value" ] },
+        "0001": { "Enabled": true, "Name": "TCKeepAliveJitter", "DataType": "21", "Acc": "R", "Range": [ "0000", "ffff" ], "Default": "012c", "Mandatory": true, "ActionList": [ "check_store_value" ] },
+        "fffd": { "Enabled": true, "Name": "ClusterRevision", "DataType": "21", "Acc": "R", "Range": [ "0001", "fffe" ], "Default": "", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "fffe": { "Enabled": true, "Name": "AttributeReportingStatus", "DataType": "30", "Acc": "R", "Range": [ "00", "ff" ], "Default": "", "Mandatory": false, "ActionList": [ "check_store_value" ] }
+    }
+}

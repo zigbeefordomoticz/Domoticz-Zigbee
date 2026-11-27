@@ -20,6 +20,9 @@ from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
 from Modules.zigateConsts import SIZE_DATA_TYPE, analog_value
 
+# What the WebUI edits in a reporting configuration. Anything else (the manufacturer code) is kept as it is.
+EDITED_FIELDS = ("DataType", "MinInterval", "MaxInterval", "TimeOut", "Change")
+
 
 def rest_cfgrpt_ondemand(self, verb, data, parameters):
     # Trigger a Cfg Reporting on a specific Device
@@ -34,12 +37,54 @@ def rest_cfgrpt_ondemand(self, verb, data, parameters):
         return _response
 
     if self.ControllerData:
-        self.configureReporting.check_and_redo_configure_reporting_if_needed( parameters[0] )
-        
+        self.configureReporting.cfg_reporting_on_demand(parameters[0])
+
     self.logging("Debug", f"rest_cfgrpt_ondemand requested on {parameters[0]}")
 
     _response["Data"] = json.dumps({"status": "Configure Reporting requested"}, )
     return _response
+
+
+def rest_cfgrpt_read(self, verb, data, parameters):
+    """Reporting configuration held by the device.
+
+    PUT cfgrpt-read/<nwkid>: ask the device. It answers later, and only if it is awake.
+    GET cfgrpt-read/<nwkid>: what it answered so far, one record per endpoint, cluster and attribute.
+    """
+    _response = prepResponseMessage(self, setupHeadersResponse())
+
+    if len(parameters) != 1 or parameters[0] == "0000" or parameters[0] not in self.ListOfDevices:
+        self.logging("Log", f"rest_cfgrpt_read - [CFGR0201] unknown device {verb} {parameters}")
+        _response["Status"] = "404 NOT FOUND"
+        _response["Data"] = json.dumps({"Error": "UNKNOWN_DEVICE"})
+        return _response
+
+    nwkid = parameters[0]
+    if verb == "GET":
+        _response["Data"] = json.dumps(read_reporting_records(self, nwkid))
+        return _response
+
+    if self.configureReporting is None:
+        self.logging("Log", f"rest_cfgrpt_read - [CFGR0202] configure reporting not ready {verb} {parameters}")
+        _response["Status"] = "503 SERVICE UNAVAILABLE"
+        _response["Data"] = json.dumps({"Error": "NOT_READY"})
+        return _response
+
+    asked = self.configureReporting.read_reporting_configuration_on_demand(nwkid)
+    _response["Data"] = json.dumps({"Attributes": asked, "TimeStamp": int(time.time())})
+    return _response
+
+
+def read_reporting_records(self, nwkid):
+    stored = self.ListOfDevices[nwkid].get(STORE_READ_CONFIGURE_REPORTING) or {}
+    records = []
+    # Copies: an answer of the device can be stored while we are reading
+    for ep, clusters in list(stored.get("Ep", {}).items()):
+        for cluster, attributes in list(clusters.items()):
+            for attribute, info in list(attributes.items()):
+                records.append({"Ep": ep, "ClusterId": cluster, "Attribute": attribute, **info})
+
+    return {"TimeStamp": stored.get("TimeStamp"), "Records": records}
 
 
 def rest_cfgrpt_ondemand_with_config(self, verb, data, parameters ):
@@ -187,7 +232,8 @@ def rest_cfgrpt_ondemand_with_config_put(self, verb, data, parameters , _respons
         for attribute in attributes_list:
             if "Attribute" not in attribute:
                 continue
-            cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ] = {}
+            cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ] = fields_not_edited(
+                self, nwkid, cluster_info["ClusterId"], attribute[ "Attribute"])
             # All data are sent by the Frontend in hex. We need to make sure they are store in the proper format
             for info in attribute["Infos"]:
                 if "MinInterval" in info:
@@ -267,6 +313,19 @@ def get_cfg_rpt_record(self, NwkId):
         return self.DeviceConf[ self.ListOfDevices[NwkId]["Model"]]["ConfigureReporting" ]
 
     return None
+
+
+def fields_not_edited(self, nwkid, cluster, attribute):
+    device = self.ListOfDevices[nwkid]
+    fields = {}
+    for record in (
+        self.DeviceConf.get(device.get("Model") or "", {}).get("ConfigureReporting"),
+        device.get(STORE_CUSTOM_CONFIGURE_REPORTING),
+    ):
+        attributes = ((record or {}).get(cluster) or {}).get("Attributes") or {}
+        fields.update({key: value for key, value in (attributes.get(attribute) or {}).items() if key not in EDITED_FIELDS})
+
+    return fields
 
 
 def datatype_formating( self, value, data_type):

@@ -47,7 +47,7 @@ PREAMBLE = textwrap.dedent(
     import Modules.database as database
     import Modules.greenPower as gp
     from Classes.PluginStore import PluginStore
-    from Modules.greenPowerStore import GP_STORE_NAME, GP_STORE_VERSION
+    from Modules.greenPowerStore import GP_STORE_NAME, GP_STORE_VERSION, GreenPowerRequests
 
     GP_IEEE = "%s"
 
@@ -72,7 +72,7 @@ PREAMBLE = textwrap.dedent(
         p.log = Log()
         p.zigbee_communication = mode
         p.ControllerLink = Link()
-        p.flush_list_of_devices = False
+        p.green_power_requests = GreenPowerRequests()
         p.IEEE2NWK = {}
         p.ListOfDevices = {}
         store = PluginStore(GP_STORE_NAME, GP_STORE_VERSION)
@@ -105,7 +105,7 @@ def test_remove_drops_the_record_and_asks_zigpy_only():
         assert gp.remove_green_power_device(p, GP_IEEE) is True
 
         assert GP_IEEE not in p.PluginStores[GP_STORE_NAME]
-        assert p.flush_list_of_devices is True
+        assert p.green_power_requests.store_flush is True
         assert p.ControllerLink.sent == [("REMOVE-DEVICE", {"Param1": int(GP_IEEE, 16)})]
         assert "00" * 16 not in p.log.text()
         """
@@ -119,7 +119,7 @@ def test_remove_of_an_unknown_device_does_nothing():
 
         assert gp.remove_green_power_device(p, "0000000001020304") is False
 
-        assert p.ControllerLink.sent == [] and p.flush_list_of_devices is False
+        assert p.ControllerLink.sent == [] and p.green_power_requests.store_flush is False
         """
     )
 

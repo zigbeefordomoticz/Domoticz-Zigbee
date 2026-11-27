@@ -42,6 +42,7 @@ Constants:
     THREAD_GROUP            Mapping of logical thread group names to thread name patterns
 """
 
+import contextlib
 import itertools
 import inspect
 import json
@@ -53,6 +54,7 @@ import threading
 import time
 import traceback
 from collections import deque
+from collections.abc import Mapping
 from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
 from pathlib import Path
 from queue import PriorityQueue
@@ -68,6 +70,15 @@ LOG_MAX_ERRORS_PER_SESSION = 20
 LOG_MAX_SESSIONS = 5
 LOG_RETENTION_SECONDS = 7 * 24 * 3600  # 7 days
 JSON_SAFE_MAX_DEPTH = 12  # Recursion guard for json_safe(); device entries are far shallower
+
+# What an error says about its device. Named one by one: a device entry also holds what must not
+# reach a history attached to public issues (IAS_KEYPAD has the PIN codes of an alarm keypad).
+DEVICE_INFOS_ATTRIBUTES = (
+    "IEEE", "ZDeviceName", "Model", "Manufacturer", "Manufacturer Name", "ZDeviceID", "ProfileID",
+    "DeviceType", "LogicalType", "MacCapa", "PowerSource", "Type", "Version", "CertifiedDevice", "ConfigSource",
+    "App Version", "Stack Version", "HW Version", "ZCL Version", "SWBUILD_1", "SWBUILD_2", "SWBUILD_3",
+    "Status", "Health", "Battery", "LQI", "RSSI", "RIA", "Param",
+)
 
 # Names must match the Thread(name=...) of each thread exactly: a ThreadXxx filter
 # turned on with a name no thread carries silences every debug line.
@@ -95,6 +106,7 @@ class LoggingManagement:
         PluginHealth:           Dict tracking the current health status text of the plugin.
         HardwareID:             Domoticz hardware ID, used to namespace log files and threads.
         ListOfDevices:          Reference to the active device registry, used to enrich error context.
+                                See loggingUpdateListOfDevices().
         permitTojoin:           Current permit-to-join state, included in error context snapshots.
         FirmwareVersion:        Coordinator firmware version, recorded in error history.
         FirmwareMajorVersion:   Coordinator firmware major version, recorded in error history.
@@ -136,6 +148,7 @@ class LoggingManagement:
         self.logging_thread = None
         self._startTime = int(time.time())
         self._log_counter = itertools.count(1)  # Ordering Queue
+        self._logging_failures = set()  # Causes already reported by _catch_error_event()
 
         self.debugZigpy = None
         self.debugZNP = None
@@ -193,13 +206,9 @@ class LoggingManagement:
 
     def loggingUpdatePluginVersion(self, Version):
         self.PluginVersion = Version
-        if (
-            self.LogErrorHistory
-            and self.LogErrorHistory["LastLog"]
-            and "StartTime" in self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]
-            and self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["StartTime"] == self._startTime
-        ):
-            self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["PluginVersion"] = Version
+        session = _current_error_session(self)
+        if session is not None:
+            session["PluginVersion"] = Version
 
 
     def loggingUpdateFirmware(self, FirmwareVersion, FirmwareMajorVersion):
@@ -207,14 +216,10 @@ class LoggingManagement:
             return
         self.FirmwareVersion = FirmwareVersion
         self.FirmwareMajorVersion = FirmwareMajorVersion
-        if (
-            self.LogErrorHistory
-            and self.LogErrorHistory["LastLog"]
-            and "StartTime" in self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]
-            and self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["StartTime"] == self._startTime
-        ):
-            self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["FirmwareVersion"] = FirmwareVersion
-            self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["FirmwareMajorVersion"] = FirmwareMajorVersion
+        session = _current_error_session(self)
+        if session is not None:
+            session["FirmwareVersion"] = FirmwareVersion
+            session["FirmwareMajorVersion"] = FirmwareMajorVersion
 
 
     def openLogFile(self):
@@ -272,7 +277,10 @@ class LoggingManagement:
     
         with handle:
             try:
-                self.LogErrorHistory = json.load(handle)
+                history = json.load(handle)
+                if not _is_error_history(history):
+                    raise ValueError("unexpected content")
+                self.LogErrorHistory = history
 
             except json.decoder.JSONDecodeError as e:
                 loggingWriteErrorHistory(self)  # flush the file to avoid the error next startup
@@ -281,6 +289,11 @@ class LoggingManagement:
             except Exception as e:
                 loggingWriteErrorHistory(self)  # flush the file to avoid the error next startup
                 domoticz_error_api("load Json LogErrorHistory Error %s, not JSON: %s" % (jsonLogHistory, e))
+
+
+    def loggingUpdateListOfDevices(self, ListOfDevices):
+        """The device registry, once loaded: LoadDeviceList() replaces the one given at creation."""
+        self.ListOfDevices = ListOfDevices
 
 
     def closeLogFile(self):
@@ -308,20 +321,24 @@ class LoggingManagement:
 
 
     def loggingCleaningErrorHistory(self):
-        if len(self.LogErrorHistory) > 1:
-            idx = list(self.LogErrorHistory.keys())[1]
-            if "Time" in self.LogErrorHistory[str(idx)]:
-                if time.time() - self.LogErrorHistory[str(idx)]["Time"] > LOG_RETENTION_SECONDS:  # 7 days for old structure
-                    self.LogErrorHistory.pop(idx)
-            elif len(self.LogErrorHistory[str(idx)]) > 4:
-                idx2 = list(self.LogErrorHistory[str(idx)].keys())[4]
-                if "Time" in self.LogErrorHistory[str(idx)][str(idx2)] and (
-                    time.time() - self.LogErrorHistory[str(idx)][str(idx2)]["Time"] > LOG_RETENTION_SECONDS
-                ):  # 7 days
-                    self.LogErrorHistory[idx].pop(idx2)
-            else:
-                self.LogErrorHistory.pop(idx)
-        if len(self.LogErrorHistory) == 1:
+        """Forget the errors older than LOG_RETENTION_SECONDS, and the sessions left with none."""
+        limit = time.time() - LOG_RETENTION_SECONDS
+
+        for index in _numbered_keys(self.LogErrorHistory):
+            session = self.LogErrorHistory[index]
+            if "Time" in session:
+                # old structure: the error itself, not a session of errors
+                if _is_older_than(session, limit):
+                    self.LogErrorHistory.pop(index)
+                continue
+
+            for entry in _numbered_keys(session):
+                if _is_older_than(session[entry], limit):
+                    session.pop(entry)
+            if not _numbered_keys(session):
+                self.LogErrorHistory.pop(index)
+
+        if not _numbered_keys(self.LogErrorHistory):
             self.LogErrorHistory.clear()
 
 
@@ -459,54 +476,69 @@ def loggingError(self, thread_name, message, module, nwkid, context):
     if self.pluginconf.pluginConf["enablePluginLogging"]:
         self._plugin_file_logger.error(" [%17s] " % thread_name + "[%17s] " %module + message)
 
-    # Log empty
-    if not self.LogErrorHistory or "LastLog" not in self.LogErrorHistory:
-        self.LogErrorHistory["LastLog"] = 0
-        self.LogErrorHistory["0"] = {
-            "LastLog": 0,
-            "StartTime": self._startTime,
-            "FirmwareVersion": self.FirmwareVersion,
-            "FirmwareMajorVersion": self.FirmwareMajorVersion,
-            "PluginVersion": self.PluginVersion,
-        }
-
-        self.LogErrorHistory["0"]["0"] = loggingBuildContext(self, thread_name, module, message, nwkid, context)
-        loggingWriteErrorHistory(self)
-        return  # log created, leaving
-
-    # check if existing log contains plugin launch time
-    if "StartTime" in self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]:
-        index = self.LogErrorHistory["LastLog"]
-        # check if launch time if the same, otherwise, create a new entry
-        if self.LogErrorHistory[str(index)]["StartTime"] != self._startTime:
-            index += 1
-    else:  # compatibility with older version
-        index = self.LogErrorHistory["LastLog"] + 1
-
-    # check if it's a new entry
-    if str(index) not in self.LogErrorHistory:
-        self.LogErrorHistory["LastLog"] += 1
-        self.LogErrorHistory[str(index)] = {"LastLog": 0}
-        self.LogErrorHistory[str(index)]["StartTime"] = self._startTime
-        self.LogErrorHistory[str(index)]["FirmwareVersion"] = self.FirmwareVersion
-        self.LogErrorHistory[str(index)]["FirmwareMajorVersion"] = self.FirmwareMajorVersion
-        self.LogErrorHistory[str(index)]["PluginVersion"] = (self.PluginVersion)
-        self.LogErrorHistory[str(index)]["0"] = loggingBuildContext(self, thread_name, module, message, nwkid, context)
+    session = _current_error_session(self)
+    if session is None:
+        session = _open_error_session(self)
     else:
-        self.LogErrorHistory[str(index)]["LastLog"] += 1
-        self.LogErrorHistory[str(index)][str(self.LogErrorHistory[str(index)]["LastLog"])] = loggingBuildContext(
-            self, thread_name, module, message, nwkid, context
-        )
+        session["LastLog"] += 1
+    session[str(session["LastLog"])] = loggingBuildContext(self, thread_name, module, message, nwkid, context)
 
-        if len(self.LogErrorHistory[str(index)]) > LOG_MAX_ERRORS_PER_SESSION + 4:  # log full for this launch time, remove oldest
-            idx = list(self.LogErrorHistory[str(index)].keys())[4]
-            self.LogErrorHistory[str(index)].pop(idx)
-
-    if len(self.LogErrorHistory) > LOG_MAX_SESSIONS + 1:  # log full, remove oldest
-        idx = list(self.LogErrorHistory.keys())[1]
-        self.LogErrorHistory.pop(idx)
+    # Too many errors for this plugin start, or too many plugin starts: the oldest go
+    _keep_newest(session, LOG_MAX_ERRORS_PER_SESSION)
+    _keep_newest(self.LogErrorHistory, LOG_MAX_SESSIONS)
 
     loggingWriteErrorHistory(self)
+
+
+def _numbered_keys(entries):
+    """
+    The keys of the sessions of the error history, or of the errors of a session, oldest first.
+
+    Both dicts also hold named keys ("LastLog", "StartTime", "PluginVersion"...): an entry
+    is told by its key being a number, never by its position.
+    """
+    return sorted((key for key in list(entries) if key.isdigit()), key=int)
+
+
+def _is_error_history(history):
+    """Is it what loggingError() and loggingCleaningErrorHistory() can work on?"""
+    if not isinstance(history, dict) or not isinstance(history.get("LastLog", 0), int):
+        return False
+    sessions = [history[index] for index in _numbered_keys(history)]
+    return all(isinstance(session, dict) for session in sessions) and all(
+        isinstance(session[entry], dict) for session in sessions for entry in _numbered_keys(session))
+
+
+def _keep_newest(entries, count):
+    for key in _numbered_keys(entries)[:-count]:
+        entries.pop(key)
+
+
+def _is_older_than(entry, limit):
+    entry_time = entry.get("Time")
+    return isinstance(entry_time, (int, float)) and entry_time < limit
+
+
+def _current_error_session(self):
+    """The session of the error history opened by this plugin start, None if it has none yet."""
+    session = self.LogErrorHistory.get(str(self.LogErrorHistory.get("LastLog")))
+    # A session of an older version of the plugin has no StartTime
+    if session is not None and session.get("StartTime") == self._startTime:
+        return session
+    return None
+
+
+def _open_error_session(self):
+    index = self.LogErrorHistory["LastLog"] + 1 if "LastLog" in self.LogErrorHistory else 0
+    self.LogErrorHistory["LastLog"] = index
+    self.LogErrorHistory[str(index)] = {
+        "LastLog": 0,
+        "StartTime": self._startTime,
+        "FirmwareVersion": self.FirmwareVersion,
+        "FirmwareMajorVersion": self.FirmwareMajorVersion,
+        "PluginVersion": self.PluginVersion,
+    }
+    return self.LogErrorHistory[str(index)]
 
 
 def get_stack_trace():
@@ -546,16 +578,17 @@ def json_safe(obj, _depth=0):
         # or pathological structure. Keep the error, drop the recursion.
         return repr(obj)
 
-    if isinstance(obj, dict):
+    if isinstance(obj, Mapping):
         # json.dump() only accepts str/int/float/bool/None keys; normalise the rest.
+        # list() first: the other threads may add or remove keys meanwhile.
         return {
             (k if isinstance(k, (str, int, float, bool)) or k is None else str(k)):
                 json_safe(v, _depth + 1)
-            for k, v in obj.items()
+            for k, v in list(obj.items())
         }
 
     if isinstance(obj, (list, tuple, set, frozenset, deque)):
-        return [json_safe(v, _depth + 1) for v in obj]
+        return [json_safe(v, _depth + 1) for v in list(obj)]
 
     if isinstance(obj, (bytes, bytearray)):
         return obj.hex()
@@ -564,6 +597,21 @@ def json_safe(obj, _depth=0):
         return "%s: %s" % (type(obj).__name__, obj)
 
     return repr(obj)
+
+
+def device_infos(device):
+    """What an error records of its device: DEVICE_INFOS_ATTRIBUTES, and per endpoint the clusters and the widgets."""
+    infos = {attribute: device.get(attribute) for attribute in DEVICE_INFOS_ATTRIBUTES if attribute in device}
+
+    endpoints = device.get("Ep")
+    if isinstance(endpoints, Mapping):
+        infos["Ep"] = {
+            ep: {"Clusters": sorted(str(key) for key in list(clusters) if key not in ("Type", "ClusterType")),
+                 "Type": clusters.get("Type"),
+                 "ClusterType": clusters.get("ClusterType")}
+            for ep, clusters in list(endpoints.items()) if isinstance(clusters, Mapping)
+        }
+    return json_safe(infos)
 
 
 def loggingBuildContext(self, thread_name, module, message, nwkid, context=None):
@@ -580,8 +628,9 @@ def loggingBuildContext(self, thread_name, module, message, nwkid, context=None)
         "message": message,
     }
 
-    if nwkid in self.ListOfDevices:
-        _context["DeviceInfos"] = json_safe(self.ListOfDevices.get(nwkid, {}))
+    device = self.ListOfDevices.get(nwkid)
+    if isinstance(device, Mapping):
+        _context["DeviceInfos"] = device_infos(device)
 
     if context is not None:
         _context["context"] = json_safe(context) if isinstance(context, dict) else str(context)
@@ -636,7 +685,12 @@ def logging_thread(self):
                 break
 
         elif len(logging_tuple) == 8:  # 8 expected
-            process_logging_event( self, logging_tuple)
+            try:
+                process_logging_event( self, logging_tuple)
+            except Exception as e:
+                # An exception leaving this loop ends the thread: every later line, of any
+                # level, would then be queued and never written until the plugin restarts.
+                _catch_error_event(self, logging_tuple, e)
 
         else:
             domoticz_error_api("logging_thread unexpected tuple %s" % (str(logging_tuple)))
@@ -675,10 +729,26 @@ def _should_log_debug(self, thread_name):
     return not self._thread_filter or thread_name in self._thread_filter
 
 
-def _catch_error_event(self, context,logging_tuple, err ):
-    domoticz_error_api("Something went wrong and catch: context: %s" % str(context))
-    domoticz_error_api("      logging_thread unexpected tuple %s" % (str(logging_tuple)))
-    domoticz_error_api("      Error %s" % (str(err)))
+def _catch_error_event(self, logging_tuple, err):
+    """
+    A line could not be processed. Report why, once per cause - the same one usually fails
+    on every line - and give the line itself to Domoticz, so that it is not lost.
+
+    Runs in the logging thread and must not raise.
+    """
+    with contextlib.suppress(Exception):
+        _, thread_name, _, module, logType, message, _, _ = logging_tuple
+
+        last_frame = traceback.extract_tb(err.__traceback__)[-1]
+        cause = (type(err).__name__, last_frame.filename, last_frame.lineno)
+        if cause not in self._logging_failures:
+            self._logging_failures.add(cause)
+            domoticz_error_api("Z4D logging failed on a %s line of %s (thread %s): %s: %s at %s:%s" % (
+                logType, module, thread_name, type(err).__name__, err, os.path.basename(last_frame.filename), last_frame.lineno))
+
+        # loggingError() gives the message to Domoticz before anything can fail; a Debug line is only for the plugin log
+        if logType not in ("Error", "Debug"):
+            domoticz_log_api(message)
 
 
 def configure_loggers(self, logger_names, mode):
