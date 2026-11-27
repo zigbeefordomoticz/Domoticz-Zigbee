@@ -19,7 +19,15 @@ an address and a port ("127.0.0.1:9440"):
 * the WebUI listens on a loopback address: it can only be reached through a
   reverse proxy that serves it under /z4d/ next to Domoticz, so the iframe
   uses the relative /z4d/ of the page's own address;
-* otherwise: http://<address the browser used for Domoticz>:<port>/z4d/.
+* otherwise: <scheme>://<address the browser used for Domoticz>:<port>/z4d/,
+  https when the WebUI has a usable certificate, http otherwise.
+
+A browser does not show an http page inside an https one. When Domoticz is
+opened over https and the WebUI is http, the page shows a link that opens the
+WebUI in a new tab instead of a blank frame.
+
+With the WebUI turned off (Mode4 neither a port nor address:port, e.g.
+"None"), there is nothing to point to and no page is written.
 """
 
 import html
@@ -54,19 +62,54 @@ def _js_string(value):
     return json.dumps(value).replace("</", "<\\/")
 
 
-def custom_menu_html(hardware_name, webui_port):
-    """The custom menu page for this hardware and Plugin WebUI port."""
+def webui_enabled(webui_port):
+    """The Plugin WebUI port parameter starts the WebUI (same test as plugin.py onStart)."""
+    return webui_port.isdigit() or ":" in webui_port
+
+
+MIXED_CONTENT_NOTE = (
+    "Domoticz is opened over https and the plugin WebUI is served over http: "
+    "the browser does not show the WebUI inside this page. "
+)
+OPEN_WEBUI_LINK = "Open the Zigbee for Domoticz WebUI"
+
+
+def custom_menu_html(hardware_name, webui_port, webui_tls=False):
+    """The custom menu page for this hardware and Plugin WebUI port; webui_tls when the WebUI serves https."""
     address, port = split_webui_port(webui_port)
     if is_loopback(address):
         src = _js_string("/z4d/")
     else:
-        src = '"http://" + location.hostname + ":" + %s + "/z4d/"' % _js_string(port)
+        scheme = "https://" if webui_tls else "http://"
+        src = '%s + location.hostname + ":" + %s + "/z4d/"' % (_js_string(scheme), _js_string(port))
 
     return (
-        '<iframe id="%s" style="width:100%%;height:800px;overflow:scroll;">\n'
+        '<iframe id="%(id)s" style="width:100%%;height:800px;overflow:scroll;">\n'
         "</iframe>\n"
         "\n"
         "<script>\n"
-        "document.getElementById(%s).src = %s;\n"
+        "(function () {\n"
+        "  var frame = document.getElementById(%(js_id)s);\n"
+        "  var src = %(src)s;\n"
+        '  if (location.protocol === "https:" && src.indexOf("http:") === 0) {\n'
+        '    var note = document.createElement("p");\n'
+        "    note.textContent = %(note)s;\n"
+        '    var link = document.createElement("a");\n'
+        "    link.href = src;\n"
+        '    link.target = "_blank";\n'
+        '    link.rel = "noopener";\n'
+        "    link.textContent = %(link)s;\n"
+        "    note.appendChild(link);\n"
+        "    frame.parentNode.replaceChild(note, frame);\n"
+        "  } else {\n"
+        "    frame.src = src;\n"
+        "  }\n"
+        "})();\n"
         "</script>\n"
-    ) % (html.escape(hardware_name, quote=True), _js_string(hardware_name), src)
+    ) % {
+        "id": html.escape(hardware_name, quote=True),
+        "js_id": _js_string(hardware_name),
+        "src": src,
+        "note": _js_string(MIXED_CONTENT_NOTE),
+        "link": _js_string(OPEN_WEBUI_LINK),
+    }
