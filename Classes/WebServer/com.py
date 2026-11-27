@@ -216,6 +216,30 @@ def handle_client(self, client_socket, client_addr):
         client_socket.close()
 
 
+def webui_certificate_paths(plugin_conf, home_directory):
+    """(certificate, private key) the WebUI uses: the SSLCertificate / SSLPrivateKey settings, else server.crt / server.key in the plugin folder."""
+    certificate = plugin_conf.get("SSLCertificate") or os.path.join(home_directory, "server.crt")
+    private_key = plugin_conf.get("SSLPrivateKey") or os.path.join(home_directory, "server.key")
+    return certificate, private_key
+
+
+def load_tls_context(cert_path, key_path):
+    """The SSLContext the WebUI socket is wrapped with; raises if the files are missing or unusable."""
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.minimum_version = ssl.TLSVersion.TLSv1_2
+    context.load_cert_chain(certfile=cert_path, keyfile=key_path)
+    return context
+
+
+def webui_uses_tls(plugin_conf, home_directory):
+    """True when the WebUI will serve https: same files and same check as run_server(), without logging."""
+    try:
+        load_tls_context(*webui_certificate_paths(plugin_conf, home_directory))
+    except Exception:
+        return False
+    return True
+
+
 def check_cert_and_key(self, cert_path, key_path):
     """
     Check for the existence and validity of the SSL certificate and key files.
@@ -256,9 +280,7 @@ def check_cert_and_key(self, cert_path, key_path):
 
     try:
         # Attempt to load cert and key to verify correctness
-        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        context.minimum_version = ssl.TLSVersion.TLSv1_2
-        context.load_cert_chain(certfile=cert_path, keyfile=key_path)
+        context = load_tls_context(cert_path, key_path)
 
     except ssl.SSLError as e:
         self.logging( "Error",f"SSL error: {e}")
@@ -347,8 +369,7 @@ def run_server(self, host='0.0.0.0', port=9440):   # nosec
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         # Check certificate and key
-        server_certificate = self.pluginconf.pluginConf.get("SSLCertificate") or os.path.join(self.homedirectory, "server.crt") 
-        server_private_key = self.pluginconf.pluginConf.get("SSLPrivateKey") or os.path.join(self.homedirectory, "server.key")
+        server_certificate, server_private_key = webui_certificate_paths(self.pluginconf.pluginConf, self.homedirectory)
         self.logging( "Log", f"++ WebUI - SSL Certificate {server_certificate}")
         self.logging( "Log", f"++ WebUI - SSL Private key {server_private_key}")
 
