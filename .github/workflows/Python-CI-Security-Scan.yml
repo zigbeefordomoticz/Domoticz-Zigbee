@@ -9,6 +9,7 @@ on:
     branches: ["**"]
     paths:
       - "**/*.py"
+      - ".github/workflows/Python-CI-Security-Scan.yml"
   schedule:
     - cron: '44 10 * * 6'  # Weekly run for CodeQL
 
