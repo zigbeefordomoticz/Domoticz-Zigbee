@@ -9,12 +9,12 @@ on:
     branches: ["**"]
     paths:
       - "**/*.py"
-  workflow_run:
-    workflows: ["Tests"]
-    types:
-      - completed
+      - ".github/workflows/Python-CI-Security-Scan.yml"
   schedule:
     - cron: '44 10 * * 6'  # Weekly run for CodeQL
+
+permissions:
+  contents: read
 
 jobs:
   python_quality:
@@ -27,15 +27,15 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Cache pip
-        uses: actions/cache@v3
+        uses: actions/cache@v6
         with:
           path: ~/.cache/pip
           key: pip-cache-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
@@ -95,15 +95,15 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v7
         with:
           python-version: 3.11
 
       - name: Cache CodeQL database
-        uses: actions/cache@v3
+        uses: actions/cache@v6
         with:
           path: .github/codeql/databases
           key: codeql-${{ runner.os }}-${{ github.sha }}
@@ -111,10 +111,9 @@ jobs:
             codeql-${{ runner.os }}-
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-
+        uses: github/codeql-action/analyze@v4
